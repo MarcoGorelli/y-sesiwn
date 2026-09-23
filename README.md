@@ -129,13 +129,19 @@ uv run --no-project --with mido python .claude/skills/alawon-abc/scripts/<script
 Useful to know:
 
 - 551 tunes were found; 26 have no ABC (their MIDI link on the site is dead).
-  29 more were deleted as duplicates (identical music to another folder, under
-  the same name or an abbreviation of it, e.g. `BchgMain` = `Y-Bachgen-Main`),
-  so the app shows 496. Re-running `scrape.py` would bring them back.
-- Three pairs have identical music but different names, so one tune in each
+  75 more were deleted as duplicates, so the app shows 450. Re-running
+  `scrape.py` would bring them back. A folder was deleted when its melody was
+  at least 95% the same as another's (compared by the steps between notes, so
+  a different key doesn't matter; the key drop-down covers that) and it had
+  the same name, a spelling variant (`(Y) Pural Fesur` = `Y Pural Fesur`) or a
+  file-name abbreviation (`BchgMain` = `Y-Bachgen-Main`). Deliberate variants
+  with their own names were kept: `... syml`, `... fel rîl`, `Jig ...`,
+  `Walts ...`, English/Welsh names (`Height of` / `Uchder Cader Idris`).
+- Four pairs have the same melody but unrelated names, so one tune in each
   pair probably has the wrong MIDI and needs checking against its score:
   `Hoffedd-Miss-Williams` / `Hoffedd-Miss-Blisset-2`,
-  `Santiana` / `Sesiwn-yng-Nghymru`, `Ton-y-Melinydd` / `Ton-Garol-2`.
+  `Santiana` / `Sesiwn-yng-Nghymru`, `Ton-y-Melinydd` / `Ton-Garol`,
+  `Pigau-r-Dur` / `Rali-Twm-Sion`.
 - The ABC files have no composer or arranger (`C:`) fields, only `T:`, `R:`
   (type, mostly in Welsh: *jig*, *polca*, *walts*, *rîl*, *pibddawns*, …),
   `M:`, `L:`, `Q:`, `K:`, `S:` (source page) and `Z:`. The app shows any

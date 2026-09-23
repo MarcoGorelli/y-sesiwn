@@ -129,19 +129,28 @@ uv run --no-project --with mido python .claude/skills/alawon-abc/scripts/<script
 Useful to know:
 
 - 551 tunes were found; 26 have no ABC (their MIDI link on the site is dead).
-  75 more were deleted as duplicates, so the app shows 450. Re-running
+  83 more were deleted as duplicates, so the app shows 442. Re-running
   `scrape.py` would bring them back. A folder was deleted when its melody was
-  at least 95% the same as another's (compared by the steps between notes, so
-  a different key doesn't matter; the key drop-down covers that) and it had
-  the same name, a spelling variant (`(Y) Pural Fesur` = `Y Pural Fesur`) or a
-  file-name abbreviation (`BchgMain` = `Y-Bachgen-Main`). Deliberate variants
-  with their own names were kept: `... syml`, `... fel rîl`, `Jig ...`,
-  `Walts ...`, English/Welsh names (`Height of` / `Uchder Cader Idris`).
-- Four pairs have the same melody but unrelated names, so one tune in each
-  pair probably has the wrong MIDI and needs checking against its score:
-  `Hoffedd-Miss-Williams` / `Hoffedd-Miss-Blisset-2`,
-  `Santiana` / `Sesiwn-yng-Nghymru`, `Ton-y-Melinydd` / `Ton-Garol`,
-  `Pigau-r-Dur` / `Rali-Twm-Sion`.
+  at least 95% the same as another's (compared by the steps between notes'
+  pitches, so a different key doesn't matter; the key drop-down covers that)
+  and it had the same name, a spelling variant (`(Y) Pural Fesur` =
+  `Y Pural Fesur`) or a file-name abbreviation (`BchgMain` = `Y-Bachgen-Main`).
+  Deliberate variants with their own names were kept: `... syml`,
+  `... fel rîl`, `Jig ...`, `Walts ...`. The last 8 were mislabelled copies
+  whose score image shows another tune already in the collection (e.g.
+  `Santiana`'s score was *Sesiwn yng Nghymru*, with identical music).
+- **Titles come from the score images.** Every tune's `T:` was checked
+  against the title printed on its `score.gif`: the printed title is the first
+  `T:`, other genuine names follow as extra `T:` lines. File-name titles
+  (`BachBoDw`), typos and index-style `(Y) ...` titles were replaced.
+- Some tunes named on the site aren't in the collection, because the scraper
+  paired their name with another tune's MIDI: *Diafol yn y Llwyn*, *Neidod y
+  Pant*, *Rali Twm Siôn*, and second versions of *Dere i Jigio*, *Sawdl y
+  Fuwch*, *Meillionen Meirionnydd*, *Triban Morgannwg (Syml)* and *Hoffedd Miss
+  Blisset*. The folders that carried those names now have the title of the
+  music they actually contain.
+- `Ffoi-o-r-Wcrain/score.gif` shows a different tune (*Shche Ne Vmerla
+  Ukrainy*) from its ABC; the ABC's title was kept.
 - The ABC files have no composer or arranger (`C:`) fields, only `T:`, `R:`
   (type, mostly in Welsh: *jig*, *polca*, *walts*, *rîl*, *pibddawns*, …),
   `M:`, `L:`, `Q:`, `K:`, `S:` (source page) and `Z:`. The app shows any

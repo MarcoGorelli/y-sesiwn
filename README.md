@@ -129,7 +129,7 @@ uv run --no-project --with mido python .claude/skills/alawon-abc/scripts/<script
 Useful to know:
 
 - 551 tunes were found; 26 have no ABC (their MIDI link on the site is dead).
-  83 more were deleted as duplicates, so the app shows 442. Re-running
+  92 more were deleted as duplicates, so the app shows 433. Re-running
   `scrape.py` would bring them back. A folder was deleted when its melody was
   at least 95% the same as another's (compared by the steps between notes'
   pitches, so a different key doesn't matter; the key drop-down covers that)
@@ -139,6 +139,11 @@ Useful to know:
   `... fel rîl`, `Jig ...`, `Walts ...`. The last 8 were mislabelled copies
   whose score image shows another tune already in the collection (e.g.
   `Santiana`'s score was *Sesiwn yng Nghymru*, with identical music).
+  A final pass compared same-titled tunes by their MIDI (repeats played out,
+  pitch steps and rhythm), which catches copies that write repeats
+  differently (`|1 ... :| [2` vs written out). Near-identical pairs were merged
+  by hand, keeping the more complete copy, including two that differ only in
+  time signature (*Ar Lan y Môr*, *Da yw swllt*).
 - **Titles come from the score images.** Every tune's `T:` was checked
   against the title printed on its `score.gif`: the printed title is the first
   `T:`, other genuine names follow as extra `T:` lines. File-name titles

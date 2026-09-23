@@ -128,8 +128,14 @@ uv run --no-project --with mido python .claude/skills/alawon-abc/scripts/<script
 
 Useful to know:
 
-- 551 tunes were found; 26 have no ABC (their MIDI link on the site is dead),
-  so the app shows 525.
+- 551 tunes were found; 26 have no ABC (their MIDI link on the site is dead).
+  29 more were deleted as duplicates (identical music to another folder, under
+  the same name or an abbreviation of it, e.g. `BchgMain` = `Y-Bachgen-Main`),
+  so the app shows 496. Re-running `scrape.py` would bring them back.
+- Three pairs have identical music but different names, so one tune in each
+  pair probably has the wrong MIDI and needs checking against its score:
+  `Hoffedd-Miss-Williams` / `Hoffedd-Miss-Blisset-2`,
+  `Santiana` / `Sesiwn-yng-Nghymru`, `Ton-y-Melinydd` / `Ton-Garol-2`.
 - The ABC files have no composer or arranger (`C:`) fields, only `T:`, `R:`
   (type, mostly in Welsh: *jig*, *polca*, *walts*, *rîl*, *pibddawns*, …),
   `M:`, `L:`, `Q:`, `K:`, `S:` (source page) and `Z:`. The app shows any

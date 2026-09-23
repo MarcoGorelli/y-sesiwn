@@ -304,6 +304,9 @@ def main() -> None:
     st.title("Y Sesiwn")
 
     slug = st.session_state.get("selected")
+    if slug not in by_slug:  # e.g. a tune deleted since it was opened
+        st.session_state.pop("selected", None)
+        slug = None
     if not slug:
         st.write("Search for a tune in the sidebar and select it to see its sheet music.")
         return

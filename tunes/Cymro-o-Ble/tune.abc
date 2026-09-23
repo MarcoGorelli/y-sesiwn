@@ -1,0 +1,16 @@
+X:1
+T:Cymro o Ble?
+T:Cymru Iach
+R:jig
+S:http://alawoncymru.com/alawon/Tunes/Rhatlar/RhatlarS.html
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+M:6/8
+L:1/8
+Q:3/8=60
+K:D
+|: A3 AFA | D2 F G2 B | A3 AFA | E2 F G2 B |
+A3 AFA | D2 F G2 B | dcB AGF | E2 F G2 B :|
+|: dfd AFA | dfd AFA | dfd AGF | E2 F G2 B |
+dfd e2 g | fed cBA | dcB AGF |1 E2 F G2 B :|
+[2 E2 F D3 |]

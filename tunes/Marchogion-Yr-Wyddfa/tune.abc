@@ -1,0 +1,17 @@
+X:1
+T:Marchogion Yr Wyddfa
+T:Marchogion yr Wyddfa
+R:jig
+S:http://alawoncymru.com/alawon/Tunes/MarErSet/MarErSt.html
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+M:6/8
+L:1/8
+Q:3/8=80
+K:D
+|: f2 f fed | c2 A A3 | d2 d def | g2 e e2 d/e/ |
+f2 f fed | c2 A A2 c | d2 d ede | f2 d d3 :|
+e2 e e2 e | efg gab | bag fed | c2 A A3 |
+efe e2 e | efg gab | bag fed | cBA GFE |
+DEF F2 F | FGA A2 A | d2 B d2 B | A2 G F2 E |
+DEF F2 F | FGA A2 A | d2 B A2 G | F2 D D3 |]

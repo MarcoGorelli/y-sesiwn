@@ -1,0 +1,6 @@
+tunes/**/*.json
+tunes/**/*.gif
+tunes/**/*.mid
+*.pyc
+
+

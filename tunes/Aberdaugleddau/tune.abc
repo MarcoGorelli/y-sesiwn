@@ -1,0 +1,18 @@
+X:1
+T:Aberdaugleddau
+R:jig
+S:http://alawoncymru.com/alawon/Tunes/BonhBala/SetBonBala.html
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+M:6/8
+L:1/8
+Q:3/8=73
+K:G
+GAB B2 A | G3 D3 | Bcd d2 c | B3 G3 |
+g2 f g2 d | e2 f g2 B | c2 B A2 G | A3 D3 |
+GAB B2 A | G3 D3 | Bcd d2 c | B3 G3 |
+g2 f g2 d | e2 f g2 c | B3 A3 | G6 |
+G2 B d2 B | A2 D DEF | G2 B d2 B | A3 D3 |
+G2 B d2 B | e2 c B2 A | Bcd DEF | G6 |
+GAB d2 B | AFD DEF | GAB d2 B | A3 D3 |
+G2 B d2 B | e2 c B2 A | Bcd DEF | G6 |]

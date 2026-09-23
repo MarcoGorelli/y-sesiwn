@@ -1,0 +1,14 @@
+X:1
+T:Dydd Gŵyl Dewi
+R:Ymdeithdon
+S:http://alawoncymru.com/alawon/Tunes/DyddGDew/DyddGDew.html
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+M:2/4
+L:1/8
+Q:1/4=50
+K:D
+% the MIDI plays the whole tune 2 times
+|: D/E/ | FF FF/E/ | DD DD/F/ | A>A AF | A3 :| A |
+BB AF/E/ | D/E/F/G/ A>F | A>A AF | A3 A |
+BB A/G/F/E/ | D/E/F/G/ A>A | BE EF | E3 |]

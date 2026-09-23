@@ -1,0 +1,15 @@
+X:1
+T:Distyll y Don
+R:jig
+S:http://alawoncymru.com/alawon/Tunes/SetyGarreg/SetyGarreg.html
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+M:6/8
+L:1/8
+Q:3/8=67
+K:G
+E | A2 A ABA | ^G3 E2 E | c2 c cdc | B3 ^G2 B |
+c2 B A2 A | ^G2 F E2 E | F^GA BcA | ^G3 E2 D |
+EF^G A z2 | z3 z2 E | A2 A ABA | ^G3 E2 E |
+c2 c cdc | B3 ^G2 B | c2 B A2 A | ^G2 F E2 E |
+F^GA BcA | ^G3 E2 D | EF^G A z |]

@@ -1,0 +1,15 @@
+X:1
+T:(Yr) Eingion Dur
+T:Yr Eingion Dur
+R:rîl
+S:http://alawoncymru.com/alawon/Tunes/MorgaSet/MorgawSt.htm
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+M:4/4
+L:1/8
+Q:1/4=90
+K:D
+|: A3 B AG FG | FE DE DB, A,2 | DE FG AB AG |1 FD EF E4 :|
+[2 FD EF D4 || A3 A BA GB | cB Ac dD FA | df ed cB Ac |
+BA ^GB A2 Bc | d3 B AG FG | FE DE DB, A,2 | DE FG AB AG |
+FD EF D4 |]

@@ -1,0 +1,14 @@
+X:1
+T:Helygen y Dyffryn
+R:dawns clocs
+S:http://alawoncymru.com/alawon/Tunes/DPedCloc/DPedCloc.html
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+M:2/4
+L:1/8
+Q:1/4=70
+K:G
+% the MIDI plays the whole tune 2 times
+|: D | G>G FF | EE DG/F/ | EA/G/ FB/A/ | GG z :| B |
+d>d dd | ee e^c | d>d dG | BD AD |
+G>G FF | EE DG/F/ | EA/G/ FB/A/ | GG z |]

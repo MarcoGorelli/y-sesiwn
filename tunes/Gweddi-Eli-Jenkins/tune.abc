@@ -1,0 +1,13 @@
+X:1
+T:Gweddi Eli Jenkins
+R:alaw
+S:http://alawoncymru.com/alawon/Tunes/StEliJen/EliJenks.html
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+M:4/4
+L:1/8
+Q:1/4=80
+K:D
+% the MIDI plays the whole tune 2 times
+F3 F F2 F2 | F2 G2 A4 | G3 G G2 G2 | F2 E2 F4 |
+F3 F F3 F | F2 E2 D4 | E3 E E2 E2 | D2 C2 D4 |]

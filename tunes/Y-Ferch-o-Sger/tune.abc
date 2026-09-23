@@ -1,0 +1,18 @@
+X:1
+T:(Y) Ferch o Sger
+R:alaw
+S:http://alawoncymru.com/alawon/Tunes/FerchSgr/FerchSgr.htm
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+M:4/4
+L:1/8
+Q:1/4=120
+K:C
+c4 G3 F | E4 G4 | c4 e2 g2 | g2 f2 e4 |
+d4 d2 B2 | G2 B2 d4 | c2 B2 A4 | G8 |
+c4 G3 F | E4 G4 | c4 e2 g2 | g2 f2 e4 |
+d4 d2 c2 | c2 B2 e2 c2 | B4 A4 | G8 |
+g6 g2 | g4 c4 | f6 f2 | f4 e4 |
+d4 d2 c2 | c2 B2 c2 d2 | e2 g2 f2 e2 | d8 |
+c4 B2 c2 | d2 B2 G4 | e4 d2 e2 | f2 d2 B4 |
+g4 f2 e2 | a4 g2 f2 | e4 d4 | c8 |]

@@ -1,0 +1,15 @@
+X:1
+T:Pont Cleddau
+R:jig
+S:http://alawoncymru.com/alawon/Tunes/PontCldd/SetPntCl.htm
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+M:6/8
+L:1/8
+Q:3/8=60
+K:G
+|: GBd dBG | ece d3 | GBd dBG | eaf d3 |
+GBd dBG | gfg d3 | ecA dBG | DFA G3 :|
+|: dBd ece | dBG AFD | GBd gfg | eaf d2 d |
+bag agf | gfe dBG |1 Bcd efg | afe dcA :|
+[2 DEF GBe | def g3 |]

@@ -1,0 +1,14 @@
+X:1
+T:Cariadgan y Sguthan
+R:alaw
+S:http://alawoncymru.com/alawon/Tunes/DafGarWn/DafGarWn.html
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+M:6/8
+L:1/8
+Q:3/8=60
+K:Am
+|: E | A2 B cBc | A2 e e3 | d2 c B2 d | cBc A2 E |
+A2 B cBc | A2 e e2 d | cBA BA^G | A3- A2 :: B |
+c2 g g3 | cde edc | B2 g g3 | Bcd def |
+e2 d cBA | f2 e dcB | cBA BA^G | A3- A2 :|

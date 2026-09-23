@@ -1,0 +1,18 @@
+X:1
+T:Y Ferch o blwy Penderyn
+T:(Y) Ferch o blwy Penderyn
+R:walts
+S:http://alawoncymru.com/alawon/Tunes/FerBPSet/FerchBPS.html
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+M:3/4
+L:1/8
+Q:1/4=120
+K:G
+|: D2 | G4 G2 | F3 E D2 | G4 G2 | E G3 D2 |
+E4 E2 | F3 E D2 | F2 G2 A2 | G4 :| z2 |
+B4 G2 | Bd- d4 | c4 d2 | BG- G4 |
+B4 G2 | B4 d2 | c4 B2 | A6- |
+A4 d2 | d4 G2 | F3 E D2 | G4 G2 |
+E G3 D2 | E4 E2 | F3 E D2 | F2 G2 A2 |
+G4 |]

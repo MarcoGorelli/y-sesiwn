@@ -1,0 +1,14 @@
+X:1
+T:HelaGein
+S:http://alawoncymru.com/alawon/Tunes/SetHelGeinach/SetHelGeinach.html
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+M:2/4
+L:1/8
+Q:1/4=80
+K:D
+% the MIDI plays the whole tune 2 times
+|: D>E DF | A>B AF | DF AF |1 E2 EA :|
+[2 E2 E2 || A>B AF | A>B AG/A/ | BA GF |
+ED C2 | DF A2 | BA F2 | DF AF |
+E2 D2 |]

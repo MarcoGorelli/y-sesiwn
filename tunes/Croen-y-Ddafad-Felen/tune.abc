@@ -1,0 +1,13 @@
+X:1
+T:Croen y Ddafad Felen
+R:jig
+S:http://alawoncymru.com/alawon/Tunes/FerchSgr/FerchSgr.htm
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+M:6/8
+L:1/8
+Q:3/8=80
+K:C
+|: c2 d e2 f | g3 g2 e | f2 e f2 d | g3 g2 e |
+f2 e d2 d | e2 d c2 c |1 d2 c B2 c | d3 G2 G :|
+[2 d2 d g2 g | c3 c3 |]

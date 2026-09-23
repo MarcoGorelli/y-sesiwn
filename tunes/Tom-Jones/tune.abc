@@ -1,0 +1,14 @@
+X:1
+T:Tom Jones
+R:jig
+S:http://alawoncymru.com/alawon/Tunes/TomJonSt/TomJonSt.htm
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+M:6/8
+L:1/8
+Q:3/8=67
+K:D
+|: a2 A g2 A | f2 A e2 A | d2 f ecA | d2 f ecA |
+dcd ede | fef ^gfg | aed cdB | A3 A3 :|
+|: DEF EFG | F2 A E2 G | F2 d AB=c | B3 B2 A |
+GFG AGA | BAB cBc | dAG FGE | D6 :|

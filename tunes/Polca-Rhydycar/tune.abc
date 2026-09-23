@@ -1,0 +1,14 @@
+X:1
+T:Polca Rhydycar
+R:polca
+S:http://alawoncymru.com/alawon/Tunes/SetPolcas/SetPolcas.html
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+M:4/4
+L:1/8
+Q:1/4=90
+K:G
+|: d2 g2 B2 d2 | GF GA B4 | c2 e2 d2 B2 | AG AB A2 Bc |
+d2 g2 B2 d2 | GF GA B4 | cB ce d2 B2 | AG AB G4 :|
+|: A2 B2 c2 d2 | A2 B2 c4 | A2 B2 c2 ^c2 | d2 ^c2 d4 |
+d2 g2 B2 d2 | GF GA B4 | cB ce d2 B2 | AG AB G4 :|

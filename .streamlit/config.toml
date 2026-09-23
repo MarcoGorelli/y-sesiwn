@@ -1,0 +1,7 @@
+[server]
+# Serve ./static (abcjs and the piano soundfont) at /app/static/ so the app
+# works offline. Populate it with: .venv/bin/python download_assets.py
+enableStaticServing = true
+
+[browser]
+gatherUsageStats = false

@@ -1,0 +1,14 @@
+X:1
+T:Jig Titrwm
+R:jig
+S:http://alawoncymru.com/alawon/Tunes/JigsYWerin/JigsWerin.htm
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1 transpose=-5
+%%alawon-reviewed
+M:6/8
+L:1/8
+Q:3/8=60
+K:Em
+|: G2 G FGF | E2 F E2 E | BAB AGA | G F4 F |
+G2 G FEF | E2 F G2 A | BcB F2 G | F E2 z3 :|
+|: G2 E B2 B | B2 G F2 F | E2 G F2 G | E E3 z2 :|

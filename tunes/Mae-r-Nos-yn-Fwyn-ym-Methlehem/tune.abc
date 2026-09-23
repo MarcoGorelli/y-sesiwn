@@ -1,0 +1,13 @@
+X:1
+T:Mae'r Nos yn Fwyn ym Methlehem
+R:carol
+S:http://alawoncymru.com/alawon/Tunes/Nadol22/Nadol22.html
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+M:6/8
+L:1/8
+Q:3/8=53
+K:C
+% the MIDI plays the whole tune 2 times
+c | B2 A G2 c | B2 A G2 G | A2 A G2 C | F3- F2 F |
+EAG FBA | GcB A2 A | G2 G GAG | G3- G2 |]

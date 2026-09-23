@@ -1,0 +1,19 @@
+X:1
+T:Dere i Jigio
+R:jig naid
+S:http://alawoncymru.com/alawon/Tunes/SetDerDr/SetDerDr.html
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+M:2/4
+L:1/8
+Q:1/4=120
+K:G
+z2 d2 | c3 c | B3 A | A3 G |
+F D3 | z2 G2 | A2 B2 | c3 B |
+A3 G | F D3 | z2 d2 | c3 c |
+B3 A | A3 G | F D3- | D3 z |
+G2 AB | c3 A | d3 A | A3 G |
+F D3- | D4 | G4 | d4 |
+F3 E | D4 | z2 BG | d4 |
+c4 | B4 | AF AD | G4 |
+c4 | B4 | A4 | G4 |]

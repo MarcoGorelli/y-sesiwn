@@ -1,0 +1,17 @@
+X:1
+T:Ymadawiad y Brenin
+R:Ymdeithdon
+S:http://alawoncymru.com/alawon/Tunes/LletBugl/LletBugl.htm
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+M:4/4
+L:1/8
+Q:1/4=120
+K:Em
+|: E4 G3 A | B8 | c4 B3 A | B8 |
+A4 G2 F2 | G2 A2 B2 A2 | G4 F3 E | E8 :|
+e4 e3 f | d6 c2 | B2 A2 B2 c2 | B4 A4 |
+G2 A2 B2 c2 | d4 e2 d2 | c2 B2 A3 G | G8 |
+G2 A2 B4 | F2 G2 A4 | E2 G2 F2 E2 | E2 ^D2 B,4 |
+E2 F2 G2 A2 | B8 | c4 B3 A | B8 |
+A4 G2 F2 | G2 A2 B2 A2 | G4 F3 E | E8 |]

@@ -1,0 +1,19 @@
+X:1
+T:Belle Isle March
+T:Ymdaith Belle Isle
+R:pibddawns
+S:http://alawoncymru.com/alawon/Tunes/BelleIsl/BelleIsl.htm
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+M:6/8
+L:1/8
+Q:3/8=80
+K:G
+|: DEF G3- | G2 B A3- | A2 c B2 d | g2 e d3- |
+d2 c Bcd | B2 G ABc | A2 F G2 F | G2 E D3 |
+DEF G3- | G2 B A3- | A2 c B2 d | g2 e d3- |
+d2 c Bcd | B2 G ABc | A2 F G2 F | G2 F G3 :|
+|: B2 c d3 | d2 c B2 c | d2 B c3 | c2 B A2 B |
+c2 A d3 | d2 c B3 | B3 c2 d | e2 c A3 |
+DEF G3- | G2 B A3- | A2 c B2 d | g2 e d3- |
+d2 c Bcd | B2 G ABc | A2 F G2 F | G2 F G3 :|

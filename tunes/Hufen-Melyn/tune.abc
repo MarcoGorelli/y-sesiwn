@@ -1,0 +1,17 @@
+X:1
+T:Hufen Melyn
+R:alaw
+S:http://alawoncymru.com/alawon/Tunes/StHufMel/StHufMel.html
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+%%alawon-reviewed
+M:2/4
+L:1/8
+Q:1/4=80
+K:G
+|: D | G>A BG | A>B cA | B<d z D | GB Bd |
+cA GF | G2 z :| B | c>B cd | e/f/g fd |
+e/f/ g2 B | c>B cd | e/f/g fd | e/f/ g2 d |
+gd dB | ec cA | dB BG | FE FD |
+G>A BG | A>B cA | B<d z D | GB Bd |
+cA GF | G3 |]

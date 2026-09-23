@@ -1,0 +1,19 @@
+X:1
+T:Pibddawns y Glöwr
+T:Pibddawns Y Glöwr
+R:pibddawns
+S:http://alawoncymru.com/alawon/Tunes/PibMorg/PibMorg.htm
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+M:2/4
+L:1/8
+Q:1/4=120
+K:D
+|: A2 d>c | d>A F>D | F>A B>A | B>c d>c |
+B>A B>c | d>c B>A | G>F E>e | e>d e2 |
+f>e d>c | d>A F>D | F>A B>A | B>c d>c |
+B>A B>c | d>B A>g | f>e d>c | d>c d2 :|
+|: f>g a>f | d>f g>e | c>A d>c | d>B A>F |
+D>F G>F | G>A B>A | G>F E>e | e>d e2 |
+d>e f>e | f>d e>c | A2 g>f | g>e d>c |
+B>A B>c | d>B A>g | f>e d>c | d>c d2 :|

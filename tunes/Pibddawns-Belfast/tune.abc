@@ -1,0 +1,15 @@
+X:1
+T:Pibddawns Belfast
+T:Pibddawns Llundain
+R:pibddawns
+S:http://alawoncymru.com/alawon/Tunes/PibPrydn/PibPrydn.htm
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+M:12/8
+L:1/8
+Q:3/8=80
+K:DMix
+|: B2 A G2 D B,2 D G2 B | d2 B cdc BAG F2 A | D2 F G2 B d2 B c2 e | d2 c B2 d c2 B A2 c |
+B2 A G2 D B,2 D G2 B | d2 B cdc BAG F2 A | D2 F G2 B d2 B c2 e | d2 c B3 G3 G3 :|
+|: d2 c B2 c def g2 d | B2 G e3 c3 e2 d | c2 B A2 ^c efg a2 e | ^c2 A c2 e a2 g g2 f |
+e2 d B2 c def g2 d | B2 G e3 c3 e2 d | c2 B e2 d c2 B c2 e | d2 c B3 G3 G3 :|

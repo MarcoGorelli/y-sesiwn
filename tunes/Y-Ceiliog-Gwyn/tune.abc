@@ -1,0 +1,15 @@
+X:1
+T:Y Ceiliog Gwyn
+T:(Y) Ceiliog Gwyn
+R:dawns naid
+S:http://alawoncymru.com/alawon/Tunes/CeilyRhe/CeilyRhe.htm
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+M:6/8
+L:1/8
+Q:3/8=80
+K:D
+|: F2 A d2 e | d3 d2 c | e2 d c2 B |1 A6 :|
+[2 A3 A2 d/e/ || f3 e3 | d3 d z e | f3 e3 |
+d3 d z c | B2 A d2 c | B2 A d2 e | f3 e3 |
+d6 |]

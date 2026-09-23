@@ -1,0 +1,15 @@
+X:1
+T:Rasys Cas-Gwent
+R:jig
+S:http://alawoncymru.com/alawon/Tunes/SetRasys/SetRasys.html
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+M:6/8
+L:1/8
+Q:3/8=53
+K:G
+% the MIDI plays the whole tune 2 times
+|: gBc dGA | BDF GBd | gBc dGA | ^cde def |
+gBc dGA | BDF GBd | efg afd | aef g3 :|
+|: fdA FAd | e^cA GAc | dfa afd | egf e2 A |
+fdA FAd | e^cA GAc | dfa afd | gfe d3 :|

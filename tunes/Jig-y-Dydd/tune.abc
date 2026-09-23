@@ -1,0 +1,14 @@
+X:1
+T:Jig y Dydd
+R:jig
+S:http://alawoncymru.com/alawon/Tunes/SetHuwBach/SetHuwBach.html
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+M:6/8
+L:1/8
+Q:3/8=67
+K:G
+|: D | G2 D GAB | A2 D ABc | BAG d2 B | A2 G F2 D |
+G2 D GAB | A2 E ABc | BAG FGA | G3- G2 :: B |
+A2 F D2 c | BcA G2 B | A2 F D2 c | BGB g2 a |
+bdb aca | gBg f2 A | ABc B2 A | G3- G2 :|

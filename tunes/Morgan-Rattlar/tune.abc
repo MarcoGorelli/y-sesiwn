@@ -1,0 +1,16 @@
+X:1
+T:Morgan Rattlar
+R:jig
+S:http://alawoncymru.com/alawon/Tunes/Rhatlar/RhatlarS.html
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+M:6/8
+L:1/8
+Q:3/8=67
+K:D
+|: d | AGF EFG | FEF D2 d | AGF EFG | B2 A Bcd |
+AGF EFG | FEF D2 A | def ecA | B2 A Bc :: d |
+d2 e fdB | c2 d ecA | d2 e fdB | f2 e fga |
+d2 e fdB | cde def | edc dcB | B2 A Bc :: d |
+D2 d dcd | E2 e ede | D2 d dcd | B2 A Bcd |
+D2 d dcd | E2 e efg | fed cBA | B2 A Bc :| d |]

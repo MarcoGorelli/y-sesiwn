@@ -1,0 +1,16 @@
+X:1
+T:Cambro Brython
+R:dawns sgwâr
+S:http://alawoncymru.com/alawon/Tunes/Moliann/Moliannw.htm
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+M:2/2
+L:1/8
+Q:1/2=60
+K:G
+|: B2 d2 c2 e2 | d2 B2 A2 G2 | G2 g2 d2 B2 | A2 A2 A4 |
+B2 d2 c2 e2 | d2 B2 A2 G2 | B2 d2 A2 c2 | B2 G2 G4 :|
+g4 d2 B2 | g4 d2 B2 | G2 g2 d2 B2 | A2 A2 A4 |
+g4 d2 B2 | g4 d2 B2 | B2 d2 A2 c2 | B2 G2 G4 |
+g4 d2 B2 | g4 d2 B2 | G2 g2 d2 B2 | A2 A2 A4 |
+B2 d2 c2 e2 | d2 B2 A2 G2 | B2 d2 A2 c2 | B2 G2 G4 |]

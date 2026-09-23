@@ -13,6 +13,7 @@ import streamlit as st
 from streamlit_searchbox import st_searchbox
 
 TUNES_DIR = Path(__file__).parent / "tunes"
+STATIC_DIR = Path(__file__).parent / "static"
 # Local copies served by Streamlit from ./static (see download_assets.py),
 # so the app needs no internet access.
 STATIC_URL = "/app/static"
@@ -128,6 +129,18 @@ def strip_fields(abc: str, fields: str) -> str:
 
 def render_tune(abc: str, transpose: int) -> None:
     """Render ABC as sheet music with abcjs, plus a MIDI synth player."""
+    # Without static serving, /app/static/... returns Streamlit's index page
+    # instead of abcjs and the score silently fails to draw.
+    if not st.get_option("server.enableStaticServing"):
+        st.error(
+            "Sheet music needs `server.enableStaticServing = true` (see "
+            "`.streamlit/config.toml`). Restart the app from this folder so the "
+            "config is read."
+        )
+        return
+    if not (STATIC_DIR / "abcjs" / "abcjs-basic-min.js").exists():
+        st.error("`static/` is missing abcjs. Run `.venv/bin/python download_assets.py`.")
+        return
     html = f"""
 <link rel="stylesheet" href="{STATIC_URL}/abcjs/abcjs-audio.css">
 <script src="{STATIC_URL}/abcjs/abcjs-basic-min.js"></script>
@@ -230,7 +243,7 @@ def go_home() -> None:
 
 
 def main() -> None:
-    st.set_page_config(page_title="Y Sesiwn", page_icon="🎻", layout="wide")
+    st.set_page_config(page_title="Y Sesiwn", page_icon=STATIC_DIR / "harp.svg", layout="wide")
     tunes = load_tunes()
     by_slug = {t["slug"]: t for t in tunes}
 

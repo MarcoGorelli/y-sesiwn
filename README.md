@@ -134,11 +134,11 @@ Useful to know:
   at least 95% the same as another's (compared by the steps between notes'
   pitches, so a different key doesn't matter; the key drop-down covers that)
   and it had the same name, a spelling variant (`(Y) Pural Fesur` =
-  `Y Pural Fesur`) or a file-name abbreviation (`BchgMain` = `Y-Bachgen-Main`).
+  `Y Pural Fesur`) or a file-name abbreviation (`BchgMain` = *Y Bachgen Main*).
   Deliberate variants with their own names were kept: `... syml`,
   `... fel rîl`, `Jig ...`, `Walts ...`. The last 8 were mislabelled copies
   whose score image shows another tune already in the collection (e.g.
-  `Santiana`'s score was *Sesiwn yng Nghymru*, with identical music).
+  the `Santiana` folder's score was *Sesiwn yng Nghymru*, with identical music).
   A final pass compared same-titled tunes by their MIDI (repeats played out,
   pitch steps and rhythm), which catches copies that write repeats
   differently (`|1 ... :| [2` vs written out). Near-identical pairs were merged
@@ -148,13 +148,19 @@ Useful to know:
   against the title printed on its `score.gif`: the printed title is the first
   `T:`, other genuine names follow as extra `T:` lines. File-name titles
   (`BachBoDw`), typos and index-style `(Y) ...` titles were replaced.
+- **Naming:** titles have no brackets (`Ffaniglen Syml`), except that tunes
+  sharing a title are numbered `... (version 2)`, `(version 3)`. Each folder
+  is named after its first title: lowercase, accents dropped, anything else
+  turned into hyphens (`Codi'r Hwyl` → `tunes/codi-r-hwyl/`,
+  `Sawdl y Fuwch (version 2)` → `sawdl-y-fuwch-version-2`). The 26 folders
+  with no `tune.abc` (dead MIDI links) keep the scraper's names.
 - Some tunes named on the site aren't in the collection, because the scraper
   paired their name with another tune's MIDI: *Diafol yn y Llwyn*, *Neidod y
   Pant*, *Rali Twm Siôn*, and second versions of *Dere i Jigio*, *Sawdl y
-  Fuwch*, *Meillionen Meirionnydd*, *Triban Morgannwg (Syml)* and *Hoffedd Miss
+  Fuwch*, *Meillionen Meirionnydd*, *Triban Morgannwg Syml* and *Hoffedd Miss
   Blisset*. The folders that carried those names now have the title of the
   music they actually contain.
-- `Ffoi-o-r-Wcrain/score.gif` shows a different tune (*Shche Ne Vmerla
+- `ffoi-o-r-wcrain/score.gif` shows a different tune (*Shche Ne Vmerla
   Ukrainy*) from its ABC; the ABC's title was kept.
 - The ABC files have no composer or arranger (`C:`) fields, only `T:`, `R:`
   (type, mostly in Welsh: *jig*, *polca*, *walts*, *rîl*, *pibddawns*, …),

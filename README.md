@@ -94,9 +94,11 @@ Not in git (see `.gitignore`): each tune's `score.gif`, `tune.mid` and
 - abcjs boosts the volume (×3) only for its default online soundfont. With a
   local `soundFontUrl` the boost must be set explicitly
   (`soundFontVolumeMultiplier: 3.0` in `AUDIO_PARAMS`), or playback is quiet.
-- The soundfont and abcjs URLs are absolute paths (`/app/static/...`). If the
-  app is ever served under a sub-path (`server.baseUrlPath`), update
-  `STATIC_URL` in `app.py`.
+- The soundfont and abcjs URLs must be relative (`app/static/...`, no leading
+  slash). The score iframe resolves them against the app page's URL, which on
+  Streamlit Community Cloud is `https://<app>.streamlit.app/~/+/`; an absolute
+  `/app/static/...` hits Cloud's login redirect instead, and the score silently
+  doesn't draw.
 - "Back to home" must also delete the search box's state
   (`st.session_state["tune_search"]`); otherwise choosing the same tune again
   afterwards does nothing, because the search box only reports a *changed*

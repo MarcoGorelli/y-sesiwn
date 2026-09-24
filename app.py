@@ -17,7 +17,9 @@ TUNES_DIR = Path(__file__).parent / "tunes"
 STATIC_DIR = Path(__file__).parent / "static"
 # Local copies served by Streamlit from ./static (see download_assets.py),
 # so the app needs no internet access.
-STATIC_URL = "/app/static"
+# Relative, not "/app/static": the score iframe resolves it against the app's
+# own URL, which on Streamlit Community Cloud is under a sub-path (/~/+/).
+STATIC_URL = "app/static"
 AUDIO_PARAMS = {
     "program": 0,
     "soundFontUrl": f"{STATIC_URL}/soundfont/",

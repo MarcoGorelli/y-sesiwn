@@ -140,6 +140,42 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .pills button:hover:not(:disabled) { border-color: var(--c); color: inherit; }
 .pills button[aria-pressed="true"] { border-color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); font-weight: 600; }
 
+/* Search by notes */
+.notes-search { max-width: 40rem; }
+.notes-search input {
+  width: 100%; padding: .7rem 1rem; font-size: 1.05rem;
+  border: 1.5px solid var(--border); border-radius: var(--radius); background: var(--card-bg);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .03em;
+}
+.notes-search input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+/* Piano keyboard (G3 to A5) */
+.piano-wrap { overflow-x: auto; margin: .7rem 0 .4rem; padding-bottom: .2rem; }
+.piano {
+  --white: calc(100% / var(--whites)); --black: calc(var(--white) * .62);
+  position: relative; display: flex; height: 7.5rem; min-width: 24rem;
+  border-top: 4px solid var(--slate); border-radius: 4px 4px 6px 6px;
+}
+.piano .key { border-radius: 0 0 5px 5px; padding: 0; cursor: pointer; transition: background-color .08s; }
+.piano .white {
+  flex: 1; display: flex; align-items: flex-end; justify-content: center; padding-bottom: .35rem;
+  background: #fffdf8; border: 1px solid #b9bcc2; border-top: none; margin-right: -1px; color: #8a9099;
+  font-size: .72rem;
+}
+.piano .white.c { color: var(--slate); font-weight: 600; }
+.piano .black {
+  position: absolute; top: 0; width: var(--black); height: 62%; z-index: 1;
+  background: #262b31; border: 1px solid #111; border-top: none;
+}
+.piano .white:hover { background: #f3ead3; border-color: #b9bcc2; color: var(--accent); }
+.piano .black:hover { background: #3b4550; border-color: #111; }
+.piano .white:active, .piano .black:active { background: var(--accent); }
+.note-edit { display: flex; gap: .4rem; margin: .1rem 0 .3rem; }
+.note-edit button { padding: .3rem .7rem; font-size: .9rem; }
+.notes-results { margin: .4rem 0 0; padding-left: 2.1rem; }  /* room for 2-digit numbers */
+.notes-results li { padding: .15rem 0; }
+.notes-results a { color: var(--text); text-decoration: none; font-weight: 500; }
+.notes-results a:hover { color: var(--accent); text-decoration: underline; }
+
 /* Tune-type colourways: a small woven swatch */
 .swatch {
   display: inline-block; flex: none;

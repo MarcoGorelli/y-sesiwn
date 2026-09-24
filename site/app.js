@@ -88,6 +88,164 @@ function search(query) {
     .map(([, tune]) => tune);
 }
 
+// ---- Search by notes (any key) ------------------------------------------------------
+// Tunes and queries become the steps between successive notes, in semitones, and
+// repeated notes are ignored; steps don't depend on the key. Notes tapped on the
+// keyboard (or typed with an octave, "G3") give exact steps, leaps included. Note
+// names without an octave ("D E F#") are compared by the smaller way round
+// (-5..+6 semitones), since people rarely know the octave of a tune they hum.
+
+const LETTER_PITCH = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+const MIN_NOTES = 4;
+const KEYBOARD = { from: 55, to: 81 };  // G3 (fiddle's open G string) to A5
+const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+
+function parseNotes(text) {
+  // "D E F# G", "G3 A3", "Bb", "B♭", "^F" (ABC); a "b" straight after a letter is a flat.
+  // Returns [{ pc, midi }], midi being null when no octave was given.
+  const notes = [];
+  for (const m of text.matchAll(/(\^|_|=)?([A-Ga-g])(#|♯|b|♭)?(\d)?/g)) {
+    const alter = { "^": 1, "_": -1 }[m[1]] ?? { "#": 1, "♯": 1, b: -1, "♭": -1 }[m[3]] ?? 0;
+    const semitone = LETTER_PITCH[m[2].toUpperCase()] + alter;
+    notes.push({ pc: (semitone + 12) % 12, midi: m[4] === undefined ? null : 12 * (+m[4] + 1) + semitone });
+  }
+  return notes;
+}
+
+function collapse(values) { return values.filter((v, i) => i === 0 || v !== values[i - 1]); }
+
+// One character per step, so matching is a plain string search.
+function foldedSteps(pitchClasses) {
+  let out = "";
+  for (let i = 1; i < pitchClasses.length; i++) {
+    let d = (pitchClasses[i] - pitchClasses[i - 1] + 12) % 12;
+    if (d > 6) d -= 12;
+    out += String.fromCharCode(70 + d);
+  }
+  return out;
+}
+function exactSteps(midis) {
+  let out = "";
+  for (let i = 1; i < midis.length; i++) out += String.fromCharCode(80 + midis[i] - midis[i - 1]);
+  return out;
+}
+
+function tuneSteps(tune) {
+  const midis = [...tune.melody].map((c) => c.charCodeAt(0) - 160);  // see melody_string()
+  tune.steps ??= {
+    exact: exactSteps(collapse(midis)),
+    folded: foldedSteps(collapse(midis.map((m) => m % 12))),
+  };
+  return tune.steps;
+}
+
+function oneWrongNote(query, steps, at, base, octaves) {
+  // Would the query match at `at` if exactly one of its notes were changed? A wrong
+  // first or last note changes one step; a wrong note in between changes the step
+  // into it and the step out of it, which together still span the same interval.
+  const wrong = [];
+  for (let j = 0; j < query.length && wrong.length < 3; j++) if (steps[at + j] !== query[j]) wrong.push(j);
+  if (wrong.length === 1) return wrong[0] === 0 || wrong[0] === query.length - 1;
+  if (wrong.length !== 2 || wrong[1] !== wrong[0] + 1) return false;
+  const span = (s, j) => s.charCodeAt(j) + s.charCodeAt(j + 1) - 2 * base;  // semitones across two steps
+  const diff = span(query, wrong[0]) - span(steps, at + wrong[0]);
+  return octaves ? diff === 0 : diff % 12 === 0;
+}
+
+function searchByNotes(text) {
+  const notes = parseNotes(text);
+  const octaves = notes.length > 0 && notes.every((n) => n.midi !== null);
+  const query = octaves ? exactSteps(collapse(notes.map((n) => n.midi))) : foldedSteps(collapse(notes.map((n) => n.pc)));
+  if (query.length < MIN_NOTES - 1) return null;
+  const results = [];
+  for (const tune of state.data.tunes) {
+    const steps = tuneSteps(tune)[octaves ? "exact" : "folded"];
+    const at = steps.indexOf(query);
+    let score = 0, where = at, how = "";
+    if (at >= 0) {
+      [score, how] = at <= 2 ? [4, "starts like this"] : [3, "later in the tune"];  // <= 2: allow pick-up notes
+    } else if (query.length >= 4) {
+      for (let i = 0; i + query.length <= steps.length; i++) {
+        if (oneWrongNote(query, steps, i, octaves ? 80 : 70, octaves)) {
+          [score, where, how] = [i <= 2 ? 2 : 1, i, "one note different"];
+          break;
+        }
+      }
+    }
+    if (score) results.push({ tune, score, where, how });
+  }
+  return results.sort((a, b) => b.score - a.score || a.where - b.where || (a.tune.title < b.tune.title ? -1 : 1));
+}
+
+function playNote(midi) {
+  // Sound one keyboard note with the same piano (and volume) as the player.
+  const sequence = new ABCJS.synth.SynthSequence();
+  const track = sequence.addTrack();
+  sequence.setInstrument(track, 0);
+  sequence.appendNote(track, midi, 0.25, 100);
+  const synth = new ABCJS.synth.CreateSynth();
+  synth.init({ sequence, millisecondsPerMeasure: 2000, options: AUDIO_PARAMS })
+    .then(() => synth.prime()).then(() => synth.start()).catch(() => {});
+}
+
+function keyboard(onPress) {
+  // A piano keyboard from G3 to A5: white keys in a row, black keys laid over them.
+  const whites = [], blacks = [];
+  for (let midi = KEYBOARD.from; midi <= KEYBOARD.to; midi++) {
+    const name = NOTE_NAMES[midi % 12] + (Math.floor(midi / 12) - 1);
+    const key = el("button", {
+      type: "button", "aria-label": name.replace("#", " sharp "), title: name.replace("#", "♯"),
+      onclick: () => { playNote(midi); onPress(name); },
+    });
+    if (name.includes("#")) {
+      key.className = "key black";
+      key.style.left = `calc(${whites.length} * var(--white) - var(--black) / 2)`;
+      blacks.push(key);
+    } else {
+      key.className = `key white${name.startsWith("C") ? " c" : ""}`;
+      key.append(el("span", {}, name.startsWith("C") ? name : name[0]));  // label C's with their octave
+      whites.push(key);
+    }
+  }
+  return el("div", { class: "piano", role: "group", "aria-label": "Piano keyboard, G3 to A5", style: `--whites: ${whites.length}` },
+    whites, blacks);
+}
+
+function notesSearch() {
+  const input = el("input", {
+    id: "notes-search", type: "text", autocomplete: "off", spellcheck: "false",
+    placeholder: "e.g. D E F# G A (any key)", "aria-describedby": "notes-help",
+  });
+  const results = el("ol", { class: "notes-results", "aria-live": "polite" });
+  const help = el("p", { id: "notes-help", class: "caption" });
+  const update = () => {
+    const found = searchByNotes(input.value);
+    if (!found) {
+      const n = collapse(parseNotes(input.value).map((x) => x.midi ?? x.pc)).length;
+      help.textContent = n ? `Keep going: ${MIN_NOTES - n} more note${MIN_NOTES - n > 1 ? "s" : ""}.`
+        : "Type or play the first few notes of a tune. The key doesn't matter.";
+      results.replaceChildren();
+      return;
+    }
+    help.textContent = found.length
+      ? `${found.length} tune${found.length > 1 ? "s" : ""} with these notes${found.length > 12 ? " (showing the best 12; add notes to narrow it down)" : ""}.`
+      : "No tunes with these notes. Try fewer notes, or check a note or two.";
+    results.replaceChildren(...found.slice(0, 12).map(({ tune, how }) => el("li", {},
+      el("a", { href: tuneUrl(tune.slug), "data-route": true }, tune.title), el("span", { class: "caption" }, ` · ${how}`))));
+  };
+  input.addEventListener("input", update);
+  const press = (name) => { input.value = `${input.value.trimEnd()} ${name}`.trimStart(); update(); };
+  const edit = el("div", { class: "note-edit" },
+    el("button", { type: "button", "aria-label": "Delete last note", onclick: () => {
+      input.value = input.value.trimEnd().replace(/\s*\S+$/, ""); update(); } }, "⌫ Delete"),
+    el("button", { type: "button", onclick: () => { input.value = ""; update(); } }, "Clear"));
+  update();
+  return el("section", { class: "notes-search" },
+    el("h2", { class: "section-heading" }, "Search by notes"),
+    el("label", { for: "notes-search", class: "visually-hidden" }, "First notes of the tune"),
+    input, el("div", { class: "piano-wrap" }, keyboard(press)), edit, help, results);
+}
+
 // ---- Routing ----------------------------------------------------------------
 
 function tuneUrl(slug) { return `?tune=${encodeURIComponent(slug)}`; }
@@ -179,6 +337,7 @@ function renderHome(main) {
       " or ", el("a", { href: "?page=fix", "data-route": true }, "suggest a correction"), "."),
     heroSearch(tunes.length),
     el("button", { type: "button", class: "primary", onclick: openRandomTune }, "Surprise me"),
+    notesSearch(),
     el("h2", { class: "section-heading" }, "Browse by type"),
     pills, caption, list,
   );

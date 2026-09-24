@@ -41,6 +41,18 @@ each tune type has a blanket colourway (a woven swatch in the type buttons and
 tune list; colours in `TYPE_ORDER` in `build_site.py`). The **About** page
 (`?page=about`) is `site/about.md`.
 
+**Search by notes** (home page): type the first few notes (4 or more), or play
+them on the piano keyboard (G3, the fiddle's open G, to A5; each key sounds its
+note), in any key. Each tune's melody is worked out at build time by `melody()`
+in `build_site.py` (a small ABC reader, checked note for note against abcjs's
+playback for every tune) and stored in `tunes.json` as `melody`: one character
+per note, `chr(MIDI pitch + 160)`, repeated notes collapsed. The page compares
+the *steps* between notes, so the key doesn't matter. Played notes (and typed
+ones with an octave, like `G3`) use exact steps, leaps included; note names
+without an octave use the smaller way round, so no octaves are needed. Matches
+at the start (allowing a pick-up) rank first, then later in the tune, then
+"one note different" (a wrong first/last note, or one wrong note in between).
+
 ```bash
 python build_site.py                    # builds _site/ (standard library only)
 python -m http.server -d _site 8000     # preview at http://localhost:8000

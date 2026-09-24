@@ -82,6 +82,75 @@ CREDIT_WORDS = {
 }
 
 
+# ---- Melody, for "search by notes" ----------------------------------------------
+
+# Sharps (+) or flats (-) in each major key, and how far each mode shifts that.
+KEY_SHARPS = {
+    "C": 0, "G": 1, "D": 2, "A": 3, "E": 4, "B": 5, "F#": 6, "C#": 7,
+    "F": -1, "Bb": -2, "Eb": -3, "Ab": -4, "Db": -5, "Gb": -6, "Cb": -7,
+}
+MODE_SHARPS = {"": 0, "maj": 0, "ion": 0, "lyd": 1, "mix": -1, "dor": -2, "m": -3,
+               "min": -3, "aeo": -3, "phr": -4, "loc": -5}
+NOTE_TOKEN = re.compile(
+    r"\[([^\]|]*[A-Ga-g][^\]|]*)\]"          # chord: [ceg]
+    r"|(\^\^|\^|__|_|=)?([A-Ga-g])([,']*)"   # note, with accidental and octave marks
+    r"|(\|)"                                # bar line: accidentals end here
+)
+ACCIDENTALS = {"^^": 2, "^": 1, "=": 0, "_": -1, "__": -2}
+
+
+def key_signature(key: str) -> dict[str, int]:
+    """'DMix' -> {'F': 1}: the sharp (+1) or flat (-1) on each letter."""
+    m = re.match(r"^([A-G][#b]?)\s*([A-Za-z]*)", key.strip())
+    if not m or m.group(1) not in KEY_SHARPS:
+        return {}
+    n = KEY_SHARPS[m.group(1)] + MODE_SHARPS.get(m.group(2)[:3].lower(), 0)
+    letters = "FCGDAEB" if n > 0 else "BEADGCF"
+    return {letter: 1 if n > 0 else -1 for letter in letters[: abs(n)]}
+
+
+def melody(abc: str) -> list[int]:
+    """MIDI pitches of the tune's notes in written order (top note of chords)."""
+    lines = abc.splitlines()
+    start = next((i + 1 for i, line in enumerate(lines) if line.startswith("K:")), len(lines))
+    signature = key_signature((parse_headers(abc).get("K") or [""])[0])
+    body = " ".join(
+        line for line in lines[start:] if not re.match(r"^(%|[A-Za-z]:)", line)
+    )
+    body = re.sub(r"\[[A-Za-z]:[^\]]*\]", " ", body)  # inline fields, e.g. [M:6/8]
+    bar: dict[tuple[str, int], int] = {}  # accidentals written earlier in this bar
+
+    def pitch(acc: str | None, letter: str, marks: str) -> int:
+        octave = (1 if letter.islower() else 0) + marks.count("'") - marks.count(",")
+        name = letter.upper()
+        if acc:
+            bar[(name, octave)] = ACCIDENTALS[acc]
+        alter = bar.get((name, octave), signature.get(name, 0))
+        return 60 + 12 * octave + PITCH[name] + alter
+
+    notes = []
+    for m in NOTE_TOKEN.finditer(body):
+        if m.group(5):
+            bar.clear()
+        elif m.group(1) is not None:
+            chord = [pitch(*n.groups()) for n in re.finditer(r"(\^\^|\^|__|_|=)?([A-Ga-g])([,']*)", m.group(1))]
+            notes.append(max(chord))
+        else:
+            notes.append(pitch(m.group(2), m.group(3), m.group(4)))
+    return notes
+
+
+def melody_string(abc: str) -> str:
+    """The melody for the note search, one character per note: chr(MIDI pitch + 160),
+    repeated notes collapsed. Compact in JSON, and needs no escaping."""
+    out = []
+    for p in melody(abc):
+        c = chr(p + 160)
+        if not out or out[-1] != c:
+            out.append(c)
+    return "".join(out)
+
+
 def normalize(text: str) -> str:
     """Lowercase, strip accents and punctuation, e.g. 'Frân' -> 'fran'."""
     text = unicodedata.normalize("NFKD", text)
@@ -195,6 +264,7 @@ def tune_record(path: Path) -> dict:
         "beatName": BEAT_NAMES.get(beat, str(beat)),
         "bpm": default_bpm(headers),
         "details": rows,
+        "melody": melody_string(abc),
         "gloss": gloss,
         "abc": abc,
     }

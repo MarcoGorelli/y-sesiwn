@@ -45,10 +45,20 @@ SPECIFIC_TYPES = {
     "ymdeithdon": "Ymdaith", "dawns": "Dawns", "carol": "Carol",
 }
 GENERIC_TYPES = {"alaw": "Alaw", "can": "Cân"}
-TYPE_ORDER = {  # label -> English, in display order
-    "Jig": "jigs", "Polca": "polkas", "Walts": "waltzes", "Rîl": "reels",
-    "Pibddawns": "hornpipes", "Ymdaith": "marches", "Dawns": "dances",
-    "Alaw": "airs", "Cân": "songs", "Carol": "carols", "Other": "untyped and other tunes",
+# label -> (English, colour), in display order. The colours are carthen
+# (Welsh tapestry blanket) colourways, shown as small swatches in the site.
+TYPE_ORDER = {
+    "Jig": ("jigs", "#C8102E"),           # Welsh red
+    "Polca": ("polkas", "#2f4f8f"),       # indigo
+    "Walts": ("waltzes", "#c28f1c"),      # mustard
+    "Rîl": ("reels", "#2e6b4f"),          # bottle green
+    "Pibddawns": ("hornpipes", "#7b3f6e"),  # plum
+    "Ymdaith": ("marches", "#2b7a7f"),    # teal
+    "Dawns": ("dances", "#b4532a"),       # rust
+    "Alaw": ("airs", "#5b6f8c"),          # slate blue
+    "Cân": ("songs", "#a3456a"),          # rose
+    "Carol": ("carols", "#6b7b2c"),       # olive
+    "Other": ("untyped and other tunes", "#6b737c"),  # slate grey
 }
 
 # ABC header fields shown under Details, in display order (only if present).
@@ -195,7 +205,11 @@ def main() -> None:
     counts = {t: sum(tune["type"] == t for tune in tunes) for t in TYPE_ORDER}
     index = {
         "repo": REPO_URL,
-        "types": [{"name": t, "english": e, "count": counts[t]} for t, e in TYPE_ORDER.items() if counts[t]],
+        "types": [
+            {"name": t, "english": english, "colour": colour, "count": counts[t]}
+            for t, (english, colour) in TYPE_ORDER.items()
+            if counts[t]
+        ],
         "tunes": tunes,
     }
 

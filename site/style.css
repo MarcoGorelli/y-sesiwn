@@ -32,6 +32,7 @@ html, body { margin: 0; }
 body {
   display: grid;
   grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-rows: 1fr auto;
   min-height: 100vh;
   /* The carthen band (Welsh tapestry blanket pattern) across the top. */
   padding-top: 14px;
@@ -52,6 +53,7 @@ button, input, select { font: inherit; color: inherit; }
 
 /* Left column: brand + search on top, then buttons and links */
 .nav {
+  grid-row: 1 / span 2;
   background: var(--sidebar-bg);
   border-right: 1px solid var(--border);
   position: sticky;
@@ -134,9 +136,27 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 
 .pills { display: flex; flex-wrap: wrap; gap: .5rem; }
 .pills button { border-radius: 999px; }
-.pills button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.pills button { display: inline-flex; align-items: center; }
+.pills button:hover:not(:disabled) { border-color: var(--c); color: inherit; }
+.pills button[aria-pressed="true"] { border-color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); font-weight: 600; }
+
+/* Tune-type colourways: a small woven swatch */
+.swatch {
+  display: inline-block; flex: none;
+  width: .7em; height: .7em; margin-right: .5em;
+  border-radius: 2px;
+  background: repeating-linear-gradient(45deg, var(--c) 0 2px, color-mix(in srgb, var(--c) 65%, #fff) 2px 3px);
+  box-shadow: inset 0 0 0 1px #00000022;
+}
+.tune-list .swatch { width: .55em; height: .55em; opacity: .9; transform: translateY(-.05em); }
+
+/* A short strip of the carthen under section headings */
+.section-heading::after, .about h2::after {
+  content: ""; display: block; width: 9rem; height: 7px; margin-top: .45rem;
+  background: url("carthen.svg") repeat-x left center / auto 7px;
+}
 .tune-list { columns: 3 14rem; column-gap: 2rem; padding: 0; list-style: none; margin: .5rem 0 0; }
-.tune-list li { break-inside: avoid; padding: .15rem 0; }
+.tune-list li { break-inside: avoid; padding: .15rem 0; display: flex; align-items: baseline; }  /* long names wrap beside the swatch */
 .tune-list a { color: var(--text); text-decoration: none; }
 .tune-list a:hover { color: var(--accent); text-decoration: underline; }
 
@@ -170,9 +190,19 @@ details.abc { margin-top: 1rem; border: 1px solid var(--border); border-radius: 
 details.abc summary { cursor: pointer; }
 details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 
+/* Footer: the carthen band again, and a line of links */
+.site-footer {
+  padding: 22px 3rem 1.5rem;
+  background: url("carthen.svg") repeat-x top left / auto 14px;
+  color: var(--muted); font-size: .9rem;
+}
+.site-footer p { margin: 0; max-width: 1200px; }
+.site-footer a { color: var(--muted); }
+.site-footer a:hover { color: var(--accent); }
+
 /* Practice mode: just the controls and a big score, for a tablet on a music stand */
 body.practice { grid-template-columns: 1fr; }
-body.practice .nav, body.practice .tune-side, body.practice main h1::after, body.practice .aka { display: none; }
+body.practice .nav, body.practice .tune-side, body.practice .site-footer, body.practice main h1::after, body.practice .aka { display: none; }
 body.practice main { max-width: none; padding: 1rem 1.5rem 2rem; }
 body.practice h1 { font-size: 1.4rem; }
 body.practice .controls { margin: .5rem 0 1rem; }
@@ -188,7 +218,7 @@ body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 
 
 /* Narrow screens: brand + search pinned to the top, everything else in one column */
 @media (max-width: 800px) {
-  body { grid-template-columns: 1fr; }
+  body { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr auto; }  /* top bar, sidebar, page, footer */
   .nav { display: contents; }
   .topbar {
     position: sticky; top: 0; z-index: 30;
@@ -204,6 +234,7 @@ body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 
   .sidebar-actions { grid-template-columns: 1fr 1fr; }
   .sidebar-links { display: flex; flex-wrap: wrap; gap: .25rem 1rem; padding-top: .5rem; font-size: .9rem; }
   main { padding: 1.5rem 1rem 3rem; }
+  .site-footer { padding: 22px 1rem 1.25rem; }
   .tune-layout { grid-template-columns: 1fr; }
   .practice-toggle { margin-left: 0; }
 }

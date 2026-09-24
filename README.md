@@ -36,6 +36,10 @@ to search from anywhere, **practice mode** on tune pages (just the controls
 and a full-width score, full screen where supported), a search bar pinned to
 the top on phones, and a *carthen* (Welsh tapestry blanket) band across the
 top (`site/carthen.svg`), with Welsh slate and cream "paper" behind the music.
+The band returns in the footer and as short strips under section headings;
+each tune type has a blanket colourway (a woven swatch in the type buttons and
+tune list; colours in `TYPE_ORDER` in `build_site.py`). The **About** page
+(`?page=about`) is `site/about.md`.
 
 ```bash
 python build_site.py                    # builds _site/ (standard library only)

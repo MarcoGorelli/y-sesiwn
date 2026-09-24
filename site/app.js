@@ -9,7 +9,12 @@ const AUDIO_PARAMS = {
   // abcjs only applies this boost automatically for its default online soundfont.
   soundFontVolumeMultiplier: 3.0,
 };
-const GUIDES = { add: "How to add a tune", fix: "How to submit corrections" };
+// Markdown pages: ?page=<key> shows the "# heading" section of file (or all of it).
+const PAGES = {
+  add: { file: "CONTRIBUTING.md", heading: "How to add a tune" },
+  fix: { file: "CONTRIBUTING.md", heading: "How to submit corrections" },
+  about: { file: "about.md", heading: "About Y Sesiwn", className: "about" },
+};
 
 const state = {
   data: null,
@@ -17,7 +22,7 @@ const state = {
   browseType: null,
   settings: new Map(),  // per tune: { transpose, bpm }, kept while the page is open
   synth: null,          // the playing SynthController, stopped when leaving a tune
-  guide: null,          // CONTRIBUTING.md, fetched on first use
+  docs: new Map(),      // markdown files, fetched on first use
 };
 
 // ---- Small DOM helper ----------------------------------------------------
@@ -121,7 +126,8 @@ function render() {
   stopPlayback();
   const params = new URLSearchParams(location.search);
   const tune = state.bySlug.get(params.get("tune"));
-  const guide = GUIDES[params.get("page")];
+  const page = params.get("page");
+  const guide = PAGES[page] ? page : null;
   const main = document.getElementById("main");
   if (!tune) setPractice(false);
   main.style.animation = "none"; void main.offsetWidth; main.style.animation = "";  // replay fade-in
@@ -136,6 +142,7 @@ function render() {
 function renderHome(main) {
   document.title = "Y Sesiwn";
   const { tunes, types, repo } = state.data;
+  const colour = Object.fromEntries(types.map((t) => [t.name, t.colour]));
 
   const list = el("ul", { class: "tune-list" });
   const caption = el("p", { class: "caption" });
@@ -149,13 +156,15 @@ function renderHome(main) {
     const listed = tunes.filter((t) => !type || t.type === name)
       .sort((a, b) => (a.search[0] < b.search[0] ? -1 : 1));
     list.replaceChildren(...listed.map((t) =>
-      el("li", {}, el("a", { href: tuneUrl(t.slug), "data-route": true }, t.title))));
+      el("li", { style: `--c: ${colour[t.type]}` },
+        el("span", { class: "swatch", title: t.type }),
+        el("a", { href: tuneUrl(t.slug), "data-route": true }, t.title))));
   };
   for (const type of types) {
     pills.append(el("button", {
-      type: "button", "data-type": type.name,
+      type: "button", "data-type": type.name, style: `--c: ${type.colour}`,
       onclick: () => showType(state.browseType === type.name ? null : type.name),
-    }, `${type.name} · ${type.count}`));
+    }, el("span", { class: "swatch" }), `${type.name} · ${type.count}`));
   }
 
   main.replaceChildren(
@@ -170,7 +179,7 @@ function renderHome(main) {
       " or ", el("a", { href: "?page=fix", "data-route": true }, "suggest a correction"), "."),
     heroSearch(tunes.length),
     el("button", { type: "button", class: "primary", onclick: openRandomTune }, "Surprise me"),
-    el("h2", {}, "Browse by type"),
+    el("h2", { class: "section-heading" }, "Browse by type"),
     pills, caption, list,
   );
   showType(state.browseType);
@@ -302,19 +311,21 @@ function setPractice(on) {
 // Leaving full screen (e.g. with Esc) also leaves practice mode.
 document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement) setPractice(false); });
 
-// ---- Guide pages (sections of CONTRIBUTING.md) --------------------------------------
+// ---- Markdown pages: the guides (sections of CONTRIBUTING.md) and About -------------
 
-async function renderGuide(main, heading) {
+async function renderGuide(main, key) {
+  const { file, heading, className } = PAGES[key];
   document.title = `${heading} · Y Sesiwn`;
   main.replaceChildren(el("p", { class: "loading" }, "Loading…"));
-  state.guide ??= await (await fetch("CONTRIBUTING.md")).text();
-  const section = state.guide.split(/^(?=# )/m).find((s) => s.startsWith(`# ${heading}\n`)) ?? "";
+  if (!state.docs.has(file)) state.docs.set(file, await (await fetch(file)).text());
+  const text = state.docs.get(file);
+  const section = text.split(/^(?=# )/m).find((s) => s.startsWith(`# ${heading}\n`)) ?? "";
   const html = marked.parse(section.replaceAll("(#how-to-add-a-tune)", "(?page=add)"));
-  const guide = el("article", { class: "guide" });
-  guide.innerHTML = html;  // our own CONTRIBUTING.md, from this repo
+  const guide = el("article", { class: `guide ${className ?? ""}` });
+  guide.innerHTML = html;  // our own markdown, from this repo
   guide.querySelectorAll('a[href^="?"]').forEach((a) => a.setAttribute("data-route", ""));
-  // Only show it if we're still on this guide (the fetch may finish after leaving).
-  if (GUIDES[new URLSearchParams(location.search).get("page")] === heading) main.replaceChildren(guide);
+  // Only show it if we're still on this page (the fetch may finish after leaving).
+  if (new URLSearchParams(location.search).get("page") === key) main.replaceChildren(guide);
 }
 
 // ---- Sidebar search box ---------------------------------------------------------------

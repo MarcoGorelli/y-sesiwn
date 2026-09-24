@@ -1,0 +1,156 @@
+:root {
+  --accent: #C8102E;          /* Welsh flag red: accents only */
+  --accent-soft: #c8102e1a;
+  --bg: #ffffff;
+  --sidebar-bg: #f0f2f6;
+  --card-bg: #ffffff;
+  --text: #31333f;
+  --muted: #6b6d7a;
+  --border: #d9dbe3;
+  --link: #1c6ecf;
+  --radius: 8px;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0e1117;
+    --sidebar-bg: #1b1e27;
+    --card-bg: #161a22;
+    --text: #f4f4f6;
+    --muted: #a3a6b4;
+    --border: #353946;
+    --link: #6fb1ff;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+a { color: var(--link); }
+h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 .5rem; }
+h2 { font-size: 1.35rem; margin: 2rem 0 .75rem; }
+button, input, select { font: inherit; color: inherit; }
+
+/* Sidebar */
+.sidebar {
+  background: var(--sidebar-bg);
+  padding: 1.5rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+.brand {
+  display: flex; align-items: center; gap: .6rem;
+  font-size: 1.75rem; font-weight: 700; color: var(--text); text-decoration: none;
+}
+.sidebar-actions { display: grid; gap: .5rem; }
+.sidebar-links { display: grid; gap: .35rem; border-top: 1px solid var(--border); padding-top: 1rem; }
+.sidebar-links a { text-decoration: none; }
+.sidebar-links a:hover { text-decoration: underline; }
+
+button {
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: .45rem .9rem;
+  cursor: pointer;
+}
+button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+button:disabled { opacity: .5; cursor: default; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.primary:hover { color: #fff; filter: brightness(1.1); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Search */
+.search { position: relative; }
+.search label { display: block; font-weight: 600; margin-bottom: .35rem; }
+.search input {
+  width: 100%;
+  padding: .55rem .7rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+}
+.search input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.hint { font-size: .8rem; color: var(--muted); margin: .35rem 0 0; }
+#suggestions {
+  position: absolute; left: 0; right: 0; z-index: 10;
+  margin: .25rem 0 0; padding: .25rem 0;
+  list-style: none;
+  max-height: 60vh; overflow-y: auto;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px #0002;
+}
+#suggestions li { padding: .4rem .75rem; cursor: pointer; }
+#suggestions li[aria-selected="true"] { background: var(--accent-soft); }
+#suggestions li.empty { color: var(--muted); cursor: default; }
+
+/* Main */
+main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; }
+.loading, .caption { color: var(--muted); }
+.caption { font-size: .9rem; }
+.lead { font-size: 1.1rem; max-width: 50rem; }
+
+.pills { display: flex; flex-wrap: wrap; gap: .5rem; }
+.pills button { border-radius: 999px; }
+.pills button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.tune-list { columns: 3 14rem; column-gap: 2rem; padding: 0; list-style: none; margin: .5rem 0 0; }
+.tune-list li { break-inside: avoid; padding: .15rem 0; }
+.tune-list a { color: var(--text); text-decoration: none; }
+.tune-list a:hover { color: var(--accent); text-decoration: underline; }
+
+/* Tune page */
+.controls { display: flex; flex-wrap: wrap; gap: 1rem 2.5rem; align-items: end; margin: 1rem 0 1.25rem; }
+.control label { display: block; font-size: .9rem; margin-bottom: .3rem; }
+.control select { padding: .4rem .6rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); }
+.control.tempo { flex: 1 1 18rem; max-width: 32rem; }
+.control input[type="range"] { width: 100%; accent-color: var(--accent); }
+.tune-layout { display: grid; grid-template-columns: minmax(0, 3fr) minmax(14rem, 1fr); gap: 1.5rem; align-items: start; }
+.score {                     /* sheet music always on white, also in dark mode */
+  background: #fff; color: #000;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .75rem 1rem 1rem;
+}
+.score .abcjs-note_playing { fill: var(--accent); }
+.card { border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.1rem; background: var(--card-bg); }
+.card h2 { margin: 0 0 .6rem; font-size: 1.15rem; }
+.card dl { margin: 0; }
+.card dt { font-weight: 600; }
+.card dd { margin: 0 0 .5rem; }
+details.abc { margin-top: 1rem; border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .9rem; }
+details.abc summary { cursor: pointer; }
+details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
+
+/* Guide pages (CONTRIBUTING.md) */
+.guide { max-width: 50rem; }
+.guide table { border-collapse: collapse; margin: 1rem 0; }
+.guide th, .guide td { border: 1px solid var(--border); padding: .35rem .6rem; text-align: left; vertical-align: top; }
+.guide pre { background: var(--sidebar-bg); padding: .75rem 1rem; border-radius: var(--radius); overflow-x: auto; }
+.guide code { font-size: .9em; }
+
+/* Narrow screens: sidebar on top, one column */
+@media (max-width: 800px) {
+  body { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; padding: 1rem; gap: .75rem; }
+  .brand { font-size: 1.4rem; }
+  .brand img { width: 28px; height: 28px; }
+  .sidebar-actions { grid-template-columns: 1fr 1fr; }
+  .hint { display: none; }
+  .sidebar-links { display: flex; flex-wrap: wrap; gap: .25rem 1rem; padding-top: .6rem; font-size: .9rem; }
+  main { padding: 1.5rem 1rem 3rem; }
+  .tune-layout { grid-template-columns: 1fr; }
+}

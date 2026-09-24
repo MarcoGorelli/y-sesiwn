@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Y Sesiwn</title>
+  <meta name="description" content="A free, open-source resource to help you learn and share Welsh folk tunes: sheet music, playback and any key.">
+  <link rel="icon" href="static/harp.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="static/abcjs/abcjs-audio.css">
+  <link rel="stylesheet" href="style.css">
+  <script src="static/abcjs/abcjs-basic-min.js" defer></script>
+  <script src="static/marked/marked.min.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="./" data-route><img src="static/harp.svg" alt="" width="36" height="36">Y Sesiwn</a>
+    <div class="sidebar-actions">
+      <button type="button" id="home-button">Back to home</button>
+      <button type="button" id="surprise-sidebar">Surprise me</button>
+    </div>
+    <div class="search">
+      <label for="search-input">Find a tune</label>
+      <input id="search-input" type="search" autocomplete="off" spellcheck="false"
+             placeholder="e.g. Llancesau Trefaldwyn"
+             role="combobox" aria-expanded="false" aria-controls="suggestions" aria-autocomplete="list">
+      <ul id="suggestions" role="listbox" hidden></ul>
+      <p class="hint">Suggestions update as you type; press Enter to open the top one.</p>
+    </div>
+    <nav class="sidebar-links">
+      <a href="?page=add" data-route>How to add a tune</a>
+      <a href="?page=fix" data-route>How to submit corrections</a>
+      <a href="https://github.com/MarcoGorelli/y-sesiwn">GitHub</a>
+    </nav>
+  </aside>
+  <main id="main"><p class="loading">Loading tunes…</p></main>
+</body>
+</html>

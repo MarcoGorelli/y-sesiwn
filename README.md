@@ -26,6 +26,38 @@ Then open http://localhost:8501. Run the `streamlit` command from this folder:
 `.streamlit/config.toml` and `static/` are found relative to it, and the
 config is only read at startup.
 
+## Static site (in progress: replacing the Streamlit app)
+
+`site/` is the same app as plain HTML/JavaScript, with no server: it can be
+hosted anywhere (GitHub Pages is set up), never sleeps, and loads in a blink.
+Each tune has its own link (`?tune=sawdl-y-fuwch`) and the back button works.
+
+```bash
+python build_site.py                    # builds _site/ (standard library only)
+python -m http.server -d _site 8000     # preview at http://localhost:8000
+```
+
+(Opening `_site/index.html` directly won't work: browsers block `file://`
+fetches of `tunes.json`.)
+
+- `build_site.py` reads every `tunes/*/tune.abc` and writes `_site/tunes.json`:
+  the ABC plus what the page needs (type, key parts, default tempo and beat,
+  Details rows, credit glosses), worked out once in Python. It also copies
+  `site/`, `static/` (abcjs, soundfont, marked, harp icon) and
+  `CONTRIBUTING.md` into `_site/`, which is git-ignored.
+- `site/app.js` does the rest in the browser: search (a port of the Python
+  matching, including `difflib`'s similarity ratio), browsing, routing
+  (`?tune=…`, `?page=add|fix`), sheet music and playback with abcjs, and the
+  guide pages (sections of `CONTRIBUTING.md` rendered with marked).
+- `.github/workflows/pages.yml` builds and publishes on every push to `main`.
+  One-time setup: repo **Settings → Pages → Source: GitHub Actions**. The site
+  is then at `https://marcogorelli.github.io/y-sesiwn/`.
+- Everything uses relative URLs, so it works under the `/y-sesiwn/` sub-path.
+
+Switching over from Streamlit means: point people to the new URL, then delete
+`app.py`, `requirements.txt` and `.streamlit/`, and update the "run it
+locally" part of `CONTRIBUTING.md` to the two commands above.
+
 ## Features
 
 - **Home page**: a welcome, a **Surprise me** button (random tune; also in the

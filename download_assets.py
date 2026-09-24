@@ -20,6 +20,8 @@ NOTES = [f"{NAMES[p % 12]}{p // 12 - 1}" for p in range(21, 109)]
 FILES = {
     "abcjs/abcjs-basic-min.js": f"{ABCJS}/dist/abcjs-basic-min.js",
     "abcjs/abcjs-audio.css": f"{ABCJS}/abcjs-audio.css",
+    # Markdown renderer for the static site's guide pages (CONTRIBUTING.md).
+    "marked/marked.min.js": "https://cdn.jsdelivr.net/npm/marked@15.0.12/marked.min.js",
     **{
         f"soundfont/{INSTRUMENT}-mp3/{note}.mp3": f"{SOUNDFONT}/{INSTRUMENT}-mp3/{note}.mp3"
         for note in NOTES

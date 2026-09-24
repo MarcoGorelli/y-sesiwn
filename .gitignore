@@ -1,6 +1,14 @@
+# Python
+.venv/
+*.pyc
+
+# Built static site (python build_site.py)
+_site/
+
+# Scraper downloads: only tune.abc is kept in the repo
 tunes/**/*.json
 tunes/**/*.gif
 tunes/**/*.mid
-*.pyc
 
-
+# macOS
+.DS_Store

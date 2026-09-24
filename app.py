@@ -463,8 +463,9 @@ def main() -> None:
     if parsed:
         pitch, root, mode = parsed
         options = list(range(-5, 7))  # semitone shifts, nearest direction
-        labels = {s: NOTES[(pitch + s) % 12] + mode for s in options}
-        labels[0] = f"{root}{mode} (original)"
+        mode_name = MODE_NAMES.get(mode[:3].lower(), mode)  # "Dor" -> "Dorian"
+        labels = {s: f"{NOTES[(pitch + s) % 12]} {mode_name}" for s in options}
+        labels[0] = f"{root} {mode_name} (original)"
     col_key, col_tempo = st.columns([1, 3])
     if parsed:
         transpose = col_key.selectbox(

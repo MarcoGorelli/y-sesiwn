@@ -111,3 +111,47 @@ merged, the [live app](https://y-sesiwn.streamlit.app/) redeploys and the tune
 appears in search.
 
 Only `tune.abc` is needed: no score image or MIDI file.
+
+# How to submit corrections
+
+Spotted a wrong note, a misspelt title, the wrong key or tune type, or know
+who composed a tune? There are two ways to fix it.
+
+## Tell us about it
+
+[Open an issue](https://github.com/MarcoGorelli/y-sesiwn/issues/new) on
+GitHub (you'll need a free GitHub account). Say:
+
+- which tune, with its title as shown in the app;
+- what's wrong and what it should be (for example "bar 5 should be
+  `B2 AB`", or "the title should be *Y Gaseg Felen*");
+- where the correct version comes from, if you know (a book, a recording,
+  a website).
+
+## Fix it yourself with a pull request
+
+1. Find the tune's file. Each tune is `tunes/<folder>/tune.abc`, and the folder
+   is named after the title (lowercase, accents removed, hyphens between
+   words), so *Sawdl y Fuwch* is `tunes/sawdl-y-fuwch/tune.abc`. On the
+   [repository page](https://github.com/MarcoGorelli/y-sesiwn), press `t` and
+   type part of the name to find it.
+2. Open the file and click the pencil icon (**Edit this file**). GitHub will
+   offer to make your own copy (a *fork*) first; accept.
+3. Make your change. The notes follow the `K:` line; the header lines above it
+   hold the title (`T:`), tune type (`R:`), key (`K:`) and so on; see
+   [How to add a tune](#how-to-add-a-tune) for what each line means. You can
+   add a composer (`C:`) or another name for the tune (an extra `T:` line).
+   Leave the `%%alawon ...` line as it is.
+4. Paste the whole file into the
+   [abcjs Quick Editor](https://editor.drawthedots.com/) to check it still
+   looks and plays right.
+5. Click **Commit changes…**, then **Propose changes**, then
+   **Create pull request**. Say what you changed and why.
+
+If you change the first `T:` title, the folder name should change to match.
+You can do that in the same edit by changing the path in the file name box
+(e.g. `tunes/old-name/tune.abc` to `tunes/new-name/tune.abc`), or just mention
+it in the pull request and the maintainer will rename it.
+
+Once the pull request is merged, the
+[live app](https://y-sesiwn.streamlit.app/) shows the corrected tune.

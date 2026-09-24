@@ -3,8 +3,11 @@
 Run with:  .venv/bin/streamlit run app.py
 """
 
+import collections
 import difflib
 import json
+import math
+import random
 import re
 import unicodedata
 from fractions import Fraction
@@ -28,20 +31,43 @@ AUDIO_PARAMS = {
     "soundFontVolumeMultiplier": 3.0,
 }
 
-# ABC header fields worth showing to the user, in display order.
+# ABC header fields shown under Details, in display order (only if present).
 HEADER_LABELS = {
-    "T": "Title",
     "R": "Tune type",
-    "C": "Composer",
+    "K": "Key",
+    "M": "Time signature",
+    "C": "Composer / arranger",
     "A": "Area",
     "O": "Origin",
     "B": "Book",
     "D": "Discography",
     "H": "History",
     "N": "Notes",
-    "M": "Meter",
-    "L": "Unit note length",
-    "K": "Key",
+}
+# The credits (C:) are in Welsh, as printed on the original scores.
+CREDIT_WORDS = {
+    "Trefniant": "arranged by", "Trefniannau": "arrangements by", "Trefnwyd gan": "arranged by",
+    "Addasiad": "adapted by", "Addaswyd gan": "adapted by", "Alaw": "tune by",
+    "Alaw draddodiadol": "traditional tune",
+}
+MODE_NAMES = {
+    "": "major", "maj": "major", "ion": "major", "m": "minor", "min": "minor",
+    "aeo": "minor", "dor": "Dorian", "phr": "Phrygian", "lyd": "Lydian",
+    "mix": "Mixolydian", "loc": "Locrian",
+}
+
+# Browsing categories, matched against the first word of R: that fits. Specific
+# dance types come before the generic "alaw" (air) and "cân" (song).
+SPECIFIC_TYPES = {
+    "jig": "Jig", "polca": "Polca", "polka": "Polca", "walts": "Walts",
+    "ril": "Rîl", "reel": "Rîl", "pibdd": "Pibddawns", "ymdaith": "Ymdaith",
+    "ymdeithdon": "Ymdaith", "dawns": "Dawns", "carol": "Carol",
+}
+GENERIC_TYPES = {"alaw": "Alaw", "can": "Cân"}
+TYPE_ORDER = {  # label -> English, in display order
+    "Jig": "jigs", "Polca": "polkas", "Walts": "waltzes", "Rîl": "reels",
+    "Pibddawns": "hornpipes", "Ymdaith": "marches", "Dawns": "dances",
+    "Alaw": "airs", "Cân": "songs", "Carol": "carols", "Other": "untyped and other tunes",
 }
 
 NOTES = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"]
@@ -92,6 +118,7 @@ def load_tunes() -> list[dict]:
                 "titles": titles,
                 "search": [normalize(t) for t in titles],
                 "headers": headers,
+                "type": tune_type(headers),
                 "abc": abc,
             }
         )
@@ -132,6 +159,24 @@ def parse_key(key: str) -> tuple[int, str, str] | None:
     root = m.group(1).upper() + m.group(2)
     pitch = PITCH[root[0]] + {"#": 1, "b": -1, "": 0}[m.group(2)]
     return pitch % 12, root, m.group(3)
+
+
+def tune_type(headers: dict[str, list[str]]) -> str:
+    """Browsing category from R:, e.g. "polca/pibddawns" -> "Polca"."""
+    words = normalize(" ".join(headers.get("R", []))).split()
+    for table in (SPECIFIC_TYPES, GENERIC_TYPES):
+        for word in words:
+            for prefix, label in table.items():
+                if word.startswith(prefix):
+                    return label
+    return "Other"
+
+
+def key_name(key: str) -> str:
+    """'DMix' -> 'D Mixolydian', 'Em' -> 'E minor'; unknown keys as written."""
+    parsed = parse_key(key)
+    mode = MODE_NAMES.get(parsed[2][:3].lower()) if parsed else None
+    return f"{parsed[1]} {mode}" if mode else key
 
 
 def beat_unit(meter: str) -> Fraction:
@@ -279,6 +324,62 @@ def tune_search(tunes: list[dict]) -> None:
     st.caption(f"{len(tunes)} tunes")
 
 
+def open_tune(slug: str) -> None:
+    """Show a tune; reset the searchbox so choosing any tune there works again."""
+    st.session_state["selected"] = slug
+    st.session_state.pop("tune_search", None)
+
+
+def open_random(slugs: list[str]) -> None:
+    current = st.session_state.get("selected")
+    open_tune(random.choice([s for s in slugs if s != current]))
+
+
+def home_page(tunes: list[dict]) -> None:
+    st.title("Croeso! Welcome to Y Sesiwn")
+    st.markdown(
+        f"Y Sesiwn is a **completely free and open-source** resource to help you "
+        f"learn and share Welsh folk tunes. Each of its {len(tunes)} tunes has its "
+        f"sheet music, which you can play back at any tempo and change to any key. "
+        f"Search by name in the sidebar, browse by type below, or let chance decide. "
+        f"Everything is [on GitHub]({REPO_URL}), and anyone can add a tune or "
+        f"suggest a correction (see the links in the sidebar)."
+    )
+    st.button(
+        "Surprise me",
+        icon=":material/shuffle:",
+        type="primary",
+        on_click=open_random,
+        args=([t["slug"] for t in tunes],),
+    )
+
+    st.subheader("Browse by type")
+    counts = collections.Counter(t["type"] for t in tunes)
+    types = [t for t in TYPE_ORDER if counts[t]]
+    chosen = st.pills(
+        "Tune type",
+        types,
+        default=types[0],
+        format_func=lambda t: f"{t} · {counts[t]}",
+        label_visibility="collapsed",
+        key="browse_type",
+    )
+    if not chosen:
+        return
+    st.caption(f"{counts[chosen]} {TYPE_ORDER[chosen]}")
+    listed = sorted((t for t in tunes if t["type"] == chosen), key=lambda t: normalize(t["title"]))
+    per_column = math.ceil(len(listed) / 3)
+    for column, start in zip(st.columns(3), range(0, len(listed), per_column)):
+        for t in listed[start : start + per_column]:
+            column.button(
+                t["title"],
+                key=f"browse-{t['slug']}",
+                type="tertiary",
+                on_click=open_tune,
+                args=(t["slug"],),
+            )
+
+
 def go_home() -> None:
     """Clear the selected tune, and reset the searchbox so it starts empty."""
     st.session_state.pop("selected", None)
@@ -288,16 +389,32 @@ def go_home() -> None:
 def sidebar_links() -> None:
     st.divider()
     st.page_link(ADD_PAGE, label="How to add a tune", icon=":material/add_circle:")
+    st.page_link(FIX_PAGE, label="How to submit corrections", icon=":material/edit:")
     st.page_link(REPO_URL, label="GitHub", icon=":material/code:")
 
 
-def add_a_tune() -> None:
-    """The contributing guide, shared with GitHub (CONTRIBUTING.md)."""
+def guide_page(heading: str) -> None:
+    """Show one "# heading" section of CONTRIBUTING.md (shared with GitHub)."""
     with st.sidebar:
         st.title("Y Sesiwn")
         st.page_link(TUNES_PAGE, label="Back to the tunes", icon=":material/home:")
         sidebar_links()
-    st.markdown((Path(__file__).parent / "CONTRIBUTING.md").read_text(encoding="utf-8"))
+    guide = (Path(__file__).parent / "CONTRIBUTING.md").read_text(encoding="utf-8")
+    sections = re.split(r"(?m)^(?=# )", guide)
+    section = next(s for s in sections if s.startswith(f"# {heading}\n"))
+    # In-file anchors only work on GitHub, where both guides are one page.
+    section = section.replace(
+        "[How to add a tune](#how-to-add-a-tune)", "*How to add a tune* (linked in the sidebar)"
+    )
+    st.markdown(section)
+
+
+def add_a_tune() -> None:
+    guide_page("How to add a tune")
+
+
+def submit_corrections() -> None:
+    guide_page("How to submit corrections")
 
 
 def main() -> None:
@@ -313,22 +430,27 @@ def main() -> None:
             disabled="selected" not in st.session_state,
             width="stretch",
         )
+        st.button(
+            "Surprise me",
+            icon=":material/shuffle:",
+            on_click=open_random,
+            args=(list(by_slug),),
+            width="stretch",
+        )
         tune_search(tunes)
         sidebar_links()
-
-    st.title("Y Sesiwn")
 
     slug = st.session_state.get("selected")
     if slug not in by_slug:  # e.g. a tune deleted since it was opened
         st.session_state.pop("selected", None)
         slug = None
     if not slug:
-        st.write("Search for a tune in the sidebar and select it to see its sheet music.")
+        home_page(tunes)
         return
 
     tune = by_slug[slug]
     headers = tune["headers"]
-    st.header(tune["title"])
+    st.title(tune["title"])
     if len(tune["titles"]) > 1:
         st.caption("Also known as: " + ", ".join(tune["titles"][1:]))
 
@@ -365,22 +487,29 @@ def main() -> None:
 
     col_music, col_info = st.columns([3, 1])
     with col_music:
-        # abcjs prints S: and Z: under the score; Source has its own box instead.
+        # abcjs prints S: and Z: under the score; the source is in the ABC below.
         render_tune(set_tempo(strip_fields(tune["abc"], "SZ"), beat, bpm), transpose)
     with col_info:
         with st.container(border=True):
             st.subheader("Details")
             for field, label in HEADER_LABELS.items():
                 values = headers.get(field)
-                if field == "T" or not values:
+                if not values:
                     continue
+                if field == "K":
+                    values = [key_name(v) for v in values]
                 st.markdown(f"**{label}:** {', '.join(values)}")
-        sources = headers.get("S")
-        if sources:
-            with st.container(border=True):
-                st.subheader("Source")
-                for source in sources:
-                    st.markdown(f"[{source}]({source})" if source.startswith("http") else source)
+                if field == "C":
+                    glossary = {
+                        word: meaning
+                        for word, meaning in CREDIT_WORDS.items()
+                        for v in values
+                        if v.startswith(word + " ") or v == word or v.startswith(word + ",")
+                    }
+                    if "Alaw draddodiadol" in glossary:
+                        glossary.pop("Alaw", None)
+                    if glossary:
+                        st.caption(" · ".join(f"*{w}* = {m}" for w, m in glossary.items()))
         with st.expander("ABC notation"):
             st.code(strip_fields(tune["abc"], "Z"), language=None)
 
@@ -397,4 +526,7 @@ st.set_page_config(
 )
 TUNES_PAGE = st.Page(main, title="Tunes", default=True)
 ADD_PAGE = st.Page(add_a_tune, title="How to add a tune", url_path="how-to-add-a-tune")
-st.navigation([TUNES_PAGE, ADD_PAGE], position="hidden").run()
+FIX_PAGE = st.Page(
+    submit_corrections, title="How to submit corrections", url_path="how-to-submit-corrections"
+)
+st.navigation([TUNES_PAGE, ADD_PAGE, FIX_PAGE], position="hidden").run()

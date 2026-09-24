@@ -27,6 +27,10 @@ config is only read at startup.
 
 ## Features
 
+- **Home page**: a welcome, a **Surprise me** button (random tune; also in the
+  sidebar) and **Browse by type**: buttons for each tune type (Jig, Polca,
+  Walts, Rîl, Pibddawns, …, from `R:` via `tune_type()` in `app.py`) with a
+  clickable list of that type's tunes.
 - **Search** (sidebar): suggestions appear as you type; Enter opens the top
   match. Matching ignores case and accents (`fran` finds *Frân*), tolerates
   typos (`llancesau trefalwdyn` finds *Llancesau Trefaldwyn*) and also
@@ -37,20 +41,22 @@ config is only read at startup.
   mode (e.g. Dm → Em), up to half an octave either way.
 - **Playback** with play / loop / restart / tempo controls; notes are
   highlighted as they play.
-- **Details** box (tune type, meter, tempo, key, … from the ABC header), a
-  separate **Source** box with the link to the original page, and the raw
-  ABC in an expander.
+- **Details** box: tune type, key (written out, e.g. *D Mixolydian*), time
+  signature and composer/arranger, plus any other standard ABC fields present;
+  Welsh credit words get an English gloss (*Trefniant* = arranged by). The
+  raw ABC, including its source link, is in an expander.
 - **Back to home** button in the sidebar.
-- **How to add a tune** page (linked from the sidebar, at `/how-to-add-a-tune`)
-  showing `CONTRIBUTING.md`, and links to this repo in the sidebar and the
+- **How to add a tune** and **How to submit corrections** pages (linked from
+  the sidebar, at `/how-to-add-a-tune` and `/how-to-submit-corrections`), each
+  showing one `# ...` section of `CONTRIBUTING.md`, and links to this repo in the sidebar and the
   app's ⋮ menu.
 
 ## Files
 
 | Path | What it is |
 |---|---|
-| `app.py` | The whole app: the tunes page and the "How to add a tune" page (`st.navigation`, hidden; the sidebar links between them). |
-| `CONTRIBUTING.md` | How to add a tune by pull request. Shown in the app and on GitHub, so edit it in one place. |
+| `app.py` | The whole app: the tunes page and the two guide pages (`st.navigation`, hidden; the sidebar links between them). |
+| `CONTRIBUTING.md` | How to add a tune, and how to submit corrections. Each `# ...` section is one page in the app, and GitHub shows the whole file, so edit it in one place. Keep the two `# ` headings as they are: the app finds the sections by them. |
 | `requirements.txt` | Python packages: `streamlit`, `streamlit-searchbox`. |
 | `.streamlit/config.toml` | Turns on serving of `static/` at `/app/static/`; turns off Streamlit's usage statistics (which would go online). |
 | `static/abcjs/` | [abcjs](https://www.abcjs.net/) 6.4.4 (`abcjs-basic-min.js`, `abcjs-audio.css`). |
@@ -168,10 +174,14 @@ Useful to know:
   music they actually contain.
 - `ffoi-o-r-wcrain/score.gif` shows a different tune (*Shche Ne Vmerla
   Ukrainy*) from its ABC; the ABC's title was kept.
-- The ABC files have no composer or arranger (`C:`) fields, only `T:`, `R:`
-  (type, mostly in Welsh: *jig*, *polca*, *walts*, *rîl*, *pibddawns*, …),
-  `M:`, `L:`, `Q:`, `K:`, `S:` (source page) and `Z:`. The app shows any
-  other standard field (`C:`, `N:`, `O:`, …) automatically if you add one.
+- **Credits (`C:`) come from the score images** too: the credit printed at the
+  bottom of each score, as written (in Welsh: *Trefniant* = arrangement,
+  *Addasiad* = adaptation, *Alaw* = tune by, *o alaw …* = from a tune by …),
+  with only obvious typos fixed. 416 tunes have one; 17 scores print none.
+  abcjs shows `C:` at the top right of the sheet music. Other header fields
+  are `T:`, `R:` (type, mostly in Welsh: *jig*, *polca*, *walts*, *rîl*,
+  *pibddawns*, …), `M:`, `L:`, `Q:`, `K:`, `S:` (source page) and `Z:`. The app
+  shows other standard fields (`N:`, `O:`, …) automatically if you add them.
 - `%%alawon ...` lines record the conversion options for `abctool.py check`.
   Keep them; abcjs ignores them.
 - To fix a tune, edit its `tune.abc`, then restart the app or use the app

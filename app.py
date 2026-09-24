@@ -13,6 +13,7 @@ from pathlib import Path
 import streamlit as st
 from streamlit_searchbox import st_searchbox
 
+REPO_URL = "https://github.com/MarcoGorelli/y-sesiwn"
 TUNES_DIR = Path(__file__).parent / "tunes"
 STATIC_DIR = Path(__file__).parent / "static"
 # Local copies served by Streamlit from ./static (see download_assets.py),
@@ -287,8 +288,22 @@ def go_home() -> None:
     st.session_state.pop("tune_search", None)
 
 
+def sidebar_links() -> None:
+    st.divider()
+    st.page_link(ADD_PAGE, label="How to add a tune", icon=":material/add_circle:")
+    st.page_link(REPO_URL, label="GitHub", icon=":material/code:")
+
+
+def add_a_tune() -> None:
+    """The contributing guide, shared with GitHub (CONTRIBUTING.md)."""
+    with st.sidebar:
+        st.title("Y Sesiwn")
+        st.page_link(TUNES_PAGE, label="Back to the tunes", icon=":material/home:")
+        sidebar_links()
+    st.markdown((Path(__file__).parent / "CONTRIBUTING.md").read_text(encoding="utf-8"))
+
+
 def main() -> None:
-    st.set_page_config(page_title="Y Sesiwn", page_icon=STATIC_DIR / "harp.svg", layout="wide")
     tunes = load_tunes()
     by_slug = {t["slug"]: t for t in tunes}
 
@@ -302,6 +317,7 @@ def main() -> None:
             width="stretch",
         )
         tune_search(tunes)
+        sidebar_links()
 
     st.title("Y Sesiwn")
 
@@ -372,4 +388,16 @@ def main() -> None:
             st.code(strip_fields(tune["abc"], "Z"), language=None)
 
 
-main()
+st.set_page_config(
+    page_title="Y Sesiwn",
+    page_icon=STATIC_DIR / "harp.svg",
+    layout="wide",
+    menu_items={
+        "Get help": REPO_URL,
+        "Report a bug": f"{REPO_URL}/issues",
+        "About": f"**Y Sesiwn**: Welsh traditional tunes, from ABC notation. [GitHub]({REPO_URL})",
+    },
+)
+TUNES_PAGE = st.Page(main, title="Tunes", default=True)
+ADD_PAGE = st.Page(add_a_tune, title="How to add a tune", url_path="how-to-add-a-tune")
+st.navigation([TUNES_PAGE, ADD_PAGE], position="hidden").run()

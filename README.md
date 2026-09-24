@@ -41,12 +41,16 @@ config is only read at startup.
   separate **Source** box with the link to the original page, and the raw
   ABC in an expander.
 - **Back to home** button in the sidebar.
+- **How to add a tune** page (linked from the sidebar, at `/how-to-add-a-tune`)
+  showing `CONTRIBUTING.md`, and links to this repo in the sidebar and the
+  app's ⋮ menu.
 
 ## Files
 
 | Path | What it is |
 |---|---|
-| `app.py` | The whole app. |
+| `app.py` | The whole app: the tunes page and the "How to add a tune" page (`st.navigation`, hidden; the sidebar links between them). |
+| `CONTRIBUTING.md` | How to add a tune by pull request. Shown in the app and on GitHub, so edit it in one place. |
 | `requirements.txt` | Python packages: `streamlit`, `streamlit-searchbox`. |
 | `.streamlit/config.toml` | Turns on serving of `static/` at `/app/static/`; turns off Streamlit's usage statistics (which would go online). |
 | `static/abcjs/` | [abcjs](https://www.abcjs.net/) 6.4.4 (`abcjs-basic-min.js`, `abcjs-audio.css`). |

@@ -31,6 +31,11 @@ config is only read at startup.
 `site/` is the same app as plain HTML/JavaScript, with no server: it can be
 hosted anywhere (GitHub Pages is set up), never sleeps, and loads in a blink.
 Each tune has its own link (`?tune=sawdl-y-fuwch`) and the back button works.
+Extras over the Streamlit app: a big search box on the home page, `/` to jump
+to search from anywhere, **practice mode** on tune pages (just the controls
+and a full-width score, full screen where supported), a search bar pinned to
+the top on phones, and a *carthen* (Welsh tapestry blanket) band across the
+top (`site/carthen.svg`), with Welsh slate and cream "paper" behind the music.
 
 ```bash
 python build_site.py                    # builds _site/ (standard library only)

@@ -107,12 +107,24 @@ document.addEventListener("click", (event) => {
 });
 window.addEventListener("popstate", render);
 
+// "/" jumps to search from anywhere (the big box on the home page, else the sidebar's).
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "/" || event.ctrlKey || event.metaKey || event.altKey) return;
+  if (event.target.closest("input, textarea, select, [contenteditable]")) return;
+  event.preventDefault();
+  const box = document.getElementById("hero-search") ?? document.getElementById("search-input");
+  if (document.body.classList.contains("practice")) setPractice(false);
+  box.focus();
+});
+
 function render() {
   stopPlayback();
   const params = new URLSearchParams(location.search);
   const tune = state.bySlug.get(params.get("tune"));
   const guide = GUIDES[params.get("page")];
   const main = document.getElementById("main");
+  if (!tune) setPractice(false);
+  main.style.animation = "none"; void main.offsetWidth; main.style.animation = "";  // replay fade-in
   document.getElementById("home-button").disabled = !tune && !guide;
   if (tune) renderTune(main, tune);
   else if (guide) renderGuide(main, guide);
@@ -124,24 +136,25 @@ function render() {
 function renderHome(main) {
   document.title = "Y Sesiwn";
   const { tunes, types, repo } = state.data;
-  state.browseType ??= types[0].name;
 
   const list = el("ul", { class: "tune-list" });
   const caption = el("p", { class: "caption" });
   const pills = el("div", { class: "pills", role: "group", "aria-label": "Tune type" });
+  // No type selected (null) lists every tune; clicking the selected type again clears it.
   const showType = (name) => {
     state.browseType = name;
     const type = types.find((t) => t.name === name);
     for (const pill of pills.children) pill.setAttribute("aria-pressed", pill.dataset.type === name);
-    caption.textContent = `${type.count} ${type.english}`;
-    const listed = tunes.filter((t) => t.type === name)
+    caption.textContent = type ? `${type.count} ${type.english}` : `All ${tunes.length} tunes`;
+    const listed = tunes.filter((t) => !type || t.type === name)
       .sort((a, b) => (a.search[0] < b.search[0] ? -1 : 1));
     list.replaceChildren(...listed.map((t) =>
       el("li", {}, el("a", { href: tuneUrl(t.slug), "data-route": true }, t.title))));
   };
   for (const type of types) {
     pills.append(el("button", {
-      type: "button", "data-type": type.name, onclick: () => showType(type.name),
+      type: "button", "data-type": type.name,
+      onclick: () => showType(state.browseType === type.name ? null : type.name),
     }, `${type.name} · ${type.count}`));
   }
 
@@ -155,11 +168,26 @@ function renderHome(main) {
       el("a", { href: repo }, "on GitHub"),
       ", and anyone can ", el("a", { href: "?page=add", "data-route": true }, "add a tune"),
       " or ", el("a", { href: "?page=fix", "data-route": true }, "suggest a correction"), "."),
+    heroSearch(tunes.length),
     el("button", { type: "button", class: "primary", onclick: openRandomTune }, "Surprise me"),
     el("h2", {}, "Browse by type"),
     pills, caption, list,
   );
   showType(state.browseType);
+}
+
+function heroSearch(count) {
+  const input = el("input", {
+    id: "hero-search", type: "search", autocomplete: "off", spellcheck: "false",
+    placeholder: `Search ${count} tunes by name…`, role: "combobox", "aria-expanded": "false",
+    "aria-controls": "hero-suggestions", "aria-autocomplete": "list",
+  });
+  const list = el("ul", { id: "hero-suggestions", class: "suggestions", role: "listbox", hidden: true });
+  // The list below already shows every tune, so only suggest once something is typed.
+  attachSearch(input, list, { showAllOnFocus: false });
+  return el("div", { class: "search hero-search" },
+    el("label", { for: "hero-search", class: "visually-hidden" }, "Search tunes by name"),
+    input, el("kbd", { class: "shortcut", title: "Press / to search" }, "/"), list);
 }
 
 // ---- Tune page -------------------------------------------------------------------
@@ -234,12 +262,14 @@ function renderTune(main, tune) {
   const tempoLabel = el("label", { for: "tempo" });
   const showTempo = () => { tempoLabel.textContent = `Tempo: ${settings.bpm} bpm (${tune.beatName} beats)`; };
   showTempo();
+  const practice = el("button", { type: "button", class: "practice-toggle", onclick: () => setPractice(!document.body.classList.contains("practice")) });
+  practice.textContent = document.body.classList.contains("practice") ? "Exit practice mode" : "Practice mode";
   controls.append(el("div", { class: "control tempo" }, tempoLabel,
     el("input", {
       id: "tempo", type: "range", min: 30, max: 200, value: settings.bpm,
       oninput: (e) => { settings.bpm = +e.target.value; showTempo(); },
       onchange: redraw,
-    })));
+    })), practice);
 
   const details = el("dl", {}, tune.details.map(([label, value]) => [el("dt", {}, label), el("dd", {}, value)]));
   const gloss = tune.gloss.length
@@ -249,16 +279,28 @@ function renderTune(main, tune) {
 
   main.replaceChildren(...[
     el("h1", {}, tune.title),
-    tune.titles.length > 1 ? el("p", { class: "caption" }, `Also known as: ${tune.titles.slice(1).join(", ")}`) : null,
+    tune.titles.length > 1 ? el("p", { class: "caption aka" }, `Also known as: ${tune.titles.slice(1).join(", ")}`) : null,
     controls,
     el("div", { class: "tune-layout" },
       el("div", { class: "score" }, audio, paper),
-      el("div", {},
+      el("div", { class: "tune-side" },
         el("section", { class: "card" }, el("h2", {}, "Details"), details, gloss),
         el("details", { class: "abc" }, el("summary", {}, "ABC notation"), el("pre", {}, stripFields(tune.abc, "Z"))))),
   ].filter(Boolean));
   redraw();
 }
+
+// Practice mode: hide everything but the controls and the score, full screen if possible.
+function setPractice(on) {
+  if (document.body.classList.contains("practice") === on) return;
+  document.body.classList.toggle("practice", on);
+  const button = document.querySelector(".practice-toggle");
+  if (button) button.textContent = on ? "Exit practice mode" : "Practice mode";
+  if (on && document.fullscreenEnabled) document.documentElement.requestFullscreen().catch(() => {});
+  if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+}
+// Leaving full screen (e.g. with Esc) also leaves practice mode.
+document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement) setPractice(false); });
 
 // ---- Guide pages (sections of CONTRIBUTING.md) --------------------------------------
 
@@ -277,9 +319,7 @@ async function renderGuide(main, heading) {
 
 // ---- Sidebar search box ---------------------------------------------------------------
 
-function setUpSearch() {
-  const input = document.getElementById("search-input");
-  const list = document.getElementById("suggestions");
+function attachSearch(input, list, { showAllOnFocus = true } = {}) {
   let results = [];
   let active = 0;
 
@@ -287,11 +327,12 @@ function setUpSearch() {
   const open = (tune) => { input.value = ""; close(); input.blur(); navigate(tuneUrl(tune.slug)); };
   const show = () => {
     const query = input.value;
+    if (!query.trim() && !showAllOnFocus) { results = []; close(); return; }
     results = query.trim() ? search(query).slice(0, 20) : state.data.tunes;
     active = 0;
     list.replaceChildren(...(results.length
       ? results.map((tune, i) => el("li", {
-          role: "option", id: `suggestion-${i}`, "aria-selected": i === active,
+          role: "option", id: `${input.id}-option-${i}`, "aria-selected": i === active,
           onmousedown: (e) => { e.preventDefault(); open(tune); },
         }, tune.title))
       : [el("li", { class: "empty" }, "No tunes match that name.")]));
@@ -303,7 +344,7 @@ function setUpSearch() {
     active = (i + results.length) % results.length;
     [...list.children].forEach((li, j) => li.setAttribute("aria-selected", j === active));
     list.children[active].scrollIntoView({ block: "nearest" });
-    input.setAttribute("aria-activedescendant", `suggestion-${active}`);
+    input.setAttribute("aria-activedescendant", `${input.id}-option-${active}`);
   };
 
   input.addEventListener("input", show);
@@ -324,7 +365,7 @@ async function start() {
   for (const tune of state.data.tunes) state.bySlug.set(tune.slug, tune);
   document.getElementById("home-button").addEventListener("click", () => navigate("./"));
   document.getElementById("surprise-sidebar").addEventListener("click", openRandomTune);
-  setUpSearch();
+  attachSearch(document.getElementById("search-input"), document.getElementById("suggestions"));
   render();
 }
 start().catch((error) => {

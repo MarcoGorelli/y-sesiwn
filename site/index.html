@@ -13,26 +13,31 @@
   <script src="app.js" defer></script>
 </head>
 <body>
-  <aside class="sidebar">
-    <a class="brand" href="./" data-route><img src="static/harp.svg" alt="" width="36" height="36">Y Sesiwn</a>
-    <div class="sidebar-actions">
-      <button type="button" id="home-button">Back to home</button>
-      <button type="button" id="surprise-sidebar">Surprise me</button>
-    </div>
-    <div class="search">
-      <label for="search-input">Find a tune</label>
-      <input id="search-input" type="search" autocomplete="off" spellcheck="false"
-             placeholder="e.g. Llancesau Trefaldwyn"
-             role="combobox" aria-expanded="false" aria-controls="suggestions" aria-autocomplete="list">
-      <ul id="suggestions" role="listbox" hidden></ul>
-      <p class="hint">Suggestions update as you type; press Enter to open the top one.</p>
-    </div>
-    <nav class="sidebar-links">
-      <a href="?page=add" data-route>How to add a tune</a>
-      <a href="?page=fix" data-route>How to submit corrections</a>
-      <a href="https://github.com/MarcoGorelli/y-sesiwn">GitHub</a>
-    </nav>
-  </aside>
+  <!-- Left column on wide screens; on phones .topbar sticks to the top of the page. -->
+  <div class="nav">
+    <header class="topbar">
+      <a class="brand" href="./" data-route><img src="static/harp.svg" alt="" width="36" height="36">Y Sesiwn</a>
+      <div class="search">
+        <label for="search-input" class="visually-hidden">Find a tune</label>
+        <input id="search-input" type="search" autocomplete="off" spellcheck="false"
+               placeholder="Find a tune…"
+               role="combobox" aria-expanded="false" aria-controls="suggestions" aria-autocomplete="list">
+        <kbd class="shortcut" title="Press / to search">/</kbd>
+        <ul id="suggestions" class="suggestions" role="listbox" hidden></ul>
+      </div>
+    </header>
+    <aside class="sidebar">
+      <div class="sidebar-actions">
+        <button type="button" id="home-button">Back to home</button>
+        <button type="button" id="surprise-sidebar">Surprise me</button>
+      </div>
+      <nav class="sidebar-links">
+        <a href="?page=add" data-route>How to add a tune</a>
+        <a href="?page=fix" data-route>How to submit corrections</a>
+        <a href="https://github.com/MarcoGorelli/y-sesiwn">GitHub</a>
+      </nav>
+    </aside>
+  </div>
   <main id="main"><p class="loading">Loading tunes…</p></main>
 </body>
 </html>

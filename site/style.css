@@ -1,25 +1,29 @@
 :root {
   --accent: #C8102E;          /* Welsh flag red: accents only */
   --accent-soft: #c8102e1a;
-  --bg: #ffffff;
-  --sidebar-bg: #f0f2f6;
+  --slate: #3b4550;           /* Welsh slate */
+  --bg: #fdfbf7;              /* warm off-white */
+  --sidebar-bg: #eef0f1;      /* pale slate */
   --card-bg: #ffffff;
-  --text: #31333f;
-  --muted: #6b6d7a;
-  --border: #d9dbe3;
+  --paper: #fbf6ea;           /* cream, behind the sheet music */
+  --text: #262b31;
+  --muted: #66707a;
+  --border: #dcdfe3;
   --link: #1c6ecf;
   --radius: 8px;
+  --search-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2366707a' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='m15.5 15.5 5 5'/%3E%3C/svg%3E");
   color-scheme: light dark;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0e1117;
-    --sidebar-bg: #1b1e27;
-    --card-bg: #161a22;
-    --text: #f4f4f6;
-    --muted: #a3a6b4;
-    --border: #353946;
+    --bg: #111418;
+    --sidebar-bg: #1a1f25;
+    --card-bg: #171b21;
+    --text: #eef0f2;
+    --muted: #a0a8b1;
+    --border: #343b44;
     --link: #6fb1ff;
+    /* --paper stays cream: the sheet music reads best on paper colours */
   }
 }
 
@@ -29,35 +33,46 @@ body {
   display: grid;
   grid-template-columns: 300px minmax(0, 1fr);
   min-height: 100vh;
-  background: var(--bg);
+  /* The carthen band (Welsh tapestry blanket pattern) across the top. */
+  padding-top: 14px;
+  background: url("carthen.svg") repeat-x top left / auto 14px, var(--bg);
   color: var(--text);
   font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 a { color: var(--link); }
+::selection { background: var(--accent); color: #fff; }
 h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 .5rem; }
+main h1::after, .guide h1::after {    /* short red underline under page titles */
+  content: ""; display: block; width: 3rem; height: 3px;
+  margin-top: .45rem; border-radius: 2px; background: var(--accent);
+}
 h2 { font-size: 1.35rem; margin: 2rem 0 .75rem; }
 button, input, select { font: inherit; color: inherit; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-/* Sidebar */
-.sidebar {
+/* Left column: brand + search on top, then buttons and links */
+.nav {
   background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  height: calc(100vh - 14px);
+  overflow-y: auto;
   padding: 1.5rem 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  overflow-y: auto;
 }
+.topbar { display: grid; gap: 1rem; }
+.sidebar { display: flex; flex-direction: column; gap: 1.25rem; }
 .brand {
   display: flex; align-items: center; gap: .6rem;
-  font-size: 1.75rem; font-weight: 700; color: var(--text); text-decoration: none;
+  font-size: 1.75rem; font-weight: 700; color: var(--accent); text-decoration: none;
 }
 .sidebar-actions { display: grid; gap: .5rem; }
 .sidebar-links { display: grid; gap: .35rem; border-top: 1px solid var(--border); padding-top: 1rem; }
 .sidebar-links a { text-decoration: none; }
-.sidebar-links a:hover { text-decoration: underline; }
+.sidebar-links a:hover { color: var(--accent); text-decoration: underline; }
 
 button {
   border: 1px solid var(--border);
@@ -65,6 +80,7 @@ button {
   border-radius: var(--radius);
   padding: .45rem .9rem;
   cursor: pointer;
+  transition: border-color .15s, color .15s, background-color .15s;
 }
 button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
 button:disabled { opacity: .5; cursor: default; }
@@ -72,34 +88,46 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 button.primary:hover { color: #fff; filter: brightness(1.1); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* Search */
+/* Search boxes (sidebar and the big one on the home page) */
 .search { position: relative; }
-.search label { display: block; font-weight: 600; margin-bottom: .35rem; }
 .search input {
   width: 100%;
-  padding: .55rem .7rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--card-bg);
+  padding: .7rem 2.4rem .7rem 2.5rem;
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  background: var(--search-icon) no-repeat .85rem center / 1.15rem, var(--card-bg);
+  box-shadow: 0 1px 2px #0000000d;
+  transition: border-color .15s, box-shadow .15s;
 }
-.search input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
-.hint { font-size: .8rem; color: var(--muted); margin: .35rem 0 0; }
-#suggestions {
-  position: absolute; left: 0; right: 0; z-index: 10;
-  margin: .25rem 0 0; padding: .25rem 0;
+.search input::-webkit-search-cancel-button { display: none; }
+.search input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.shortcut {
+  position: absolute; right: .8rem; top: 1.35rem; transform: translateY(-50%);
+  font: 600 .75rem/1 ui-monospace, monospace; color: var(--muted);
+  border: 1px solid var(--border); border-radius: 4px; padding: .2rem .4rem; pointer-events: none;
+}
+.search input:focus ~ .shortcut { display: none; }
+.suggestions {
+  position: absolute; left: 0; right: 0; z-index: 20;
+  margin: .35rem 0 0; padding: .3rem 0;
   list-style: none;
   max-height: 60vh; overflow-y: auto;
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: 0 8px 24px #0002;
+  box-shadow: 0 10px 30px #00000026;
 }
-#suggestions li { padding: .4rem .75rem; cursor: pointer; }
-#suggestions li[aria-selected="true"] { background: var(--accent-soft); }
-#suggestions li.empty { color: var(--muted); cursor: default; }
+.suggestions li { padding: .45rem 1rem; cursor: pointer; }
+.suggestions li[aria-selected="true"] { background: var(--accent-soft); }
+.suggestions li.empty { color: var(--muted); cursor: default; }
+
+.hero-search { max-width: 40rem; margin: 1.5rem 0 1rem; }
+.hero-search input { font-size: 1.15rem; padding: 1rem 3rem 1rem 3.1rem; background-position: 1.1rem center; background-size: 1.35rem; box-shadow: 0 2px 10px #0000000f; }
+.hero-search .shortcut { top: 1.85rem; right: 1.1rem; }
 
 /* Main */
-main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; }
+main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fade-in .2s ease-out; }
+@keyframes fade-in { from { opacity: 0; transform: translateY(4px); } }
 .loading, .caption { color: var(--muted); }
 .caption { font-size: .9rem; }
 .lead { font-size: 1.1rem; max-width: 50rem; }
@@ -118,22 +146,38 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; }
 .control select { padding: .4rem .6rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); }
 .control.tempo { flex: 1 1 18rem; max-width: 32rem; }
 .control input[type="range"] { width: 100%; accent-color: var(--accent); }
+.practice-toggle { margin-left: auto; }
 .tune-layout { display: grid; grid-template-columns: minmax(0, 3fr) minmax(14rem, 1fr); gap: 1.5rem; align-items: start; }
-.score {                     /* sheet music always on white, also in dark mode */
-  background: #fff; color: #000;
+.score {                     /* sheet music on cream "paper", also in dark mode */
+  background: var(--paper); color: #000;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: .75rem 1rem 1rem;
+  box-shadow: 0 1px 3px #0000000f;
 }
+.score .abcjs-inline-audio { background-color: var(--slate); border-radius: 6px; }
+.score .abcjs-inline-audio .abcjs-midi-progress-background { background-color: #2a323b; }
 .score .abcjs-note_playing { fill: var(--accent); }
-.card { border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.1rem; background: var(--card-bg); }
+/* Player: red progress knob, and play/loop in red while they're on. */
+.score .abcjs-inline-audio .abcjs-midi-progress-indicator { background-color: var(--accent); }
+.score .abcjs-inline-audio .abcjs-btn.abcjs-pushed { background-color: var(--accent); }
+.card { border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: var(--radius); padding: 1rem 1.1rem; background: var(--card-bg); }
 .card h2 { margin: 0 0 .6rem; font-size: 1.15rem; }
 .card dl { margin: 0; }
 .card dt { font-weight: 600; }
 .card dd { margin: 0 0 .5rem; }
-details.abc { margin-top: 1rem; border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .9rem; }
+details.abc { margin-top: 1rem; border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .9rem; background: var(--card-bg); }
 details.abc summary { cursor: pointer; }
 details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
+
+/* Practice mode: just the controls and a big score, for a tablet on a music stand */
+body.practice { grid-template-columns: 1fr; }
+body.practice .nav, body.practice .tune-side, body.practice main h1::after, body.practice .aka { display: none; }
+body.practice main { max-width: none; padding: 1rem 1.5rem 2rem; }
+body.practice h1 { font-size: 1.4rem; }
+body.practice .controls { margin: .5rem 0 1rem; }
+body.practice .tune-layout { grid-template-columns: 1fr; }
+body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 1rem 1.5rem 1.5rem; }
 
 /* Guide pages (CONTRIBUTING.md) */
 .guide { max-width: 50rem; }
@@ -142,15 +186,25 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .guide pre { background: var(--sidebar-bg); padding: .75rem 1rem; border-radius: var(--radius); overflow-x: auto; }
 .guide code { font-size: .9em; }
 
-/* Narrow screens: sidebar on top, one column */
+/* Narrow screens: brand + search pinned to the top, everything else in one column */
 @media (max-width: 800px) {
   body { grid-template-columns: 1fr; }
-  .sidebar { position: static; height: auto; padding: 1rem; gap: .75rem; }
-  .brand { font-size: 1.4rem; }
-  .brand img { width: 28px; height: 28px; }
+  .nav { display: contents; }
+  .topbar {
+    position: sticky; top: 0; z-index: 30;
+    grid-template-columns: auto 1fr; align-items: center; gap: .75rem;
+    background: var(--sidebar-bg); padding: .6rem 1rem;
+    border-bottom: 1px solid var(--border); box-shadow: 0 2px 8px #0000000f;
+  }
+  .brand { font-size: 1.25rem; gap: .4rem; }
+  .brand img { width: 26px; height: 26px; }
+  .search input { padding-top: .55rem; padding-bottom: .55rem; }
+  .topbar .shortcut { display: none; }
+  .sidebar { background: var(--sidebar-bg); padding: .6rem 1rem .8rem; gap: .6rem; border-bottom: 1px solid var(--border); }
   .sidebar-actions { grid-template-columns: 1fr 1fr; }
-  .hint { display: none; }
-  .sidebar-links { display: flex; flex-wrap: wrap; gap: .25rem 1rem; padding-top: .6rem; font-size: .9rem; }
+  .sidebar-links { display: flex; flex-wrap: wrap; gap: .25rem 1rem; padding-top: .5rem; font-size: .9rem; }
   main { padding: 1.5rem 1rem 3rem; }
   .tune-layout { grid-template-columns: 1fr; }
+  .practice-toggle { margin-left: 0; }
 }
+@media (prefers-reduced-motion: reduce) { main { animation: none; } }

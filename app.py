@@ -247,15 +247,12 @@ def render_tune(abc: str, transpose: int) -> None:
 
 
 def suggestions(query: str, tunes: list[dict], limit: int = 20) -> list[tuple[str, str]]:
-    """(label, slug) pairs for the searchbox; duplicate titles show their folder."""
+    """(title, slug) pairs for the searchbox. Titles are unique: repeated names
+    are numbered "(version 2)" in the ABC files."""
     results = search(query, tunes)
     if query.strip():
         results = results[:limit]
-    titles = [t["title"] for t in results]
-    return [
-        (f"{t['title']} ({t['slug']})" if titles.count(t["title"]) > 1 else t["title"], t["slug"])
-        for t in results
-    ]
+    return [(t["title"], t["slug"]) for t in results]
 
 
 @st.fragment

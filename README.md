@@ -31,7 +31,7 @@ config is only read at startup.
   match. Matching ignores case and accents (`fran` finds *Frân*), tolerates
   typos (`llancesau trefalwdyn` finds *Llancesau Trefaldwyn*) and also
   searches alternative titles (extra `T:` lines). Clicking the empty box lists
-  every tune. Tunes sharing a title show their folder name.
+  every tune. Titles are unique (repeats are numbered "(version 2)").
 - **Sheet music** for one tune at a time, shown in full.
 - **Key** drop-down: transposes the notation and the playback, keeping the
   mode (e.g. Dm → Em), up to half an octave either way.

@@ -5,3 +5,8 @@ enableStaticServing = true
 
 [browser]
 gatherUsageStats = false
+
+[theme]
+# Welsh flag red, for accents only (primary buttons, selected pills, slider,
+# focused inputs). Links and everything else keep Streamlit's defaults.
+primaryColor = "#C8102E"

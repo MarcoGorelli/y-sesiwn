@@ -238,7 +238,7 @@ def render_tune(abc: str, transpose: int) -> None:
 <style>
   body {{ margin: 0; font-family: sans-serif; background: white; overflow: hidden; }}
   #audio {{ margin: 8px 0 12px; }}
-  .abcjs-note_playing {{ fill: #d33; }}
+  .abcjs-note_playing {{ fill: #C8102E; }}
 </style>
 <div id="audio"></div>
 <div id="paper"></div>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="14" viewBox="0 0 48 14">
+  <!-- One repeat of the carthen (Welsh tapestry blanket) band across the top of the page. -->
+  <rect width="48" height="14" fill="#f3ead3"/>
+  <rect width="48" height="2" fill="#3b4550"/>
+  <rect y="12" width="48" height="2" fill="#3b4550"/>
+  <polygon points="12,2.5 17,7 12,11.5 7,7" fill="none" stroke="#3b4550" stroke-width="1"/>
+  <polygon points="12,4.5 14.5,7 12,9.5 9.5,7" fill="#C8102E"/>
+  <polygon points="36,4.5 38.5,7 36,9.5 33.5,7" fill="#3b4550"/>
+  <rect x="23" y="6" width="2" height="2" fill="#C8102E"/>
+  <rect x="47" y="6" width="1" height="2" fill="#C8102E"/>
+  <rect x="0" y="6" width="1" height="2" fill="#C8102E"/>
+</svg>

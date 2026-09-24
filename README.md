@@ -1,12 +1,13 @@
 # Y Sesiwn
 
-A small Streamlit app for browsing Welsh traditional tunes from
-[alawoncymru.com](http://alawoncymru.com/alawon/Tunes/Tunesal.html).
-Search for a tune by name, see its sheet music, change its key and play it back.
+A free, open-source web app to help you learn and share Welsh folk
+tunes. Search for a tune by name or browse by type, see its sheet music,
+change its key and play it back. Anyone can add tunes or suggest corrections
+by pull request (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
 Everything shown — sheet music, playback, key changes and tune details — is
 generated from each tune's **ABC notation alone** (`tunes/<slug>/tune.abc`).
-The site's MIDI files and score images are not used by the app.
+No MIDI files or score images are used by the app.
 
 The app runs fully **offline**: the music library and the piano sounds are
 stored in `static/`.
@@ -118,9 +119,12 @@ Not in git (see `.gitignore`): each tune's `score.gif`, `tune.mid` and
 - Browsers keep audio paused until the user clicks, so notes can be loaded
   early but not played. abcjs resumes the audio when play is pressed.
 
-## Where the tunes come from
+## ABC sources
 
-The `tunes/` folder was built with the **alawon-abc** skill in
+New tunes are added by pull request (see [CONTRIBUTING.md](CONTRIBUTING.md)).
+The first batch was imported from
+[alawoncymru.com](http://alawoncymru.com/alawon/Tunes/Tunesal.html) with the
+**alawon-abc** skill in
 `.claude/skills/alawon-abc/` (read its `SKILL.md` for full instructions). In
 short:
 

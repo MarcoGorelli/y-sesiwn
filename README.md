@@ -175,6 +175,25 @@ Not in git (see `.gitignore`): each tune's `score.gif`, `tune.mid` and
 ## ABC sources
 
 New tunes are added by pull request (see [CONTRIBUTING.md](CONTRIBUTING.md)).
+
+**The *Blodau'r Grug* collection** (volumes 1–3, 90 tunes) was added from Brian
+Martin's ABC transcriptions in John Chambers' archive
+(`https://trillian.mit.edu/~jc/music/abc/mirror/BrianMartin/msg/welsh_tunes_1.abc`;
+found via abcnotation.com, whose search pages ask robots not to crawl them, so
+the tunes came from the archive directly). Each tune was matched to ours by
+melody (steps between notes, any key) and name: 69 are versions of tunes we
+already had (named `<our title> (version N)`, with their own titles, e.g.
+*Knights of Snowdon*, kept as extra `T:` lines) and 21 are new. Their files got
+`B:` (the volume), `S:` (the archive URL), `N:Transcribed by Brian Martin` (his
+email address left out), and ABC2Win's `!` line breaks turned into real ones.
+
+**Versions share a page.** Titles ending ` (version N)` are grouped with the
+tune they're a version of (`build_site.py` adds `group`, `base`, `version` and a
+`source` label to each tune); the site shows one entry per tune in browsing,
+counts and search, and tabs on the tune page (`?tune=rheged&v=2`). The type
+used for browsing is version 1's; `R:` can be Welsh or English (*Waltz*,
+*Hornpipe*, *March*, *Set Dance*…).
+
 The first batch was imported from
 [alawoncymru.com](http://alawoncymru.com/alawon/Tunes/Tunesal.html) with the
 **alawon-abc** skill in
@@ -198,7 +217,9 @@ uv run --no-project --with mido python .claude/skills/alawon-abc/scripts/<script
 Useful to know:
 
 - 551 tunes were found; 26 have no ABC (their MIDI link on the site is dead).
-  92 more were deleted as duplicates, so the app shows 433. Re-running
+  92 more were deleted as duplicates, leaving 433 (441 tunes and 523 versions
+  with *Blodau'r Grug*, below; *Mwynen Cynwyd, syml* was retitled *Mwynen
+  Cynwyd* to match its score). Re-running
   `scrape.py` would bring them back. A folder was deleted when its melody was
   at least 95% the same as another's (compared by the steps between notes'
   pitches, so a different key doesn't matter; the key drop-down covers that)

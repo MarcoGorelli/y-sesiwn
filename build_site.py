@@ -40,11 +40,12 @@ OTHER_BPM = 100
 # Browsing categories, matched against the first word of R: that fits. Specific
 # dance types come before the generic "alaw" (air) and "cân" (song).
 SPECIFIC_TYPES = {
-    "jig": "Jig", "polca": "Polca", "polka": "Polca", "walts": "Walts",
-    "ril": "Rîl", "reel": "Rîl", "pibdd": "Pibddawns", "ymdaith": "Ymdaith",
-    "ymdeithdon": "Ymdaith", "dawns": "Dawns", "carol": "Carol",
+    "jig": "Jig", "polca": "Polca", "polka": "Polca", "walts": "Walts", "waltz": "Walts",
+    "ril": "Rîl", "reel": "Rîl", "pibdd": "Pibddawns", "hornpipe": "Pibddawns",
+    "ymdaith": "Ymdaith", "ymdeithdon": "Ymdaith", "march": "Ymdaith",
+    "dawns": "Dawns", "set": "Dawns", "carol": "Carol",  # "Set Dance"
 }
-GENERIC_TYPES = {"alaw": "Alaw", "can": "Cân"}
+GENERIC_TYPES = {"alaw": "Alaw", "air": "Alaw", "can": "Cân", "song": "Cân"}
 # label -> (English, colour), in display order. The colours are carthen
 # (Welsh tapestry blanket) colourways, shown as small swatches in the site.
 TYPE_ORDER = {
@@ -112,12 +113,17 @@ def key_signature(key: str) -> dict[str, int]:
 def melody(abc: str) -> list[int]:
     """MIDI pitches of the tune's notes in written order (top note of chords)."""
     lines = abc.splitlines()
-    start = next((i + 1 for i, line in enumerate(lines) if line.startswith("K:")), len(lines))
-    signature = key_signature((parse_headers(abc).get("K") or [""])[0])
-    body = " ".join(
-        line for line in lines[start:] if not re.match(r"^(%|[A-Za-z]:)", line)
-    )
-    body = re.sub(r"\[[A-Za-z]:[^\]]*\]", " ", body)  # inline fields, e.g. [M:6/8]
+    start = next((i for i, line in enumerate(lines) if line.startswith("K:")), len(lines))
+    signature: dict[str, int] = {}
+    body_parts = []
+    for line in lines[start:]:
+        if line.startswith("K:"):  # the key, and key changes part-way through
+            body_parts.append(f"[K:{line[2:].strip()}]")
+        elif not re.match(r"^(%|[A-Za-z]:)", line):
+            body_parts.append(line)
+    body = " ".join(body_parts)
+    body = re.sub(r'\{[^}]*\}|"[^"]*"', " ", body)  # grace notes; chord names and text
+    body = re.sub(r"\[(?!K:)[A-Za-z]:[^\]]*\]", " ", body)  # other inline fields, e.g. [M:6/8]
     bar: dict[tuple[str, int], int] = {}  # accidentals written earlier in this bar
 
     def pitch(acc: str | None, letter: str, marks: str) -> int:
@@ -129,7 +135,12 @@ def melody(abc: str) -> list[int]:
         return 60 + 12 * octave + PITCH[name] + alter
 
     notes = []
-    for m in NOTE_TOKEN.finditer(body):
+    for m in re.finditer(r"\[K:([^\]]*)\]|" + NOTE_TOKEN.pattern, body):
+        if m.group(1) is not None:  # key change
+            signature = key_signature(m.group(1))
+            bar.clear()
+            continue
+        m = NOTE_TOKEN.match(m.group(0))
         if m.group(5):
             bar.clear()
         elif m.group(1) is not None:
@@ -241,6 +252,22 @@ def details(headers: dict[str, list[str]]) -> tuple[list[list[str]], list[list[s
     return rows, [[w, m] for w, m in gloss.items()]
 
 
+VERSION = re.compile(r"^(.*) \(version (\d+)\)$")
+
+
+def slugify(title: str) -> str:
+    """Folder name for a title: 'Codi'r Hwyl' -> 'codi-r-hwyl'."""
+    return re.sub(r"[^a-z0-9]+", "-", normalize(title).replace(" ", "-")).strip("-")
+
+
+def version_label(headers: dict[str, list[str]]) -> str:
+    """Where a version comes from, for its tab: the book, else the source site."""
+    if headers.get("B"):
+        return headers["B"][0]
+    source = " ".join(headers.get("S", []))
+    return "Alawon Cymru" if "alawoncymru" in source else ""
+
+
 def tune_record(path: Path) -> dict:
     abc = path.read_text(encoding="utf-8")
     headers = parse_headers(abc)
@@ -248,8 +275,15 @@ def tune_record(path: Path) -> dict:
     parsed = parse_key((headers.get("K") or [""])[0])
     beat = beat_unit((headers.get("M") or [""])[0])
     rows, gloss = details(headers)
+    # Versions of a tune ("Rheged (version 2)") share one page, under the base title.
+    m = VERSION.match(titles[0])
+    base, number = (m.group(1), int(m.group(2))) if m else (titles[0], 1)
     return {
         "slug": path.parent.name,
+        "group": slugify(base),
+        "base": base,
+        "version": number,
+        "source": version_label(headers),
         "title": titles[0],
         "titles": titles,
         "search": [normalize(t) for t in titles],
@@ -272,7 +306,8 @@ def tune_record(path: Path) -> dict:
 
 def main() -> None:
     tunes = [tune_record(p) for p in sorted((ROOT / "tunes").glob("*/tune.abc"))]
-    counts = {t: sum(tune["type"] == t for tune in tunes) for t in TYPE_ORDER}
+    first_versions = [t for t in tunes if t["version"] == 1]
+    counts = {t: sum(tune["type"] == t for tune in first_versions) for t in TYPE_ORDER}
     index = {
         "repo": REPO_URL,
         "types": [

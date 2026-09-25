@@ -38,13 +38,14 @@ The lines at the top are the *header*:
 | `K:` | yes, **last** | Key, e.g. `D`, `Em`, `ADor`. The notes start on the next line. |
 | `C:` | optional | Composer or arranger. |
 | more `T:` lines | optional | Other names for the tune; they're searchable too. |
-| `N:`, `O:`, `S:` | optional | Notes, place of origin, source. Shown under Details. |
+| `B:`, `N:`, `O:`, `S:` | optional | Book, notes, place of origin, source. Shown under Details. |
 
 About titles:
 
 - Use the name printed on the sheet music, without brackets.
 - If a tune with the same name is already in the app, call yours
-  `<Name> (version 2)` (or 3, 4, …).
+  `<Name> (version 2)` (or 3, 4, …). All versions of a tune share one page,
+  with a tab for each; a `B:` line (the book it's from) labels your tab.
 - Tempo lines (`Q:`) are ignored: the app's tempo slider decides.
 
 If you're new to ABC, the [ABC notation primer](https://abcnotation.com/learn)

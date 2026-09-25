@@ -18,7 +18,9 @@ const PAGES = {
 
 const state = {
   data: null,
-  bySlug: new Map(),
+  bySlug: new Map(),    // every tune file ("version"), by folder name
+  groups: new Map(),    // one page per tune: its versions, by the first version's folder
+  groupList: [],        // groups sorted by title
   browseType: null,
   settings: new Map(),  // per tune: { transpose, bpm }, kept while the page is open
   synth: null,          // the playing SynthController, stopped when leaving a tune
@@ -79,9 +81,10 @@ function score(query, tune) {
 }
 
 function search(query) {
+  // Tunes (groups of versions) whose names match; any version's titles count.
   const q = normalize(query);
-  if (!q) return state.data.tunes;
-  return state.data.tunes
+  if (!q) return state.groupList;
+  return state.groupList
     .map((tune) => [score(q, tune), tune])
     .filter(([s]) => s >= 0.7)
     .sort((x, y) => y[0] - x[0] || (x[1].title < y[1].title ? -1 : 1))
@@ -174,7 +177,10 @@ function searchByNotes(text) {
     }
     if (score) results.push({ tune, score, where, how });
   }
-  return results.sort((a, b) => b.score - a.score || a.where - b.where || (a.tune.title < b.tune.title ? -1 : 1));
+  results.sort((a, b) => b.score - a.score || a.where - b.where || (a.tune.title < b.tune.title ? -1 : 1));
+  // One entry per tune: its best-matching version.
+  const seen = new Set();
+  return results.filter((r) => !seen.has(r.tune.group) && seen.add(r.tune.group));
 }
 
 function playNote(midi) {
@@ -230,8 +236,12 @@ function notesSearch() {
     help.textContent = found.length
       ? `${found.length} tune${found.length > 1 ? "s" : ""} with these notes${found.length > 12 ? " (showing the best 12; add notes to narrow it down)" : ""}.`
       : "No tunes with these notes. Try fewer notes, or check a note or two.";
-    results.replaceChildren(...found.slice(0, 12).map(({ tune, how }) => el("li", {},
-      el("a", { href: tuneUrl(tune.slug), "data-route": true }, tune.title), el("span", { class: "caption" }, ` · ${how}`))));
+    results.replaceChildren(...found.slice(0, 12).map(({ tune, how }) => {
+      const several = state.groups.get(tune.group).versions.length > 1;
+      return el("li", {},
+        el("a", { href: tuneUrl(tune.group, tune.version), "data-route": true }, tune.base),
+        el("span", { class: "caption" }, `${several ? ` (version ${tune.version})` : ""} · ${how}`));
+    }));
   };
   input.addEventListener("input", update);
   const press = (name) => { input.value = `${input.value.trimEnd()} ${name}`.trimStart(); update(); };
@@ -248,7 +258,9 @@ function notesSearch() {
 
 // ---- Routing ----------------------------------------------------------------
 
-function tuneUrl(slug) { return `?tune=${encodeURIComponent(slug)}`; }
+function tuneUrl(group, version = 1) {
+  return `?tune=${encodeURIComponent(group)}${version > 1 ? `&v=${version}` : ""}`;
+}
 
 function navigate(url) {
   history.pushState(null, "", url);
@@ -258,7 +270,7 @@ function navigate(url) {
 
 function openRandomTune() {
   const current = new URLSearchParams(location.search).get("tune");
-  const choices = state.data.tunes.filter((t) => t.slug !== current);
+  const choices = state.groupList.filter((g) => g.slug !== current);
   navigate(tuneUrl(choices[Math.floor(Math.random() * choices.length)].slug));
 }
 
@@ -283,14 +295,21 @@ document.addEventListener("keydown", (event) => {
 function render() {
   stopPlayback();
   const params = new URLSearchParams(location.search);
-  const tune = state.bySlug.get(params.get("tune"));
+  let group = state.groups.get(params.get("tune"));
+  let version = Number(params.get("v")) || 1;
+  const file = state.bySlug.get(params.get("tune"));
+  if (!group && file) {  // an old link to a version's own folder, e.g. ?tune=rheged-version-2
+    [group, version] = [state.groups.get(file.group), file.version];
+    history.replaceState(null, "", tuneUrl(group.slug, version));
+  }
+  const tune = group ? group.versions.find((v) => v.version === version) ?? group.versions[0] : null;
   const page = params.get("page");
   const guide = PAGES[page] ? page : null;
   const main = document.getElementById("main");
   if (!tune) setPractice(false);
   main.style.animation = "none"; void main.offsetWidth; main.style.animation = "";  // replay fade-in
   document.getElementById("home-button").disabled = !tune && !guide;
-  if (tune) renderTune(main, tune);
+  if (tune) renderTune(main, group, tune);
   else if (guide) renderGuide(main, guide);
   else renderHome(main);
 }
@@ -299,7 +318,8 @@ function render() {
 
 function renderHome(main) {
   document.title = "Y Sesiwn";
-  const { tunes, types, repo } = state.data;
+  const { types, repo } = state.data;
+  const tunes = state.groupList;  // one entry per tune, whatever its number of versions
   const colour = Object.fromEntries(types.map((t) => [t.name, t.colour]));
 
   const list = el("ul", { class: "tune-list" });
@@ -311,8 +331,7 @@ function renderHome(main) {
     const type = types.find((t) => t.name === name);
     for (const pill of pills.children) pill.setAttribute("aria-pressed", pill.dataset.type === name);
     caption.textContent = type ? `${type.count} ${type.english}` : `All ${tunes.length} tunes`;
-    const listed = tunes.filter((t) => !type || t.type === name)
-      .sort((a, b) => (a.search[0] < b.search[0] ? -1 : 1));
+    const listed = tunes.filter((t) => !type || t.type === name);
     list.replaceChildren(...listed.map((t) =>
       el("li", { style: `--c: ${colour[t.type]}` },
         el("span", { class: "swatch", title: t.type }),
@@ -361,7 +380,7 @@ function heroSearch(count) {
 // ---- Tune page -------------------------------------------------------------------
 
 function stripFields(abc, fields) {
-  // abcjs prints S: and Z: under the score; the source stays in the ABC view.
+  // Header fields to leave off the score (abcjs would print them); they stay in the ABC view.
   return abc.split("\n").filter((line) => !new RegExp(`^[${fields}]:`).test(line)).join("\n");
 }
 
@@ -385,7 +404,9 @@ function stopPlayback() {
 function drawScore(tune, paper, audio) {
   stopPlayback();
   const { transpose, bpm } = state.settings.get(tune.slug);
-  let abc = setTempo(stripFields(tune.abc, "SZ"), tune.beat, bpm);
+  // S:, Z:, B: (book), N: (notes) and A: (area) are in the Details box, so leave
+  // them off the score; the version tabs say which version it is.
+  let abc = setTempo(stripFields(tune.abc, "SZBNA"), tune.beat, bpm).replace(/^(T:.*) \(version \d+\)$/m, "$1");
   if (transpose) {
     // strTranspose needs the whole array renderAbc returns, not its first tune.
     abc = ABCJS.strTranspose(abc, ABCJS.renderAbc("*", abc), transpose);
@@ -408,8 +429,8 @@ function drawScore(tune, paper, audio) {
   new ABCJS.synth.CreateSynth().init({ visualObj, options: AUDIO_PARAMS }).catch(() => {});
 }
 
-function renderTune(main, tune) {
-  document.title = `${tune.title} · Y Sesiwn`;
+function renderTune(main, group, tune) {
+  document.title = `${group.title} · Y Sesiwn`;
   if (!state.settings.has(tune.slug)) state.settings.set(tune.slug, { transpose: 0, bpm: tune.bpm });
   const settings = state.settings.get(tune.slug);
 
@@ -445,9 +466,18 @@ function renderTune(main, tune) {
         [i ? " · " : "", el("em", {}, word), ` = ${meaning}`]))
     : null;
 
+  const versions = group.versions.length > 1
+    ? el("nav", { class: "versions", "aria-label": "Versions of this tune" }, group.versions.map((v) =>
+        el("a", {
+          href: tuneUrl(group.slug, v.version), "data-route": true,
+          class: v === tune ? "active" : null, "aria-current": v === tune ? "page" : null,
+        }, el("span", {}, `Version ${v.version}`), v.source ? el("small", {}, v.source) : null)))
+    : null;
+
   main.replaceChildren(...[
-    el("h1", {}, tune.title),
-    tune.titles.length > 1 ? el("p", { class: "caption aka" }, `Also known as: ${tune.titles.slice(1).join(", ")}`) : null,
+    el("h1", {}, group.title),
+    group.titles.length > 1 ? el("p", { class: "caption aka" }, `Also known as: ${group.titles.slice(1).join(", ")}`) : null,
+    versions,
     controls,
     el("div", { class: "tune-layout" },
       el("div", { class: "score" }, audio, paper),
@@ -494,11 +524,11 @@ function attachSearch(input, list, { showAllOnFocus = true } = {}) {
   let active = 0;
 
   const close = () => { list.hidden = true; input.setAttribute("aria-expanded", "false"); };
-  const open = (tune) => { input.value = ""; close(); input.blur(); navigate(tuneUrl(tune.slug)); };
+  const open = (group) => { input.value = ""; close(); input.blur(); navigate(tuneUrl(group.slug)); };
   const show = () => {
     const query = input.value;
     if (!query.trim() && !showAllOnFocus) { results = []; close(); return; }
-    results = query.trim() ? search(query).slice(0, 20) : state.data.tunes;
+    results = query.trim() ? search(query).slice(0, 20) : state.groupList;
     active = 0;
     list.replaceChildren(...(results.length
       ? results.map((tune, i) => el("li", {
@@ -530,9 +560,28 @@ function attachSearch(input, list, { showAllOnFocus = true } = {}) {
 
 // ---- Start -----------------------------------------------------------------------------
 
+const VERSION_SUFFIX = / \(version \d+\)$/;
+
+function buildGroups() {
+  // Versions of a tune ("Rheged", "Rheged (version 2)", …) share one page.
+  for (const tune of state.data.tunes) {
+    state.bySlug.set(tune.slug, tune);
+    if (!state.groups.has(tune.group)) state.groups.set(tune.group, { slug: tune.group, title: tune.base, versions: [] });
+    state.groups.get(tune.group).versions.push(tune);
+  }
+  for (const group of state.groups.values()) {
+    group.versions.sort((a, b) => a.version - b.version);
+    group.type = group.versions[0].type;
+    const titles = group.versions.flatMap((v) => v.titles.map((t) => t.replace(VERSION_SUFFIX, "")));
+    group.titles = titles.filter((t, i) => titles.findIndex((u) => normalize(u) === normalize(t)) === i);
+    group.search = group.titles.map(normalize);
+  }
+  state.groupList = [...state.groups.values()].sort((a, b) => (a.search[0] < b.search[0] ? -1 : 1));
+}
+
 async function start() {
   state.data = await (await fetch("tunes.json")).json();
-  for (const tune of state.data.tunes) state.bySlug.set(tune.slug, tune);
+  buildGroups();
   document.getElementById("home-button").addEventListener("click", () => navigate("./"));
   document.getElementById("surprise-sidebar").addEventListener("click", openRandomTune);
   attachSearch(document.getElementById("search-input"), document.getElementById("suggestions"));

@@ -236,6 +236,17 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .site-footer a { color: var(--muted); }
 .site-footer a:hover { color: var(--accent); }
 
+/* Version tabs on a tune page */
+.versions { display: flex; flex-wrap: wrap; gap: .4rem; margin: .9rem 0 .2rem; }
+.versions a {
+  display: grid; padding: .4rem .85rem; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--card-bg); color: var(--text); text-decoration: none; line-height: 1.3;
+}
+.versions a small { color: var(--muted); font-size: .75rem; }
+.versions a:hover { border-color: var(--accent); }
+.versions a.active { border-color: var(--accent); box-shadow: inset 0 -3px 0 var(--accent); font-weight: 600; }
+.versions a.active small { font-weight: 400; }
+
 /* Practice mode: just the controls and a big score, for a tablet on a music stand */
 body.practice { grid-template-columns: 1fr; }
 body.practice .nav, body.practice .tune-side, body.practice .site-footer, body.practice main h1::after, body.practice .aka { display: none; }

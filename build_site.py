@@ -9,6 +9,7 @@ about it (type, key, default tempo, details), worked out here once instead of
 in the browser. The GitHub Pages workflow runs this on every push to main.
 """
 
+import hashlib
 import json
 import re
 import shutil
@@ -304,6 +305,26 @@ def tune_record(path: Path) -> dict:
     }
 
 
+# The projection site/wales.svg was drawn with (see the comment in it).
+MAP = {"lon0": -5.669900, "lat0": 53.435690, "k": 0.610145, "scale": 100}
+
+
+def places(groups: set[str]) -> list[dict]:
+    """places.json, with each place's position on site/wales.svg."""
+    result = []
+    for place in json.loads((ROOT / "places.json").read_text(encoding="utf-8"))["places"]:
+        unknown = set(place["tunes"]) - groups
+        if unknown:
+            raise SystemExit(f"places.json: no tune called {', '.join(sorted(unknown))}")
+        result.append({
+            "name": place["name"],
+            "x": round((place["lon"] - MAP["lon0"]) * MAP["k"] * MAP["scale"], 1),
+            "y": round((MAP["lat0"] - place["lat"]) * MAP["scale"], 1),
+            "tunes": place["tunes"],
+        })
+    return result
+
+
 def main() -> None:
     tunes = [tune_record(p) for p in sorted((ROOT / "tunes").glob("*/tune.abc"))]
     first_versions = [t for t in tunes if t["version"] == 1]
@@ -316,6 +337,9 @@ def main() -> None:
             if counts[t]
         ],
         "tunes": tunes,
+        "places": places({t["group"] for t in tunes}),
+        "mapSize": [float(n) for n in re.search(
+            r'viewBox="0 0 ([\d.]+) ([\d.]+)"', (ROOT / "site" / "wales.svg").read_text()).groups()],
     }
 
     if OUT.exists():
@@ -331,7 +355,36 @@ def main() -> None:
     (OUT / "tunes.json").write_text(
         json.dumps(index, ensure_ascii=False, separators=(",", ":")), encoding="utf-8"
     )
+    write_service_worker()
     print(f"built {OUT.relative_to(ROOT)}/ with {len(tunes)} tunes")
+
+
+# Not needed offline: link-preview images and the source of the service worker itself.
+NOT_OFFLINE = {"sw.js", "og-image.png", "CNAME"}
+
+
+def write_service_worker() -> None:
+    """Fill in sw.js: which files to keep for offline use, and a version that
+    changes whenever any of them does (so browsers pick up a new deploy)."""
+    def digest(files: list[Path]) -> str:
+        h = hashlib.sha256()
+        for f in files:
+            h.update(f.relative_to(OUT).as_posix().encode() + f.read_bytes())
+        return h.hexdigest()[:12]
+
+    files = sorted(f for f in OUT.rglob("*") if f.is_file() and f.name not in NOT_OFFLINE)
+    sounds = [f for f in files if f.is_relative_to(OUT / "static" / "soundfont")]
+    site = [f for f in files if f not in sounds]
+    urls = lambda fs: json.dumps([f.relative_to(OUT).as_posix() for f in fs])
+    sw = OUT / "sw.js"
+    sw.write_text(
+        sw.read_text(encoding="utf-8")
+        .replace("__VERSION__", digest(site))
+        .replace("__SOUNDS_VERSION__", digest(sounds))
+        .replace("__SITE_FILES__", '["./", ' + urls(site)[1:])
+        .replace("__SOUND_FILES__", urls(sounds)),
+        encoding="utf-8",
+    )
 
 
 if __name__ == "__main__":

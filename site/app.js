@@ -72,14 +72,24 @@ function ratio(a, b) {
   return a.length + b.length ? (2 * matched(a, 0, a.length, b, 0, b.length)) / (a.length + b.length) : 1;
 }
 
+// "y", "yr" and "'r" (the), so "Helfa'r Sgwarnog" finds "Hel y Sgwarnog".
+const ARTICLES = new Set(["y", "yr", "r", "the"]);
+const words = (text) => {
+  const all = text.split(/\s+/).filter(Boolean);
+  const kept = all.filter((w) => !ARTICLES.has(w));
+  return kept.length ? kept : all;
+};
+
 function score(query, tune) {
-  // 1 for a substring match, otherwise the average word-by-word similarity,
-  // so small typos ("trefalwdyn") still match.
+  // 2 for the exact name, 1 if the title has the query at the start of a word ("mon" finds "Mwynen Môn",
+  // not "harmoni"), otherwise the average word-by-word similarity, so small typos
+  // and other spellings ("trefalwdyn", "Risiart") still match.
   let best = 0;
+  const queryWords = words(query);
   for (const title of tune.search) {
-    if (title.includes(query)) return 1;
-    const titleWords = title.split(/\s+/).filter(Boolean);
-    const queryWords = query.split(/\s+/).filter(Boolean);
+    if (title === query) return 2;  // the exact name comes first
+    if (` ${title}`.includes(` ${query}`)) { best = 1; continue; }
+    const titleWords = words(title);
     const scores = queryWords.map((q) => Math.max(0, ...titleWords.map((t) => ratio(q, t))));
     best = Math.max(best, (0.99 * scores.reduce((s, x) => s + x, 0)) / scores.length);
   }
@@ -317,12 +327,14 @@ function render() {
   const tune = group ? group.versions.find((v) => v.version === version) ?? group.versions[0] : null;
   const page = params.get("page");
   const guide = PAGES[page] ? page : null;
+  const map = page === "map";
   const main = document.getElementById("main");
   if (!tune) setPractice(false);
   main.style.animation = "none"; void main.offsetWidth; main.style.animation = "";  // replay fade-in
-  document.getElementById("home-button").disabled = !tune && !guide;
+  document.getElementById("home-button").disabled = !tune && !guide && !map;
   if (tune) renderTune(main, group, tune);
   else if (guide) renderGuide(main, guide);
+  else if (map) renderMap(main);
   else renderHome(main);
 }
 
@@ -470,7 +482,8 @@ function renderTune(main, group, tune) {
       id: "tempo", type: "range", min: 30, max: 200, value: settings.bpm,
       oninput: (e) => { settings.bpm = +e.target.value; showTempo(); },
       onchange: redraw,
-    })), practice);
+    })), el("div", { class: "tune-actions" },
+      el("button", { type: "button", onclick: () => window.print() }, "Print"), practice));
 
   const details = el("dl", {}, tune.details.map(([label, value]) => [el("dt", {}, label), el("dd", {}, value)]));
   const gloss = tune.gloss.length
@@ -495,6 +508,7 @@ function renderTune(main, group, tune) {
       el("div", { class: "score" }, audio, paper),
       el("div", { class: "tune-side" },
         el("section", { class: "card" }, el("h2", {}, "Details"), details, gloss),
+        placeCard(group),
         el("details", { class: "abc" }, el("summary", {}, "ABC notation"), el("pre", {}, stripFields(tune.abc, "Z"))))),
   ].filter(Boolean));
   redraw();
@@ -511,6 +525,94 @@ function setPractice(on) {
 }
 // Leaving full screen (e.g. with Esc) also leaves practice mode.
 document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement) setPractice(false); });
+
+// ---- Map: the places named in tune titles (places.json) --------------------------------
+
+function svg(tag, attrs = {}, ...children) {
+  const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const [name, value] of Object.entries(attrs)) if (value != null) node.setAttribute(name, value);
+  node.append(...children.flat().filter((c) => c != null));
+  return node;
+}
+
+function walesMap(current = null) {
+  // wales.svg is only the outline, used as a mask so the land takes the page's
+  // colours (also in dark mode); the places are dots in an SVG on top of it.
+  const [width, height] = state.data.mapSize;
+  const { places } = state.data;
+  const dots = places.map((place) => svg("circle", {
+    cx: place.x, cy: place.y, r: place === current ? 3.6 : 2.2,
+    class: current ? (place === current ? "here" : "other") : null,
+  }, current ? svg("title", {}, place.name) : null));
+  if (current) dots.push(dots.splice(places.indexOf(current), 1)[0]);  // drawn on top
+  // The full map gets bigger invisible targets over the small dots, for pointing and tapping.
+  const targets = current ? [] : places.map((place, i) =>
+    svg("circle", { cx: place.x, cy: place.y, r: 5, class: "target", "data-place": i }));
+  return el("div", { class: "wales-map", style: `aspect-ratio: ${width} / ${height}` },
+    svg("svg", { viewBox: `0 0 ${width} ${height}`, role: "img",
+      "aria-label": current ? `Map of Wales showing ${current.name}` : "Map of Wales with the places named in tune titles" },
+      dots, targets));
+}
+
+function placeCard(group) {
+  const place = state.data.places.find((p) => p.tunes.includes(group.slug));
+  if (!place) return null;
+  return el("section", { class: "card place" },
+    el("h2", {}, place.name),
+    walesMap(place),
+    el("p", { class: "caption" }, el("a", { href: "?page=map", "data-route": true }, "All tunes on the map")));
+}
+
+function renderMap(main) {
+  document.title = "Tunes on the map · Y Sesiwn";
+  const places = [...state.data.places].sort((a, b) => (normalize(a.name) < normalize(b.name) ? -1 : 1));
+  const map = walesMap();
+  const circles = [...map.querySelectorAll("circle:not(.target)")];
+  // Pointing at a place in the list lights up its dot.
+  const light = (place, on) => circles[state.data.places.indexOf(place)].classList.toggle("lit", on);
+
+  // Pointing at (or tapping) a dot shows a popup with the place's tunes. It stays
+  // open while the pointer is on it, so its links can be clicked.
+  const popup = el("div", { class: "map-popup", hidden: true });
+  map.append(popup);
+  let shown = null, hideTimer = null;
+  const hide = () => { if (shown) light(shown, false); shown = null; popup.hidden = true; };
+  const hideSoon = () => { clearTimeout(hideTimer); hideTimer = setTimeout(hide, 250); };
+  const show = (place) => {
+    clearTimeout(hideTimer);
+    if (shown === place) return;
+    hide();
+    shown = place;
+    light(place, true);
+    const [width, height] = state.data.mapSize;
+    const x = place.x / width, y = place.y / height;
+    popup.replaceChildren(el("strong", {}, place.name), el("ul", {}, place.tunes.map((slug) =>
+      el("li", {}, el("a", { href: tuneUrl(slug), "data-route": true }, state.groups.get(slug).title)))));
+    // Above the dot, or below it near the top; kept inside the map at the sides.
+    Object.assign(popup.style, { left: `${x * 100}%`, top: `${y * 100}%` });
+    popup.dataset.side = y < 0.3 ? "below" : "above";
+    popup.dataset.align = x < 0.3 ? "left" : x > 0.7 ? "right" : "centre";
+    popup.hidden = false;
+  };
+  const target = (event) => event.target.closest?.(".target");
+  map.addEventListener("pointerover", (e) => { if (target(e)) show(state.data.places[target(e).dataset.place]); });
+  map.addEventListener("pointerout", (e) => { if (target(e)) hideSoon(); });
+  popup.addEventListener("pointerenter", () => clearTimeout(hideTimer));
+  popup.addEventListener("pointerleave", hideSoon);
+  // On a touchscreen, tapping elsewhere closes it.
+  main.addEventListener("pointerdown", (e) => { if (!target(e) && !popup.contains(e.target)) hide(); });
+  const list = el("ul", { class: "place-list" }, places.map((place) =>
+    el("li", { onmouseenter: () => light(place, true), onmouseleave: () => light(place, false) },
+      el("strong", {}, place.name), " ",
+      place.tunes.map((slug, i) => [i ? ", " : "", el("a", { href: tuneUrl(slug), "data-route": true }, state.groups.get(slug).title)]))));
+  main.replaceChildren(
+    el("h1", {}, "Tunes on the map"),
+    el("p", { class: "lead" }, `${places.length} places in Wales and just over the border that tunes are named after.`),
+    el("div", { class: "map-layout" },
+      el("figure", {}, map, el("figcaption", { class: "caption" },
+        "Outline: Office for National Statistics, Open Government Licence. Contains OS data © Crown copyright and database right.")),
+      list));
+}
 
 // ---- Markdown pages: the guides (sections of CONTRIBUTING.md) and About -------------
 
@@ -612,6 +714,12 @@ async function start() {
   attachSearch(document.getElementById("search-input"), document.getElementById("suggestions"));
   render();
 }
+// Offline use (sw.js): once the page has loaded, keep a copy of the whole site, so it
+// works in a pub with no signal and can be added to the home screen as an app.
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+
 start().catch((error) => {
   document.getElementById("main").replaceChildren(el("p", {}, `Couldn't load the tunes: ${error}`));
 });

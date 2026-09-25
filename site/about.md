@@ -5,6 +5,15 @@ wants to learn them, play them or share them. Every tune has its sheet music,
 can be played back at any tempo and changed to any key, and has its own link
 you can send to a friend before a session.
 
+## At a session
+
+Once you've opened the site, it keeps a copy of every tune, so it works
+without a signal. On a phone, choose **Add to Home Screen** from the
+browser's share or menu button to keep it as an app. The **Print** button on
+each tune gives clean sheet music in the key you've chosen, and
+[Tunes on the map](?page=map) shows where the tunes named after places come
+from.
+
 ## The sesiwn
 
 A *sesiwn* (session) is an informal gathering of musicians playing traditional

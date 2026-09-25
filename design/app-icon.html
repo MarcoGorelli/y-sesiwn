@@ -1,0 +1,11 @@
+<!doctype html><meta charset="utf-8">
+<!-- Home-screen icons: open as app-icon.html?size=512&harp=0.78 and screenshot the square.
+     icon-192/512.png use harp=0.78 (like apple-touch-icon); the maskable icon uses
+     harp=0.6 so the harp stays inside the circle Android may cut it to. -->
+<style>html,body{margin:0} .i{background:#fbf6ea;display:grid;place-items:center}</style>
+<div class="i" id="i"><img id="h" src="../static/harp.svg" alt=""></div>
+<script>
+  const q = new URLSearchParams(location.search), size = +q.get("size") || 512, harp = +q.get("harp") || 0.78;
+  Object.assign(document.getElementById("i").style, { width: size + "px", height: size + "px" });
+  Object.assign(document.getElementById("h").style, { width: size * harp + "px", height: size * harp + "px" });
+</script>

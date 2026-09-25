@@ -11,6 +11,7 @@
   --border: #dcdfe3;
   --link: #1c6ecf;
   --radius: 8px;
+  --land: #e2e5e8;            /* the map of Wales */
   --search-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2366707a' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='m15.5 15.5 5 5'/%3E%3C/svg%3E");
   color-scheme: light dark;
 }
@@ -23,6 +24,7 @@
     --muted: #a0a8b1;
     --border: #343b44;
     --link: #6fb1ff;
+    --land: #2f3740;
     /* --paper stays cream: the sheet music reads best on paper colours */
   }
 }
@@ -202,7 +204,7 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .control select { padding: .4rem .6rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); }
 .control.tempo { flex: 1 1 18rem; max-width: 32rem; }
 .control input[type="range"] { width: 100%; accent-color: var(--accent); }
-.practice-toggle { margin-left: auto; }
+.tune-actions { display: flex; gap: .5rem; margin-left: auto; }
 .tune-layout { display: grid; grid-template-columns: minmax(0, 3fr) minmax(14rem, 1fr); gap: 1.5rem; align-items: start; }
 .score {                     /* sheet music on cream "paper", also in dark mode */
   background: var(--paper); color: #000;
@@ -247,6 +249,47 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .versions a.active { border-color: var(--accent); box-shadow: inset 0 -3px 0 var(--accent); font-weight: 600; }
 .versions a.active small { font-weight: 400; }
 
+/* Map of Wales (the outline is a mask, so it follows the colour scheme) */
+.wales-map { position: relative; width: 100%; }
+.wales-map::before {  /* the land; on its own layer so the mask doesn't clip dots over the border */
+  content: ""; position: absolute; inset: 0;
+  background: var(--land);
+  -webkit-mask: url("wales.svg") center / contain no-repeat;
+  mask: url("wales.svg") center / contain no-repeat;
+}
+.wales-map svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.wales-map circle { fill: var(--slate); stroke: var(--card-bg); stroke-width: .6; transition: r .15s, fill .15s; }
+.wales-map circle.other { fill: var(--muted); opacity: .35; r: 1.6; }
+.wales-map circle.here { r: 5; stroke-width: 1.2; }
+.wales-map circle.here, .wales-map circle.lit { fill: var(--accent); }
+.wales-map circle.lit { r: 4.2; }
+@media (prefers-color-scheme: dark) { .wales-map circle { fill: var(--muted); } }
+.wales-map circle.target { fill: transparent; stroke: none; cursor: pointer; }
+.map-popup {
+  position: absolute; z-index: 5; width: max-content; max-width: 16rem;
+  padding: .55rem .8rem; font-size: .9rem; line-height: 1.4;
+  background: var(--card-bg); border: 1px solid var(--border); border-top: 3px solid var(--accent);
+  border-radius: var(--radius); box-shadow: 0 8px 24px #00000026;
+  --dx: -50%; --dy: calc(-100% - 10px);
+  transform: translate(var(--dx), var(--dy));
+}
+.map-popup[data-side="below"] { --dy: 10px; }
+.map-popup[data-align="left"] { --dx: -1.2rem; }
+.map-popup[data-align="right"] { --dx: calc(-100% + 1.2rem); }
+.map-popup ul { list-style: none; margin: .2rem 0 0; padding: 0; }
+.map-popup a { color: var(--text); }
+.map-popup a:hover { color: var(--accent); }
+.card.place { margin-top: 1rem; }
+.card.place .wales-map { max-width: 14rem; margin: .25rem auto .5rem; }
+.card.place .caption { margin: 0; }
+.map-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2rem; align-items: start; }
+.map-layout figure { margin: 0; position: sticky; top: 1.5rem; }
+.map-layout figcaption { font-size: .75rem; margin-top: .5rem; }
+.place-list { list-style: none; padding: 0; margin: 0; }
+.place-list li { padding: .35rem .5rem; border-radius: 6px; }
+.place-list li:hover { background: var(--accent-soft); }
+.place-list strong { display: block; }
+
 /* Practice mode: just the controls and a big score, for a tablet on a music stand */
 body.practice { grid-template-columns: 1fr; }
 body.practice .nav, body.practice .tune-side, body.practice .site-footer, body.practice main h1::after, body.practice .aka { display: none; }
@@ -282,7 +325,19 @@ body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 
   .sidebar-links { display: flex; flex-wrap: wrap; gap: .25rem 1rem; padding-top: .5rem; font-size: .9rem; }
   main { padding: 1.5rem 1rem 3rem; }
   .site-footer { padding: 22px 1rem 1.25rem; }
-  .tune-layout { grid-template-columns: 1fr; }
-  .practice-toggle { margin-left: 0; }
+  .tune-layout, .map-layout { grid-template-columns: 1fr; }
+  .map-layout figure { position: static; max-width: 22rem; margin: 0 auto; }
+  .tune-actions { margin-left: 0; }
 }
+/* Printing a tune: just the sheet music (in the key chosen on the page), full width. */
+@media print {
+  body { display: block; padding: 0; background: none; color: #000; }
+  .nav, .site-footer, .controls, .versions, .aka, .tune-side, .audio, main > h1 { display: none !important; }
+  main { padding: 0; max-width: none; animation: none; }
+  .tune-layout { display: block; }
+  .score { border: none; box-shadow: none; background: none; padding: 0; }
+  .score .abcjs-note_playing { fill: currentColor; }
+}
+@page { margin: 15mm; }
+
 @media (prefers-reduced-motion: reduce) { main { animation: none; } }

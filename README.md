@@ -12,7 +12,9 @@ No MIDI files or score images are used by the site.
 
 It's a **static site**: plain HTML, CSS and JavaScript with no server, so it
 never sleeps and loads almost instantly. Everything it needs (the tunes, abcjs
-and the piano sounds) is in this repo; it contacts no other website.
+and the piano sounds) is in this repo; it contacts no other website. After
+the first visit it also **works offline**, and can be added to a phone's home
+screen as an app.
 
 ## Running it locally
 
@@ -45,8 +47,11 @@ relative URLs, so the site also works under a sub-path such as
 - **Search by name** (sidebar and home page): suggestions as you type; Enter
   opens the top one; `/` jumps to search from anywhere. Matching ignores case
   and accents (`fran` finds *Frân*), tolerates typos (`llancesau trefalwdyn`
-  finds *Llancesau Trefaldwyn*) and searches alternative titles (extra `T:`
-  lines, e.g. *Knights of Snowdon*).
+  finds *Llancesau Trefaldwyn*, `risiart annwyl` finds *Rhisiart Annwyl*),
+  ignores *y*, *yr* and *'r* (`helfa'r sgwarnog` finds *Hel y Sgwarnog*), and
+  searches alternative titles (extra `T:` lines, e.g. *Knights of Snowdon*).
+  Partial names match at the start of a word (`mon` finds *Mwynen Môn*, not
+  *harmoni*), and an exact name comes first.
 - **Search by notes:** type the first few notes (4 or more), or play them on
   the piano keyboard (G3, the fiddle's open G, to A5; each key sounds its
   note), in any key. Each tune's melody is worked out at build time by
@@ -72,6 +77,20 @@ relative URLs, so the site also works under a sub-path such as
   the notes highlighted as they play.
 - **Practice mode:** just the controls and a full-width score, full screen
   where supported.
+- **Print:** a button on the tune page; the print styles leave just the
+  sheet music, in the key chosen on the page.
+- **Map:** tunes named after a place have a small map of Wales on their page,
+  and *Tunes on the map* (`?page=map`) shows every place with its tunes. The
+  places and their tunes are listed by hand in `places.json` (name, latitude,
+  longitude, tune folders); `build_site.py` works out each dot's position on
+  `site/wales.svg` and stops with an error if a folder doesn't exist.
+- **Offline and home-screen app:** `site/sw.js` (a service worker) saves a
+  copy of the whole site (about 3 MB, piano notes included) after the first
+  visit, and `site/manifest.webmanifest` lets phones install it. The build
+  fills in `sw.js`'s file lists and a version made from the files' contents,
+  so each deploy is picked up in the background and used from the next visit.
+  The piano notes are cached separately, so a deploy doesn't download them
+  again.
 - **Details:** tune type, key (written out), time signature,
   composer/arranger with an English gloss for Welsh credit words
   (*Trefniant* = arranged by), and any other standard ABC fields (book, notes,
@@ -92,6 +111,8 @@ relative URLs, so the site also works under a sub-path such as
 | `build_site.py` | Builds `_site/` (git-ignored): copies `site/`, `static/`, `CONTRIBUTING.md`, and writes `tunes.json`: every `tune.abc` plus what the page needs about it (type, key, default tempo and beat, Details rows, credit glosses, melody for the note search, version grouping), worked out once in Python. Tune types, colourways and default tempos are set at the top. |
 | `site/index.html`, `site/style.css`, `site/app.js` | The page. `app.js` does searching (a port of the original Python matching, including `difflib`'s similarity ratio), browsing, routing (`?tune=…&v=…`, `?page=add\|fix\|about`), sheet music and playback with abcjs, and renders the Markdown pages with marked. |
 | `site/about.md`, `site/carthen.svg` | The About page; the tapestry band. |
+| `places.json`, `site/wales.svg` | The places named in tune titles, for the map; the outline of Wales (made once from the ONS local authority boundaries via [UK-GeoJSON](https://github.com/martinjc/UK-GeoJSON), merged and simplified; its projection is in a comment in the file and in `MAP` in `build_site.py`). The outline is used as a CSS mask, so it takes the page's colours. |
+| `site/sw.js`, `site/manifest.webmanifest`, `site/icon-*.png` | Offline use and the home-screen app (see Features). The icons are made from `design/app-icon.html`. |
 | `site/og-image.png`, `site/apple-touch-icon.png` | The link-preview card (1200×630, used by the `og:`/`twitter:` tags in `index.html`) and the home-screen icon. Made from `design/og-card.html` and `design/apple-touch-icon.html`: open one in a browser at that size and screenshot it to regenerate. |
 | `CONTRIBUTING.md` | How to add a tune, and how to submit corrections. Each `# ` section is one page on the site, and GitHub shows the whole file, so edit it in one place. Keep the two `# ` headings as they are: the site finds the sections by them. |
 | `static/abcjs/` | [abcjs](https://www.abcjs.net/) 6.4.4 (`abcjs-basic-min.js`, `abcjs-audio.css`): draws and plays the music. |
@@ -123,6 +144,9 @@ and `info.json`, and `.venv/`.
 - Browsers keep audio paused until the user clicks, so notes are loaded as a
   tune opens (a second `CreateSynth().init()` fills abcjs's shared note cache)
   but only played once play is pressed.
+- A service worker serves the cached copy first, so while testing locally
+  a change shows up only on the second reload (or use the browser's
+  "Update on reload" / "Bypass for network" developer setting).
 - abcjs prints some header fields on the score; `S:`, `Z:`, `B:`, `N:` and
   `A:` are left off it (they're in the Details box), and so is a title's
   ` (version N)`, since the tabs say which version it is.

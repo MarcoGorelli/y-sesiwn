@@ -24,6 +24,7 @@ const state = {
   browseType: null,
   settings: new Map(),  // per tune: { transpose, bpm }, kept while the page is open
   synth: null,          // the playing SynthController, stopped when leaving a tune
+  keyNote: null,        // the note sounding from the search-by-notes keyboard
   docs: new Map(),      // markdown files, fetched on first use
 };
 
@@ -184,14 +185,20 @@ function searchByNotes(text) {
 }
 
 function playNote(midi) {
-  // Sound one keyboard note with the same piano (and volume) as the player.
+  // Sound one keyboard note with the same piano (and volume) as the player: short
+  // (1/8 of a 2 s bar = 250 ms) with a quick 60 ms fade instead of abcjs's 200 ms,
+  // and stopping the previous key's note, so taps don't ring into each other.
+  state.keyNote?.stop();
   const sequence = new ABCJS.synth.SynthSequence();
   const track = sequence.addTrack();
   sequence.setInstrument(track, 0);
-  sequence.appendNote(track, midi, 0.25, 100);
+  sequence.appendNote(track, midi, 1 / 8, 100);
   const synth = new ABCJS.synth.CreateSynth();
-  synth.init({ sequence, millisecondsPerMeasure: 2000, options: AUDIO_PARAMS })
-    .then(() => synth.prime()).then(() => synth.start()).catch(() => {});
+  state.keyNote = synth;
+  synth.init({ sequence, millisecondsPerMeasure: 2000, options: { ...AUDIO_PARAMS, fadeLength: 60 } })
+    .then(() => synth.prime())
+    .then(() => { if (state.keyNote === synth) synth.start(); })  // skip if another key came first
+    .catch(() => {});
 }
 
 function keyboard(onPress) {

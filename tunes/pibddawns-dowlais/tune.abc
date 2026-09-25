@@ -3,13 +3,15 @@ T:Pibddawns Dowlais
 R:pibddawns
 S:http://alawoncymru.com/alawon/Tunes/PibNav/SetNav.htm
 Z:MIDI transcribed with alawon-abc
-%%alawon track=1
 C:Trefniant Meurig Williams o dôn Llewelyn Alaw
+%%alawon track=1
+%%alawon-reviewed
 M:12/8
 L:1/8
 Q:3/8=80
 K:D
-A2 d f3 f3 f2 g | e2 f d3 d3 d2 e | c2 d B3 B3 B2 c | d2 f e2 d c2 B A3 |
-A2 d f3 f3 f2 g | e2 f d3 d3 d2 e | c2 d B2 g e2 d c2 B | A2 B A3 A2 B A3 |
-A2 G F2 A d2 A f2 d | A2 F E2 A e2 f g2 e | c2 A D2 F A2 c d2 c | d2 f e2 d c2 B A3 |
-A2 G F2 A d2 A f2 d | A2 F G2 B d2 B g2 e | c2 A d2 f a2 f g2 e | c2 A f2 d e2 c d3 |]
+A2 d | f3 f3 f2 g e2 f | d3 d3 d2 e c2 d | B3 B3 B2 c d2 f |
+e2 d c2 B A3 A2 d | f3 f3 f2 g e2 f | d3 d3 d2 e c2 d | B2 g e2 d c2 B A2 B |
+A3 A2 B A3 :: A2 G | F2 A d2 A f2 d A2 F | E2 A e2 f g2 e c2 A |
+D2 F A2 c d2 c d2 f | e2 d c2 B A3 A2 G | F2 A d2 A f2 d A2 F |
+G2 B d2 B g2 e c2 A | d2 f a2 f g2 e c2 A | f2 d e2 c d3 :|

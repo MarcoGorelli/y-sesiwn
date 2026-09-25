@@ -3,13 +3,15 @@ T:Pibddawns Wrecsam
 R:pibddawns
 S:http://alawoncymru.com/alawon/Tunes/PibGogledd/PibGogledd.html
 Z:MIDI transcribed with alawon-abc
-%%alawon track=1
 C:Trefniant Meurig Williams
+%%alawon track=1
+%%alawon-reviewed
 M:4/4
 L:1/8
 Q:1/4=90
 K:D
-|: (3ABc dc dA FA | df ed ec Ac | eg fg af ba | gf ed cB Ag |
-fe dc dA FA | df ed ec Ac | eg fg af bg | ec d2 f2 d2 :|
-|: fg af af df | af bg bg e2 | fg af af ba | gf ed cB Ag |
-fe dc dA FA | df ed ec Ac | eg fg af bg | ec d2 f2 d2 :|
+|: (3ABc | dc dA FA df | ed ec Ac eg | fg af ba gf |
+ed cB Ag fe | dc dA FA df | ed ec Ac eg |
+fg af bg ec | d2 f2 d2 :: fg | af af df af |
+bg bg e2 fg | af af ba gf | ed cB Ag fe |
+dc dA FA df | ed ec Ac eg | fg af bg ec | d2 f2 d2 :|

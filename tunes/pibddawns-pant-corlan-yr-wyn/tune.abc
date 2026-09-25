@@ -4,13 +4,15 @@ T:Pant Corlan yr Ŵyn
 R:fel pibddawns
 S:http://alawoncymru.com/alawon/Tunes/PibauPwt/PibauPwt.html
 Z:MIDI transcribed with alawon-abc
-%%alawon track=1
 C:Addasiad Meurig Williams
+%%alawon track=1
+%%alawon-reviewed
 M:12/8
 L:1/8
 Q:3/8=80
 K:G
-|: B2 A G3 G2 A B3 | G3 c3 A2 B c3 | A3 B3 G3 G2 A | B2 c d3 A3 F3 |
-D3 G3 G2 A B3 | G3 c3 c2 B A3 | c3 B3 G3 F2 G | A2 F G3 B3 G3 :|
-|: d2 c B3 d3 d3 | c2 B A2 B c2 d c3 | B2 A G3 B3 B3 | A2 G F3 A3 F3 |
-D3 G3 G2 A B3 | G3 c3 c2 B A3 | c3 B3 G3 F2 G | A2 F G3 B3 G3 :|
+|: B2 A | G3 G2 A B3 G3 | c3 A2 B c3 A3 | B3 G3 G2 A B2 c |
+d3 A3 F3 D3 | G3 G2 A B3 G3 | c3 c2 B A3 c3 |
+B3 G3 F2 G A2 F | G3 B3 G3 :: d2 c | B3 d3 d3 c2 B |
+A2 B c2 d c3 B2 A | G3 B3 B3 A2 G | F3 A3 F3 D3 |
+G3 G2 A B3 G3 | c3 c2 B A3 c3 | B3 G3 F2 G A2 F | G3 B3 G3 :|

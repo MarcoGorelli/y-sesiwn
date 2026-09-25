@@ -4,13 +4,13 @@ T:Cân y Melinydd
 R:alaw - walts
 S:http://alawoncymru.com/alawon/Tunes/SetFyNol/SetFyNol.html
 Z:MIDI transcribed with alawon-abc
-%%alawon track=1
 C:Trefniant Meurig Williams
+%%alawon track=1
+%%alawon-reviewed
 M:3/4
 L:1/8
 Q:1/4=120
 K:C
-G,2 C2 D2 | E2 F2 E2 | D2 D E3- | E6 |
-G,2 C2 D2 | E2 F2 E2 | D2 E C3- | C6 |
-G2 c3 d | c2 B3 A | G2 A3 B | A2 G4 |
-G,2 C2 D2 | E2 G2 F2 | E2 D2 C2- | C6 |]
+G,2 | C2 D2 E2 | F2 E2 D2 | DE- E4- | E4 G,2 | C2 D2 E2 |
+F2 E2 D2 | EC- C4- | C4 G2 | c3 d c2 | B3 A G2 |
+A3 B A2 | G4 G,2 | C2 D2 E2 | G2 F2 E2 | D2 C4- | C4 |]

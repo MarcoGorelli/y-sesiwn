@@ -3,13 +3,14 @@ T:Rîl Llanofer
 R:alaw telyn / polca
 S:http://alawoncymru.com/alawon/Tunes/DafIfSet/DafIfSet.htm
 Z:MIDI transcribed with alawon-abc
-%%alawon track=1
 C:Trefniant Meurig Williams
+%%alawon track=1
+%%alawon-reviewed
 M:4/4
 L:1/8
 Q:1/4=100
 K:G
-|: Bc d2 d2 dc | BA e2 e2 ed | cB d2 d2 dc | BA FG AB cB |
-AG d2 d2 dc | BA e2 e2 ed | cB Gd BG Fc | AF B2 G2 G2 :|
-|: Bc dB GB d2 | d2 ec Gc e2 | e2 dB GB d2 | d2 cA FA c2 |
-c2 dB GB d2 | d2 ec Gc e2 | e2 dg fe dc | BA G2 B2 G2 :|
+|: Bc | d2 d2 dc BA | e2 e2 ed cB | d2 d2 dc BA | FG AB cB AG |
+d2 d2 dc BA | e2 e2 ed cB | Gd BG Fc AF | B2 G2 G2 :: Bc |
+dB GB d2 d2 | ec Gc e2 e2 | dB GB d2 d2 | cA FA c2 c2 |
+dB GB d2 d2 | ec Gc e2 e2 | dg fe dc BA | G2 B2 G2 :|

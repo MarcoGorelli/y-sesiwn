@@ -3,13 +3,14 @@ T:Seren y Bore
 R:polca
 S:http://alawoncymru.com/alawon/Tunes/StEliJen/EliJenks.html
 Z:MIDI transcribed with alawon-abc
-%%alawon track=1
 C:Trefniant Meurig Williams
+%%alawon track=1
+%%alawon-reviewed
 M:4/4
 L:1/8
 Q:1/4=90
 K:G
-|: dc BA BG E2 | FG AB AG F2 | dc BA BG E2 | AF D2 d2 d2 |
-dc BA BG E2 | FG AB AG F2 | dc BA BG E2 | AF D2 G2 G2 :|
-|: G2 B2 d2 ef | ge dB cA G2 | G2 B2 d2 ef | ge f2 d2 d2 |
-G2 B2 d2 ef | ge dB cA G2 | G2 BA BG E2 | AF D2 G2 G2 :|
+|: dc | BA BG E2 FG | AB AG F2 dc | BA BG E2 AF | D2 d2 d2 dc |
+BA BG E2 FG | AB AG F2 dc | BA BG E2 AF | D2 G2 G2 :: G2 |
+B2 d2 ef ge | dB cA G2 G2 | B2 d2 ef ge | f2 d2 d2 G2 |
+B2 d2 ef ge | dB cA G2 G2 | BA BG E2 AF | D2 G2 G2 :|

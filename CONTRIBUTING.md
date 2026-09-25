@@ -100,15 +100,16 @@ Then open the pull request from your fork on GitHub.
 To see it in the app before proposing it, run Y Sesiwn locally:
 
 ```bash
-python -m venv .venv
-.venv/bin/pip install -r requirements.txt
-.venv/bin/streamlit run app.py
+python build_site.py
+python -m http.server -d _site 8000
 ```
+
+and open http://localhost:8000.
 
 ## What happens next
 
 The maintainer reviews the pull request and may suggest changes. Once it's
-merged, the [live app](https://y-sesiwn.streamlit.app/) redeploys and the tune
+merged, the [live app](https://ysesiwn.cymru/) redeploys and the tune
 appears in search.
 
 Only `tune.abc` is needed: no score image or MIDI file.
@@ -155,4 +156,4 @@ You can do that in the same edit by changing the path in the file name box
 it in the pull request and the maintainer will rename it.
 
 Once the pull request is merged, the
-[live app](https://y-sesiwn.streamlit.app/) shows the corrected tune.
+[live app](https://ysesiwn.cymru/) shows the corrected tune.

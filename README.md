@@ -1,151 +1,108 @@
 # Y Sesiwn
 
-A free, open-source web app to help you learn and share Welsh folk
-tunes. Search for a tune by name or browse by type, see its sheet music,
-change its key and play it back. Anyone can add tunes or suggest corrections
-by pull request (see [CONTRIBUTING.md](CONTRIBUTING.md)).
+A free, open-source web app to help you learn and share Welsh folk tunes:
+**https://ysesiwn.cymru/**. Search for a tune by name or by its first few
+notes, or browse by type; see its sheet music, change its key and play it back.
+Anyone can add tunes or suggest corrections by pull request (see
+[CONTRIBUTING.md](CONTRIBUTING.md)).
 
-Everything shown — sheet music, playback, key changes and tune details — is
-generated from each tune's **ABC notation alone** (`tunes/<slug>/tune.abc`).
-No MIDI files or score images are used by the app.
+Everything shown (sheet music, playback, key changes and tune details) is
+generated from each tune's **ABC notation alone** (`tunes/<folder>/tune.abc`).
+No MIDI files or score images are used by the site.
 
-The app runs fully **offline**: the music library and the piano sounds are
-stored in `static/`.
+It's a **static site**: plain HTML, CSS and JavaScript with no server, so it
+never sleeps and loads almost instantly. Everything it needs (the tunes, abcjs
+and the piano sounds) is in this repo; it contacts no other website.
 
-## Running it
+## Running it locally
 
-Needs Python 3.10 or newer.
-
-```bash
-python -m venv .venv
-.venv/bin/pip install -r requirements.txt      # needs internet, once
-.venv/bin/streamlit run app.py
-```
-
-Then open http://localhost:8501. Run the `streamlit` command from this folder:
-`.streamlit/config.toml` and `static/` are found relative to it, and the
-config is only read at startup.
-
-## Static site (in progress: replacing the Streamlit app)
-
-`site/` is the same app as plain HTML/JavaScript, with no server: it can be
-hosted anywhere (GitHub Pages is set up), never sleeps, and loads in a blink.
-Each tune has its own link (`?tune=sawdl-y-fuwch`) and the back button works.
-Extras over the Streamlit app: a big search box on the home page, `/` to jump
-to search from anywhere, **practice mode** on tune pages (just the controls
-and a full-width score, full screen where supported), a search bar pinned to
-the top on phones, and a *carthen* (Welsh tapestry blanket) band across the
-top (`site/carthen.svg`), with Welsh slate and cream "paper" behind the music.
-The band returns in the footer and as short strips under section headings;
-each tune type has a blanket colourway (a woven swatch in the type buttons and
-tune list; colours in `TYPE_ORDER` in `build_site.py`). The **About** page
-(`?page=about`) is `site/about.md`.
-
-**Search by notes** (home page): type the first few notes (4 or more), or play
-them on the piano keyboard (G3, the fiddle's open G, to A5; each key sounds its
-note), in any key. Each tune's melody is worked out at build time by `melody()`
-in `build_site.py` (a small ABC reader, checked note for note against abcjs's
-playback for every tune) and stored in `tunes.json` as `melody`: one character
-per note, `chr(MIDI pitch + 160)`, repeated notes collapsed. The page compares
-the *steps* between notes, so the key doesn't matter. Played notes (and typed
-ones with an octave, like `G3`) use exact steps, leaps included; note names
-without an octave use the smaller way round, so no octaves are needed. Matches
-at the start (allowing a pick-up) rank first, then later in the tune, then
-"one note different" (a wrong first/last note, or one wrong note in between).
+Needs Python 3.10 or newer, and nothing else (the build uses the standard
+library only).
 
 ```bash
-python build_site.py                    # builds _site/ (standard library only)
-python -m http.server -d _site 8000     # preview at http://localhost:8000
+python build_site.py                    # builds _site/
+python -m http.server -d _site 8000     # then open http://localhost:8000
 ```
 
-(Opening `_site/index.html` directly won't work: browsers block `file://`
-fetches of `tunes.json`.)
+Opening `_site/index.html` directly won't work: browsers block `file://`
+fetches of `tunes.json`. Rebuild after editing a tune or anything in `site/`.
 
-- `build_site.py` reads every `tunes/*/tune.abc` and writes `_site/tunes.json`:
-  the ABC plus what the page needs (type, key parts, default tempo and beat,
-  Details rows, credit glosses), worked out once in Python. It also copies
-  `site/`, `static/` (abcjs, soundfont, marked, harp icon) and
-  `CONTRIBUTING.md` into `_site/`, which is git-ignored.
-- `site/app.js` does the rest in the browser: search (a port of the Python
-  matching, including `difflib`'s similarity ratio), browsing, routing
-  (`?tune=…`, `?page=add|fix`), sheet music and playback with abcjs, and the
-  guide pages (sections of `CONTRIBUTING.md` rendered with marked).
-- `.github/workflows/pages.yml` builds and publishes on every push to `main`.
-  One-time setup: repo **Settings → Pages → Source: GitHub Actions**. The site
-  is then at `https://marcogorelli.github.io/y-sesiwn/`.
-- Everything uses relative URLs, so it works under the `/y-sesiwn/` sub-path.
+## Deploying
 
-Switching over from Streamlit means: point people to the new URL, then delete
-`app.py`, `requirements.txt` and `.streamlit/`, and update the "run it
-locally" part of `CONTRIBUTING.md` to the two commands above.
+`.github/workflows/pages.yml` runs `build_site.py` and publishes `_site/` to
+GitHub Pages on every push to `main` (repo **Settings → Pages → Source: GitHub
+Actions**), served at the custom domain `ysesiwn.cymru`. Everything uses
+relative URLs, so the site also works under a sub-path such as
+`marcogorelli.github.io/y-sesiwn/`.
 
 ## Features
 
-- **Home page**: a welcome, a **Surprise me** button (random tune; also in the
-  sidebar) and **Browse by type**: buttons for each tune type (Jig, Polca,
-  Walts, Rîl, Pibddawns, …, from `R:` via `tune_type()` in `app.py`) with a
-  clickable list of that type's tunes.
-- **Search** (sidebar): suggestions appear as you type; Enter opens the top
-  match. Matching ignores case and accents (`fran` finds *Frân*), tolerates
-  typos (`llancesau trefalwdyn` finds *Llancesau Trefaldwyn*) and also
-  searches alternative titles (extra `T:` lines). Clicking the empty box lists
-  every tune. Titles are unique (repeats are numbered "(version 2)").
-- **Sheet music** for one tune at a time, shown in full.
-- **Key** drop-down: transposes the notation and the playback, keeping the
-  mode (e.g. Dm → Em), up to half an octave either way.
-- **Playback** with play / loop / restart / tempo controls; notes are
-  highlighted as they play.
-- **Details** box: tune type, key (written out, e.g. *D Mixolydian*), time
-  signature and composer/arranger, plus any other standard ABC fields present;
-  Welsh credit words get an English gloss (*Trefniant* = arranged by). The
-  raw ABC, including its source link, is in an expander.
-- **Back to home** button in the sidebar.
-- **How to add a tune** and **How to submit corrections** pages (linked from
-  the sidebar, at `/how-to-add-a-tune` and `/how-to-submit-corrections`), each
-  showing one `# ...` section of `CONTRIBUTING.md`, and links to this repo in the sidebar and the
-  app's ⋮ menu.
+- **Home page:** a welcome, a big name search box, **Surprise me** (a random
+  tune; also in the sidebar), **Search by notes** and **Browse by type**:
+  buttons for each tune type (Jig, Polca, Walts, Rîl, Pibddawns, …, from `R:`,
+  Welsh or English, via `tune_type()` in `build_site.py`), each with a
+  *carthen* colourway, and a list of every tune (or that type's).
+- **Search by name** (sidebar and home page): suggestions as you type; Enter
+  opens the top one; `/` jumps to search from anywhere. Matching ignores case
+  and accents (`fran` finds *Frân*), tolerates typos (`llancesau trefalwdyn`
+  finds *Llancesau Trefaldwyn*) and searches alternative titles (extra `T:`
+  lines, e.g. *Knights of Snowdon*).
+- **Search by notes:** type the first few notes (4 or more), or play them on
+  the piano keyboard (G3, the fiddle's open G, to A5; each key sounds its
+  note), in any key. Each tune's melody is worked out at build time by
+  `melody()` in `build_site.py` (a small ABC reader, checked note for note
+  against abcjs's playback for every tune) and stored in `tunes.json` as
+  `melody`: one character per note, `chr(MIDI pitch + 160)`, repeated notes
+  collapsed. The page compares the *steps* between notes, so the key doesn't
+  matter. Played notes (and typed ones with an octave, like `G3`) use exact
+  steps, leaps included; note names without an octave use the smaller way
+  round. Matches at the start (allowing a pick-up) rank first, then later in
+  the tune, then "one note different" (a wrong first/last note, or one wrong
+  note in between).
+- **One page per tune, with its versions:** titles ending ` (version N)` are
+  grouped with their tune (`build_site.py` adds `group`, `base`, `version` and
+  a `source` label, e.g. *Alawon Cymru* or the `B:` book); the page has a tab
+  per version (`?tune=rheged&v=2`), and browsing, counts and search show one
+  entry per tune. Old links to a version's folder (`?tune=rheged-version-2`)
+  open the right tab.
+- **Sheet music** on cream "paper", with a **key** drop-down (the same mode on
+  any root, up to half an octave either way, e.g. *E Dorian*), a **tempo**
+  slider (defaults: jigs 112, reels 90, polcas 100, others 100 bpm, in the
+  felt beat: dotted crotchets in 6/8, minims in 4/4), and **playback** with
+  the notes highlighted as they play.
+- **Practice mode:** just the controls and a full-width score, full screen
+  where supported.
+- **Details:** tune type, key (written out), time signature,
+  composer/arranger with an English gloss for Welsh credit words
+  (*Trefniant* = arranged by), and any other standard ABC fields (book, notes,
+  area…). The raw ABC, including its source, is in an expander.
+- **Pages:** *How to add a tune* and *How to submit corrections* (the two
+  `# ` sections of `CONTRIBUTING.md`), and *About* (`site/about.md`).
+- **Look:** a *carthen* (Welsh tapestry blanket) band across the top and
+  bottom (`site/carthen.svg`) and under section headings, Welsh slate, and
+  Welsh red for accents. Works in dark mode and on phones (search pinned to
+  the top).
+- **Every tune has its own link** (`?tune=sawdl-y-fuwch`), and the back button
+  works.
 
 ## Files
 
 | Path | What it is |
 |---|---|
-| `app.py` | The whole app: the tunes page and the two guide pages (`st.navigation`, hidden; the sidebar links between them). |
-| `CONTRIBUTING.md` | How to add a tune, and how to submit corrections. Each `# ...` section is one page in the app, and GitHub shows the whole file, so edit it in one place. Keep the two `# ` headings as they are: the app finds the sections by them. |
-| `requirements.txt` | Python packages: `streamlit`, `streamlit-searchbox`. |
-| `.streamlit/config.toml` | Turns on serving of `static/` at `/app/static/`; turns off Streamlit's usage statistics (which would go online). |
-| `static/abcjs/` | [abcjs](https://www.abcjs.net/) 6.4.4 (`abcjs-basic-min.js`, `abcjs-audio.css`). |
-| `static/soundfont/acoustic_grand_piano-mp3/` | The 88 piano notes (A0–C8) from the FluidR3_GM soundfont, one MP3 each. |
+| `build_site.py` | Builds `_site/` (git-ignored): copies `site/`, `static/`, `CONTRIBUTING.md`, and writes `tunes.json`: every `tune.abc` plus what the page needs about it (type, key, default tempo and beat, Details rows, credit glosses, melody for the note search, version grouping), worked out once in Python. Tune types, colourways and default tempos are set at the top. |
+| `site/index.html`, `site/style.css`, `site/app.js` | The page. `app.js` does searching (a port of the original Python matching, including `difflib`'s similarity ratio), browsing, routing (`?tune=…&v=…`, `?page=add\|fix\|about`), sheet music and playback with abcjs, and renders the Markdown pages with marked. |
+| `site/about.md`, `site/carthen.svg` | The About page; the tapestry band. |
+| `CONTRIBUTING.md` | How to add a tune, and how to submit corrections. Each `# ` section is one page on the site, and GitHub shows the whole file, so edit it in one place. Keep the two `# ` headings as they are: the site finds the sections by them. |
+| `static/abcjs/` | [abcjs](https://www.abcjs.net/) 6.4.4 (`abcjs-basic-min.js`, `abcjs-audio.css`): draws and plays the music. |
+| `static/soundfont/acoustic_grand_piano-mp3/` | The 88 piano notes (A0–C8) from the FluidR3_GM soundfont, one MP3 each; a tune loads only the notes it uses. |
+| `static/marked/`, `static/harp.svg` | [marked](https://marked.js.org/) 15 (Markdown pages); the icon. |
 | `download_assets.py` | Re-downloads everything in `static/` (skips files that exist). Only needed if `static/` is lost or you want to change version. |
-| `tunes/<slug>/tune.abc` | One tune per folder; the app reads only these. |
-| `.claude/skills/alawon-abc/` | The Claude Code skill that downloaded the tunes and made the ABC files (see below). |
+| `tunes/<folder>/tune.abc` | One tune (or version) per folder; the site reads only these. |
+| `.github/workflows/pages.yml` | Builds and publishes the site. |
+| `.claude/skills/alawon-abc/` | The Claude Code skill that downloaded the first tunes and made their ABC files (see below). |
 
-Not in git (see `.gitignore`): each tune's `score.gif`, `tune.mid` and
-`info.json`, and `.venv/`.
-
-## How the app works
-
-- **Loading tunes:** every `tunes/*/tune.abc` is read once (cached with
-  `st.cache_data`). Header lines up to `K:` are parsed into fields; the first
-  `T:` is the title and further `T:` lines are alternative titles.
-- **Search:** `streamlit-searchbox` calls `suggestions()` on every keystroke.
-  A title containing the query scores 1.0; otherwise each query word is
-  compared with the title's words using `difflib`, and results scoring below
-  0.7 are dropped. The search box lives in an `st.fragment`, so typing reruns
-  only the sidebar; choosing a tune stores its folder name in
-  `st.session_state["selected"]` and reruns the whole page.
-- **Rendering and playback:** `render_tune()` puts an HTML page with abcjs
-  into `st.iframe(..., height="content")`. Streamlit re-measures that frame
-  whenever its content changes, so the whole score shows with no scrollbar.
-  abcjs draws the score (`renderAbc`) and `SynthController` plays it.
-- **Key changes:** done in the browser with
-  `ABCJS.strTranspose(abc, parsedTunes, semitones)`, which rewrites the ABC
-  text (notes and `K:`) before drawing, so the audio follows too.
-- **Faster playback start:** when a tune opens, a second `CreateSynth().init()`
-  fetches and decodes its notes in the background (into abcjs's shared note
-  cache), so pressing play doesn't wait for them.
-- **Hidden fields:** abcjs prints `S:` (source) and `Z:` (transcription)
-  under the score. The app removes them before drawing, since Source has its
-  own box and `Z:` only says the file was made with alawon-abc.
+Not in git (see `.gitignore`): `_site/`, each tune's `score.gif`, `tune.mid`
+and `info.json`, and `.venv/`.
 
 ### Gotchas (things that went wrong while building it)
 
@@ -157,20 +114,17 @@ Not in git (see `.gitignore`): each tune's `score.gif`, `tune.mid` and
   abcjs-audio.css".
 - abcjs boosts the volume (×3) only for its default online soundfont. With a
   local `soundFontUrl` the boost must be set explicitly
-  (`soundFontVolumeMultiplier: 3.0` in `AUDIO_PARAMS`), or playback is quiet.
-- The soundfont and abcjs URLs must be relative (`app/static/...`, no leading
-  slash). The score iframe resolves them against the app page's URL, which on
-  Streamlit Community Cloud is `https://<app>.streamlit.app/~/+/`; an absolute
-  `/app/static/...` hits Cloud's login redirect instead, and the score silently
-  doesn't draw.
-- "Back to home" must also delete the search box's state
-  (`st.session_state["tune_search"]`); otherwise choosing the same tune again
-  afterwards does nothing, because the search box only reports a *changed*
-  choice.
-- `st.components.v1.html` is deprecated in this Streamlit version; use
-  `st.iframe`.
-- Browsers keep audio paused until the user clicks, so notes can be loaded
-  early but not played. abcjs resumes the audio when play is pressed.
+  (`soundFontVolumeMultiplier: 3.0` in `AUDIO_PARAMS`), or playback is quiet;
+  `ABCJS.synth.playEvent` ignores it, so the keyboard builds its own
+  `SynthSequence` instead.
+- Keep URLs relative (`static/...`, no leading slash), so the site works
+  under any path.
+- Browsers keep audio paused until the user clicks, so notes are loaded as a
+  tune opens (a second `CreateSynth().init()` fills abcjs's shared note cache)
+  but only played once play is pressed.
+- abcjs prints some header fields on the score; `S:`, `Z:`, `B:`, `N:` and
+  `A:` are left off it (they're in the Details box), and so is a title's
+  ` (version N)`, since the tabs say which version it is.
 
 ## ABC sources
 
@@ -258,10 +212,9 @@ Useful to know:
   with only obvious typos fixed. 416 tunes have one; 17 scores print none.
   abcjs shows `C:` at the top right of the sheet music. Other header fields
   are `T:`, `R:` (type, mostly in Welsh: *jig*, *polca*, *walts*, *rîl*,
-  *pibddawns*, …), `M:`, `L:`, `Q:`, `K:`, `S:` (source page) and `Z:`. The app
+  *pibddawns*, …), `M:`, `L:`, `Q:`, `K:`, `S:` (source page) and `Z:`. The site
   shows other standard fields (`N:`, `O:`, …) automatically if you add them.
 - `%%alawon ...` lines record the conversion options for `abctool.py check`.
   Keep them; abcjs ignores them.
-- To fix a tune, edit its `tune.abc`, then restart the app or use the app
-  menu (⋮) → *Clear cache*: the tune list is cached, so edits don't show on
-  their own.
+- To fix a tune, edit its `tune.abc` and rebuild (`python build_site.py`);
+  once pushed to `main`, the live site updates by itself.

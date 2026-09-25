@@ -502,13 +502,26 @@ document.addEventListener("fullscreenchange", () => { if (!document.fullscreenEl
 
 // ---- Markdown pages: the guides (sections of CONTRIBUTING.md) and About -------------
 
+function markdownSections(text) {
+  // Split at "# " headings, but not at "# " lines inside ``` code blocks
+  // (e.g. a shell comment in an example).
+  const sections = [];
+  let inCode = false;
+  for (const line of text.split("\n")) {
+    if (line.startsWith("```")) inCode = !inCode;
+    if (!inCode && line.startsWith("# ")) sections.push([]);
+    (sections.at(-1) ?? sections[sections.push([]) - 1]).push(line);
+  }
+  return sections.map((lines) => lines.join("\n"));
+}
+
 async function renderGuide(main, key) {
   const { file, heading, className } = PAGES[key];
   document.title = `${heading} · Y Sesiwn`;
   main.replaceChildren(el("p", { class: "loading" }, "Loading…"));
   if (!state.docs.has(file)) state.docs.set(file, await (await fetch(file)).text());
   const text = state.docs.get(file);
-  const section = text.split(/^(?=# )/m).find((s) => s.startsWith(`# ${heading}\n`)) ?? "";
+  const section = markdownSections(text).find((s) => s.startsWith(`# ${heading}\n`)) ?? "";
   const html = marked.parse(section.replaceAll("(#how-to-add-a-tune)", "(?page=add)"));
   const guide = el("article", { class: `guide ${className ?? ""}` });
   guide.innerHTML = html;  // our own markdown, from this repo

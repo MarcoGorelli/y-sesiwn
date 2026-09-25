@@ -9,6 +9,11 @@ const AUDIO_PARAMS = {
   // abcjs only applies this boost automatically for its default online soundfont.
   soundFontVolumeMultiplier: 3.0,
 };
+// On iPhone/iPad, web audio is muted by the silent switch unless the page says
+// its sound is "playback" (like a music app). Ours only plays when someone presses
+// play or a piano key, so ask for playback. (Safari 16.4+; ignored elsewhere.)
+if ("audioSession" in navigator) navigator.audioSession.type = "playback";
+
 // Markdown pages: ?page=<key> shows the "# heading" section of file (or all of it).
 const PAGES = {
   add: { file: "CONTRIBUTING.md", heading: "How to add a tune" },

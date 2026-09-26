@@ -4,13 +4,14 @@ R:walts
 S:http://alawoncymru.com/alawon/Tunes/SetAlFch/SetAlFch.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:3/4
 L:1/8
 Q:1/4=120
 K:G
-|: D2 | G2 GA Bc | d2 dc Bd | c2 BA GB | A2 AG FD |
-G2 GA Bc | d2 dc Bd | cB AG A2 | G4 :: Bc |
-d2 BA G2 | c2 AG F2 | G>A BG FG | AG FE D2 |
-G2 AG FE | D2 E2 F2 | G2 GA Bc | d2 dc Bd |
-cB AG A2 | G4 :|
+|: D2 | "G"G2 GA Bc | "Em"d2 dc Bd | "C"c2 BA GB | "D"A2 AG FD |
+"G"G2 GA Bc | "Em"d2 dc Bd | "C"cB AG "D"A2 | "G"G4 :: Bc |
+"G"d2 BA G2 | "D"c2 AG F2 | "Em"G>A BG FG | "D"AG FE D2 | "C"G2 AG FE |
+"D"D2 E2 F2 | "G"G2 GA Bc | "Em"d2 dc Bd | "C"cB AG "D"A2 | "G"G4 :|

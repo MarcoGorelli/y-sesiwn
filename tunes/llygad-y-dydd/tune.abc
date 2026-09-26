@@ -4,14 +4,16 @@ R:dawns
 S:http://alawoncymru.com/alawon/Tunes/SawdlFuw/SawdlFuw.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams o alaw Ieuan Jones
 M:4/4
 L:1/8
 Q:1/4=120
 K:D
-|: A2 | de fe d2 c2 | d6 cB | A2 F2 FG AB | A3 B A2 G2 |
-F2 A2 BA GF | G3 F E2 AG | FE DE F2 E2 | D6 :: (3CDE |
-F2 F2 F2 ED | C2 c2 c2 c2 | c3 d cB A^G | F2 c2 A2 F2 |
-F2 F^G A2 B2 | c3 d c2 B2 | A2 ^GF G3 =F | F6 E2 |
-D2 F2 G2 A2 | B3 A G2 F2 | G3 F E2 D2 | E2 C2 C4 |
-A2 AB c2 A2 | d2 A2 F2 D2 | E2 ED C3 D | D6 :|
+|: A2 | "D"de fe "A"d2 c2 | "D"d6 "A"cB | "D"A2 F2 "G"FG AB | "A"A3 B A2 G2 |
+"D"F2 A2 "G"BA GF | "A"G3 F E2 AG | "D"FE DE "A"F2 E2 | "D"D6 :: (3CDE |
+"F#m"F2 F2 F2 ED | "C#"C2 c2 c2 c2 | "C#"c3 d cB A^G | "F#m"F2 c2 A2 F2 |
+"F#m"F2 F^G A2 B2 | "C#"c3 d c2 B2 | "F#m"A2 ^GF "C#"G3 =F | "F#m"F6 "A"E2 |
+"D"D2 F2 G2 A2 | "G"B3 A G2 F2 | "Em"G3 F E2 D2 | "A"E2 C2 C4 |
+"A"A2 AB c2 A2 | "D"d2 A2 F2 D2 | "Em"E2 ED "A"C3 D | "D"D6 :|

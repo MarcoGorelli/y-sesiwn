@@ -3,12 +3,14 @@ T:Bryniau'r Iwerddon
 S:http://alawoncymru.com/alawon/Tunes/JigsNic/JigsNic.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams o'r alaw yn llyfr Nicholas Bennett
 M:6/8
 L:1/8
 Q:3/8=60
 K:Dm
-A | d2 d d2 A | A F2 z2 A | G2 F E2 F | D3- D2 D |
-D2 E F2 G | A c2 z2 c | B2 G GAB | A3- A2 A |
-F2 A c2 A | d d2 z2 d | c2 B A2 B | c3- c2 A |
-d2 d d2 A | A F2 z2 A | G2 F E2 F | D3- D2 |]
+A | "Dm"d2 d d2 A | "Dm"A F2 z2 A | "Gm"G2 F "A"E2 F | "Dm"D3- D2 D |
+"Dm"D2 E F2 G | "F"A c2 z2 c | "Gm"B2 G GAB | "A"A3- A2 || A |
+"Dm"F2 A c2 A | "Dm"d d2 z2 d | "C"c2 B A2 B | "F"c3- c2 A |
+"Dm"d2 d d2 A | "Dm"A F2 z2 A | "Gm"G2 F "A"E2 F | "Dm"D3- D2 |]

@@ -4,14 +4,15 @@ R:walts
 S:http://alawoncymru.com/alawon/Tunes/SetYmadael/SetYmadael.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
 M:3/4
 L:1/8
 Q:1/4=90
 K:D
-|: (3ABc | d2 d2 fe | d2 A2 Bc | d2 c2 B2 | A4 GA |
-B2 BA GA | B2 A2 G2 | FD F2 E2 | D4 :| Bc |
-d2 c2 B2 | d2 c2 B2 | f2 ed cB | B6 |
-de fg af | de fe fc | d2 c2 A2 | A6 |
-de fg fe | de fg fe | de fg fe | d2 A4 |
-Bc dc Bc | A3 G F2 | G2 F2 E2 | D4 |]
+|: (3ABc | "D"d2 d2 fe | "D"d2 A2 Bc | "G"d2 c2 B2 | "A"A4 GA |
+"G"B2 BA GA | "Em"B2 A2 G2 | "A"FD F2 E2 | "D"D4 :| Bc | "Bm"d2 c2 B2 |
+"Bm"d2 c2 B2 | "F#"f2 ed cB | "Bm"B6 | "D"de fg af | "D"de fe fc |
+"A"d2 c2 A2 | "A"A6 | "D"de fg fe | "D"de fg fe | "D"de fg fe |
+"D"d2 A4 | "G"Bc dc Bc | "D"A3 G F2 | "A"G2 F2 E2 | "D"D4 |]

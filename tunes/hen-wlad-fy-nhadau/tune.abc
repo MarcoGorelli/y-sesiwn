@@ -4,16 +4,16 @@ R:walts
 S:http://alawoncymru.com/alawon/Tunes/HenWfyNh/HenWfyNh.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
 M:3/4
 L:1/8
 Q:1/4=120
 K:C
-C2 | E2 D2 C2 | G2 F2 E2 | c2 c2 AB | c4 A2 |
-G2 E2 C2 | C2 B,2 C2 | E2 D2 D2 | D4 EF |
-G2 G2 EF | G2 G2 AB | c2 c2 AB | c4 A2 |
-G2 E2 C2 | D E3 D2 | C6- | C6 |
-G6- | G6 | c6- | c6 |
-G2 E2 C2 | C2 B,2 C2 | D6- | D4 G2 |
-G4 EF | G4 c2 | c4 AB | c4 A2 |
-G2 E2 C2 | D E3 D2 | C6- | C6 |]
+C2 | "C"E2 D2 C2 | G2 F2 E2 | "F"c2 c2 AB | c4 A2 | "C"G2 E2 C2 |
+"Am"C2 B,2 C2 | "Dm"E2 D2 D2 | "G"D4 EF | "C"G2 G2 EF | G2 G2 AB |
+"F"c2 c2 AB | c4 A2 | "C"G2 E2 C2 | "G"D E3 D2 | "C"C6- | C6 |
+"C"G6- | G6 | c6- | c6 | G2 E2 C2 | "D"C2 B,2 C2 |
+"G"D6- | D4 G2 | "C"G4 EF | G4 c2 | "F"c4 AB |
+"F"c4 A2 | "C"G2 E2 C2 | "G"D E3 D2 | "C"C6- | C6 |]

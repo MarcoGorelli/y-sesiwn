@@ -3,12 +3,14 @@ T:Y Polacca Cymreig
 S:http://alawoncymru.com/alawon/Tunes/PuralFSt/PuralFst.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams a Steve Jeans
 M:3/4
 L:1/8
 Q:1/4=120
 K:G
-|: DG GG FA | GB dB ce | dB BG GE | GE AG FD |
-DG GG FA | GB dB ce | dB BG A/B/c/e/ | dD EF G2 :|
-|: Gg fg dB | AB cd cB | Gg fg fe | db a^c d2 |
-dd/=f/ ed cB | A/B/c/B/ AG FD | dB BG A/B/c/e/ | dD EF G2 :|
+|: "G"DG GG "D"FA | "G"GB "D"dB ce | "Em"dB BG GE | "Am"GE AG "D"FD |
+"G"DG GG "D"FA | "G"GB dB "C"ce | "Em"dB BG "C"A/B/c/e/ | "D"dD EF "G"G2 :|
+|: "G"Gg fg dB | "D"AB cd cB | "G"Gg fg fe | "A"db a^c "D"d2 |
+"C"dd/=f/ ed cB | "D"A/B/c/B/ AG FD | "G"dB BG "C"A/B/c/e/ | "D"dD EF "G"G2 :|

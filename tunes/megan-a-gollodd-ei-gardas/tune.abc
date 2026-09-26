@@ -4,13 +4,14 @@ R:walts
 S:http://alawoncymru.com/alawon/Tunes/FerBPSet/FerchBPS.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:3/4
 L:1/8
 Q:1/4=120
 K:G
-|: D2 | G2 G2 G2 | F3 E D2 | G2 GB Ac | B3 A G2 |
-c2 cB Ac | B2 BA GB | AG FE FG | A4 :: d2 |
-g2 gb ag | f2 fa gf | e2 eg fe | fe d2 :| f2 |
-B2 g2 d2 | B2 g2 d2 | B2 g2 d2 | ce dc B2 |
-AB cd ec | d2 c2 B2 | A>B G2 F2 | G4 |]
+|: D2 | "G"G2 G2 G2 | "D"F3 E D2 | "G"G2 GB "D"Ac | "G"B3 A G2 | "C"c2 cB Ac |
+"G"B2 BA GB | "Am"AG FE FG | "D"A4 :: d2 | "G"g2 gb ag | "D"f2 fa gf |
+"A"e2 eg fe | "D"fe d2 :| f2 | "G"B2 g2 "D"d2 | "G"B2 g2 "D"d2 | "G"B2 g2 "D"d2 |
+"C"ce dc B2 | "Am"AB cd ec | "G"d2 c2 B2 | "D"A>B G2 F2 | "G"G4 |]

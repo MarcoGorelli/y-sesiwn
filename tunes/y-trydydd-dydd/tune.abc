@@ -4,12 +4,13 @@ R:walts
 S:http://alawoncymru.com/alawon/Tunes/AfonGwyS/AfonGwy.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:3/4
 L:1/8
 Q:1/4=80
 K:C
-|: c2 G2 A2 | G3 F E2 | D2 c2 B2 |1 cB cd c2 :|
-[2 c6 |: ef ed cB | A3 B c2 | de fe dc |
-B2 AB G2 | c2 G2 A2 | G3 F E2 | D2 c2 B2 |
-c6 :|
+"C"c2 G2 "F"A2 | "C"G3 F E2 | "G"D2 c2 B2 | "C"cB cd c2 | "C"c2 G2 "F"A2 |
+"C"G3 F E2 | "G"D2 c2 B2 | "C"c6 |: "C"ef ed cB | "F"A3 B c2 |
+"D"de fe dc | "G"B2 AB G2 | "C"c2 G2 "F"A2 | "C"G3 F E2 | "G"D2 c2 B2 | "C"c6 :|

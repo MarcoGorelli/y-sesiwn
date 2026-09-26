@@ -4,13 +4,15 @@ R:emyn
 S:http://alawoncymru.com/alawon/Tunes/SetHyder/SetHyder.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Richard Ellis
 M:4/4
 L:1/8
 Q:1/4=120
 K:Am
-|: A4 ^G4 | A4 E4 | c2 B2 A2 ^G2 | A4 B4 |
-c2 B2 c2 d2 | e4 A2 B2 | c2 B2 A2 ^G2 | A8 :|
-c4 c2 e2 | d2 c2 B4 | A2 c2 B2 A2 | A2 ^G2 E4 |
-e4 e2 d2 | c4 c2 B2 | A2 B2 c2 d2 | e4 A2 B2 |
-c2 B2 A2 ^G2 | A8 |]
+|: "Am"A4 "E"^G4 | "Am"A4 "E"E4 | "Am"c2 B2 "E"A2 ^G2 | "Am"A4 "E"B4 |
+"Am"c2 B2 "G"c2 d2 | "C"e4 "Dm"A2 B2 | "Am"c2 B2 "E"A2 ^G2 | "Am"A8 :|
+"C"c4 c2 e2 | "G"d2 c2 B4 | "Am"A2 c2 B2 A2 | "E"A2 ^G2 E4 |
+"Am"e4 e2 d2 | "E"c4 c2 B2 | "Am"A2 B2 "G"c2 d2 | "Am"e4 "Dm"A2 B2 |
+"Am"c2 B2 "E"A2 ^G2 | "Am"A8 |]

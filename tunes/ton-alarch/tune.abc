@@ -5,13 +5,15 @@ R:walts
 S:http://alawoncymru.com/alawon/Tunes/RhubMSet/LlantwSt.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Guto Dafis
 M:3/4
 L:1/8
 Q:1/4=120
 K:D
-|: A2 | d2 d>e (3def | A2 A>B (3ABc | (3def f>g f>g | e2 c>d e>c |
-d2 d>e (3def | A2 A>B (3ABc | (3def f>g A>c | d4 :: f>g |
-a2 f>g a>f | g2 e>f g>e | f2 d>e f>g | a2 A>B c>A |
-a>g f>g (3agf | g>f e>f (3gfe | f>e d>e f>g | a2 A>B c>A |
-f2 d>e (3def | A2 A>B (3ABc | (3def f>g A>c | d4 :|
+|: A2 | "D"d2 d>e (3def | "A"A2 A>B (3ABc | "D"(3def f>g f>g | "A"e2 c>d e>c |
+"D"d2 d>e (3def | "A"A2 A>B (3ABc | "D"(3def "A"f>g A>c | "D"d4 :: f>g |
+"D"a2 f>g a>f | "A"g2 e>f g>e | "D"f2 d>e f>g | "A"a2 A>B c>A |
+"D"a>g f>g (3agf | "A"g>f e>f (3gfe | "D"f>e d>e f>g | "A"a2 A>B c>A |
+"D"f2 d>e (3def | "A"A2 A>B (3ABc | "D"(3def "A"f>g A>c | "D"d4 :|

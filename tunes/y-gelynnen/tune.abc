@@ -4,12 +4,13 @@ R:2-gam
 S:http://alawoncymru.com/alawon/Tunes/SetDeioBach/SetDeioBach.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:2/4
 L:1/8
 Q:1/4=50
 K:G
-dG3/2 d/B | Gc cc | B/A/G dB | cd d2- |
-dG3/2 d/B | Gc c/d/e | Bc Ad | FG G2 |
-dg gg | ec cc | BA Aa | gf dd/d/ |
-e/f/g gg | Gc c/d/e | Bc Ad | DG G2 |]
+d | "G"G3/2d/ BG | "C"cc cB/A/ | "G"Gd Bc | "D"d d3 | "G"G3/2d/ BG |
+"C"c c/d/ eB | "D"cA dF | "G"G G2 || d | "G"gg ge | "C"cc cB |
+"A"AA ag | "D"fd d/d/e/f/ | "G"gg gG | "C"c c/d/ eB | "D"cA dD | "G"G G2 |]

@@ -5,16 +5,14 @@ R:alaw
 S:http://alawoncymru.com/alawon/Tunes/SetGwenan/SetGwenan.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Carwyn Tywyn o alaw draddodiadol
 M:2/4
 L:1/8
 Q:1/4=100
 K:C
-|: C2 E2 | D2 B,2 | E2 G2 | A2 G2 |
-A2 B2 | c2 G2 | F2 E2 | D4 |
-C2 E2 | D2 B,2 | E2 G2 | A2 G2 |
-A2 B2 | cA GF | E2 D2 | C4 :|
-G3 F | EF G2 | A3 G | AB c2 |
-G3 E | C2 E2 | DC B,A, | G,4 |
-C2 E2 | D2 B,2 | E2 G2 | A2 G2 |
-A2 B2 | cA GF | E2 D2 | C4 |]
+|: "C"C2 E2 | "G"D2 B,2 | "C"E2 G2 | "F"A2 G2 | "F"A2 "G"B2 | "C"c2 G2 | "F"F2 E2 | "G"D4 |
+"C"C2 E2 | "G"D2 B,2 | "C"E2 G2 | "F"A2 G2 | "F"A2 "G"B2 | "C"cA "F"GF | "C"E2 "G"D2 | "C"C4 :|
+"C"G3 F | "C"EF G2 | "F"A3 G | "F"AB c2 | "C"G3 E | "Am"C2 E2 | "Dm"DC B,A, | "G"G,4 |
+"C"C2 E2 | "G"D2 B,2 | "C"E2 G2 | "F"A2 G2 | "F"A2 "G"B2 | "C"cA "F"GF | "C"E2 "G"D2 | "C"C4 |]

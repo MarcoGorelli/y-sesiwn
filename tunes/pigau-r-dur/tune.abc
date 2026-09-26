@@ -4,14 +4,16 @@ R:dawns llys
 S:http://alawoncymru.com/alawon/Tunes/BwthFyNn/BwthFyNn.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:4/4
 L:1/8
 Q:1/4=120
 K:D
-|: A3 B A2 A2 | AG AB A2 GA | B2 A2 G2 F2 | E4 E4 |
-F3 E F2 G2 | AG AB A2 d2 | G2 F2 E3 D | D4 D4 :|
-E3 F E2 E2 | F3 G F2 F2 | B2 d2 c2 B2 | B2 ^A2 A2 B2 |
-c2 de B2 cd | c2 de B2 cd | e2 d2 c2 B2 | A4 B2 c2 |
-d3 e d2 c2 | B3 c B2 A2 | B2 A2 G2 F2 | E4 E4 |
-FE FG F2 G2 | AG AB A2 d2 | G2 F2 E3 D | D4 D4 |]
+|: "D"A3 B A2 A2 | "D"AG AB A2 GA | "G"B2 A2 G2 F2 | "A"E4 E4 |
+"D"F3 E F2 G2 | "Bm"AG AB A2 d2 | "G"G2 F2 "A"E3 D | "D"D4 D4 :|
+"A"E3 F E2 E2 | "D"F3 G F2 F2 | "Bm"B2 d2 c2 B2 | "F#"B2 ^A2 A2 B2 |
+"F#"c2 de "Bm"B2 cd | "F#"c2 de "Bm"B2 cd | "E"e2 d2 c2 B2 | "A"A4 B2 c2 |
+"D"d3 e d2 c2 | "Bm"B3 c B2 A2 | "G"B2 A2 G2 F2 | "A"E4 E4 |
+"D"FE FG F2 G2 | "Bm"AG AB A2 d2 | "G"G2 F2 "A"E3 D | "D"D4 D4 |]

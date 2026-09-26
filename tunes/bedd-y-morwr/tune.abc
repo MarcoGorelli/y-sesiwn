@@ -3,12 +3,14 @@ T:Bedd y Morwr
 S:http://alawoncymru.com/alawon/Tunes/JigOwSet/JigOwnSt.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=53
 K:G
-|: D | G2 G BdB | e2 f gfe | d2 d BGB | A2 G ABA |
-G2 G BdB | e2 f gfe | d2 d BGA | G3 G2 :: d |
-g2 g aga | b2 g d2 d | g2 g fef | e2 d efg |
-d2 d BGB | e2 f gfe | d2 d BGA | G3 G2 :|
+|: D | "G"G2 G BdB | "C"e2 f gfe | "G"d2 d BGB | "D"A2 G ABA |
+"G"G2 G BdB | "C"e2 f gfe | "G"d2 d "D"BGA | "G"G3 G2 :: d |
+"G"g2 g "D"aga | "Em"b2 g d2 d | "G"g2 g "D"fef | "C"e2 d efg |
+"G"d2 d BGB | "C"e2 f gfe | "G"d2 d "D"BGA | "G"G3 G2 :|

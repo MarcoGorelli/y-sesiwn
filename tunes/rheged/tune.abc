@@ -4,14 +4,15 @@ R:walts
 S:http://alawoncymru.com/alawon/Tunes/WaltsysMelys/WaltsysMelys.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:3/4
 L:1/8
 Q:1/4=80
 K:D
-|: A2 | d4 A2 | B2 c2 d2 | ef gf ed | c3 B A2 |
-d4 A2 | B2 c2 df | e2 d2 c2 | d4 :| e2 |
-f3 g a2 | b2 a2 f2 | g3 f eg | f2 ef d2 |
-f3 g a2 | b2 a2 g2 | f2 a2 ^g2 | a6 |
-f3 g a2 | b2 a2 g2 | g3 f ed | c3 B A2 |
-d4 A2 | B2 c2 df | e2 d2 c2 | d4 |]
+|: A2 | "D"d4 A2 | "G"B2 c2 d2 | "Bm"ef gf ed | "A"c3 B A2 |
+"D"d4 A2 | "G"B2 c2 df | "A"e2 d2 c2 | "D"d4 :| e2 | "D"f3 g a2 |
+"Bm"b2 a2 f2 | "A"g3 f eg | "D"f2 ef d2 | "D"f3 g a2 | "G"b2 a2 g2 |
+"D"f2 a2 "E"^g2 | "A"a6 | "D"f3 g a2 | "G"b2 a2 g2 | "Em"g3 f ed |
+"A"c3 B A2 | "D"d4 A2 | "G"B2 c2 df | "A"e2 d2 c2 | "D"d4 |]

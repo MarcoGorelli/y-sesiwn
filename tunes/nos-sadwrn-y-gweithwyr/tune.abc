@@ -4,13 +4,14 @@ R:walts
 S:http://alawoncymru.com/alawon/Tunes/SetWaltsNic/WaltsNic.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:3/4
 L:1/8
 Q:1/4=90
 K:G
-D2 |: G2 G2 G2 | G2 G2 B2 | D2 D2 D2 | D4 D2 |
-E2 D2 E2 | F2 E2 F2 | A6 |1 G4 D2 :|
-[2 G4 GA |: B2 B2 B2 | B2 B2 B2 | B2 c2 B2 |
-d4 B2 | B2 B2 A2 | G2 F2 G2 |1 A2 G2 A2 |
-B4 A2 :|2 A2 G2 F2 | G4 |]
+D2 | "G"G2 G2 G2 | "G"G2 G2 B2 | "G"D2 D2 D2 | "G"D4 D2 | "C"E2 D2 E2 | "D"F2 E2 F2 |
+"D"A6 | "G"G4 :| GA | "G"B2 B2 B2 | "Bm"B2 B2 B2 | "Am"B2 c2 B2 | "D"d4 B2 |
+"G"B2 B2 A2 | "Em"G2 F2 G2 | "D"A2 G2 A2 | "G"B4 A2 | "G"B2 B2 B2 | "Bm"B2 B2 B2 |
+"Am"B2 c2 B2 | "D"d4 B2 | "G"B2 B2 A2 | "Em"G2 F2 G2 | "D"A2 G2 F2 | "G"G4 |]

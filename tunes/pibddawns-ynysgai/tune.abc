@@ -4,12 +4,14 @@ R:pibddawns
 S:http://alawoncymru.com/alawon/Tunes/SetYrAradr/SetyrAradr.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:4/4
 L:1/8
 Q:1/4=100
 K:G
-|: Bc | d2 G2 cB AG | d2 G2 cB AG | c2 A2 AB cd | e2 A2 A2 Bc |
-d2 B2 g2 fe | de dc B2 AB | cB AG FG Ac | B2 G2 G2 :: ga |
-ba gb ag fa | gf eg d2 cB | c2 A2 AB cd | e2 A2 A2 ga |
-ba gb ag fa | gf eg d2 cB | cB AG FG Ac | B2 G2 G2 :|
+|: Bc | "G"d2 G2 cB AG | "G"d2 G2 cB AG | "Am"c2 A2 AB cd | "D"e2 A2 A2 Bc |
+"G"d2 B2 g2 fe | "Em"de dc B2 AB | "C"cB AG "D"FG Ac | "G"B2 G2 G2 :: ga |
+"G"ba gb "D"ag fa | "C"gf eg "G"d2 cB | "Am"c2 A2 AB cd | "D"e2 A2 A2 ga |
+"G"ba gb "D"ag fa | "C"gf eg "G"d2 cB | "C"cB AG "D"FG Ac | "G"B2 G2 G2 :|

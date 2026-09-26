@@ -4,14 +4,15 @@ R:alaw
 S:http://alawoncymru.com/alawon/Tunes/CaincMed/CaincMSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams o drefniant Huw Roberts
 M:3/4
 L:1/8
 Q:1/4=100
 K:G
-|: BA | G2 B2 d2 | e2 d2 B2 | g2 f2 e2 | d4 BA |
-G2 B2 d2 | e2 d2 B2 | A2 G2 F2 | G4 :| d2 |
-g3 f g2 | G2 A2 B2 | c2 ce dB | c4 e2 |
-a3 ^g a2 | A2 B2 ^c2 | d2 df e^c | d4 ef |
-g3 f g2 | G2 A2 B2 | c2 d2 e2 | d4 BA |
-G2 B2 d2 | e2 d2 B2 | A2 G2 F2 | G4 |]
+|: BA | "G"G2 B2 d2 | "C"e2 "G"d2 B2 | "C"g2 f2 e2 | "D"d4 BA |
+"G"G2 B2 d2 | "C"e2 "G"d2 B2 | "Am"A2 G2 "D"F2 | "G"G4 :| d2 |
+"G"g3 f g2 | "G"G2 A2 B2 | "C"c2 ce "G"dB | "C"c4 e2 | "A"a3 ^g a2 | "A"A2 B2 ^c2 |
+"D"d2 df "A"e^c | "D"d4 ef | "G"g3 f g2 | "G"G2 A2 B2 | "C"c2 d2 e2 | "D"d4 BA |
+"Em"G2 B2 d2 | "C"e2 "G"d2 B2 | "Am"A2 G2 "D"F2 | "G"G4 |]

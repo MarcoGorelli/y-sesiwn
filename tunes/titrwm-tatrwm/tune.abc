@@ -3,12 +3,14 @@ T:Titrwm Tatrwm
 R:alaw
 S:http://alawoncymru.com/alawon/Tunes/JigsYWerin/JigsWerin.htm
 Z:MIDI transcribed with alawon-abc
-%%alawon track=1
+%%alawon track=1 transpose=-5
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=67
-K:Am
-c2 c B B2 | A2 B A2 A | d d2 c2 c | c B4 B |
-c2 c B2 B/B/ | A2 B c2 d | e e2 B2 c | B A2 z3
-|: c2 A e2 e | e2 c B2 B | A2 c B2 c | A A3 z2 :|
+K:Em
+"Em"G2 G "B5"F F2 | "Em"E2 F E2 E | "Am"A A2 "C"G2 G | "B5"G F4 F |
+"Em"G2 G "B5"F2 F/F/ | "C"E2 F G2 A | "B5"B B2 F2 G | "Em"F E2 z3
+|: "Em"G2 E B2 B | "G"B2 G F2 F | "Em"E2 G "B5"F2 G | "Em"E E3 z2 :|

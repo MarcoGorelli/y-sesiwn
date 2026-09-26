@@ -4,10 +4,12 @@ R:cân
 S:http://alawoncymru.com/alawon/Tunes/CodiAngr/CodiAngo.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams o gân J. Glyn Davies
 M:4/4
 L:1/8
 Q:1/4=120
 K:D
-DE | F2 F2 F2 ED | F2 E2 D3 D | E3 E D2 E2 | F2 A4 FA |
-B2 B2 A3 G | F2 E2 D3 A | F3 F F2 D2 | E2 D4 |]
+DE | "D"F2 F2 F2 ED | "A"F2 E2 "Bm"D3 D | "A"E3 E D2 E2 | "D"F2 A4 FA |
+"G"B2 B2 "F#m"A3 G | "D"F2 E2 "Bm"D3 A | "D"F3 F F2 D2 | "A"E2 "D"D4 |]

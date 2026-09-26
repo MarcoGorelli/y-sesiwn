@@ -3,12 +3,14 @@ T:Calennig
 S:http://alawoncymru.com/alawon/Tunes/SetCalennig/SetCalennig.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:3/4
 L:1/8
 Q:1/4=90
 K:Am
-|: E2 | A2 A2 BA | A2 ^G2 AB | c2 c2 dc | c2 B2 cB |
-A2 A2 BA | ^G2 E2 ^FG | A2 G2 ^F2 | E4 :: AB |
-c2 cd ef | e2 d2 c2 | B2 eB cA | ^G4 ed |
-c2 A2 AB/c/ | B2 ^G2 ed | c2 A2 ^G2 | A4 :|
+|: E2 | "Am"A2 A2 BA | "E"A2 ^G2 AB | "Am"c2 c2 dc | "E"c2 B2 cB |
+"Am"A2 A2 BA | "E"^G2 E2 ^FG | "D"A2 G2 ^F2 | "E"E4 :: "G"AB |
+"C"c2 cd ef | "C"e2 d2 c2 | "E"B2 eB "Am"cA | "E"^G4 ed |
+"Am"c2 A2 AB/c/ | "E"B2 ^G2 ed | "Am"c2 A2 "E"^G2 | "Am"A4 :|

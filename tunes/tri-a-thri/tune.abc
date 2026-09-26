@@ -4,16 +4,15 @@ R:polca
 S:http://alawoncymru.com/alawon/Tunes/SetoDri/SetODri.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Alaw draddodiadol
 M:2/4
 L:1/8
 Q:1/4=80
 K:G
-|: B3 A | G2 D2 | EF GE | D2 B,2 |
-EF GE | D2 AB | c2 B2 | B2 A2 |
-B3 A | G2 D2 | EF GE | D2 B,2 |
-EF GE | D2 Gc | B2 A2 | G4 :|
-|: d2 ef | gf ed | e2 e2 | e4 |
-d2 B2 | A2 G2 | FG AB | A4 |
-d2 ef | gf ed | e2 e2 | e2 d2 |
-ef g2 | fg af | g2 g2 | g4 :|
+|: "G"B3 A | "G"G2 D2 | "C"EF GE | "G"D2 B,2 | "C"EF GE | "G"D2 AB |
+"Am"c2 B2 | "D"B2 A2 | "G"B3 A | "G"G2 D2 | "C"EF GE | "G"D2 B,2 | "C"EF GE |
+"G"D2 Gc | "D"B2 A2 | "G"G4 :: "G"d2 ef | "G"gf ed | "C"e2 e2 | "C"e4 |
+"G"d2 B2 | "Am"A2 G2 | "D"FG AB | "D"A4 | "G"d2 ef | "G"gf ed |
+"C"e2 e2 | "C"e2 d2 | "C"ef g2 | "D"fg af | "G"g2 g2 | "G"g4 :|

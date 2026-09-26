@@ -4,15 +4,17 @@ R:walts
 S:http://alawoncymru.com/alawon/Tunes/CadIdSt/CadIdSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:The score plays part A twice, part B, then part A again (D.C. al Fine).
 M:3/4
 L:1/8
 Q:1/4=120
 K:G
-z4 Bc |: dB Gd BG | c>d ec dB | A>B cA BG |
-AF DA FD | dB Gd BG | c/B/c/d/ ec dB | Ac BA GF |
-[1 G4 Bc :|2 G4 ga || bg db gd | af da fd |
-ge ^cg ec | af da fd | bg db gd | af da fd |
-g/a/g/f/ ed ^ce | d4 Bc | dB Gd BG | c>d ec dB |
-A>B cA BG | AF DA FD | dB Gd BG | c/B/c/d/ ec dB |
-Ac BA GF | G4 z2 |]
+Bc | "G"dB Gd BG | "C"c>d ec dB | "Am"A>B cA BG | "D"AF DA FD |
+"G"dB Gd BG | "C"c/B/c/d/ ec dB | "D"Ac BA GF | "G"G4 :| ga |
+"G"bg db gd | "D"af da fd | "A"ge ^cg ec | "D"af da fd |
+"G"bg db gd | "D"af da fd | "A"g/a/g/f/ ed ^ce | "D"d4 Bc |
+"G"dB Gd BG | "C"c>d ec dB | "Am"A>B cA BG | "D"AF DA FD |
+"G"dB Gd BG | "C"c/B/c/d/ ec dB | "D"Ac BA GF | "G"G4 z2 |]

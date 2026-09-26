@@ -4,14 +4,15 @@ R:polca
 S:http://alawoncymru.com/alawon/Tunes/TonTonSt/TonTonSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:4/4
 L:1/8
 Q:1/4=120
 K:Em
-B,2 | E2 E2 E3 G | F2 F2 F4 | G2 E2 E3 E | F2 D2 B,3 D |
-G2 G2 G3 B | A2 A2 A2 c2 | B2 G2 F2 ED | E4 E4 |
-B2 G2 G2 B2 | A2 F2 F4 | G2 E2 E3 E | F2 D2 B,4 |
-B3 B B2 G2 | A2 A2 A2 c2 | B2 G2 F2 ED | E4 E4 |
-E2 E2 E2 FG | F2 F2 F2 GA | G2 E2 E2 ED | C2 A,2 A,4 |
-G2 G2 G2 AB | A2 A2 A2 Bc | B2 G2 F2 ED | E4 E2 |]
+B,2 | "Em"E2 E2 E3 G | "D"F2 F2 F4 | "C"G2 E2 E3 E | "Bm"F2 D2 B,3 D |
+"G"G2 G2 G3 B | "Am"A2 A2 A2 c2 | "Bm"B2 G2 F2 ED | "Em"E4 E4 || "G"B2 G2 G2 B2 |
+"D"A2 F2 F4 | "C"G2 E2 E3 E | "Bm"F2 D2 B,4 | "G"B3 B B2 G2 | "Am"A2 A2 A2 c2 |
+"Bm"B2 G2 F2 ED | "Em"E4 E4 | E2 E2 E2 FG | "D"F2 F2 F2 GA | "C"G2 E2 E2 ED |
+"D"C2 A,2 A,4 | "G"G2 G2 G2 AB | "Am"A2 A2 A2 Bc | "Bm"B2 G2 F2 ED | "Em"E4 E2 |]

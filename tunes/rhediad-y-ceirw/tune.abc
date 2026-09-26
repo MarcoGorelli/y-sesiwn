@@ -3,12 +3,14 @@ T:Rhediad y Ceirw
 S:http://alawoncymru.com/alawon/Tunes/SetYCeirw/SetYCeirw.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:2/2
 L:1/8
 Q:1/2=50
 K:G
-|: d2 Bc (3Bcd G2 | dB ce d3 B | c e2 d c A2 B | ce dc BG G2 |
-BG d2 cA e2 | dg fe dc ed | cB AG FG Ad | EG FA GG, z2 :|
-|: FA FD FA AB | c>e dc Bd d2 | FA GE FG AB | ce dc [GB]2 [FA]2 |
-GB df ec c2 | Ac eg fd d2 | Bd ge dB cd | EG FA GG, z2 :|
+|: "G"d2 Bc (3Bcd G2 | "G"dB "C"ce "G"d3 B | "C"c e2 d "D"c A2 B | "C"ce "D"dc "G"BG G2 |
+"G"BG d2 "C"cA e2 | "D"dg fe dc ed | "C"cB AG "D"FG Ad | "G"EG "D"FA "G"GG, z2 :|
+|: "D"FA FD FA AB | "C"c>e dc "G"Bd d2 | "D"FA GE FG AB | "C"ce dc "G"[GB]2 [FA]2 |
+"G"GB df "C"ec c2 | "Am"Ac eg "D"fd d2 | "G"Bd ge dB cd | "G"EG "D"FA "G"GG, z2 :|

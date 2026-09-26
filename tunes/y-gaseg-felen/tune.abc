@@ -4,12 +4,14 @@ R:cân
 S:http://alawoncymru.com/alawon/Tunes/SetStacey/SetStacey.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 M:4/4
 L:1/8
 Q:1/4=120
 K:D
-DE | F2 F2 E2 D2 | A2 A2 DD DE | F2 F2 E2 D2 | A6 DE |
-F2 F2 E2 D2 | G2 G2 DD DE | F2 F2 E2 D2 | D6 DE |
-F2 F2 E2 D2 | B2 A2 DD DE | F2 F2 E2 D2 | A6 DE |
-F2 F2 E2 D2 | G2 G2 DD DE | F2 F2 E2 D2 | D4 D2 C2 |
-A,8 | z4 D2 C2 | D8- | D8 |]
+DE | "D"F2 F2 "A"E2 D2 | "D"A2 A2 DD DE | "D"F2 F2 "A"E2 D2 | "D"A6 DE |
+"D"F2 F2 "A"E2 D2 | "G"G2 G2 DD DE | "D"F2 F2 "A"E2 D2 | "D"D6 || DE |
+"D"F2 F2 "A"E2 D2 | "D"B2 A2 DD DE | "D"F2 F2 "A"E2 D2 | "D"A6 DE |
+"D"F2 F2 "A"E2 D2 | "G"G2 G2 DD DE | "D"F2 F2 "A"E2 D2 | "D"D4 D2 || C2 |
+"A"A,8 | "A"z4 D2 C2 | "D"D8- | D8 |]

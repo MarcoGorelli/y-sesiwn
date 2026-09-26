@@ -4,14 +4,17 @@ R:carol
 S:http://alawoncymru.com/alawon/Tunes/SetDawGaeaf/SetDawGaef.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams o alaw Edward Arthur (David Evans)
+N:The score plays part A, part B, then part A again (D.C.).
 M:6/8
 L:1/8
 Q:3/8=47
 K:Am
-A,3 E3 | DCD E3 | A,2 E EDE | G2 F E3 |
-D2 A, A,2 B, | C2 B, A,2 G, | A,6 | A3 GEG |
-A3 A3 | A3 GEC | D3 E3 | A,3 A,B,C |
-D3 A,2 B, | C3 B,3 | B,6 | A,3 E3 |
-DCD E3 | A,2 E EDE | G2 F E3 | D2 A, A,2 B, |
-C2 B, A,2 G, | A,6 |]
+"Am"A,3 E3 | "Dm"DCD "Am"E3 | "Am"A,2 E EDE | "G"G2 F "Am"E3 |
+"Dm"D2 A, A,2 B, | "F"C2 B, "Em"A,2 G, | "Am"A,6 || "Am"A3 "G"GEG |
+"Am"A3 A3 | "Am"A3 GEC | "Dm"D3 "Em"E3 | "Am"A,3 A,B,C |
+"Dm"D3 A,2 B, | "F"C3 B,3 | "Em"B,6 | "Am"A,3 E3 |
+"Dm"DCD "Am"E3 | "Am"A,2 E EDE | "G"G2 F "Am"E3 | "Dm"D2 A, A,2 B, |
+"F"C2 B, "Em"A,2 G, | "Am"A,6 |]

@@ -4,12 +4,15 @@ R:polca
 S:http://alawoncymru.com/alawon/Tunes/SetDowlais/SetDowlais.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:4/4
 L:1/8
 Q:1/4=90
 K:G
-|: D2 | G2 G>A BA BG | c2 c>B AB cA | GB Ac Bd ce | dD FA dc BA |
-G2 G>A BA BG | c2 c>d ed ec | d2 d>e dc BA | GB FA G2 :: z d |
-g2 g>a g=f ed | c2 c>d ed ec | a2 a>b ag fe | d2 d>e fe fd |
-g2 g>a g=f ed | c2 c>d ed ec | d2 d>e dc BA | GB FA G2 :|
+|: D2 | "G"G2 G>A BA BG | "D"c2 c>B AB cA | "G"GB Ac Bd ce |
+"D"dD FA dc BA | "G"G2 G>A BA BG | "C"c2 c>d ed ec |
+"D"d2 d>e dc BA | "G"GB "D"FA "G"G2 :| |: z d | "G"g2 g>a g=f ed |
+"C"c2 c>d ed ec | "A"a2 a>b ag fe | "D"d2 d>e fe fd |
+"G"g2 g>a g=f ed | "C"c2 c>d ed ec | "D"d2 d>e dc BA | "G"GB "D"FA "G"G2 :|

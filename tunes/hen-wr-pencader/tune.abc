@@ -4,12 +4,14 @@ R:alaw pib
 S:http://alawoncymru.com/alawon/Tunes/MiGlywaf/MiGlywaf.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:2/4
 L:1/8
 Q:1/4=70
 K:D
-|: A>G F/G/A | G>F E/F/G | F>E D/E/F | E4 |
-A>G F/G/A | G>F E/F/G | FD EF | D4 :|
-|: AD/E/ F/G/A | BA3/2 G/F | AG3/2 F/E | BA FA |
-AD/E/ F/G/A | BA3/2 G/F | AG EF | D4 :|
+|: "D"A>G F/G/A | "A"G>F E/F/G | "D"F>E D/E/F | "A"E4 |
+"D"A>G F/G/A | "A"G>F E/F/G | "D"FD "A"EF | "D"D4 :|
+|: "D"AD/E/ F/G/A | "D"BA3/2 G/F | "A"AG3/2 F/E | "D"BA FA |
+"D"AD/E/ F/G/A | "D"BA3/2 G/F | "D"AG "A"EF | "D"D4 :|

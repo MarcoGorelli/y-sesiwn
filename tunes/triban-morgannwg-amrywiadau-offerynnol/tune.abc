@@ -5,16 +5,14 @@ R:cân
 S:http://alawoncymru.com/alawon/Tunes/Triban/Triban.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams o fersiwn Mike Lease
 M:2/4
 L:1/8
 Q:1/4=120
 K:D
-A2 D2- | DE F2- | FG A2 | A2 z2 |
-A2 AB | AG FG | FE DE | FG A2 |
-F2 G2 | G2 G2 | Bd c2 | A4 |
-A2 G2 | G2 GA | BG A2 | A2 AB |
-cA d2 | d2 d2 | D2 G2 | A2 B2- |
-BB A2 | G2 F2 | E2 D2 | D4 |
-(3ABc de | dc Bc | BA GA | Bc dB |
-dB AB | GA FG | EF D2 | D2 z2 |]
+A2 | "D"D3 E | F3 G | A2 A2 | z2 A2 | "D"AB AG | FG FE | DE FG | A2 F2 |
+"G"G2 G2 | G2 Bd | "A"c2 A2- | A2 A2 | "G"G2 G2 | GA BG | "A"A2 A2 | AB cA |
+"D"d2 d2 | d2 D2 | "G"G2 A2 | B3 B | "A"A2 G2 | F2 E2 | "D"D2 D2- | D2 (3ABc |
+"D"de dc | Bc BA | "G"GA Bc | dB dB | "A"AB GA | FG EF | "D"D2 D2 |]

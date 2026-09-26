@@ -4,12 +4,14 @@ R:cân
 S:http://alawoncymru.com/alawon/Tunes/YBotel/YBotel.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=67
 K:Em
-|: G/A/ | B2 B BcB | A2 A ABA | G2 G GFE | F3- F2 :| G/A/ |
-B3 G2 G | A3 F2 F | GFE E2 G | FDB, B,3 |
-E2 E B,2 B, | E2 E F3 | G2 G D2 D | G2 G A3 |
-B2 B BcB | AGF F2 B | GFE FED | E3- E2 |]
+|: G/A/ | "Em"B2 B BcB | "D"A2 A ABA | "C"G2 G GFE | "B5"F3- F2 :| G/A/ |
+"Em"B3 G2 G | "D"A3 F2 F | "C"GFE E2 G | "B5"FDB, B,3 |
+"Em"E2 E B,2 B, | "Em"E2 E "D"F3 | "G"G2 G D2 D | "G"G2 G "D"A3 |
+"Em"B2 B BcB | "D"AGF F2 B | "C"GFE "B5"FED | "Em"E3- E2 |]

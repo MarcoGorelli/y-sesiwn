@@ -4,14 +4,15 @@ R:walts
 S:http://alawoncymru.com/alawon/Tunes/LlwynSt/LlwynSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
+N:Chords from the score of Llwyn Onn, which this simpler version follows. The score plays part A twice, part B, then part A again (D.C. al Fine).
 M:3/4
 L:1/8
 Q:1/4=120
 K:G
-z2 | z4 |: D2 | G2 B2 d>c | B2 G2 G2 | A2 cB AG |
-F2 D2 D2 | G2 BA GF | E2 C2 (3CDE | D2 G2 F2 |
-G4 :| Bc | d2 Bc de | d2 c2 B2 | c2 AB cd |
-c2 B2 A2 | B2 GA Bc | B2 A2 G2 | F2 d2 ^c2 |
-d4 z2 | z4 D2 | G2 B2 d>c | B2 G2 G2 |
-A2 cB AG | F2 D2 D2 | G2 BA GF | E2 C2 (3CDE |
-D2 G2 F2 | G4 |]
+|: D2 | "G"G2 B2 d>c | B2 G2 G2 | "C"A2 cB AG | "D"F2 D2 D2 | "G"G2 BA GF |
+"C"E2 C2 (3CDE | "G"D2 G2 "D"F2 | "G"G4 :| Bc | "G"d2 Bc de | "G"d2 "D"c2 "G"B2 |
+"D"c2 AB cd | "D"c2 "G"B2 "D"A2 | "Em"B2 GA Bc | B2 A2 G2 | "D"F2 d2 "A"^c2 |
+"D"d4 z2 | z4 D2 | "G"G2 B2 d>c | B2 G2 G2 | "C"A2 cB AG | "D"F2 D2 D2 |
+"G"G2 BA GF | "C"E2 C2 (3CDE | "G"D2 G2 "D"F2 | "G"G4 |]

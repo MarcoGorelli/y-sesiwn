@@ -4,14 +4,17 @@ R:dawns clocs
 S:http://alawoncymru.com/alawon/Tunes/DPedCloc/DPedCloc.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams yn seiliedig ar nodiant Nicolas Bennett
+N:The score plays part A twice, part B, then part A again (D.C. al Fine).
 M:2/4
 L:1/8
 Q:1/4=70
 K:G
-|: D | G>D G>D | G/A/B/c/ dB | A>B AG | FA dF |
-G>D G>D | G/A/B/c/ dB | AB/c/ BA | G3 :| D |
-DE/F/ GF/G/ | A>G FD | G>D G>D | G/A/B/c/ d z |
-B>c BA | GA B2 | cB/A/ GF | E2 z D |
-G>D G>D | G/A/B/c/ dB | A>B AG | FA dF |
-GA/B/ c/B/A/G/ | FD EF | GA/c/ BA | G3 |]
+|: D | "G"G>D G>D | "G"G/A/B/c/ dB | "C"A>B AG | "D"FA dF |
+"G"G>D G>D | "G"G/A/B/c/ dB | "C"AB/c/ "D"BA | "G"G3 :| D |
+"D"DE/F/ GF/G/ | "D"A>G FD | "G"G>D G>D | "G"G/A/B/c/ d z |
+"Em"B>c BA | "Em"GA B2 | "Am"cB/A/ "Bm"GF | "Em"E2 z "D"D |
+"G"G>D G>D | "G"G/A/B/c/ dB | "C"A>B AG | "D"FA dF |
+"G"GA/B/ c/B/A/G/ | "D"FD EF | "C"GA/c/ "D"BA | "G"G3 |]

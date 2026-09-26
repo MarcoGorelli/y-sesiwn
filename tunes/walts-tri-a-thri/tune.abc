@@ -4,16 +4,16 @@ R:walts
 S:http://alawoncymru.com/alawon/Tunes/SetoDri/SetODri.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
 M:3/4
 L:1/8
 Q:1/4=120
 K:G
-|: B4 A2 | G4 D2 | EF G2 E2 | D4 B,2 |
-EF G2 E2 | D2 G2 B2 | c4 B2 | B4 A2 |
-B4 A2 | G4 D2 | EF G2 E2 | D4 B,2 |
-EF G2 E2 | D2 G2 c2 | B4 A2 | G6 :|
-|: d4 ef | g3 f ed | e4 e2 | e6 |
-d4 B2 | A4 G2 | F2 G2 A2 | A6 |
-d4 ef | gf e2 d2 | e4 e2 | e4 d2 |
-ef g4 | fg a2 f2 | g4 g2 | g6 :|
+|: "G"B4 A2 | "G"G4 D2 | "C"EF G2 E2 | "G"D4 B,2 | "C"EF G2 E2 |
+"G"D2 G2 B2 | "Am"c4 B2 | "D"B4 A2 | "G"B4 A2 | "G"G4 D2 | "C"EF G2 E2 |
+"G"D4 B,2 | "C"EF G2 E2 | "G"D2 G2 c2 | "D"B4 A2 | "G"G6 :|
+|: "G"d4 ef | "G"g3 f ed | "C"e4 e2 | "C"e6 | "G"d4 B2 |
+"G"A4 G2 | "D"F2 G2 A2 | "D"A6 | "G"d4 ef | "G"gf e2 d2 | "C"e4 e2 |
+"C"e4 d2 | "C"ef g4 | "D"fg a2 f2 | "G"g4 g2 | "G"g6 :|

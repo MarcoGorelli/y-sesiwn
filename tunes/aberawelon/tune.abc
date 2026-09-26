@@ -4,13 +4,15 @@ R:dawns llys
 S:http://alawoncymru.com/alawon/Tunes/DnsAbrgn/DnsAberGn.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Alaw Meurig Williams
 M:4/4
 L:1/8
 Q:1/4=100
 K:Am
 % the MIDI plays the whole tune 2 times
-A2 A2 AB cA | B2 G2 G2 G2 | A2 A2 AB cd | e2- e3 d cB |
-A2 A2 AB cA | B2 G2 G2 ed | cB Ac BA GB | A6 G2 |
-c2 c2 cd ec | d2 G2 G2 G2 | c2 c2 cd ec | d2- d3 c BG |
-A2 A2 AB cA | B2 G2 G2 ed | cB Ac BA GB | A8 |]
+"Am"A2 A2 AB cA | "G"B2 G2 G2 G2 | "Am"A2 A2 AB cd | "E"e2- e3 d cB |
+"Am"A2 A2 AB cA | "G"B2 G2 G2 ed | "Am"cB Ac "E"BA GB | "Am"A6 G2 ||
+"C"c2 c2 cd ec | "G"d2 G2 G2 G2 | "C"c2 c2 cd ec | "G"d2- d3 c BG |
+"Am"A2 A2 AB cA | "G"B2 G2 G2 ed | "Am"cB Ac "E"BA GB | "Am"A8 |]

@@ -4,13 +4,15 @@ T:Uchder Cader Idris
 R:polca
 S:http://alawoncymru.com/alawon/Tunes/AgorYBlo/AgorBlSt.htm
 Z:MIDI transcribed with alawon-abc
-%%alawon track=1
+%%alawon track=1 transpose=-7
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:4/4
 L:1/8
 Q:1/4=100
-K:D
-|: d3 A d2 f2 | B3 F B2 d2 | c3 d e2 dc | d2 e2 f4 |
-d3 A d2 f2 | B3 F B2 d2 | c3 d e2 A2 | d2 f2 d2 z2 :|
-|: e3 A e2 f2 | ag fe d2 f2 | gf ed c2 f2 | ed cB Ag fe |
-d3 A d2 f2 | B3 F B2 d2 | c3 d fe dc | d2 f2 d4 :|
+K:G
+|: "G"G3 D G2 B2 | "Em"E3 B, E2 G2 | "D"F3 G A2 GF | "G"G2 A2 B4 |
+"G"G3 D G2 B2 | "Em"E3 B, E2 G2 | "D"F3 G A2 D2 | "G"G2 B2 G2 z2 :|
+|: "D"A3 D A2 B2 | "D"dc BA "G"G2 B2 | "C"cB AG "D"F2 B2 | "Am"AG FE "D"Dc BA |
+"G"G3 D G2 B2 | "Em"E3 B, E2 G2 | "D"F3 G BA GF | "G"G2 B2 G4 :|

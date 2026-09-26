@@ -4,12 +4,15 @@ R:cân
 S:http://alawoncymru.com/alawon/Tunes/Triban/Triban.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Guto Dafis
+N:On the score, some phrases are marked Canu (sung) and others Offeryn (instrument).
 M:2/2
 L:1/8
 Q:1/2=60
 K:D
-FE | D2 D2 DE FG | A2 A2 z2 A2 | AB AG F3 E | DE FG A3 A |
-B2 A2 GA B=c | B2 A2 z2 AG | F2 A2 G2 B2 | A2 c2 d2 z2 |
-Ad ce d2 cB | BA GF FE DC | D2 D2 z2 AG | FA FD FA FD |
-Ad ce d2 cB | BA GF FE DC | D2 D2 z2 |]
+FE | "D"D2 D2 DE FG | "D"A2 A2 z2 A2 | "D"AB AG "A"F3 E | "D"DE FG A3 A |
+"G"B2 A2 GA B=c | "D"B2 A2 "A"z2 AG | "D"F2 A2 "G"G2 B2 | "D"A2 "A"c2 "D"d2 z2 |
+"D"Ad "A"ce "D"d2 cB | "A"BA GF FE DC | "D"D2 D2 z2 AG | "D"FA FD FA FD |
+"D"Ad "A"ce "D"d2 cB | "A"BA GF FE DC | "D"D2 D2 z2 |]

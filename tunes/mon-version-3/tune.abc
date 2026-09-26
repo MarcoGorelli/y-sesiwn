@@ -4,12 +4,15 @@ R:polca
 S:http://alawoncymru.com/alawon/Tunes/SetAwst2/SetAwst2.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
+N:The score writes it in 4/4 with every note twice as long.
 M:2/4
 L:1/8
 Q:1/4=60
 K:D
-|: A | d>d AA | FA de/f/ | g>f ed | ed c/B/A |
-d>d AA | FA dd/e/ | ff ee | d3 :: d/e/ |
-f>f dd | ee cc | de/f/ gf | e>d c/B/A |
-d>d AA | FA dd/e/ | ff ee | d3 :|
+|: A | "D"d>d AA | "D"FA de/f/ | "G"g>f ed | "A"ed c/B/A |
+"D"d>d AA | "D"FA dd/e/ | "G"ff "A"ee | "D"d3 :|
+|: d/e/ | "D"f>f dd | "A"ee cc | "D"de/f/ "G"gf | "A"e>d c/B/A |
+"D"d>d AA | "D"FA dd/e/ | "G"ff "A"ee | "D"d3 :|

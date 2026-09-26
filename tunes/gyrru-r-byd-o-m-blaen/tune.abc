@@ -3,10 +3,12 @@ T:Gyrru'r Byd o'm Blaen
 S:http://alawoncymru.com/alawon/Tunes/JigOwSet/JigOwnSt.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:9/8
 L:1/8
 Q:3/8=53
 K:Am
-|: B | c2 A BGE EGE | cBA BAG A2 B | c2 A BGE EGE | cde dcB A2 :: B |
-c2 c cec BdB | c2 c cec d2 B | c2 c cec BdB | cBA BAG A2 :|
+|: B | "Am"c2 A "Em"BGE EGE | "Am"cBA "Em"BAG "Am"A2 B | c2 A "Em"BGE EGE | "Am"cde "Em"dcB "Am"A2 :: B |
+"C"c2 c cec "G"BdB | "C"c2 c cec "G"d2 B | "C"c2 c cec "G"BdB | "Am"cBA "Em"BAG "Am"A2 :|

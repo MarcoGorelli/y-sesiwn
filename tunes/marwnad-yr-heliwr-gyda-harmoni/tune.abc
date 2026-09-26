@@ -3,12 +3,15 @@ T:Marwnad yr Heliwr - gyda harmoni
 S:http://alawoncymru.com/alawon/Tunes/TriBobst/TriawBob.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams o addasiad Bob Evans
+N:The score has a harmony part as well.
 M:3/4
 L:1/8
 Q:1/4=120
 K:D
-|: D2 d2 c2 | d4 (3ABc | d2 d2 c2 | d4 A2 |
-B3 A G2 | A3 G F2 | E2 G2 F2 | E4 A2 :|
-|: F2 D2 E2 | F3 G A2 | F2 D2 E2 | FE FG A2 |
-B2 A2 G2 | F2 GF GF | BA GF E2 | D6 :|
+|: "D"D2 d2 "A"c2 | "D"d4 "A"(3ABc | "D"d2 d2 c2 | "A"d4 A2 |
+"D"B3 A "G"G2 | "D"A3 G F2 | "A"E2 G2 F2 | "A"E4 A2 :|
+|: "D"F2 D2 "A"E2 | "D"F3 G A2 | "D"F2 D2 "A"E2 | "D"FE FG A2 |
+"G"B2 A2 G2 | "D"F2 GF GF | "A"BA GF E2 | "D"D6 :|

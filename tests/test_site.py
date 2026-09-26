@@ -285,6 +285,8 @@ def test_microphone(playwright_instance, site, tmp_path):
     heard = page.input_value("#notes-search")
     assert heard == "C# D E F# E D C# D C# B"
     assert page.locator(".notes-results li a").first.inner_text() == "Machynlleth"
+    # The previews (skipped while listening, so no notes are missed) appear once it stops.
+    page.wait_for_selector(".notes-results .preview .abcjs-staff")
     browser.close()
 
 

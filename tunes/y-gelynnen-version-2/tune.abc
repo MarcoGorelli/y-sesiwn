@@ -5,12 +5,14 @@ R:polca
 S:http://alawoncymru.com/alawon/Tunes/YGelynSt/GelynnSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:4/4
 L:1/8
 Q:1/4=180
 K:D
-F2 | D2 F2 D2 F2 | D2 F2 A3 A | B3 B e2 d2 | c2 A6 |
-d3 d D2 F2 | D2 F2 B2 A2 | G2 F2 E2 AG | F2 D6 |
-DE FG A2 A2 | DE FG A3 A | B2 B2 e2 d2 | c2 A6 |
-d3 d D2 F2 | D2 F2 B2 A2 | G2 F2 E2 AG | F2 D4 |]
+F2 | "D"D2 F2 D2 F2 | D2 F2 A3 A | "G"B3 B e2 d2 | "A"c2 A6 |
+"D"d3 d D2 F2 | D2 F2 B2 A2 | "G"G2 F2 "A"E2 AG | "D"F2 D6 |
+"D"DE FG A2 A2 | DE FG A3 A | "G"B2 B2 e2 d2 | "A"c2 A6 |
+"D"d3 d D2 F2 | D2 F2 B2 A2 | "G"G2 F2 "A"E2 AG | "D"F2 D4 |]

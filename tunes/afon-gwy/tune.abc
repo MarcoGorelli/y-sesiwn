@@ -4,16 +4,16 @@ R:walts
 S:http://alawoncymru.com/alawon/Tunes/AfonGwyS/AfonGwy.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Alaw Carwyn Tywyn
 M:3/4
 L:1/8
 Q:1/4=80
 K:C
-|: c2 cd ec | B6 | A2 AB cA | G2 E2 C2 |
-A2 AB cA | G2 E2 C2 | [Adf]6 | [GBd]6 |
-c2 cd ec | B2 d2 B2 | A2 AB cA | G2 E2 C2 |
-A2 AB cA | G2 c2 e2 | f4 d2 | [EGc]6 :|
-|: A2 AB cA | G2 E2 C2 | A2 AB cA | G2 c4 |
-A2 AB cA | G2 E2 e2 | [Adf]6 | [GBd]6 |
-A2 AB cA | G2 E2 C2 | A2 AB cA | G2 c4 |
-A2 AB cA | G2 E2 e2 | [df]2 [ce]2 [Bd]2 | [EGc]6 :|
+|: "C"c2 cd ec | "G"B6 | "F"A2 AB cA | "C"G2 E2 C2 | "F"A2 AB cA |
+"C"G2 E2 C2 | "Dm"[Adf]6 | "G"[GBd]6 | "C"c2 cd ec | "G"B2 d2 B2 | "F"A2 AB cA |
+"C"G2 E2 C2 | "F"A2 AB cA | "C"G2 c2 e2 | "G"f4 d2 | "C"[EGc]6 :|
+|: "F"A2 AB cA | "C"G2 E2 C2 | "F"A2 AB cA | "C"G2 c4 | "F"A2 AB cA |
+"C"G2 E2 e2 | "Dm"[Adf]6 | "G"[GBd]6 | "F"A2 AB cA | "C"G2 E2 C2 |
+"F"A2 AB cA | "C"G2 c4 | "F"A2 AB cA | "C"G2 E2 e2 | "G"[df]2 [ce]2 [Bd]2 | "C"[EGc]6 :|

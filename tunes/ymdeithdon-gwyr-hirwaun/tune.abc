@@ -4,13 +4,15 @@ R:walts
 S:http://alawoncymru.com/alawon/Tunes/GlanMeSt/GlanMeset.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
-M:4/4
+M:3/4
 L:1/8
 Q:1/4=120
 K:G
-|: D2 G2 G2 AG | F2 G2 A2 G2 | B2 d2 c2 A2 | (3ABc B2 A2 G2 |
-c2 B2 A2 D2 | E2 F2 G4 :: d2 B2 d2 d2 | B2 d2 c2 A2 |
-c2 c2 A2 c2 | B2 G2 A2 Bc | d2 B2 GB d2 | B2 (3GAB A4 |
-GA B2 G2 E2 | D2 G2 F2 G2 | B2 d2 c2 A2 | (3ABc B2 A2 G2 |
-c2 B2 A2 D2 | E2 F2 G4 :|
+|: D2 | "G"G2 G2 AG | "D"F2 G2 A2 | "G"G2 B2 d2 | "C"c2 A2 (3ABc |
+"G"B2 A2 G2 | "C"c2 B2 A2 | "D"D2 E2 F2 | "G"G4 :| d2 | "G"B2 d2 d2 |
+"G"B2 d2 c2 | "D"A2 c2 c2 | "D"A2 c2 B2 | "G"G2 A2 Bc | "G"d2 B2 GB |
+"G"d2 B2 (3GAB | "D"A4 GA | "G"B2 G2 "C"E2 | "G"D2 G2 "D"F2 | "G"G2 B2 d2 |
+"C"c2 A2 (3ABc | "G"B2 A2 G2 | "C"c2 B2 A2 | "D"D2 E2 F2 | "G"G4 |]

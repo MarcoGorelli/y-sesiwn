@@ -4,16 +4,15 @@ R:pibddawns
 S:http://alawoncymru.com/alawon/Tunes/PibMorg/PibMorg.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
-M:2/4
+N:Written in even quavers in 4/4, as on the score; the alawoncymru recording swings it. In part B the score has d as the pick-up, agea gfdf, edcB A2 AG, FDFA d2 cd and C2 FG, where the recording plays Ad, ag eg gf df, ed cB AG FE, FD FA dd cd and CG FG.
+M:4/4
 L:1/8
 Q:1/4=120
 K:D
-|: A>G F>D | F>A d2 | A>G F>D | F>A B2 |
-A>G F>D | F>A d>e | f>g a>f | d>f e>c |
-A>G F>D | F>A d2 | c>d B>G | E>D C2 |
-F>G A>d | c>d B>G | E>C D2 | F2 D2 :|
-|: A>d c>d | e>f g2 | f>e d>e | f>g a2 |
-f>a a>g | e>g g>f | d>f e>d | c>B A>G |
-F>E F>D | F>A d>d | c>d B>G | E>D C>G |
-F>G A>d | c>d B>G | E>C D2 | F2 D2 :|
+|: AG | "D"FD FA d2 AG | "D"FD FA "G"B2 AG | "D"FD FA "Bm"de fg | "D"af df "A"ec AG |
+"D"FD FA d2 cd | "G"BG ED "A"C2 FG | "D"Ad cd "G"BG "A"EC | "D"D2 F2 D2 :|
+|: Ad | "A"cd ef g2 fe | "D"de fg a2 fa | "G"ag eg "D"gf df | "Em"ed cB "A"AG FE |
+"D"FD FA dd cd | "G"BG ED "A"CG FG | "D"Ad cd "G"BG "A"EC | "D"D2 F2 D2 :|

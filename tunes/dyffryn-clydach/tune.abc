@@ -4,13 +4,15 @@ R:ymdeithdon
 S:http://alawoncymru.com/alawon/Tunes/SetKenThom/SetKenThom.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams o alaw Alyson a Ken Thomas
 M:4/4
 L:1/8
 Q:1/4=160
 K:G
 % the MIDI plays the whole tune 2 times
-|: G3 A B2 c2 | dc Bc B2 A2 | GA Bc B2 B2 | B2 A2 A2 z2 |
-B2 d2 c2 B2 | Ac AF G2 A2 | dc Bc B2 d2 | cB AB G4 :|
-|: e3 f g2 f2 | e2 fg a2 d2 | gf ed cB AG | Bc dB A2 z2 |
-G3 A B2 c2 | dc BA Bg fg | g2 e2 d3 e | dc BA G4 :|
+|: "G"G3 A "D"B2 c2 | "G"dc Bc "D"B2 A2 | "G"GA Bc "Em"B2 B2 | "Am"B2 A2 "D"A2 z2 |
+"G"B2 d2 "D"c2 B2 | "D"Ac AF "G"G2 A2 | "G"dc Bc "Em"B2 d2 | "D"cB AB "G"G4 :|
+|: "Em"e3 f g2 f2 | "C"e2 fg "D"a2 d2 | "G"gf ed "Em"cB AG | "Am"Bc dB "D"A2 z2 |
+"G"G3 A "D"B2 c2 | "G"dc BA "D"Bg fg | "G"g2 e2 d3 e | "D"dc BA "G"G4 :|

@@ -4,11 +4,14 @@ R:polca
 S:http://alawoncymru.com/alawon/Tunes/CwacCym/CwacCym.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:The score writes it in cut time with every note twice as long, so each bar here is two of its bars.
 M:4/4
 L:1/8
 Q:1/4=70
 K:G
-|: d | B>G d>G BG GB | c>B cd ec Ad | B>G d>G BG GB | ce dc BG G :| d |
-d>g fg bg fg | d>g bg fa a2 | b>g a>f gf ed | ce dc BG Gd |
-d>g a/g/f/g/ b>g a/g/f/g/ | dg bg fa ad | ec' db ca Bg | ce dc BG G |]
+|: d | "G"B>G d>G "G"BG GB | "C"c>B cd "D"ec Ad | "G"B>G d>G "G"BG GB | "C"ce "D"dc "G"BG G :| d |
+"G"d>g fg "G"bg fg | "G"d>g bg "D"fa a2 | "G"b>g "D"a>f "C"gf "Am"ed | "C"ce "D"dc "G"BG Gd |
+"G"d>g a/g/f/g/ "G"b>g a/g/f/g/ | "G"dg bg "D"fa ad | "C"ec' "G"db "D"ca "G"Bg | "C"ce "D"dc "G"BG G |]

@@ -4,12 +4,14 @@ R:fel rîl
 S:http://alawoncymru.com/alawon/Tunes/PibAilDd/PibAilDd.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:2/2
 L:1/8
 Q:1/2=50
 K:G
-|: BA | GD B,D G2 GB | AG AB c2 BA | Gg fg ed cB | c2 A2 A2 BA |
-GD B,D G2 GB | AG AB c2 BA | Gg ed cB AG | B2 G2 G2 :: Bc |
-dg fg ed cB | cB ce dc BA | Gg fg ed cB | c2 A2 A2 Bc |
-dB cd ec de | fd ef g2 fe | dg fe dc BA | B2 G2 G2 :|
+|: BA | "G"GD B,D G2 GB | "D"AG AB c2 BA | "G"Gg fg "Am"ed cB | "D"c2 A2 A2 BA |
+"G"GD B,D G2 GB | "D"AG AB c2 BA | "G"Gg ed "D"cB AG | "G"B2 G2 G2 :: Bc |
+"G"dg fg ed cB | "Am"cB ce "D"dc BA | "G"Gg fg "Am"ed cB | "D"c2 A2 A2 Bc |
+"G"dB cd "Am"ec de | "D"fd ef "Em"g2 fe | "G"dg fe "D"dc BA | "G"B2 G2 G2 :|

@@ -4,12 +4,14 @@ R:alaw telyn
 S:http://alawoncymru.com/alawon/Tunes/DafGarWn/DafGarWn.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:3/4
 L:1/8
 Q:1/4=60
 K:Am
-Ae dc BA | A2 ^G2 A2 | E^G Bd cB | c4 B2 |
-A2 a2 g2 | f2 ed e2 | c2 ed cB | c6 |
-c2 ec gc | d2 cB A^G | AB cA dc | c2 B4 |
-Ac e^g af | ed cB c2 | B>c A2 ^G2 | A6 |]
+"Am"Ae dc BA | "F"A2 "E"^G2 "Am"A2 | "E"E^G Bd cB | "Am"c4 "G"B2 |
+"F"A2 a2 g2 | "G"f2 ed "C"e2 | "C"c2 ed "G"cB | "C"c6 ||
+"Am"c2 ec gc | "E"d2 cB A^G | "Am"AB cA "F"dc | "E"c2 B4 |
+"Am"Ac e^g af | "Dm"ed cB "Am"c2 | "Dm"B>c "E"A2 ^G2 | "Am"A6 |]

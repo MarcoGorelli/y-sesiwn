@@ -488,12 +488,15 @@ function notesSearch({ autoListen = false } = {}) {
       : closeOnes
         ? `No tunes with exactly these notes, but ${plural(closeOnes)} close to them${found.length > 12 ? " (showing the closest 12)" : ""}.`
         : "No tunes with these notes, or close to them. These are the nearest; check a note or two, or try fewer notes.";
+    // No previews while listening: drawing them would hold up the listening and miss
+    // notes. They're drawn when it stops.
+    const previews = state.listening ? 0 : PREVIEWS;
     results.replaceChildren(...found.slice(0, 12).map(({ tune, how }, i) => {
       const several = state.groups.get(tune.group).versions.length > 1;
       return el("li", {},
         el("a", { href: tuneUrl(tune.group, tune.version), "data-route": true }, tune.base),
         el("span", { class: "caption" }, `${several ? ` (version ${tune.version})` : ""} · ${how}`),
-        i < PREVIEWS ? tunePreview(tune) : null);
+        i < previews ? tunePreview(tune) : null);
     }));
   };
   input.addEventListener("input", update);
@@ -527,6 +530,7 @@ function notesSearch({ autoListen = false } = {}) {
         onStop: (reason) => {
           showListening(false);
           light(null);
+          if (reason !== "left") update();  // now with the previews
           listenStatus.textContent = reason === "done" && input.value ? "Stopped listening. Play it again, or add notes on the keyboard." : "";
           listenStatus.hidden = !listenStatus.textContent;
         },

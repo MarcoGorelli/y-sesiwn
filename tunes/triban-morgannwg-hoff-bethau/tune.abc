@@ -4,9 +4,12 @@ R:cân
 S:http://alawoncymru.com/alawon/Tunes/HoffBeth/HoffBeth.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
+N:The score writes it in 4/4 with every note twice as long, so each bar here is two of its bars. It also gives a version for voice with fiddle.
 M:2/2
 L:1/8
 Q:1/2=30
 K:D
-F | GG F/E/F/G/ A A2 A/G/ | FF/E/ D/E/F/G/ A3 A | BB/A/ G/A/B/c/ d c2 A | BB/A/ B/c/d/B/ AA/d/ c/A/B/c/ |
-d/A/d/c/ dF G/A/B/c/ d>B | A>G F/E/D/C/ D D2 A | B/G/B/d/ c/A/c/e/ dd dB | A>G F/E/D/C/ D D2 |]
+F | "G"GG "A"F/E/F/G/ "D"A A2 A/G/ | "D"FF/E/ D/E/F/G/ A3 A | "G"BB/A/ G/A/B/c/ "A"d c2 A | "G"BB/A/ B/c/d/B/ "A"AA/d/ c/A/B/c/ |
+"D"d/A/d/c/ dF "G"G/A/B/c/ d>B | "A"A>G F/E/D/C/ "D"D D2 A | "G"B/G/B/d/ "A"c/A/c/e/ "D"dd dB | "A"A>G F/E/D/C/ "D"D D2 |]

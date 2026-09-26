@@ -4,14 +4,15 @@ R:walts
 S:http://alawoncymru.com/alawon/Tunes/SetArian/SetArian.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:3/4
 L:1/8
 Q:1/4=80
 K:D
-|: d4 A2 | G2 F2 E2 | D2 f2 ed | AB cd ec |
-d4 A2 | G2 F2 E2 | D2 f2 c2 | [Fd]6 :|
-A2 A2 B2 | =c2 B2 A2 | G2 G2 A2 | B2 A2 G2 |
-A2 A2 B2 | c2 d2 e2 | f2 F2 E2 | F6 |
-f2 fa fa | e2 eg eg | d2 df ed | AB cd ec |
-d4 A2 | G2 F2 E2 | D2 f2 c2 | [Fd]6 |]
+|: "D"d4 A2 | "A"G2 F2 E2 | "D"D2 f2 ed | "A"AB cd ec | "D"d4 A2 |
+"A"G2 F2 E2 | "D"D2 f2 "A"c2 | "D"[Fd]6 :| "D"A2 A2 B2 | "D7"=c2 B2 A2 |
+"G"G2 G2 A2 | "G"B2 A2 G2 | "D"A2 A2 B2 | "A"c2 d2 e2 | "D"f2 F2 E2 |
+"D"F6 | "D"f2 fa fa | "A"e2 eg eg | "Bm"d2 df ed |
+"A"AB cd ec | "D"d4 A2 | "A"G2 F2 E2 | "D"D2 f2 "A"c2 | "D"[Fd]6 |]

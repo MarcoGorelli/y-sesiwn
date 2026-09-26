@@ -4,11 +4,14 @@ R:polca/ymdaith
 S:http://alawoncymru.com/alawon/Tunes/SetCwicstep/SetBontnew.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:The score plays part A twice, part B, then part A again (D.C. al Fine).
 M:6/8
 L:1/8
 Q:3/8=60
 K:D
-|: dfd cBA | BdB AGF | GBG FAF | Edc d3 :|
-dfa gfe | dfd ecA | Bdf edc | dcB A2 B/c/ |
-dfd cBA | BdB AGF | GBG FAF | Edc d3 |]
+|: "D"dfd "A"cBA | "G"BdB "D"AGF | "G"GBG "D"FAF | "A"Edc "D"d3 :|
+"D"dfa "A"gfe | "Bm"dfd "A"ecA | "Bm"Bdf "A"edc | "E"dcB "A"A2 B/c/ |
+"D"dfd "A"cBA | "G"BdB "D"AGF | "G"GBG "D"FAF | "A"Edc "D"d3 |]

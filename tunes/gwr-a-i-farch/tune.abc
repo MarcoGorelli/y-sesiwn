@@ -4,11 +4,13 @@ R:pibddawns 3/2, poca, ymdaith
 S:http://alawoncymru.com/alawon/Tunes/GwrFarch/GwrFarch.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:3/2
 L:1/8
 Q:1/2=60
 K:D
-|: A2 D2 D2 A2 BA GF | A2 D2 D2 F2 A2 d2 | A2 D2 D2 A2 BA GF | G2 E2 E2 F2 G2 B2 :|
-|: D2 d2 d2 A2 FG A2 | D2 d2 d2 A2 F2 A2 | dc de fe dc dc BA | B2 e2 e2 E2 G2 B2 :|
-|: A4 BA GF BA GF | A4 BA GF A2 d2 | A4 BA GF BA GF | G2 E2 E2 F2 G2 B2 :|
+|: "D"A2 D2 D2 A2 "G"BA GF | "D"A2 D2 D2 F2 A2 d2 | "D"A2 D2 D2 A2 "G"BA GF | "Em"G2 E2 E2 F2 G2 B2 :|
+|: "D"D2 d2 d2 A2 FG A2 | "D"D2 d2 d2 A2 F2 A2 | "D"dc de fe dc dc BA | "Em"B2 e2 e2 E2 G2 B2 :|
+|: "D"A4 BA GF "G"BA GF | "D"A4 BA GF A2 d2 | "D"A4 BA GF BA GF | "Em"G2 E2 E2 F2 G2 B2 :|

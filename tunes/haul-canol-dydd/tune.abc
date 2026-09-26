@@ -4,19 +4,22 @@ R:alaw
 S:http://alawoncymru.com/alawon/Tunes/YnysAfan/PontYnysAfan.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Meurig Williams
+N:The recording plays a longer part B than the score, which has eight bars (AF DF | BG DG | cA FA | BG D2 | AF DF | BG DG | ^cA Bc | d2 d2); the chords for the extra bars are ours.
 M:2/4
 L:1/8
 Q:1/4=100
 K:G
-|: gd Bd | ec Ac | dB GB | cA FD |
-GD GA | BG Bd | ec AG | FA FD |
-gd Bd | ec Ac | dB GB | cA FD |
-GD GA | BG Bd | ec AF | G2 G2 :|
-AF DF | BG DG | cA FA | BG D2 |
-AF DF | BG DG | cA Bc | d2 B2 |
-AF DF | BG DG | cB AG | FE D2 |
-FA FD | BA GD | FA DF | G2 G2
-|: gd Bd | ec Ac | dB GB | cA FD |
-GD GA | BG Bd |1 ec AG | FA FD :|
-[2 ec AF | G2 G2 |]
+|: "G"gd Bd | "C"ec Ac | "G"dB GB | "D"cA FD |
+"G"GD GA | "G"BG Bd | "Am"ec AG | "D"FA FD |
+"G"gd Bd | "C"ec Ac | "G"dB GB | "D"cA FD |
+"G"GD GA | "G"BG Bd | "D"ec AF | "G"G2 G2 :|
+"D"AF DF | "G"BG DG | "D"cA FA | "G"BG D2 |
+"D"AF DF | "G"BG DG | "D"cA Bc | "G"d2 B2 |
+"D"AF DF | "G"BG DG | "C"cB AG | "D"FE D2 |
+"D"FA FD | "G"BA GD | "D"FA DF | "G"G2 G2
+|: "G"gd Bd | "C"ec Ac | "G"dB GB | "D"cA FD |
+"G"GD GA | "G"BG Bd |1 "Am"ec AG | "D"FA FD :|
+[2 "D"ec AF | "G"G2 G2 |]

@@ -5,10 +5,13 @@ R:alaw
 S:http://alawoncymru.com/alawon/Tunes/Hiraeth/HiraethS.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
+N:The score plays part A twice, part B, then part A again (D.C. al Fine), with single-quaver pick-ups (D, G) and G3 at the ends of the parts.
 M:4/4
 L:1/8
 Q:1/4=90
 K:G
-|: D2 | G2 BG E2 AG | F2 dc BA GF | G2 BG E2 AG | FD EF G2 :: GA |
-BG dB cA ec | d2 cA BG AF | G2 dB c2 ec | d2 F2 G2 :|
+|: D2 | "G"G2 BG "C"E2 AG | "D"F2 dc "G"BA "D"GF | "G"G2 BG "C"E2 AG | "D"FD EF "G"G2 :: GA |
+"G"BG dB "C"cA ec | "D"d2 cA "G"BG "D"AF | "G"G2 dB "C"c2 ec | "D"d2 F2 "G"G2 :|

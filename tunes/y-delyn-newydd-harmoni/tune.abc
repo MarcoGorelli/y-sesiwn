@@ -4,11 +4,14 @@ R:polca
 S:http://alawoncymru.com/alawon/Tunes/DelynNew/DelynNew.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=2
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
+N:The score has the first four bars a third higher (BA GA B2 d2 | d2 c2 c4 | cB AB c2 e2 | e2 d2 d4); the recording plays them as here.
 M:2/2
 L:1/8
 Q:1/2=60
 K:G
-|: GF EF G2 B2 | B2 A2 A4 | AG FG A2 c2 | c2 B2 B4 |
-GF EF G2 B2 | B2 A2 A4 | AG F2 AG F2 | G2 G2 G4 :|
-|: B2 A2 G2 F2 | B2 A2 G2 F2 | B2 A2 G2 F2 | E2 D2 C4 |
-A2 G2 F4 | A2 G2 F4 | A2 G2 F2 D2 | E2 C2 B,4 :|
+|: "G"GF EF G2 B2 | "D"B2 A2 A4 | "D"AG FG A2 c2 | "G"c2 B2 B4 |
+"G"GF EF G2 B2 | "D"B2 A2 A4 | "D"AG F2 AG F2 | "G"G2 G2 G4 :|
+|: "G"B2 A2 G2 F2 | "G"B2 A2 G2 F2 | "G"B2 A2 G2 F2 | "D"E2 D2 C4 |
+"D"A2 G2 F4 | "D"A2 G2 F4 | "D"A2 G2 F2 D2 | "D"E2 C2 "G"B,4 :|

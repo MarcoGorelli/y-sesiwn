@@ -3,11 +3,13 @@ T:Rîl Chwi Fechgyn
 S:http://alawoncymru.com/alawon/Tunes/LlangadF/LlangadF.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams o'r jig 'Chwi Fechgyn Glân Ffri'
 M:4/4
 L:1/8
 Q:1/4=100
 K:D
-|: d2 FA BG DG | AB cd fd e2 | dA FA BG EG | AB cA d3 d :|
-|: fe df gf eg | ag fa gf eg | fe df ec AA | AB cd fd e2 |
-dA FA d2 BA | BG DG B2 G2 | FG AB AG FG | AB cA d4 :|
+|: "D"d2 FA "G"BG DG | "D"AB cd "A"fd e2 | "D"dA FA "G"BG EG | "A"AB cA "D"d3 d :|
+|: "D"fe df "A"gf eg | "D"ag fa "A"gf eg | "D"fe df "A"ec AA | "D"AB cd "A"fd e2 |
+"D"dA FA d2 BA | "G"BG DG B2 G2 | "D"FG AB "G"AG FG | "A"AB cA "D"d4 :|

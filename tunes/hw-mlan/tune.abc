@@ -3,12 +3,15 @@ T:Hŵ Mlân
 S:http://alawoncymru.com/alawon/Tunes/Meillion/Meillion.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams o fersiwn Stephen Rees
+N:The score gives it in D as well.
 M:4/4
 L:1/8
 Q:1/4=110
 K:G
-d4 c2 B2 | A2 G2 A2 B2 | c2 B2 A2 G2 | F2 D4 D2 |
-E2 F2 G2 A2 | Bd- d4 c2 | B d3 c2 A2 | F4 E2 D2 |
-G8 | E4 D4 | G8 | E4 D4 |
-G8- | G8 |]
+"^Pennill""G"d4 c2 B2 | "G"A2 G2 A2 B2 | "C"c2 B2 A2 G2 | "D"F2 D4 D2 |
+"C"E2 F2 G2 A2 | "G"Bd- d4 c2 | "Am"B d3 c2 A2 | "D"F4 E2 D2 ||
+"^Cytgan""G"G8 | "C"E4 "D"D4 | "G"G8 | "C"E4 "D"D4 |
+"G"G8- | "G"G8 |]

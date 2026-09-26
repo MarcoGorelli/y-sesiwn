@@ -4,13 +4,16 @@ R:miniwet
 S:http://alawoncymru.com/alawon/Tunes/MiniwBob/MinwsBob.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=2
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams o addasiad Bob Evans
 N:The harmony (second) part of Diferiad y Gwerwyn, the lower staff of the score.
+N:The chords are those of the melody, Diferiad y Gwerwyn.
 M:3/4
 L:1/8
 Q:1/4=120
 K:D
-|: DE FG FE | DE FD D2 | DE FG FE | D2 F2 E2 |
-G2 G2 A2 | GF ED C2 | G4 G2 | G2 F4 :|
-|: d3 e fd | cF ED C2 | GA BA BG | FB, A,G, F2 |
-d3 e fd | cF ED C2 | G4 G2 | G2 F4 :|
+|: "D"DE FG FE | "D"DE FD D2 | "D"DE FG FE | "D"D2 F2 E2 |
+"G"G2 G2 A2 | "A"GF ED C2 | "G"G4 G2 | "D"G2 F4 :|
+|: "D"d3 e fd | "A"cF ED C2 | "G"GA BA BG | "D"FB, A,G, F2 |
+"D"d3 e fd | "A"cF ED C2 | "G"G4 G2 | "D"G2 F4 :|

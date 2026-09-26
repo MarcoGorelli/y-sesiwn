@@ -4,11 +4,14 @@ R:alaw
 S:http://alawoncymru.com/alawon/Tunes/BachMain/BachMain.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:The score has a second (harmony) part, and plays part A twice, part B, then part A again (D.C. al Fine).
 M:3/4
 L:1/8
 Q:1/4=160
 K:Am
-|: AA | A2 E2 cd | e2 dc BA | c2 B2 A^G | A4 :| cd |
-e2 e2 dc | c2 B2 cd | e2 e2 dc | Bd cB AA |
-A2 E2 cd | e2 dc BA | c2 B2 A^G | A4 |]
+|: AA | "Am"A2 E2 cd | "F"e2 dc BA | "F"c2 B2 "E"A^G | "Am"A4 :| cd |
+"C"e2 e2 dc | "E"c2 B2 cd | "Am"e2 e2 dc | "E"Bd cB AA |
+"Am"A2 E2 cd | "F"e2 dc BA | "F"c2 B2 "E"A^G | "Am"A4 |]

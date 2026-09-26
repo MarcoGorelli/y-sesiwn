@@ -4,16 +4,18 @@ R:fel polca
 S:http://alawoncymru.com/alawon/Tunes/PibLlond/PibLlond.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:The score has a3 a2 g in the eighth bar of part A; the recording plays a3 A3.
 M:6/8
 L:1/8
 Q:3/8=133
 K:D
-|: A3 f2 g | f2 e d2 e | d2 c B2 c | d2 B A3 |
-A2 G F2 A | d2 f g2 e | f2 d c3 | a3 a3 |
-A3 f2 g | f2 e d2 e | d2 c B2 d | e2 f g2 f |
-g2 e f2 a | g2 e d2 f | e2 c d3 | f3 d3 :|
-|: g2 f e2 ^d | e2 ^d e2 f | g2 f e2 ^d | e2 ^d e2 f |
-g2 f e2 f | g2 f e2 f | g2 f e3 | a3 a3- |
-a3 a2 b | a2 g f2 g | f2 e d2 e | f2 d g2 f |
-g2 e f2 a | g2 e d2 f | e2 c d3 | f3 d3 :|
+|: A3 | "D"f2 g f2 e | "Bm"d2 e d2 c | "G"B2 c d2 B | "D"A3 A2 G |
+"D"F2 A d2 f | "G"g2 e "D"f2 d | "A"c3 a3 | "A"a3 A3 | "D"f2 g f2 e |
+"Bm"d2 e d2 c | "G"B2 d e2 f | "G"g2 f g2 e | "D"f2 a "G"g2 e | "D"d2 f "A"e2 c |
+"D"d3 f3 | d3 :| |: g2 f | "Em"e2 ^d e2 ^d | e2 f g2 f |
+"Em"e2 ^d e2 ^d | "Em"e2 f g2 f | "Em"e2 f g2 f | "Em"e2 f g2 f |
+"A"e3 a3 | "A"a3- a3 | "D"a2 b a2 g | "Bm"f2 g f2 e | "G"d2 e f2 d |
+"G"g2 f g2 e | "D"f2 a g2 e | "A"d2 f e2 c | "D"d3 f3 | "D"d3 :|

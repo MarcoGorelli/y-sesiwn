@@ -4,14 +4,15 @@ R:walts
 S:http://alawoncymru.com/alawon/Tunes/SetDawGaeaf/SetDawGaef.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:3/4
 L:1/8
 Q:1/4=90
 K:Dm
-|: A,2 | D2 D2 DE | F2 E2 D2 | E2 A2 A2 | G2 F2 E2 |
-D2 D2 DE | F2 E2 D2 | E2 C2 A,2 | A,4 :| E2 |
-F2 F2 F2 | G2 G2 G2 | A2 AB AB | A2 G2 F2 |
-E2 E2 E2 | F2 F2 F2 | G2 GA GA | G2 F2 E2 |
-F2 F2 F2 | G2 G2 G2 | A2 A2 A2 | A2 B2 c2 |
-d2 G2 c2 | B2 A2 G2 | F2 G2 E2 | D4 |]
+|: A,2 | "Dm"D2 D2 DE | "Dm"F2 E2 D2 | "Am"E2 A2 A2 | "Am"G2 F2 E2 |
+"Dm"D2 D2 DE | "Dm"F2 E2 D2 | "Am"E2 C2 A,2 | "Am"A,4 :| E2 | "F"F2 F2 F2 |
+"Gm"G2 G2 G2 | "Am"A2 AB AB | "Am"A2 G2 F2 | "C"E2 E2 E2 | "F"F2 F2 F2 |
+"Gm"G2 GA GA | "C"G2 F2 E2 | "F"F2 F2 F2 | "Gm"G2 G2 G2 | "Am"A2 A2 A2 |
+"Dm"A2 B2 c2 | "Gm"d2 G2 c2 | "Gm"B2 A2 G2 | "Am"F2 G2 E2 | "Dm"D4 |]

@@ -4,13 +4,14 @@ R:rîl
 S:http://alawoncymru.com/alawon/Tunes/YnysAfan/PontYnysAfan.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Alaw Jordan Williams
 M:2/2
 L:1/8
 Q:1/2=50
 K:G
-|: FE | D3 E DE FA | G2 GA GA Bd | ed ce dB GB | AG FE DE FD |
-G3 E DE FA | G2 GA GA Bd | cA Dc BG |1 DB | AG FA G2 :|2 DB |
-AF DA G2 |: Bc | d2 de dB GB | gf ef dB GB | AB cA BG DG |
-FG EF D2 EF | G2 FE DE FA | G2 GA GA Bd | ec Ge dB |1 GB |
-AF DA G2 :|2 GB | cA FD G2 |]
+|: FE | "D"D3 E DE FA | "G"G2 GA GA Bd | "C"ed ce "G"dB GB | "Am"AG FE "D"DE FD |
+"G"G3 E "D"DE FA | "G"G2 GA GA Bd | "C"cA Dc "G"BG DB |1 "D"AG FA "G"G2 :|2 "D"AF DA "G"G2 |]
+|: Bc | "G"d2 de dB GB | "C"gf ef "G"dB GB | "Am"AB cA "G"BG DG | "Am"FG EF "D"D2 EF |
+"G"G2 FE "D"DE FA | "G"G2 GA GA Bd | "C"ec Ge "G"dB GB |1 "D"AF DA "G"G2 :|2 "D"cA FD "G"G2 |]

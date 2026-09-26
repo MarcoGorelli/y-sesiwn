@@ -3,13 +3,16 @@ T:Bwthyn fy Nain
 R:cân
 S:http://alawoncymru.com/alawon/Tunes/SetStacey/SetStacey.html
 Z:MIDI transcribed with alawon-abc
-%%alawon track=4
+%%alawon track=5
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:The recording's melody is its fifth track (the others are the accompaniment).
 M:4/4
 L:1/8
 Q:1/4=120
 K:Am
-z2 | [A,,E,]4 [G,,D,]4 | [C,G,]8 | [D,A,]8 | [E,,B,,E,]8 |
-[A,,E,]8 | [E,,B,,E,]8 | [D,,A,,]4 [E,,B,,]4 | [A,,E,]6 z2 |
-[A,,E,]8 | [D,A,]8 | [A,,E,]4 [D,,A,,]4 | [E,,B,,E,]8 |
-[A,,E,A,]4 [F,,C,F,]4 | [E,,B,,E,]8 | [D,,A,,]4 [E,,B,,]4 | [A,,E,]6 |]
+E2 | "Am"A2 B2 "G"c2 d2 | "C"e6 c2 | "Dm"e2 e2 d3 c | "Em"B6 B2 |
+"Am"e2 d2 c2 A2 | "Em"B6 cd | "Dm"ef e2 "Em"d2 B2 | "Am"A6 || e2 |
+"Am"c2 B2 c2 A2 | "Dm"d6 e2 | "Am"A2 e2 "Dm"dc A2 | "Em"B6 cd |
+"Am"ef ed "Dm"cB AG | "Em"E6 d2 | "Am"ef e2 "Em"d2 B2 | "Am"A6 |]

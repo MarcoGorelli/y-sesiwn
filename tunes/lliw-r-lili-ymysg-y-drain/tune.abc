@@ -5,12 +5,13 @@ R:alaw / walts
 S:http://alawoncymru.com/alawon/Tunes/SetFfrwl/SetFfrwl.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:3/4
 L:1/8
 Q:1/4=100
 K:Dm
-|: A2 | A2 d2 D2 | F3 G A2 | A2 f2 ed | c3 B AG |
-A2 d2 D2 | F3 G A2 | A2 f2 e2 | d4 :: e2 |
-f3 g a2 | e3 f g2 | f2 fe dc | A4 G2 |
-F2 FG A2 | F2 FG A2 | A2 f2 e2 | d4 :|
+|: A2 | "Dm"A2 d2 D2 | "F"F3 G A2 | "Am"A2 f2 ed | "C"c3 B AG | "Dm"A2 d2 D2 |
+"F"F3 G A2 | "Am"A2 f2 e2 | "Dm"d4 :: e2 | "F"f3 g a2 | "C"e3 f g2 |
+"Dm"f2 fe dc | "Am"A4 G2 | "F"F2 FG A2 | "Dm"F2 FG A2 | "Am"A2 f2 e2 | "Dm"d4 :|

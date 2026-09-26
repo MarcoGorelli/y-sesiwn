@@ -3,11 +3,15 @@ T:Mympwy Llwyd
 R:polca
 S:http://alawoncymru.com/alawon/Tunes/SetAwst/SetAwst.htm
 Z:MIDI transcribed with alawon-abc
-%%alawon track=1
+%%alawon track=1 transpose=-5
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
-M:4/4
+N:The score suggests A over the second half of the bars starting de cd, and D over the second half of the sixth bar of part B.
+M:2/4
 L:1/8
 Q:1/4=90
-K:DMix
-|: BG Bd AF Ac | BG Bd A2 D2 | BG Bd AF Ac | Bc AB G2 G2 :|
-|: ga fg ef df | ga fg e2 d2 | ga fg ed eg | dB cA G2 G2 :|
+K:D
+|: "D"FD FA | "A"EC EG | "D"FD FA | "A"E2 A,2 | "D"FD FA |
+"A"EC EG | "A"FG EF | "D"D2 D2 :: "D"de cd | "G"Bc "D"Ac |
+"D"de cd | "G"B2 "D"A2 | "D"de cd | "G"BA Bd | "D"AF "A"GE | "D"D2 D2 :|

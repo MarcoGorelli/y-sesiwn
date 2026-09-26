@@ -5,14 +5,15 @@ R:fel pibddawns
 S:http://alawoncymru.com/alawon/Tunes/PibauPwt/PibauPwt.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
 M:12/8
 L:1/8
 Q:3/8=80
 K:G
-|: D3 | G3 B2 d c2 B A2 G | F2 G A2 B c3 B2 A | G2 D G2 B A2 G F2 E | F2 E F2 G A2 D E2 F |
-G3 B2 d c2 B A2 G | F2 G A2 B c2 A d2 c | c2 B A2 G B2 A G2 F | G3- G6 :: B2 d |
-c2 B A2 G F3 F2 E | F2 G A2 B A3 A2 G | F3 d3 A3 A2 G | F3 d3 A2 B c2 A |
-B3- B2 A B3- B2 A | G2 A B2 c d3 c2 B | c3 e3 d3 c2 B | A2 B c2 d e2 f g2 e |
-d3 B2 d c2 B A2 G | F2 G A2 B c2 A d2 c | c2 B A2 G B2 A |1 G2 F | G3- G6 :|2 G2 F |
-G3- G6- || G3- | G12 |]
+|: D3 | "G"G3 B2 d "C"c2 B A2 G | "D"F2 G A2 B c3 B2 A | "G"G2 D G2 B "C"A2 G F2 E | "D"F2 E F2 G A2 D E2 F |
+"G"G3 B2 d "C"c2 B A2 G | "D"F2 G A2 B c2 A d2 c | "G"c2 B A2 G "D"B2 A G2 F | "G"G3- G6 :: B2 d |
+"D"c2 B A2 G F3 F2 E | "D"F2 G A2 B A3 A2 G | "D"F3 d3 A3 A2 G | "D"F3 d3 A2 B c2 A |
+"G"B3- B2 A B3- B2 A | "G"G2 A B2 c d3 c2 B | "C"c3 e3 "G"d3 c2 B | "Am"A2 B c2 d "D"e2 f g2 e |
+"G"d3 B2 d c2 B A2 G | "C"F2 G A2 B "D"c2 A d2 c | "G"c2 B A2 G "D"B2 A G2 F |1 "G"G3- G6 :|2 "G"G12- | G12 |]

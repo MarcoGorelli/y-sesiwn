@@ -4,12 +4,14 @@ R:polca
 S:http://alawoncymru.com/alawon/Tunes/MoelWset/MoelWySt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:4/4
 L:1/8
 Q:1/4=100
 K:G
-|: D2 | G3 G G2 D2 | E2 E2 D z2 D | E2 E2 c3 A | G2 F4 D2 |
-G3 G G2 D2 | E2 E2 D z2 D | E2 E2 F3 A | A2 G4 :: D2 |
-G2 B2 d3 G | c2 e2 c3 A | G2 G2 B2 G2 | F2 A4 D2 |
-B3 c B2 A2 | G2 E2 C3 E | D2 D2 E3 A | A2 G4 :|
+|: D2 | "G"G3 G G2 D2 | "C"E2 E2 "G"D z2 D | "C"E2 E2 c3 A | "D"G2 F4 D2 |
+"G"G3 G G2 D2 | "C"E2 E2 "G"D z2 D | "C"E2 E2 "D"F3 A | "G"A2 G4 :|
+|: D2 | "G"G2 B2 d3 G | "C"c2 e2 c3 A | "G"G2 G2 B2 G2 | "D"F2 A4 D2 |
+"Em"B3 c B2 A2 | "C"G2 E2 C3 E | "D"D2 D2 E3 A | "G"A2 G4 :|

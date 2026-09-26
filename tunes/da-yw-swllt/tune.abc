@@ -4,11 +4,13 @@ R:walts, jig
 S:http://alawoncymru.com/alawon/Tunes/SetArian/SetArian.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=47
 K:Em
 % the MIDI plays the whole tune 2 times
-E2 B B3 | AGA B3 | B2 B BAG | F6 |
-EEE BBB | AGA BBA | GGG FFF | E6 |]
+"Em"E2 B B3 | "Am"AGA "Em"B3 | "Em"B2 B "C"BAG | "B"F6 |
+"Em"EEE BBB | "Am"AGA "Em"BBA | "C"GGG "B"FFF | "Em"E6 |]

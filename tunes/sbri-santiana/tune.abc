@@ -3,11 +3,13 @@ T:Sbri Santiana
 S:http://alawoncymru.com/alawon/Tunes/Santiana/Santiana.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:2/2
 L:1/8
 Q:1/2=45
 K:Em
-B,2 | E^D EF GF GA | B4 (3ABA GB | A3 E DA c2 | B4 E3 F |
-GA FE D3 A | AB AG F2 EG | F2 E2 F2 B2 | G2 EG F2 DF |
-E2 E/F/E/D/ E4- | E8 |]
+B,2 | "Em"E^D EF "D"GF GA | "G"B4 (3ABA GB | "D"A3 E DA c2 | "Em"B4 E3 F |
+"D"GA FE D3 A | "D"AB AG F2 EG | "Bm"F2 E2 F2 B2 | "Em"G2 EG "D"F2 DF |
+"Em"E2 E/F/E/D/ E4- | "Em"E8 |]

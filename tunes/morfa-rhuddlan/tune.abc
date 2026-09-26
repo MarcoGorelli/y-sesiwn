@@ -4,14 +4,15 @@ R:alaw/walts
 S:http://alawoncymru.com/alawon/Tunes/TonTonSt/TonTonSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:3/4
 L:1/8
 Q:1/4=120
 K:Em
-|: E2 E2 GB | A2 cB AG | F2 FG FE | B2 B,4 |
-E2 E2 GB | A2 cB AG | F2 E2 ^D2 | E2 E4 :|
-B2 Bc dB | A2 AB cA | G2 G2 F2 | F2 G4 |
-B2 Bc dB | A2 AB cA | Gc BA GF | F2 G4 |
-B2 GA BG | A2 FG AF | G2 EG FE | B2 B,4 |
-E2 EF GB | A2 cB AG | F2 E2 ^D2 | E2 E4 |]
+|: "Em"E2 E2 GB | "Am"A2 cB AG | "C"F2 FG FE | "B"B2 B,4 | "Em"E2 E2 GB |
+"C"A2 cB AG | "B"F2 E2 ^D2 | "Em"E2 E4 :| "G"B2 Bc dB | "D"A2 AB cA |
+"Em"G2 G2 F2 | "B"F2 "Em"G4 | "G"B2 Bc dB | "D"A2 AB cA | "C"Gc BA GF |
+"D"F2 "G"G4 | "Em"B2 GA BG | "D"A2 FG AF | "C"G2 EG FE | "B"B2 B,4 |
+"Em"E2 EF GB | "C"A2 cB AG | "B"F2 E2 ^D2 | "Em"E2 E4 |]

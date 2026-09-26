@@ -4,12 +4,13 @@ R:polca
 S:http://alawoncymru.com/alawon/Tunes/SetPibBryn/SetPibBryn.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:2/4
 L:1/8
 Q:1/4=60
 K:D
-|: F/E/D/E/ FA | AG G2 | G/F/E/F/ GB | BA A2 |
-F/E/D/E/ FA | AG G2 | G/F/E G/F/E | FD D2 :|
-|: dc BA | dc BA | dc BA | GF E2 |
-cB A2 | cB A2 | cB AG | FD D2 :|
+|: "D"F/E/D/E/ FA | "A"AG G2 | "A"G/F/E/F/ GB | "D"BA A2 | "D"F/E/D/E/ FA |
+"A"AG G2 | "A"G/F/E G/F/E | "D"FD D2 :: "D"dc BA | "D"dc BA |
+"D"dc BA | "G"GF "A"E2 | "A"cB A2 | "A"cB A2 | "A"cB AG | "D"FD D2 :|

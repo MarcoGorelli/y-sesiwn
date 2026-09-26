@@ -6,16 +6,18 @@ R:pibddawns
 S:http://alawoncymru.com/alawon/Tunes/PibLlond/PibLlond.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=80
 K:D
-|: A | F2 A D2 d | B2 d G2 a | g2 f e2 d | c2 d e2 f |
-g2 e e2 g | f2 d d2 f | e2 c d2 B | A2 B A2 G |
-F2 A D2 d | B2 d G2 a | g2 f e2 d | c2 d e2 f |
-g2 e f2 d | B2 e A2 c | d3 D3 | D3- D2 :: a |
-g2 a e2 a | f2 a d2 a | g2 a e2 a | f2 a d2 a |
-f2 a d2 f | B2 b g2 f | eba gfe | dcB ABG |
-F2 A D2 d | B2 d G2 a | g2 f e2 d | c2 d e2 f |
-g2 e f2 d | B2 e A2 c | d3 D3 | D3- D2 :|
+|: A | "D"F2 A D2 d | "G"B2 d G2 a | "G"g2 f e2 d | "A"c2 d e2 f |
+"G"g2 e e2 g | "D"f2 d d2 f | "Em"e2 c d2 B | "A"A2 B A2 G |
+"D"F2 A D2 d | "G"B2 d G2 a | "G"g2 f e2 d | "A"c2 d e2 f |
+"G"g2 e "D"f2 d | "G"B2 e "A"A2 c | "D"d3 D3 | "D"D3- D2 :: a |
+"A"g2 a e2 a | "D"f2 a d2 a | "A"g2 a e2 a | "D"f2 a d2 a |
+"D"f2 a d2 f | "G"B2 b g2 f | "G"eba gfe | "A"dcB ABG |
+"D"F2 A D2 d | "G"B2 d G2 a | "G"g2 f e2 d | "A"c2 d e2 f |
+"G"g2 e "D"f2 d | "G"B2 e "A"A2 c | "D"d3 D3 | "D"D3- D2 :|

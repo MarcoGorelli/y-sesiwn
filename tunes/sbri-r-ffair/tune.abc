@@ -3,16 +3,14 @@ T:Sbri'r Ffair
 S:http://alawoncymru.com/alawon/Tunes/SetDacwDadi/SetDacwDad.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Meurig Williams
 M:2/4
 L:1/8
 Q:1/4=100
 K:Em
-|: E2 B2 | BA GB | AB AG | F2 EF |
-G2 E2 | EF GE | F2 D2 | B,2 F2 |
-E2 B2 | BA GB | AB AG | F2 EF |
-G2 E2 | FE DF | E4 | E4 :|
-|: G2 GA | B2 G2 | A2 AB | A2 F2 |
-G2 B2 | BA G2 | F2 A2 | A4 |
-G2 GA | B2 G2 | A2 AB | A2 F2 |
-G2 B2 | A2 F2 | E2 D2 | E4 :|
+|: "Em"E2 B2 | "Em"BA GB | "D"AB AG | "D"F2 EF | "C"G2 E2 | "C"EF GE | "Bm"F2 D2 | "Bm"B,2 F2 |
+"Em"E2 B2 | "Em"BA GB | "D"AB AG | "D"F2 EF | "C"G2 E2 | "Bm"FE DF | "Em"E4 | "Em"E4 :|
+|: "G"G2 GA | "G"B2 G2 | "D"A2 AB | "D"A2 F2 | "G"G2 B2 | "G"BA G2 | "D"F2 A2 | "D"A4 |
+"G"G2 GA | "G"B2 G2 | "D"A2 AB | "D"A2 F2 | "Em"G2 B2 | "Bm"A2 F2 | "Em"E2 D2 | "Em"E4 :|

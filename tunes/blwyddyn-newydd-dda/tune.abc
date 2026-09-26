@@ -3,11 +3,14 @@ T:Blwyddyn Newydd Dda
 S:http://alawoncymru.com/alawon/Tunes/HenGalan/HenGalan.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:The score gives the words.
 M:9/8
 L:1/8
 Q:3/8=80
 K:G
-G2 A | B3 B2 A G2 E | D6 G2 B | A3- A2 A G2 A | B6 G2 A |
-B3 B2 A G2 E | D6 G2 B | [M:6/8] A3 c3 | B3 A3 |
-[M:9/8] G6 G3 |]
+G2 A | "G"B3 B2 A G2 E | D6 G2 B | "D"A3- A2 A G2 A | "G"B6 G2 A |
+"G"B3 B2 A G2 E | D6 G2 B | [M:6/8] "Am"A3 c3 | "D"B3 A3 |
+[M:9/8] "G"G6 G3 |]

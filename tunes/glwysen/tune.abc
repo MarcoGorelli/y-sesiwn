@@ -4,14 +4,16 @@ R:walts
 S:http://alawoncymru.com/alawon/Tunes/Glwysen/Glwysen.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:The score plays part A, part B, then part A again (D.C. al Fine), and has a^ga=g fe in the fifth bar of part B; the recording plays ag ag fe.
 M:3/4
 L:1/8
 Q:1/4=120
 K:Am
-|: E2 | A2 AB cA | B2 ^G2 E2 | A2 AB cd | e3 d cB |
-A2 AB cA | B2 ^G2 E2 | AF Ec B^G | A4 :| B2 |
-c2 cd ec | g4 G2 | A2 AB cd | e4 e2 |
-ag ag fe | fe fe dc | dc dc BA | ^GB AG FE |
-A2 AB cA | B2 ^G2 E2 | A2 AB cd | e3 d cB |
-A2 AB cA | B2 ^G2 E2 | AF Ec B^G | A4 |]
+|: E2 | "Am"A2 AB cA | "E"B2 ^G2 E2 | "F"A2 AB cd | "E"e3 d cB | "Am"A2 AB cA |
+"E"B2 ^G2 E2 | "F"AF E"E"c B^G | "Am"A4 :| B2 | "C"c2 cd ec | "G"g4 G2 | "Am"A2 AB cd |
+"E"e4 e2 | "Am"ag ag fe | "Dm"fe fe dc | "F"dc dc BA | "E"^GB AG FE |
+"Am"A2 AB cA | "E"B2 ^G2 E2 | "F"A2 AB cd | "E"e3 d cB |
+"Am"A2 AB cA | "E"B2 ^G2 E2 | "F"AF E"E"c B^G | "Am"A4 |]

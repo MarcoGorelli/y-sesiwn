@@ -5,12 +5,13 @@ R:alaw - walts
 S:http://alawoncymru.com/alawon/Tunes/HobedHil/HobHilSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
 M:3/4
 L:1/8
 Q:1/4=120
 K:Am
-|: E2 | A3 B c2 | E4 EF | G2 G2 A2 | D4 CD |
-E2 E2 CD | E2 E2 CD | E2 A2 B2 | A4 :: B2 |
-c2 Bc GE | c2 Bc GE | cd ec dB | A4 GF |
-E2 E2 CD | E2 E2 CD | E2 A2 B2 | A4 :| A2- | A2 z2 |]
+|: E2 | "Am"A3 B c2 | "C"E4 EF | "G"G2 G2 A2 | D4 CD | "C"E2 E2 CD |
+"Em"E2 E2 CD | "Am"E2 A2 "G"B2 | "F"A4 :: B2 | "C"c2 Bc GE | "Em/B"c2 Bc GE |
+"Am"cd ec "G"dB | "F"A4 GF | "C"E2 E2 CD | "Em"E2 E2 CD | "Am"E2 A2 "G"B2 | "F"A4 :| A2- | A2 z2 |]

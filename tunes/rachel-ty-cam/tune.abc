@@ -3,12 +3,15 @@ T:Rachel Tŷ Cam
 S:http://alawoncymru.com/alawon/Tunes/StLlCaer/StLlCaer.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:The score suggests Bm as an alternative chord in the bars DED D2 E.
 M:6/8
 L:1/8
 Q:3/8=60
 K:D
-|: A | dAA F2 E | DED D2 E | FGF FGA | GEE E2 A |
-dAA F2 E | DED D2 E | FGA GFE | FDD D2 :: A |
-ABA A2 A | dcd d2 d | dcd Bed | cAA A2 d |
-ABA F2 E | DED D2 E | FGA GFE | FDD D2 :|
+|: A | "D"dAA F2 E | DED D2 E | "G"FGF FGA | "A"GEE E2 A |
+"D"dAA F2 E | DED D2 E | "G"FGA "A"GFE | "D"FDD D2 :: A |
+"A"ABA A2 A | "D"dcd d2 d | "E7"dcd Bed | "A"cAA A2 d |
+"D"ABA F2 E | DED D2 E | "G"FGA "A"GFE | "D"FDD D2 :|

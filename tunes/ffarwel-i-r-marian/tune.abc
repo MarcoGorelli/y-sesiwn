@@ -4,14 +4,17 @@ R:walts
 S:http://alawoncymru.com/alawon/Tunes/DFfarMar/DFfarMar.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:The score plays part A twice, part B, then part A again (D.C. al Fine).
 M:3/4
 L:1/8
 Q:1/4=80
 K:Dm
-|: Ad A=B ^cd | e2 A4 | fg fe de | ^c2 A4 |
-Ad AG AF | Bd BA BG | FA F2 E2 | D6 :|
-A2 c3 A | G2 A4 | A2 c3 d | e2 A4 |
-f2 g3 f | f2 e2 d2 | ce c2 =B2 | A6 |
-Ad A=B ^cd | e2 A4 | fg fe de | ^c2 A4 |
-Ad AG AF | Bd BA BG | FA F2 E2 | D6 |]
+|: "Dm"Ad A=B ^cd | "A"e2 A4 | "Gm"fg fe de | "A"^c2 A4 |
+"Dm"Ad AG AF | "Gm"Bd BA BG | "Dm"FA F2 "A"E2 | "Dm"D6 :|
+"F"A2 c3 A | "C"G2 "F"A4 | "F"A2 c3 d | "Am"e2 A4 |
+"Dm"f2 g3 f | "Gm"f2 e2 d2 | "Am"ce c2 "Em"=B2 | "A"A6 |
+"Dm"Ad A=B ^cd | "A"e2 A4 | "Gm"fg fe de | "A"^c2 A4 |
+"Dm"Ad AG AF | "Gm"Bd BA BG | "Dm"FA F2 "A"E2 | "Dm"D6 |]

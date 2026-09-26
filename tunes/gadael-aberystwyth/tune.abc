@@ -3,12 +3,14 @@ T:Gadael Aberystwyth
 S:http://alawoncymru.com/alawon/Tunes/SetFfrwl/SetFfrwl.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=53
 K:Am
-|: A | c2 A d2 c | d e4 A | A2 e edc | B4 ef |
-edc BAG | G A3 AB | c3/2d/c BAG | A3- A2 :: B |
-c2 c cde | dcB B2 B | c2 c cBA | B3- B2 B |
-A2 A ABc | d2 d def | edc dcB | A3- A2 :|
+|: A | "Am"c2 A "Dm"d2 c | "Am"d e4 A | "Am"A2 e "Dm"edc | "E5"B4 ef |
+"Am"edc "E5"BAG | "Am"G A3 AB | "Dm"c3/2d/c "E5"BAG | "Am"A3- A2 :: B |
+"C"c2 c cde | "G"dcB B2 B | "Am"c2 c cBA | "E5"B3- B2 B |
+"Am"A2 A ABc | "Dm"d2 d def | "Am"edc "E5"dcB | "Am"A3- A2 :|

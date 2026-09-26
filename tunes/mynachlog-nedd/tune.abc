@@ -4,21 +4,17 @@ R:alaw
 S:http://alawoncymru.com/alawon/Tunes/SetKenThom/SetKenThom.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams o alaw Alyson a Ken Thomas
 M:4/4
 L:1/8
 Q:1/4=100
 K:Em
-|: E2 E2 G2 A2 | E4 G2 A2 | B4 B4 | B6 B2 |
-e2 e2 B2 G2 | A4 B2 c2 | B2 e2 f2 d2 | e8 :|
-|: e2 f2 g4 | g2 g2 f4 | f4 e4 | B4 B4 |
-B2 e4 B2 | G2 A2 B2 c2 | A2 B4 E2 | F2 E6 :|
-E2 E2 G2 A2 | E4 G2 A2 | B4 B4 | B6 B2 |
-e2 e2 B2 G2 | A4 G2 A2 | B2 e2 f2 g2 |: e8 |
-E2 E2 G2 A2 | E4 G2 A2 | B4 B4 | B6 B2 |
-e2 e2 B2 G2 | A4 B2 c2 | B2 e2 f2 d2 :| e8
-|: e2 f2 g4 | g2 g2 f4 | f4 e4 | B4 B4 |
-B2 e4 B2 | G2 A2 B2 c2 | A2 B4 E2 | F2 E6 :|
-E2 E2 G2 A2 | E4 G2 A2 | B4 B4 | B6 B2 |
-e2 e2 B2 G2 | A4 G2 A2 | B2 e2 f2 g2 | e8- |
-e8 |]
+% the MIDI plays the whole tune 2 times
+|: "Em"E2 E2 G2 A2 | "C"E4 G2 A2 | "G"B4 B4 | "Bm"B6 B2 |
+"Em"e2 e2 B2 G2 | "Am"A4 B2 c2 | "Bm"B2 e2 f2 d2 | "Em"e8 :|
+|: "C"e2 f2 g4 | "D"g2 g2 f4 | "Am"f4 e4 | "Bm"B4 B4 |
+"Em"B2 e4 B2 | "C"G2 A2 B2 c2 | "Am"A2 B4 E2 | "Em"F2 E6 :|
+"Em"E2 E2 G2 A2 | "C"E4 G2 A2 | "G"B4 B4 | "Bm"B6 B2 |
+"Em"e2 e2 B2 G2 | "Am"A4 G2 A2 | "Bm"B2 e2 f2 g2 | "Em"e8 |]

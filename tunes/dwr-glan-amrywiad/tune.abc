@@ -3,19 +3,17 @@ T:Dŵr Glân - amrywiad
 S:http://alawoncymru.com/alawon/Tunes/BelleIsl/BelleIsl.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:The score plays part A twice, part B, then part A again (D.C. al Fine).
 M:2/4
 L:1/8
 Q:1/4=80
 K:Gm
-|: GA Bc | Bc AB | AB G2 | GA BA |
-BG AB | AB GA | GA ^FA | DA ^FA |
-DA BA | Bc Bc | BA G2 | G^F GA |
-Bc d2 | de dc | BA G2- | G4 :|
-|: Bc d2 | de c2 | cd B2 | BA Bc |
-de f2 | d2 ed | c2 d2 |1 B2 BA :|
-[2 de dc || BA Bc | Bc AB | AB G2 |
-GA BA | BG AB | AB GA | GA ^FA |
-DA ^FA | DA BA | Bc Bc | BA G2 |
-G^F GA | Bc d2 | de dc | BA G2- |
-G4 |]
+|: GA | "Gm"Bc Bc | "D"AB AB | "Gm"G2 GA | BA BG | AB AB | "Eb"GA GA | "D"^FA DA | ^FA DA |
+"Gm"BA Bc | Bc BA | "Eb"G2 G^F | GA Bc | "D"d2 de | dc BA | "Gm"G4- | G2 :|
+Bc | "Bb"d2 de | "F"c2 cd | "Bb"B2 BA | Bc de | "Bb"f2 d2 | "F"ed c2 | "Bb"d2 B2 | BA Bc |
+"Bb"d2 de | "F"c2 cd | "Bb"B2 BA | Bc de | "Bb"f2 d2 | "F"ed c2 | "Gm"d2 de | "D"dc BA |
+"Gm"Bc Bc | "D"AB AB | "Gm"G2 GA | BA BG | AB AB | "Eb"GA GA | "D"^FA DA | ^FA DA |
+"Gm"BA Bc | Bc BA | "Eb"G2 G^F | GA Bc | "D"d2 de | dc BA | "Gm"G4- | G2 |]

@@ -4,10 +4,13 @@ R:rîl
 S:http://alawoncymru.com/alawon/Tunes/StWcrain/Wcrain.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
-M:2/2
+M:2/4
 L:1/8
 Q:1/2=40
 K:GMix
-|: ce Be AB ce | ce Be A3 B | ce dc AB cd | ec dB A2 A2 :|
-|: cB cd ef ed | cB cA B3 B | cB A^G AB ce | dc Bc A2 z2 :|
+|: "Am"ce "E"Be | "Am"AB "E"ce | "Am"ce "E"Be | "Am"A3 B | "Am"ce "E"dc | "Am"AB "E"cd |
+"Am"ec "E"dB | "Am"A2 A2 :: "C"cB "G"cd | "C"ef "G"ed | "Am"cB cA | "E"B3 B |
+"F"cB "E"A^G | "F"AB "Am"ce | "F"dc "E"Bc | "Am"A2 z2 :|

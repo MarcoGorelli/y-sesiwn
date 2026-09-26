@@ -5,14 +5,15 @@ R:walts
 S:http://alawoncymru.com/alawon/Tunes/DawPstSt/DawPisSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
 M:3/4
 L:1/8
 Q:1/4=120
 K:D
-|: d2 | A2 AB AG | F2 A2 D2 | G2 GA GF | E4 d2 |
-A2 AB AG | F2 A2 D2 | G2 F2 E2 | D4 :| D2 |
-F2 FE FG | A4 AG | F2 FE FG | A4 A2 |
-d2 dc de | c2 B2 A2 | d2 df eg | f4 e2 |
-d2 dc Bd | c2 B2 A2 | d2 F2 ^G2 | A4 d2 |
-A2 AB AG | F2 A2 D2 | G2 F2 E2 | D4 |]
+|: d2 | "D"A2 AB AG | "Bm"F2 A2 D2 | "G"G2 GA GF | "A"E4 d2 |
+"D"A2 AB AG | "Bm"F2 A2 D2 | "A"G2 F2 E2 | "D"D4 :| D2 | "D"F2 FE FG |
+"A"A4 AG | "Bm"F2 FE FG | "A"A4 A2 | "D"d2 dc de | "A"c2 B2 A2 |
+"D"d2 df "A"eg | "D"f4 e2 | "Bm"d2 dc Bd | "A"c2 B2 A2 | "E"d2 F2 ^G2 |
+"A"A4 d2 | "D"A2 AB AG | "Bm"F2 A2 D2 | "A"G2 F2 E2 | "D"D4 |]

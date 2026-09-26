@@ -4,10 +4,12 @@ R:Ymdeithdon
 S:http://alawoncymru.com/alawon/Tunes/SetYmdaithYCym/SetYmdaithCym.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams o alaw G F Handel
 M:4/4
 L:1/8
 Q:1/4=70
 K:G
-|: GG/G/ GG G2 D2 | GD B,D GD GA | BB/B/ BB B2 A2 | B/c/d/e/ ^c>d d4 :|
-|: AA/A/ AA A2 d2 | BG DG BG Bc | dd/d/ dd d2 c2 | B/c/d/e/ A>G G4 :|
+|: "G"GG/G/ GG G2 D2 | "G"GD B,D GD GA | "G"BB/B/ BB B2 A2 | "G"B/c/d/e/ "A"^c>d "D"d4 :|
+|: "D"AA/A/ AA A2 d2 | "G"BG DG BG Bc | "G"dd/d/ dd d2 c2 | "C"B/c/d/e/ "D"A>G "G"G4 :|

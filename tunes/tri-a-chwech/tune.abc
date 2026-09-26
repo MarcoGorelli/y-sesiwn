@@ -4,12 +4,14 @@ R:walts
 S:http://alawoncymru.com/alawon/Tunes/TriBobst/TriawBob.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams o fersiwn Bob Evans
 M:3/4
 L:1/8
 Q:1/4=120
 K:D
-|: d4 A2 | F2 G2 A2 | e2 e=f ef | eA Bc de |
-d4 A2 | F2 G2 A2 | =fg/f/ ed ec | d6 :|
-|: e>=f ed cd | e=f e4 | =fg/f/ ed cB | A>B AG FG |
-AB AG FG | AB AG FE | D2 d2 c2 | d6 :|
+|: "D"d4 A2 | "D"F2 G2 A2 | "A"e2 e=f ef | "A"eA Bc de |
+"D"d4 A2 | "D"F2 G2 A2 | "Bb"=fg/f/ "A"ed ec | "D"d6 :|
+|: "A"e>=f ed cd | "A"e=f e4 | "Bb"=fg/f/ "A"ed cB | "A"A>B AG FG |
+"D"AB AG FG | "D"AB AG FE | "D"D2 d2 "A"c2 | "D"d6 :|

@@ -4,11 +4,14 @@ R:2-step
 S:http://alawoncymru.com/alawon/Tunes/HoffBeth/HoffBeth.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:The score writes it in cut time with every note twice as long, so each bar here is two of its bars.
 M:2/2
 L:1/8
 Q:1/2=30
 K:D
-|: d/e/ | ff fa dd dd/e/ | ff fa e3 c/d/ | ee eg/e/ cc cc/d/ | ee ea d3 :| c/d/ |
-e>c d>B c>A B>^G | Aa aa a3 e/f/ | gg ff ee dd | cd gf e3 c/d/ |
-ff fa dd dd/e/ | ff fa e3 c/d/ | e>c d>B c>A B>^G | Aa ac d3 |]
+|: d/e/ | "D"ff fa dd dd/e/ | "D"ff fa "A"e3 c/d/ | "A"ee eg/e/ cc cc/d/ | "A"ee ea "D"d3 :| c/d/ |
+"A"e>c "E"d>B "A"c>A "E"B>^G | "A"Aa aa a3 e/f/ | "A"gg "D"ff "A"ee "D"dd | "A"cd gf e3 c/d/ |
+"D"ff fa dd dd/e/ | "D"ff fa "A"e3 c/d/ | "A"e>c "E"d>B "A"c>A "E"B>^G | "A"Aa ac "D"d3 |]

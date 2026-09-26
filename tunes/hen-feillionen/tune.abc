@@ -4,13 +4,15 @@ R:dawns llys
 S:http://alawoncymru.com/alawon/Tunes/Meillion/Meillion.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams o fersiwn Bob Evans
 M:4/4
 L:1/8
 Q:1/4=70
 K:G
-|: D2 | G2 Bd cB AG | FG AB c2 BA | G2 B2 A2 G2 | FE FG A2 D2 |
-G2 Bd cB AG | FG AB c2 dc | cB AG BA GF | G6 :: Bd |
-cB AG F2 FE | FG AB A2 AG | F2 d2 A2 AG | F2 d2 AB cA |
-B3 A B3 A | GA Bc d2 cB | c2 e2 d2 cB | AB cd ef ge |
-d2 Bd cB AG | FG AB cA dc | cB AG BA GF | G6 :|
+|: D2 | "G"G2 Bd cB AG | "D"FG AB c2 BA | "G"G2 B2 "C"A2 G2 | "D"FE FG A2 D2 |
+"G"G2 Bd "C"cB AG | "D"FG AB c2 dc | "G"cB AG "D"BA GF | "G"G6 :: Bd |
+"D"cB AG F2 FE | "D"FG AB A2 AG | "D"F2 d2 A2 AG | "D"F2 d2 AB cA |
+"G"B3 A B3 A | "G"GA Bc d2 cB | "C"c2 e2 "G"d2 cB | "Am"AB cd "D"ef ge |
+"G"d2 Bd "C"cB AG | "D"FG AB cA dc | "G"cB AG "D"BA GF | "G"G6 :|

@@ -4,16 +4,15 @@ R:Ymdeithdon
 S:http://alawoncymru.com/alawon/Tunes/SetYPentre/SetYPentre.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:2/4
 L:1/8
 Q:1/4=90
 K:D
-|: FD FG | AF GA | BA GB | A2 D2 |
-FD FG | AF GA | GA GF | E2 C2 |
-FD FG | AF GA | BA GB | AA Bc |
-dc dA | Bc dG | FG FE | D4 :|
-|: dc dB | AF AB | dc dB | A3 A |
-dc dB | AF DF | GF ED | CE Ac |
-dc dB | AF AB | dc dB | A2 GF |
-GA BG | FA DF | EG CE | D4 :|
+|: "D"FD FG | "D"AF GA | "G"BA GB | "D"A2 D2 | "D"FD FG | "D"AF GA |
+"Em"GA GF | "A"E2 C2 | "D"FD FG | "D"AF GA | "G"BA GB | "D"AA Bc |
+"D"dc dA | "G"Bc dG | "A"FG FE | "D"D4 :: "G"dc dB | "D"AF AB |
+"G"dc dB | "D"A3 A | "G"dc dB | "D"AF DF | "Em"GF ED | "A"CE Ac | "G"dc dB |
+"D"AF AB | "G"dc dB | "D"A2 GF | "G"GA BG | "D"FA DF | "A"EG CE | "D"D4 :|

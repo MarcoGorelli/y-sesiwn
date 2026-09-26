@@ -2,19 +2,16 @@ X:1
 T:Môn (version 2)
 S:http://alawoncymru.com/alawon/Tunes/SetAwst/SetAwst.htm
 Z:MIDI transcribed with alawon-abc
-%%alawon track=1
+%%alawon track=1 pickup=0 bars=33-64
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
+N:The alawoncymru recording is a medley; only the part that is this tune is kept.
 M:4/4
 L:1/8
 Q:1/4=160
 K:D
-|: A3 G F2 GA | B2 B2 A2 A2 | Bc d2 cd e2 | de fg e2 dc |
-d2 AG F2 GA | B2 B2 A2 A2 | Bc d2 cd eg | f2 d2 d4 :|
-|: f2 ed e2 dc | d2 cB c2 BA | Bc d2 cd e2 | de fg e2 dc |
-d2 AG F2 GA | B2 B2 A2 A2 | Bc d2 cd eg | f2 d2 d4 :|
-|: d3 d A2 A2 | F2 A2 d2 ef | g3 f e2 d2 | e2 d2 cB A2 |
-d3 d A2 A2 | F2 A2 d2 e2 | f2 gf e2 fe | d6 A2 :|
-|: f3 f d2 d2 | e3 e c2 c2 | d2 ef g3 f | e2 d2 cB A2 |
-d3 d A2 A2 | F2 A2 d2 e2 | f2 gf e2 fe | d6 A2 :|
-|: FD FA EC EG | FD FA E2 A,2 | FD FA EC EG | FG EF D2 D2 :|
-|: de cd Bc Ac | de cd B2 A2 | de cd BA Bd | AF GE D2 D2 :|
+|: "D"d3 d A2 A2 | F2 A2 d2 ef | "G"g3 f e2 d2 | "A"e2 d2 cB A2 |
+"D"d3 d A2 A2 | F2 A2 d2 e2 | "G"f2 gf "A"e2 fe | "D"d6 A2 :|
+|: "D"f3 f d2 d2 | "A"e3 e c2 c2 | "D"d2 ef "G"g3 f | "A"e2 d2 cB A2 |
+"D"d3 d A2 A2 | F2 A2 d2 e2 | "G"f2 gf "A"e2 fe | "D"d6 A2 :|

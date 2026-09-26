@@ -85,9 +85,17 @@ relative URLs, so the site also works under a sub-path such as
   bar that doesn't start with a chord of its own begins with the one still
   sounding, faintly. It's
   built from abcjs's parsed tune (`chordChart()` in `app.js`), so it follows
-  the key drop-down. Switches show the chords on the sheet music (always
-  drawn, hidden by CSS unless on) and add them to playback (abcjs's
-  `chordsOff`). A `%%chords <text>` line says where they come from; the build
+  the key drop-down. A switch shows the chords on the sheet music (always
+  drawn, hidden by CSS unless on), and **Play** chooses *Tune only*, *Tune
+  and chords* or *Chords only* (abcjs's `chordsOff` / `voicesOff`). Jigs
+  (6/8, and 9/8, 12/8) are accompanied like a guitar or bodhrán, on every
+  quaver, "Down up down, Down up down" (`%%MIDI gchord bIcbIc`), instead of abcjs's
+  "boom · chick" default. With *Tune and chords*, the chords and bass are played more quietly than
+  abcjs's default (with *Chords only* they keep it) (`%%MIDI chordvol 32`, `bassvol 50`; `CHORD_VOLUME` and
+  `BASS_VOLUME` in `app.js`), so the tune stays on top. They're not moved an
+  octave down: abcjs already voices them below most melodies (about A2–D4),
+  and an octave lower (A1–D3) sits on the bass and sounds muddy.
+  `accompaniment()` in `app.js` adds these lines unless the tune sets its own. A `%%chords <text>` line says where they come from; the build
   passes it on as `chords` (`null` when a tune has no chords). The first
   chords were copied from the Alawon Cymru score images.
 - **Print:** a button on the tune page; the print styles leave just the

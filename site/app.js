@@ -31,7 +31,7 @@ const state = {
   synth: null,          // the playing SynthController, stopped when leaving a tune
   keyNote: null,        // the note sounding from the search-by-notes keyboard
   docs: new Map(),      // markdown files, fetched on first use
-  chords: { onScore: false, play: false },  // the chord box's switches, for every tune
+  chords: { onScore: false, play: "tune" },  // the chord box's settings, for every tune; play: tune, both or chords
 };
 
 // ---- Small DOM helper ----------------------------------------------------
@@ -439,11 +439,11 @@ function drawScore(tune, paper, audio, chart) {
     // strTranspose needs the whole array renderAbc returns, not its first tune.
     abc = ABCJS.strTranspose(abc, ABCJS.renderAbc("*", abc), transpose);
   }
-  const visualObj = ABCJS.renderAbc(paper, abc, { responsive: "resize", add_classes: true, paddingtop: 0 })[0];
+  const visualObj = ABCJS.renderAbc(paper, accompaniment(abc, state.chords.play === "both"), { responsive: "resize", add_classes: true, paddingtop: 0 })[0];
   // Chords are always drawn (so playback has them), and hidden unless asked for.
   paper.classList.toggle("hide-chords", !state.chords.onScore);
   if (chart) chart.replaceChildren(chordChart(visualObj));
-  const audioParams = { ...AUDIO_PARAMS, chordsOff: !state.chords.play };
+  const audioParams = { ...AUDIO_PARAMS, chordsOff: state.chords.play === "tune", voicesOff: state.chords.play === "chords" };
 
   audio.replaceChildren();
   if (!ABCJS.synth.supportsAudio()) {
@@ -471,6 +471,28 @@ function drawScore(tune, paper, audio, chart) {
 
 const REPEAT_START = new Set(["bar_left_repeat", "bar_dbl_repeat"]);  // drawn as |: and :| by style.css
 const REPEAT_END = new Set(["bar_right_repeat", "bar_dbl_repeat"]);
+
+// How the chords are played. abcjs already voices them below most melodies (about
+// A2-D4), but three piano notes at once drown the tune, so with the tune they're
+// played more quietly than abcjs's default (chords 48, bass 64, out of 127; the
+// melody plays at 85-105). On their own ("Chords only") they keep the default. abcjs's default for 6/8 is "boom · chick boom · chick" (bass, gap,
+// chord), which sounds like a waltz in two. Guitars and bodhráns drive a jig with
+// every quaver, "Down up down, Down up down": here each beat starts with the bass
+// and the full chord (b), the middle quaver is a single light chord note (I), and
+// the last quaver the full chord again (c). A tune's own %%MIDI lines win.
+const CHORD_VOLUME = 32;
+const BASS_VOLUME = 50;
+const STRUMS = { "6/8": "bIcbIc", "9/8": "bIcbIcbIc", "12/8": "bIcbIcbIcbIc" };
+
+function accompaniment(abc, withTune) {
+  const lines = [];
+  const has = (name) => new RegExp(`^%%MIDI\\s+${name}`, "m").test(abc);
+  if (withTune && !has("chordvol")) lines.push(`%%MIDI chordvol ${CHORD_VOLUME}`);
+  if (withTune && !has("bassvol")) lines.push(`%%MIDI bassvol ${BASS_VOLUME}`);
+  const strum = STRUMS[abc.match(/^M:\s*(\S+)/m)?.[1]];
+  if (strum && !has("gchord")) lines.push(`%%MIDI gchord ${strum}`);
+  return abc.replace(/^K:/m, `${lines.join("\n")}\nK:`);
+}
 
 function chordChart(visualObj) {
   const { num, den } = visualObj.getMeterFraction();
@@ -529,13 +551,20 @@ function chordChart(visualObj) {
 
 function chordCard(tune, redraw) {
   if (tune.chords == null) return null;
-  const toggle = (key, label) => el("label", { class: "switch" },
-    el("input", { type: "checkbox", checked: state.chords[key],
-      onchange: (e) => { state.chords[key] = e.target.checked; redraw(); } }), label);
+  const showOnScore = el("label", { class: "switch" },
+    el("input", { type: "checkbox", checked: state.chords.onScore,
+      onchange: (e) => { state.chords.onScore = e.target.checked; redraw(); } }), "Show on the sheet music");
+  const playback = el("div", { class: "segmented", role: "radiogroup", "aria-label": "Playback" },
+    [["tune", "Tune only"], ["both", "Tune and chords"], ["chords", "Chords only"]].map(([value, label]) =>
+      el("label", {},
+        el("input", { type: "radio", name: "chord-playback", value, checked: state.chords.play === value,
+          onchange: () => { state.chords.play = value; redraw(); } }),
+        el("span", {}, label))));
   return el("section", { class: "card chords" },
     el("h2", {}, "Suggested chords"),
     el("div", { class: "chart-box" }),
-    el("div", { class: "switches" }, toggle("onScore", "Show on the sheet music"), toggle("play", "Play chords")),
+    el("div", { class: "chord-controls" },
+      el("div", { class: "playback" }, el("span", { class: "label" }, "Play"), playback), showOnScore),
     el("p", { class: "caption" },
       tune.chords ? `${tune.chords}. ` : "",
       "One way of accompanying it: use your ear, and your own."));

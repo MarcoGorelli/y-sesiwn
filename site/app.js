@@ -160,17 +160,49 @@ function tuneSteps(tune) {
   return tune.steps;
 }
 
-function oneWrongNote(query, steps, at, base, octaves) {
-  // Would the query match at `at` if exactly one of its notes were changed? A wrong
-  // first or last note changes one step; a wrong note in between changes the step
-  // into it and the step out of it, which together still span the same interval.
-  const wrong = [];
-  for (let j = 0; j < query.length && wrong.length < 3; j++) if (steps[at + j] !== query[j]) wrong.push(j);
-  if (wrong.length === 1) return wrong[0] === 0 || wrong[0] === query.length - 1;
-  if (wrong.length !== 2 || wrong[1] !== wrong[0] + 1) return false;
-  const span = (s, j) => s.charCodeAt(j) + s.charCodeAt(j + 1) - 2 * base;  // semitones across two steps
-  const diff = span(query, wrong[0]) - span(steps, at + wrong[0]);
-  return octaves ? diff === 0 : diff % 12 === 0;
+// Lead-ins (pick-ups) are handled both ways round. A tune's own lead-in is known
+// (tune.lead: where its melody starts after it, worked out in build_site.py), so a
+// query matches the start of a tune from its first note or from just after its
+// lead-in. And the query's first one to three notes may be a lead-in the tune doesn't
+// have (or has differently): they're tried without, when enough notes are left.
+const LEAD_TRIES = 3;       // query notes that may be dropped as a lead-in
+const MIN_AFTER_LEAD = 5;   // notes that must be left after dropping them
+// Close matches: tunes without the notes exactly are ranked by how many notes are
+// different (wrong, missing or extra; editDistance), counting one more if the
+// passage isn't at the start. Those within CLOSE_SHARE of the query's notes are
+// listed after the exact matches, and the nearest are added until there are at
+// least NEAREST suggestions, so there's always somewhere to look.
+const CLOSE_SHARE = 0.25;
+const NEAREST = 5;
+
+function editDistance(query, steps, fromStart, octaves) {
+  // How many notes must change (be replaced, added or left out) to turn the query
+  // into a stretch of the tune: one starting at its first step if fromStart, else
+  // anywhere. Worked on steps, so the key doesn't matter: a wrong note in the middle
+  // changes two steps but keeps their total (into it and out of it), a missing note
+  // is one step where the tune has two with the same total, an extra note the
+  // reverse; each of these, and a wrong first or last note (one step), costs 1.
+  const base = octaves ? 80 : 70;
+  const v = (str, k) => str.charCodeAt(k) - base;
+  const same = (a, b) => (octaves ? a === b : (((a - b) % 12) + 12) % 12 === 0);
+  const n = steps.length;
+  const rows = [Array.from({ length: n + 1 }, (_, j) => (fromStart ? j : 0))];
+  for (let i = 1; i <= query.length; i++) {
+    const row = [i];
+    for (let j = 1; j <= n; j++) {
+      let best = Math.min(
+        rows[i - 1][j - 1] + (query[i - 1] === steps[j - 1] ? 0 : 1),  // step kept or replaced
+        rows[i - 1][j] + 1, row[j - 1] + 1);                           // step added or left out
+      const q2 = i >= 2 ? v(query, i - 2) + v(query, i - 1) : null;
+      const t2 = j >= 2 ? v(steps, j - 2) + v(steps, j - 1) : null;
+      if (q2 !== null && t2 !== null && same(q2, t2)) best = Math.min(best, rows[i - 2][j - 2] + 1);  // a wrong note
+      if (t2 !== null && same(v(query, i - 1), t2)) best = Math.min(best, rows[i - 1][j - 2] + 1);     // a note missed
+      if (q2 !== null && same(q2, v(steps, j - 1))) best = Math.min(best, rows[i - 2][j - 1] + 1);     // an extra note
+      row[j] = best;
+    }
+    rows.push(row);
+  }
+  return Math.min(...rows[query.length]);
 }
 
 function searchByNotes(text) {
@@ -178,27 +210,46 @@ function searchByNotes(text) {
   const octaves = notes.length > 0 && notes.every((n) => n.midi !== null);
   const query = octaves ? exactSteps(collapse(notes.map((n) => n.midi))) : foldedSteps(collapse(notes.map((n) => n.pc)));
   if (query.length < MIN_NOTES - 1) return null;
-  const results = [];
+  // The query, then the query without its first 1, 2, 3 notes (a step fewer each).
+  const trimmed = [];
+  for (let drop = 1; drop <= LEAD_TRIES && query.length - drop >= MIN_AFTER_LEAD - 1; drop++) trimmed.push(query.slice(drop));
+  const results = [], close = [];
   for (const tune of state.data.tunes) {
     const steps = tuneSteps(tune)[octaves ? "exact" : "folded"];
-    const at = steps.indexOf(query);
-    let score = 0, where = at, how = "";
-    if (at >= 0) {
-      [score, how] = at <= 2 ? [4, "starts like this"] : [3, "later in the tune"];  // <= 2: allow pick-up notes
-    } else if (query.length >= 4) {
-      for (let i = 0; i + query.length <= steps.length; i++) {
-        if (oneWrongNote(query, steps, i, octaves ? 80 : 70, octaves)) {
-          [score, where, how] = [i <= 2 ? 2 : 1, i, "one note different"];
-          break;
-        }
-      }
+    const starts = new Set([0, tune.lead]);  // with and without the tune's lead-in
+    const atStart = (q) => [...starts].find((i) => steps.startsWith(q, i));
+    let score = 0, where = 0, how = "";
+    if (atStart(query) !== undefined) {
+      [score, how] = [6, "starts like this"];
+    } else if (trimmed.some((q) => atStart(q) !== undefined)) {
+      [score, how] = [5, "starts like this, after a different lead-in"];
+    } else {
+      const at = steps.indexOf(query);
+      if (at >= 0) [score, where, how] = at <= 2 ? [4, at, "starts like this"] : [3, at, "later in the tune"];
     }
-    if (score) results.push({ tune, score, where, how });
+    if (score) { results.push({ tune, score, where, how }); continue; }
+    // Not a match: how close is it? Near the start (with or without the tune's
+    // lead-in) counts a note less than further in.
+    const fromStart = Math.min(...[...starts].map((i) =>
+      editDistance(query, steps.slice(i, i + query.length + 4), true, octaves)));
+    const anywhere = editDistance(query, steps, false, octaves);
+    const atStartToo = fromStart <= anywhere + 1;
+    const off = atStartToo ? fromStart : anywhere;
+    close.push({ tune, score: 0, where: atStartToo ? off : off + 1, close: true,
+      how: `close: ${off} note${off > 1 ? "s" : ""} different${atStartToo ? ", near the start" : ""}` });
   }
-  results.sort((a, b) => b.score - a.score || a.where - b.where || (a.tune.title < b.tune.title ? -1 : 1));
+  const byRank = (a, b) => b.score - a.score || a.where - b.where || (a.tune.title < b.tune.title ? -1 : 1);
   // One entry per tune: its best-matching version.
   const seen = new Set();
-  return results.filter((r) => !seen.has(r.tune.group) && seen.add(r.tune.group));
+  const best = (list) => list.sort(byRank).filter((r) => !seen.has(r.tune.group) && seen.add(r.tune.group));
+  const found = best(results);
+  const limit = Math.max(1, Math.round((query.length + 1) * CLOSE_SHARE));
+  close.sort(byRank);
+  const near = best(close.filter((r) => r.where <= limit));
+  // Too few? Add the nearest of the rest (labelled as such) up to NEAREST.
+  const more = best(close.filter((r) => r.where > limit)).slice(0, Math.max(0, NEAREST - found.length - near.length))
+    .map((r) => ({ ...r, how: r.how.replace("close", "nearest") }));
+  return [...found, ...near, ...more];
 }
 
 function playNote(midi) {
@@ -357,9 +408,14 @@ function notesSearch() {
       results.replaceChildren();
       return;
     }
-    help.textContent = found.length
-      ? `${found.length} tune${found.length > 1 ? "s" : ""} with these notes${found.length > 12 ? " (showing the best 12; add notes to narrow it down)" : ""}.`
-      : "No tunes with these notes. Try fewer notes, or check a note or two.";
+    const exact = found.filter((r) => !r.close).length;
+    const closeOnes = found.filter((r) => r.how.startsWith("close")).length;
+    const plural = (n) => `${n} tune${n > 1 ? "s" : ""}`;
+    help.textContent = exact
+      ? `${plural(exact)} with these notes${closeOnes ? `, then ${plural(closeOnes)} close to them` : ""}${found.length > 12 ? " (showing the best 12; add notes to narrow it down)" : ""}.`
+      : closeOnes
+        ? `No tunes with exactly these notes, but ${plural(closeOnes)} close to them${found.length > 12 ? " (showing the closest 12)" : ""}.`
+        : "No tunes with these notes, or close to them. These are the nearest; check a note or two, or try fewer notes.";
     results.replaceChildren(...found.slice(0, 12).map(({ tune, how }) => {
       const several = state.groups.get(tune.group).versions.length > 1;
       return el("li", {},

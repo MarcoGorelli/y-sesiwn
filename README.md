@@ -72,9 +72,19 @@ relative URLs, so the site also works under a sub-path such as
   collapsed. The page compares the *steps* between notes, so the key doesn't
   matter. Played notes (and typed ones with an octave, like `G3`) use exact
   steps, leaps included; note names without an octave use the smaller way
-  round. Matches at the start (allowing a pick-up) rank first, then later in
-  the tune, then "one note different" (a wrong first/last note, or one wrong
-  note in between).
+  round. Lead-ins (pick-ups) are handled both ways round: the build works
+  out each tune's lead-in (`lead_in()`: the notes before the first bar line
+  if they don't fill a bar) and stores where its melody starts after it as
+  `lead`, so a query matches the start of a tune with or without its
+  lead-in; and the query's own first 1–3 notes are also tried as a lead-in
+  the tune doesn't have, if 5 or more notes are left. Matches at the start
+  rank first, then later in the tune. Tunes without the notes are ranked by
+  how many notes are different (wrong, missing or extra; `editDistance()`,
+  worked on the steps, so key-independent, with a wrong note counted once
+  even though it changes two steps), near the start counting one fewer:
+  those within a quarter of the query's notes are listed as *close*, and the
+  nearest are added until there are at least 5 suggestions, so a search
+  never comes back empty.
 - **One page per tune, with its versions:** titles ending ` (version N)` are
   grouped with their tune (`build_site.py` adds `group`, `base`, `version` and
   a `source` label, e.g. *Alawon Cymru* or the `B:` book); the page has a tab

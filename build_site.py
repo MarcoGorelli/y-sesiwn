@@ -111,11 +111,12 @@ def key_signature(key: str) -> dict[str, int]:
     return {letter: 1 if n > 0 else -1 for letter in letters[: abs(n)]}
 
 
-def melody(abc: str) -> list[int]:
-    """MIDI pitches of the tune's notes in written order (top note of chords)."""
+def music(abc: str) -> str:
+    """The tune's notes as one line: from the K: line on, without comments, other
+    header lines, grace notes, chord names, text or inline fields (key changes are
+    kept, as [K:...])."""
     lines = abc.splitlines()
     start = next((i for i, line in enumerate(lines) if line.startswith("K:")), len(lines))
-    signature: dict[str, int] = {}
     body_parts = []
     for line in lines[start:]:
         if line.startswith("K:"):  # the key, and key changes part-way through
@@ -124,7 +125,13 @@ def melody(abc: str) -> list[int]:
             body_parts.append(line)
     body = " ".join(body_parts)
     body = re.sub(r'\{[^}]*\}|"[^"]*"', " ", body)  # grace notes; chord names and text
-    body = re.sub(r"\[(?!K:)[A-Za-z]:[^\]]*\]", " ", body)  # other inline fields, e.g. [M:6/8]
+    return re.sub(r"\[(?!K:)[A-Za-z]:[^\]]*\]", " ", body)  # other inline fields, e.g. [M:6/8]
+
+
+def melody(abc: str) -> list[int]:
+    """MIDI pitches of the tune's notes in written order (top note of chords)."""
+    signature: dict[str, int] = {}
+    body = music(abc)
     bar: dict[tuple[str, int], int] = {}  # accidentals written earlier in this bar
 
     def pitch(acc: str | None, letter: str, marks: str) -> int:
@@ -150,6 +157,61 @@ def melody(abc: str) -> list[int]:
         else:
             notes.append(pitch(m.group(2), m.group(3), m.group(4)))
     return notes
+
+
+LENGTH_TOKEN = re.compile(
+    r"\((\d)"                                                       # tuplet: (3
+    r"|(?:\[[^\]|]*\]|(?:\^\^|\^|__|_|=)?[A-Ga-g][,']*|[zx])(\d*)(/*)(\d*)"  # chord/note/rest, length
+    r"|(\|)"                                                         # bar line
+)
+TUPLETS = {2: Fraction(3, 2), 3: Fraction(2, 3), 4: Fraction(3, 4), 6: Fraction(2, 3)}
+
+
+def meter_length(abc: str) -> Fraction | None:
+    """A bar's length in whole notes, from M: (C is 4/4, C| is 2/2)."""
+    meter = (parse_headers(abc).get("M") or [""])[0].strip()
+    meter = {"C": "4/4", "C|": "2/2"}.get(meter, meter)
+    m = re.match(r"(\d+)/(\d+)", meter)
+    return Fraction(int(m.group(1)), int(m.group(2))) if m else None
+
+
+def lead_in(abc: str) -> int:
+    """How many notes the tune's lead-in (pick-up) has: the notes before the first
+    bar line, if they don't fill a bar. 0 if the first bar is a full one."""
+    bar = meter_length(abc)
+    if not bar:
+        return 0
+    unit = (parse_headers(abc).get("L") or [""])[0].strip()
+    unit = Fraction(unit) if re.fullmatch(r"\d+/\d+", unit) else Fraction(1, 8 if bar >= Fraction(3, 4) else 16)
+    total, notes, tuplet, left = Fraction(0), 0, Fraction(1), 0
+    for m in LENGTH_TOKEN.finditer(re.sub(r"\[K:[^\]]*\]", " ", music(abc))):
+        if m.group(1):
+            p = int(m.group(1))
+            tuplet, left = TUPLETS.get(p, Fraction(1)), p
+        elif m.group(5):
+            if notes:  # a bar line before any note (|: at the start) doesn't end the bar
+                break
+        else:
+            number, slashes, divisor = m.group(2), m.group(3), m.group(4)
+            length = Fraction(int(number or 1))
+            if slashes:
+                length /= int(divisor) if divisor else 2 ** len(slashes)
+            total += length * unit * (tuplet if left else 1)
+            left = max(0, left - 1)
+            if not m.group(0).startswith(("z", "x")):
+                notes += 1
+    else:
+        return 0  # no bar line at all
+    return notes if total < bar else 0
+
+
+def lead_index(abc: str) -> int:
+    """The position in melody_string() of the first note after the lead-in."""
+    notes, k = melody(abc), lead_in(abc)
+    if not k:
+        return 0
+    collapsed = len([p for i, p in enumerate(notes[:k]) if i == 0 or p != notes[i - 1]])
+    return collapsed - 1 if k < len(notes) and notes[k] == notes[k - 1] else collapsed
 
 
 def melody_string(abc: str) -> str:
@@ -314,6 +376,9 @@ def tune_record(path: Path) -> dict:
         "bpm": default_bpm(headers),
         "details": rows,
         "melody": melody_string(abc),
+        # Where the melody string starts after the lead-in (its repeated notes are
+        # collapsed, so count the same way).
+        "lead": lead_index(abc),
         "gloss": gloss,
         "chords": chords_source(abc),
         "abc": abc,

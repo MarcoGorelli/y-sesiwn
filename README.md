@@ -53,9 +53,19 @@ relative URLs, so the site also works under a sub-path such as
   searches alternative titles (extra `T:` lines, e.g. *Knights of Snowdon*).
   Partial names match at the start of a word (`mon` finds *Mwynen Môn*, not
   *harmoni*), and an exact name comes first.
-- **Search by notes:** type the first few notes (4 or more), or play them on
+- **Search by notes:** type the first few notes (4 or more), play them on
   the piano keyboard (G3, the fiddle's open G, to A5; each key sounds its
-  note), in any key. Each tune's melody is worked out at build time by
+  note), or press **Play it to me** and play them on an instrument to the
+  microphone, in any key. Listening (`startListening()` in `app.js`) measures
+  the pitch on every screen frame with the YIN method over the last ~45 ms,
+  rounds it to the nearest semitone, and counts a pitch held for 45 ms as a
+  note, lighting its key; it stops after 2.5 s of quiet. Notes go in without
+  their octave, so an octave misheard doesn't matter. It's meant for an
+  in-tune fiddle, whistle, flute or guitar (single notes), not humming; it
+  was tested with synthesised fiddle, whistle and guitar recordings of real
+  tunes, slow and at reel speed (~8 notes a second), fed to Chromium as a
+  fake microphone. Nothing is recorded or sent anywhere. On iPhones the
+  audio session switches to `play-and-record` while listening. Each tune's melody is worked out at build time by
   `melody()` in `build_site.py` (a small ABC reader, checked note for note
   against abcjs's playback for every tune) and stored in `tunes.json` as
   `melody`: one character per note, `chr(MIDI pitch + 160)`, repeated notes

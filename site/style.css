@@ -194,7 +194,10 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 }
 .piano .white:hover { background: #f3ead3; border-color: #b9bcc2; color: var(--accent); }
 .piano .black:hover { background: #3b4550; border-color: #111; }
-.piano .white:active, .piano .black:active { background: var(--accent); }
+.piano .white:active, .piano .black:active, .piano .key.heard { background: var(--accent); }
+.note-edit .listen.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.listen-status { margin: .2rem 0 .3rem; font-size: .95rem; }
+.mic-icon { width: 1.1em; height: 1.1em; vertical-align: -.2em; }
 .note-edit { display: flex; gap: .4rem; margin: .1rem 0 .3rem; }
 .note-edit button { padding: .3rem .7rem; font-size: .9rem; }
 .notes-results { margin: .4rem 0 0; padding-left: 2.1rem; }  /* room for 2-digit numbers */

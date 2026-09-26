@@ -30,6 +30,7 @@ const state = {
   settings: new Map(),  // per tune: { transpose, bpm }, kept while the page is open
   synth: null,          // the playing SynthController, stopped when leaving a tune
   keyNote: null,        // the note sounding from the search-by-notes keyboard
+  listening: null,      // the microphone, while "Play it to me" listens
   docs: new Map(),      // markdown files, fetched on first use
   chords: { onScore: false, play: "tune" },  // the chord box's settings, for every tune; play: tune, both or chords
 };
@@ -223,7 +224,7 @@ function keyboard(onPress) {
   for (let midi = KEYBOARD.from; midi <= KEYBOARD.to; midi++) {
     const name = NOTE_NAMES[midi % 12] + (Math.floor(midi / 12) - 1);
     const key = el("button", {
-      type: "button", "aria-label": name.replace("#", " sharp "), title: name.replace("#", "♯"),
+      type: "button", "aria-label": name.replace("#", " sharp "), title: name.replace("#", "♯"), "data-midi": midi,
       onclick: () => { playNote(midi); onPress(name); },
     });
     if (name.includes("#")) {
@@ -238,6 +239,106 @@ function keyboard(onPress) {
   }
   return el("div", { class: "piano", role: "group", "aria-label": "Piano keyboard, G3 to A5", style: `--whites: ${whites.length}` },
     whites, blacks);
+}
+
+// ---- Listening: find a tune by playing it to the microphone ------------------------------
+// For a fiddle, whistle, flute or guitar played in tune: the pitch of the last ~45 ms
+// (two periods of a guitar's low E) is measured on every screen frame (the YIN
+// method, below), rounded to the nearest semitone, and a pitch held for LISTEN.hold
+// ms counts as a note, so even reel-speed notes (~120 ms) are caught. Notes are
+// passed on without their octave ("G A B"), so the search compares them the "any
+// octave" way: a note heard an octave out doesn't matter. Nothing is
+// recorded or sent anywhere; it all happens on the device.
+
+const LISTEN = {
+  hold: 45,          // ms a pitch must last to count as a note
+  silence: 2500,     // ms of quiet (after some notes) before it stops by itself
+  maxTime: 30000,    // ms before it stops anyway
+  minLevel: 0.01,    // RMS below this is silence
+  minHz: 70, maxHz: 1800,  // below a guitar's low E (82 Hz) to a whistle's top notes
+};
+
+function detectPitch(samples, sampleRate) {
+  // YIN (de Cheveigné & Kawahara, 2002): the period is the smallest lag at which
+  // the signal looks most like a copy of itself. Returns Hz, or null if unpitched.
+  let power = 0;
+  for (const x of samples) power += x * x;
+  if (Math.sqrt(power / samples.length) < LISTEN.minLevel) return null;
+  const minLag = Math.floor(sampleRate / LISTEN.maxHz);
+  const maxLag = Math.min(Math.ceil(sampleRate / LISTEN.minHz), samples.length >> 1);
+  const width = samples.length - maxLag;
+  const d = new Float32Array(maxLag + 1);
+  for (let lag = 1; lag <= maxLag; lag++) {
+    let sum = 0;
+    for (let i = 0; i < width; i++) { const diff = samples[i] - samples[i + lag]; sum += diff * diff; }
+    d[lag] = sum;
+  }
+  // Cumulative mean normalised difference; the first dip below the threshold wins,
+  // which avoids picking a multiple of the period (an octave too low).
+  const norm = new Float32Array(maxLag + 1).fill(1);
+  let running = 0;
+  for (let t = 1; t <= maxLag; t++) {
+    running += d[t];
+    if (running) norm[t] = (d[t] * t) / running;
+  }
+  let lag = minLag;
+  while (lag <= maxLag && norm[lag] >= 0.15) lag++;
+  if (lag > maxLag) return null;
+  while (lag < maxLag && norm[lag + 1] < norm[lag]) lag++;  // down to the bottom of the dip
+  // Parabolic interpolation between neighbouring lags, for a finer period.
+  const [a, b, c] = [norm[lag - 1], norm[lag], norm[lag + 1] ?? norm[lag]];
+  const shift = (a - c) / (2 * (a - 2 * b + c)) || 0;
+  return sampleRate / (lag + Math.max(-1, Math.min(1, shift)));
+}
+
+async function startListening({ onNote, onHear, onStop }) {
+  stopListening();
+  if ("audioSession" in navigator) navigator.audioSession.type = "play-and-record";  // iPhone: allow the mic
+  // Raw sound: phone "voice" processing (echo and noise cancelling, level control) warps notes.
+  const stream = await navigator.mediaDevices.getUserMedia({
+    audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+  });
+  const context = new AudioContext();
+  const analyser = context.createAnalyser();
+  analyser.fftSize = 2048;  // ~45 ms of sound: two periods of the lowest note
+  context.createMediaStreamSource(stream).connect(analyser);
+  const samples = new Float32Array(analyser.fftSize);
+  const started = performance.now();
+  let candidate = null, since = 0, last = null, lastSound = started, heardAny = false, frame = 0;
+  const listening = {
+    stop(reason) {
+      cancelAnimationFrame(frame);
+      stream.getTracks().forEach((t) => t.stop());
+      context.close().catch(() => {});
+      if ("audioSession" in navigator) navigator.audioSession.type = "playback";
+      if (state.listening === listening) state.listening = null;
+      onStop(reason);
+    },
+  };
+  state.listening = listening;
+  const tick = (now) => {
+    frame = requestAnimationFrame(tick);
+    analyser.getFloatTimeDomainData(samples);
+    const hz = detectPitch(samples, context.sampleRate);
+    const midi = hz ? Math.round(69 + 12 * Math.log2(hz / 440)) : null;
+    if (midi !== candidate) { candidate = midi; since = now; }
+    if (midi !== null) lastSound = now;
+    onHear(midi);
+    if (midi !== null && now - since >= LISTEN.hold && midi !== last) {
+      last = midi;
+      heardAny = true;
+      onNote(midi);
+    }
+    if (midi === null && now - since > 150) last = null;  // a gap: the same note may come again
+    if ((heardAny && now - lastSound > LISTEN.silence) || now - started > LISTEN.maxTime) {
+      listening.stop("done");
+    }
+  };
+  frame = requestAnimationFrame(tick);
+}
+
+function stopListening() {
+  state.listening?.stop("left");
 }
 
 function notesSearch() {
@@ -268,7 +369,54 @@ function notesSearch() {
   };
   input.addEventListener("input", update);
   const press = (name) => { input.value = `${input.value.trimEnd()} ${name}`.trimStart(); update(); };
+  const piano = keyboard(press);
+  const listenStatus = el("p", { class: "listen-status", "aria-live": "polite", hidden: true });
+  const listenButton = el("button", { type: "button", class: "listen", onclick: () => toggleListening() });
+  const micIcon = () => svg("svg", { viewBox: "0 0 24 24", class: "mic-icon", "aria-hidden": "true" },
+    svg("rect", { x: 9, y: 3, width: 6, height: 11, rx: 3, fill: "currentColor" }),
+    svg("path", { d: "M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7", fill: "none", stroke: "currentColor",
+      "stroke-width": 1.8, "stroke-linecap": "round" }));
+  const showListening = (on) => {
+    listenButton.replaceChildren(on ? "■ Stop listening" : micIcon(), on ? "" : " Play it to me");
+    listenButton.classList.toggle("on", on);
+  };
+  const light = (midi) => {
+    // The heard note's key, or (if it's outside the keyboard) the same note in range.
+    piano.querySelectorAll(".heard").forEach((k) => k.classList.remove("heard"));
+    if (midi === null) return;
+    let m = midi;
+    while (m < KEYBOARD.from) m += 12;
+    while (m > KEYBOARD.to) m -= 12;
+    piano.querySelector(`[data-midi="${m}"]`)?.classList.add("heard");
+  };
+  const toggleListening = async () => {
+    if (state.listening) { state.listening.stop("stopped"); return; }
+    input.value = ""; update();
+    showListening(true);
+    listenStatus.hidden = false;
+    listenStatus.textContent = "Listening… play the first few notes of the tune on your instrument.";
+    try {
+      await startListening({
+        onNote: (midi) => { press(NOTE_NAMES[midi % 12]); },
+        onHear: light,
+        onStop: (reason) => {
+          showListening(false);
+          light(null);
+          listenStatus.textContent = reason === "done" && input.value ? "Stopped listening. Play it again, or add notes on the keyboard." : "";
+          listenStatus.hidden = !listenStatus.textContent;
+        },
+      });
+    } catch (error) {
+      showListening(false);
+      listenStatus.textContent = error.name === "NotAllowedError"
+        ? "The microphone isn't allowed. Allow it for this site in your browser's settings, then try again."
+        : "Couldn't use the microphone on this device.";
+    }
+  };
+  showListening(false);
+  const canListen = !!navigator.mediaDevices?.getUserMedia && "AudioContext" in window;
   const edit = el("div", { class: "note-edit" },
+    canListen ? listenButton : null,
     el("button", { type: "button", "aria-label": "Delete last note", onclick: () => {
       input.value = input.value.trimEnd().replace(/\s*\S+$/, ""); update(); } }, "⌫ Delete"),
     el("button", { type: "button", onclick: () => { input.value = ""; update(); } }, "Clear"));
@@ -276,7 +424,7 @@ function notesSearch() {
   return el("section", { class: "notes-search", id: "find-by-notes" },
     el("h2", { class: "section-heading" }, "Search by notes"),
     el("label", { for: "notes-search", class: "visually-hidden" }, "First notes of the tune"),
-    input, el("div", { class: "piano-wrap" }, keyboard(press)), edit, help, results);
+    input, el("div", { class: "piano-wrap" }, piano), edit, listenStatus, help, results);
 }
 
 // ---- Routing ----------------------------------------------------------------
@@ -317,6 +465,7 @@ document.addEventListener("keydown", (event) => {
 
 function render() {
   stopPlayback();
+  stopListening();
   const params = new URLSearchParams(location.search);
   let group = state.groups.get(params.get("tune"));
   let version = Number(params.get("v")) || 1;
@@ -394,7 +543,7 @@ function features() {
   const withChords = state.groupList.filter((g) => g.versions.some((v) => v.chords != null)).length;
   const items = [
     [["Find a tune by name"], ": typos, accents and other spellings are forgiven."],
-    [[link("#find-by-notes", "Find a tune by its notes")], ": play or type the first few notes you remember, in any key."],
+    [[link("#find-by-notes", "Find a tune by its notes")], ": play the first few notes on the keyboard, type them, or play them on your instrument to the microphone, in any key."],
     [["Sheet music"], " for every tune, with the versions of a tune side by side."],
     [["Any key"], ": transpose a tune to suit your instrument, your voice or the session."],
     [["Play it back"], " at any tempo, with the notes lit up as they play, and loop it to practise."],

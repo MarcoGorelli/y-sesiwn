@@ -143,6 +143,13 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .pills button:hover:not(:disabled) { border-color: var(--c); color: inherit; }
 .pills button[aria-pressed="true"] { border-color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); font-weight: 600; }
 
+/* "What you can do": the features, two columns on wide screens */
+.features ul { columns: 2 22rem; column-gap: 2.5rem; margin: 0; padding-left: 1.2rem; max-width: 60rem; }
+.features li { break-inside: avoid; margin-bottom: .45rem; }
+.features li::marker { color: var(--accent); }
+.features strong a { color: inherit; text-decoration-color: var(--accent); text-underline-offset: .15em; }
+.features strong a:hover { color: var(--accent); }
+
 /* "Take it to the session": installing the app and using it offline */
 .offline-card {  /* with a strip of carthen along the top */
   max-width: 40rem; margin: 1.75rem 0 .5rem; padding: calc(1rem + 7px) 1.2rem 1.1rem;

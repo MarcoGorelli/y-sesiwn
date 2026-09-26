@@ -273,7 +273,7 @@ function notesSearch() {
       input.value = input.value.trimEnd().replace(/\s*\S+$/, ""); update(); } }, "⌫ Delete"),
     el("button", { type: "button", onclick: () => { input.value = ""; update(); } }, "Clear"));
   update();
-  return el("section", { class: "notes-search" },
+  return el("section", { class: "notes-search", id: "find-by-notes" },
     el("h2", { class: "section-heading" }, "Search by notes"),
     el("label", { for: "notes-search", class: "visually-hidden" }, "First notes of the tune"),
     input, el("div", { class: "piano-wrap" }, keyboard(press)), edit, help, results);
@@ -375,20 +375,41 @@ function renderHome(main) {
     el("h1", {}, "Croeso! Welcome to Y Sesiwn"),
     el("p", { class: "lead" },
       "Y Sesiwn is a ", el("strong", {}, "completely free and open-source"),
-      ` resource to help you learn and share Welsh folk tunes. Each of its ${tunes.length} tunes `,
-      "has its sheet music, which you can play back at any tempo and change to any key. ",
-      "Search by name in the sidebar, browse by type below, or let chance decide. Everything is ",
-      el("a", { href: repo }, "on GitHub"),
-      ", and anyone can ", el("a", { href: "?page=add", "data-route": true }, "add a tune"),
-      " or ", el("a", { href: "?page=fix", "data-route": true }, "suggest a correction"), "."),
+      ` resource to help you learn and share Welsh folk tunes: ${tunes.length} of them so far, `,
+      "each with its sheet music. Search by name, browse by type below, or let chance decide."),
     heroSearch(tunes.length),
     el("button", { type: "button", class: "primary", onclick: openRandomTune }, "Surprise me"),
+    features(),
     offlineCard(),
     notesSearch(),
     el("h2", { class: "section-heading" }, "Browse by type"),
     pills, caption, list,
   );
   showType(state.browseType);
+}
+
+function features() {
+  // What the site does, in one list: each item's first words say it, the rest how.
+  const link = (href, text) => el("a", { href, "data-route": href.startsWith("?") ? true : null }, text);
+  const withChords = state.groupList.filter((g) => g.versions.some((v) => v.chords != null)).length;
+  const items = [
+    [["Find a tune by name"], ": typos, accents and other spellings are forgiven."],
+    [[link("#find-by-notes", "Find a tune by its notes")], ": play or type the first few notes you remember, in any key."],
+    [["Sheet music"], " for every tune, with the versions of a tune side by side."],
+    [["Any key"], ": transpose a tune to suit your instrument, your voice or the session."],
+    [["Play it back"], " at any tempo, with the notes lit up as they play, and loop it to practise."],
+    [["Accompaniment"], `: suggested chords as a chart for guitar, piano or harp, played with or without the tune (${withChords} tunes so far, and growing).`],
+    [["Practice mode"], " fills the screen with the music, for a tablet on a music stand; or ", ["print"], " it."],
+    [[link("?page=map", "Tunes on the map")], ": the places in Wales that tunes are named after."],
+    [[link("?page=offline", "Works offline")], ": install it on your phone and take every tune to the pub."],
+    [["Free and open"], ": ", link("?page=add", "add a tune"), " or ", link("?page=fix", "suggest a correction"),
+      "; everything is ", link(state.data.repo, "on GitHub"), "."],
+  ];
+  // [["words"]] is the bold lead-in (possibly a link); plain strings and links follow it.
+  const bold = (part) => Array.isArray(part) ? el("strong", {}, part) : part;
+  return el("section", { class: "features" },
+    el("h2", { class: "section-heading" }, "What you can do"),
+    el("ul", {}, items.map((parts) => el("li", {}, parts.map(bold)))));
 }
 
 function heroSearch(count) {

@@ -3,14 +3,14 @@ T:Distyll y Don
 R:jig
 S:http://alawoncymru.com/alawon/Tunes/SetyGarreg/SetyGarreg.html
 Z:MIDI transcribed with alawon-abc
-%%alawon track=1
+%%alawon track=1 transpose=-2
+%%alawon-reviewed
 C:Trefniant Meurig Williams
+N:In G Dorian, as on the score; the alawoncymru recording is a tone higher.
 M:6/8
 L:1/8
 Q:3/8=67
-K:G
-E | A2 A ABA | ^G3 E2 E | c2 c cdc | B3 ^G2 B |
-c2 B A2 A | ^G2 F E2 E | F^GA BcA | ^G3 E2 D |
-EF^G A z2 | z3 z2 E | A2 A ABA | ^G3 E2 E |
-c2 c cdc | B3 ^G2 B | c2 B A2 A | ^G2 F E2 E |
-F^GA BcA | ^G3 E2 D | EF^G A z |]
+K:Gdor
+D | G2 G GAG | ^F3 D2 D | B2 B BcB |
+A3 ^F2 A | B2 A G2 G | ^F2 E D2 D |
+E^FG ABG | ^F3 D2 C | DE^F G z2 | z6 :|

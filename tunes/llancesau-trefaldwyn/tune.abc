@@ -4,14 +4,16 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/MarErSet/MarErSt.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=80
 K:D
-AG |: F2 F GFG | AFD DFA | B2 c dcB | ABG FGE |
-F2 F GFG | AFD DFA | Bgf edc |1 d3 dAG :|
-[2 d3 dcd || e2 c Ace | f2 d Adf | gfe fed |
-ecA Acd | e2 c Ace | f2 d Adf | efd cdB
-|: ABG FGE | F2 F GFG | AFD DFA |1 B2 c dcB :|
-[2 Bgf edc || d3 d |]
+AG |: "D"F2 F "A"GFG | "D"AFD DFA | "G"B2 c dcB | "A"ABG FGE |
+"D"F2 F "A"GFG | "D"AFD DFA | "G"Bgf "A"edc |1 "D"d3 dAG :|2 "D"d3 dcd ||
+"A"e2 c Ace | "D"f2 d Adf | "G"gfe "D"fed | "A"ecA Acd |
+"A"e2 c Ace | "D"f2 d Adf | "Em"efd cdB | "A"ABG FGE ||
+"D"F2 F "A"GFG | "D"AFD DFA | "G"B2 c dcB | "A"ABG FGE |
+"D"F2 F "A"GFG | "D"AFD DFA | "G"Bgf "A"edc | "D"d3 d |]

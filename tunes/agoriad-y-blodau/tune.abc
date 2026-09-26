@@ -4,16 +4,17 @@ R:alaw
 S:http://alawoncymru.com/alawon/Tunes/AgorYBlo/AgorBlSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
 C:Trefniant Meurig Williams
+N:The alawoncymru recording leaves out bar 7 of part B (f d c♯ e); it is added here from the score.
 M:4/4
 L:1/8
 Q:1/4=90
 K:G
-D2 | G3 F G2 A2 | B2 G2 A2 B2 | c2 E2 A2 G2 | G2 F2 E2 D2 |
-d2 B2 c2 A2 | G2 dc B2 A2 | G2 E2 F2 G2 | A2 D2 E2 F2 |
+D2 |: G3 F G2 A2 | B2 G2 A2 B2 | c2 E2 A2 G2 | G2 F2 E2 D2 |
+[1 d2 B2 c2 A2 | G2 dc B2 A2 | G2 E2 F2 G2 | A2 D2 E2 F2 :|
+[2 d2 B2 c2 A2 | G2 d2 c2 A2 | G4 F4 | G6 ||
+G2 | A3 B A2 G2 | F2 A2 d2 c2 | B3 c B2 A2 | G2 B2 e2 d2 |
+^c3 d c2 B2 | A2 ^c2 e2 g2 | f2 d2 ^c2 e2 | d3 e dc BA |
 G3 F G2 A2 | B2 G2 A2 B2 | c2 E2 A2 G2 | G2 F2 E2 D2 |
-d2 B2 c2 A2 | G2 d2 c2 A2 | G4 F4 | G6 G2 |
-A3 B A2 G2 | F2 A2 d2 c2 | B3 c B2 A2 | G2 B2 e2 d2 |
-^c3 d c2 B2 | A2 ^c2 e2 g2 | d3 e dc BA | G3 F G2 A2 |
-B2 G2 A2 B2 | c2 E2 A2 G2 | G2 F2 E2 D2 | d2 B2 c2 A2 |
-G2 d2 c2 A2 | G4 F4 | G6 |]
+d2 B2 c2 A2 | G2 d2 c2 A2 | G4 F4 | G6 |]

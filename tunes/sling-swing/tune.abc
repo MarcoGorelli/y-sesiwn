@@ -4,12 +4,14 @@ R:rîl
 S:http://alawoncymru.com/alawon/Tunes/MorgaSet/MorgawSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Alaw Andy McLauchlin
+N:Written as on the score; the alawoncymru recording holds its first note a quaver longer, so its bars fall half a beat later.
 M:2/4
 L:1/8
 Q:1/4=90
 K:D
-|: A2 FG | E D2 F | DE FG | EE FG |
-EA FG | E D2 F | DE FG | E D3 :|
-|: A3 F | AB AF | AG AE | AF AD |
-A3 F | AB AF | AG AE | A D3 :|
+|: "D"AF "A"GE | "D"D2 FD | "A"EF GE | "A"EF GE | "D"AF "A"GE |
+"D"D2 FD | "A"EF GE | "D"D4 :| |: "D"A2 FA | "D"BA FA |
+"A"GA EA | "D"FA DA- | "D"A2 FA | "D"BA FA | "A"GA EA | "D"D4 :|

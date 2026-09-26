@@ -4,17 +4,16 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/MarErSet/MarErSt.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
 C:Addasiad Meurig Williams
+N:Transcribed from the score. The alawoncymru recording also plays an extra section, a variation not on the score, and some rhythms differently.
 M:6/8
 L:1/8
 Q:3/8=80
 K:D
-|: A d2 d A2 | GF A4 | A d2 d F2 | G A2- A3 |
-A d2 cBc | d e2 c A2 | ABc d e2 | c d2- d3 :|
-cd e2 ec- | cde fec | BAf gfd- | de f4- |
-fed cBA- | AAB AGF- | FAB cde | dc d4- |
-dcd e2 e | c2 d efe | cBA fgf | d2 e f3- |
-f2 e dcB |: A2 A BAG | F2 A Bcd | edc d3- |
-d2 d d2 c | Bde f3/2e/d/c/ | B2 A def | edc B3 |
-A2 A dcB :| A2 A BAG | F2 A Bcd | edc d3- |
-d3 z3 |]
+A | d2 d A2 G | F A2- A2 A | d2 d F2 G | A3- A2 A |
+d2 c Bcd | e2 c A2 A | Bcd e2 c | d3- d2 :|
+|: d | e2 e c2 d | efe cBA | fgf d2 e | f3- f2 e |
+dcB A2 A | BAG F2 A | Bcd edc | d3- d2 :: d |
+d2 c Bde | f3/2e/d/c/ B2 A | def edc | B3 A2 A |
+dcB A2 A | BAG F2 A | Bcd edc | d3- d2 :|

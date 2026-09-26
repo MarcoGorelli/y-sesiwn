@@ -4,11 +4,13 @@ R:polca
 S:http://alawoncymru.com/alawon/Tunes/DyddEstyn/DyddEstyn.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:4/4
 L:1/8
 Q:1/4=120
 K:D
-|: F2 G2 A F3 | D3 E DE F2 | G2 B2 A F3 | E3 F D4 :|
-A2 A2 FG A2 | G2 E2 G F3 | A2 A2 FG A2 | G2 E2 F2 D2 |
-G2 B2 A F3 | D3 E DE F2 | G2 B2 A F3 | E3 F D4 |]
+|: "D"F2 G2 A F3 | "D"D3 E DE F2 | "G"G2 B2 "D"A F3 | "A"E3 F "D"D4 :|
+|: "D"A2 A2 FG A2 | "A"G2 E2 "D"G F3 | "D"A2 A2 FG A2 | "A"G2 E2 "D"F2 D2 |
+"G"G2 B2 "D"A F3 | "G"D3 E "D"DE F2 | "G"G2 B2 "D"A F3 | "A"E3 F "D"D4 :|

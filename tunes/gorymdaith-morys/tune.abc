@@ -4,12 +4,14 @@ R:ymdaith
 S:http://alawoncymru.com/alawon/Tunes/MorusMSet/MorusMor.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:4/4
 L:1/8
 Q:1/4=90
 K:D
-|: F2 A2 d2 e2 | fg fe dc BA | G2 B2 F2 A2 | EF GA GF EG |
-F2 A2 d2 e2 | fg fe dc BA | fa gf eg fe | d2 d2 d4 :|
-|: d2 f2 c2 e2 | Bc de dc BA | G2 B2 F2 A2 | EF GA GF EG |
-F2 A2 d2 e2 | fg fe dc BA | fa gf eg fe | d2 d2 d4 :|
+|: "D"F2 A2 d2 e2 | fg fe dc BA | "G"G2 B2 "D"F2 A2 | "A"EF GA GF EG |
+"D"F2 A2 d2 e2 | fg fe dc BA | "D"fa gf "A"eg fe | "D"d2 d2 d4 :|
+|: "D"d2 f2 "A"c2 e2 | "G"Bc de "D"dc BA | "G"G2 B2 "D"F2 A2 | "A"EF GA GF EG |
+"D"F2 A2 d2 e2 | fg fe dc BA | "D"fa gf "A"eg fe | "D"d2 d2 d4 :|

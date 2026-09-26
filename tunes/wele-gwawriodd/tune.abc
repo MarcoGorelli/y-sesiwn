@@ -3,12 +3,14 @@ T:Wele Gwawriodd
 R:carol
 S:http://alawoncymru.com/alawon/Tunes/BachMain/BachMain.htm
 Z:MIDI transcribed with alawon-abc
-%%alawon track=1
+%%alawon track=1 transpose=-7 pickup=3/8
+%%alawon-reviewed
 C:Trefniant Meurig Williams
+N:In G, as on the score; the alawoncymru recording is a fifth higher.
 M:9/8
 L:1/8
 Q:3/8=80
-K:D
-|: A2 A | d3 f3 f2 f | e3 d3 def | g3 f3 ede | d6 :| f2 g |
-a3 f3 b2 b | b3 a3 f2 g | a3 f3 b2 b | a6 f2 g |
-f3 d3 f2 f | e3 d3 def | g3 f3 ede | d6 |]
+K:G
+|: D2 D | G3 B3 B2 B | A3 G3 GAB | c3 B3 AGA | G6 :| B2 c |
+d3 B3 e2 e | e3 d3 B2 c | d3 B3 e2 e | d6 B2 c |
+B3 G3 B2 B | A3 G3 GAB | c3 B3 AGA | G6 |]

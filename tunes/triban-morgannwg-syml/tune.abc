@@ -3,13 +3,12 @@ T:Triban Morgannwg Syml
 R:cân
 S:http://alawoncymru.com/alawon/Tunes/Triban/Triban.htm
 Z:MIDI transcribed with alawon-abc
-%%alawon track=1
+%%alawon track=1 pickup=1/4
+%%alawon-reviewed
 C:Trefniant Meurig Williams
 M:2/4
 L:1/8
 Q:1/4=120
 K:D
-|: A2 D2- | DE F2- | FG A2 | A2 z2 :|
-|: F2 G2 | G2 G2 | d2 c2 | A2 z2 :|
-|: A2 d2 | d2 d2 | D2 G2 | A2 B2- |
-BB A2 | G2 F2 | E2 D2 | D2 z2 :|
+|: A2 | D3 E | F3 G | A2 A2 | z2 :: F2 | G2 G2 | G2 d2 | c2 A2 | z2 :|
+|: A2 | d2 d2 | d2 D2 | G2 A2 | B3 B | A2 G2 | F2 E2 | D2 D2 | z2 :|

@@ -2,3 +2,4 @@
 #   pip install -r requirements-dev.txt && python -m playwright install chromium
 pytest
 playwright
+axe-playwright-python  # the axe accessibility checker, bundled

@@ -45,11 +45,21 @@ def test_lead_in(slug, lead):
     assert b.lead_index((b.ROOT / "tunes" / slug / "tune.abc").read_text(encoding="utf-8")) == lead
 
 
+# Lead-ins restored from the score (they had been folded into bar 1, shifting every bar
+# line): how many notes the lead-in has.
+@pytest.mark.parametrize("slug, notes", [
+    ("clawdd-offa", 1), ("fflat-huw-puw", 1), ("marwnad-yr-ehedydd", 2),
+    ("triban-morgannwg-syml", 1), ("y-pren-ar-y-bryn", 2), ("wele-gwawriodd", 2),
+])
+def test_restored_lead_ins(slug, notes):
+    assert b.lead_in((b.ROOT / "tunes" / slug / "tune.abc").read_text(encoding="utf-8")) == notes
+
+
 def test_chords_source():
     read = lambda slug: (b.ROOT / "tunes" / slug / "tune.abc").read_text(encoding="utf-8")
     assert b.chords_source(read("glandyfi")) == "From the Alawon Cymru score"
     assert b.chords_source(read("dawns-y-glocsen")) is None  # "^Fine" and "^D.C." are text, not chords
-    assert b.chords_source(read("nyth-y-gog")) is None
+    assert b.chords_source(read("hufen-melyn")) is None
 
 
 def test_types_and_tempos():
@@ -77,6 +87,21 @@ def test_built_site(site):
     files = json.loads(re.search(r"const SITE_FILES = (\[.*?\]);", sw).group(1))
     sounds = json.loads(re.search(r"const SOUND_FILES = (\[.*?\]);", sw).group(1))
     assert {"./", "index.html", "tunes.json", "app.js", "style.css", "wales.svg"} <= set(files)
-    assert len(sounds) == 88
+    assert sum("acoustic_grand_piano" in f for f in sounds) == 88  # the piano, A0 to C8
+    assert {"static/soundfont/percussion-mp3/E5.mp3", "static/soundfont/percussion-mp3/F5.mp3"} <= set(sounds)  # the click
     for f in files[1:] + sounds:
         assert (out / f).is_file(), f"sw.js would cache a missing file: {f}"
+
+
+# Repeats checked against the score images (the recordings, which the ABC was made from,
+# often play a part once that the score repeats, or play the whole tune twice).
+@pytest.mark.parametrize("slug, end_repeats", [
+    ("hoffedd-ap-hywel", 2), ("aly-grogan", 2), ("ar-ben-waun-tredegar", 1), ("diferiad-y-gwerwyn", 2),
+    ("gweddi-eli-jenkins", 1), ("hela-r-wiwer", 2), ("taith-dadi", 1), ("hiraeth", 1),
+    ("dydd-gwyl-dewi", 1), ("hela-r-geinach", 1), ("neyland-ferry", 2), ("pibddawns-dowlais-fel-ril", 2),
+    ("roedd-yn-y-wlad-honno", 2), ("y-pibydd-du", 2), ("clawdd-offa", 3), ("distyll-y-don", 1),
+])
+def test_repeats_follow_the_score(slug, end_repeats):
+    abc = (b.ROOT / "tunes" / slug / "tune.abc").read_text(encoding="utf-8")
+    body = re.sub(r'"[^"]*"', "", abc.split("\nK:", 1)[1].split("\n", 1)[1])
+    assert len(re.findall(r":\||::", body)) == end_repeats

@@ -3,14 +3,16 @@ T:Fflat Huw Puw
 R:cân
 S:http://alawoncymru.com/alawon/Tunes/FflatHP/FflatHP.html
 Z:MIDI transcribed with alawon-abc
-%%alawon track=1
+%%alawon track=1 pickup=3/8
+%%alawon-reviewed
 C:Trefniant Meurig Williams
 M:12/8
 L:1/8
 Q:3/8=120
 K:G
-D3 D2 E D2 C B,3 | D3 E3 E3 D3 | D3 E2 F G2 E F3 | A3 G2 A B2 c B3 |
-A12 | D3 D2 E D2 C B,3 | D3 E3 E3 D3- | D2 D E2 F G2 E F2 G |
-A2 F B3 G3 G3 | z3 B3 B3 A3 | A3 G3 G3 F3 | F3 E2 F G2 E F3 |
-A3 G2 A B2 c B3 | A12 | D3 D2 E D2 C B,3 | D3 E3 E3 D3 |
-z2 D E2 F G2 E F2 G | A2 F B3 G3 G3 | z2 D E2 F G2 E F2 G | A2 F B3 G3 G3 |]
+"^Pennill"D3 | D2 E D2 C B,3 D3 | E3 E3 D3 D3 | E2 F G2 E F3 A3 |
+G2 A B2 c B3 A3- | A3- A6 D3 | D2 E D2 C B,3 D3 |
+E3 E3 D3- D2 D | E2 F G2 E F2 G A2 F | B3 G3 G3 || "^Cytgan"z3 |
+B3 B3 A3 A3 | G3 G3 F3 F3 | E2 F G2 E F3 A3 |
+G2 A B2 c B3 A3- | A3- A6 D3 | D2 E D2 C B,3 D3 |
+E3 E3 D3 |: "^Ailadroddiad offerynnol"z2 D | E2 F G2 E F2 G A2 F | B3 G3 G3 :|

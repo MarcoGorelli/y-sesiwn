@@ -5,14 +5,15 @@ S:http://alawoncymru.com/alawon/Tunes/MrFrenSt/MrFrenSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1 pickup=1/4
 %%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
 M:4/4
 L:1/8
 Q:1/4=120
 K:Em
-EF | GF GF E2 ed | BA GG FA GF | GF GA BA Bc | dA AG A2 BA |
-GF GF E2 ed | BA GG FA GF | GF GA Bc BA | GE ED E2 :: Bd |
-e2 ed ef ge | dB BA B2 BA | GB dB GB dB | cA AG A2 Bd |
-e2 ed ef ge | dB BA B2 BA | GF GA Bc BA | GE ED E2 :: z2 |
-BG EG BG EG | BG BG E2 EG | AF DF AF DF | AF AF D2 EF |
-GF GF E2 ed | BA GG FA GF | GF GA Bc BA | GE ED E2 :|
+EF | "Em"GF GF E2 ed | "G"BA GG "D"FA GF | "Em"GF GA "G"BA Bc | "Bm"dA AG A2 BA |
+"Em"GF GF E2 ed | "G"BA GG "D"FA GF | "Em"GF GA "Bm"Bc BA | "Em"GE ED E2 :: Bd |
+"Em"e2 ed ef ge | "Bm"dB BA B2 BA | "G"GB dB GB dB | "D"cA AG A2 Bd |
+"Em"e2 ed ef ge | "Bm"dB BA B2 BA | "Em"GF GA "Bm"Bc BA | "Em"GE ED E2 :: z2 |
+"Em"BG EG BG EG | BG BG E2 EG | "D"AF DF AF DF | AF AF D2 EF |
+"Em"GF GF E2 ed | "G"BA GG "D"FA GF | "Em"GF GA "Bm"Bc BA | "Em"GE ED E2 :|

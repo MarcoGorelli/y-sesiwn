@@ -101,6 +101,20 @@ abctool.py check tunes/<slug>/tune.abc tunes/<slug>/tune.mid
 The "bars not matching the meter" list is information: a pickup bar and the
 short bar that completes it are expected; anything else deserves a look.
 
+To find tunes whose repeats don't follow their score (the MIDI often plays a part
+once that the score repeats, or plays the whole tune twice), run
+
+```bash
+uv run --no-project --with pillow --with numpy python <skill-dir>/scripts/scorecheck.py tunes
+```
+
+It counts the end-repeat signs on each score image and in each ABC and lists the
+tunes where they differ; check each against its score. Scores with a harmony or bass
+staff are listed too (each staff's repeat signs count), so expect some false alarms.
+The same review usually turns up tunes whose bar lines are shifted by a missed pick-up
+(re-run `convert` with `--pickup`) or whose MIDI is in another key than the score
+(`--transpose` and `--key`).
+
 When a tune is done, add the line `%%alawon-reviewed` after the `%%alawon`
 line so `batch --force` never overwrites it.
 

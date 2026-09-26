@@ -12,6 +12,7 @@ STATIC = Path(__file__).parent / "static"
 ABCJS = "https://cdn.jsdelivr.net/npm/abcjs@6.4.4"
 SOUNDFONT = "https://paulrosen.github.io/midi-js-soundfonts/FluidR3_GM"
 INSTRUMENT = "acoustic_grand_piano"
+PERCUSSION = "https://paulrosen.github.io/midi-js-soundfonts/abcjs"
 
 # abcjs names notes like this, for MIDI pitches 21 (A0) to 108 (C8).
 NAMES = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
@@ -25,6 +26,13 @@ FILES = {
     **{
         f"soundfont/{INSTRUMENT}-mp3/{note}.mp3": f"{SOUNDFONT}/{INSTRUMENT}-mp3/{note}.mp3"
         for note in NOTES
+    },
+    # The metronome and count-in: General MIDI percussion 76 and 77 (high and low
+    # woodblock), which abcjs names E5 and F5. From abcjs's own sound set, whose
+    # percussion samples are real recordings (FluidR3's are near-silent stubs).
+    **{
+        f"soundfont/percussion-mp3/{note}.mp3": f"{PERCUSSION}/percussion-mp3/{note}.mp3"
+        for note in ["E5", "F5"]
     },
 }
 

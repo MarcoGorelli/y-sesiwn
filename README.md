@@ -2,7 +2,7 @@
 
 A free, open-source web app to help you learn and share Welsh folk tunes:
 **https://ysesiwn.cymru/**. Search for a tune by name or by its first few
-notes, or browse by type; see its sheet music, change its key and play it back.
+notes, or browse by type and key; see its sheet music, change its key and play it back.
 Anyone can add tunes or suggest corrections by pull request (see
 [CONTRIBUTING.md](CONTRIBUTING.md)).
 
@@ -50,8 +50,13 @@ requirements-dev.txt python -m pytest`.)
   tune pages, key changes, the chord chart (spacing, repeats, switches),
   search by name and by notes (lead-ins, close matches, never empty), the
   map and its popups, the home page, phone widths (no sideways scrolling),
-  working offline, and the microphone (a generated fiddle recording played
-  to Chromium's fake microphone). Any JavaScript error fails the test.
+  working offline, the microphone (a generated fiddle recording played to
+  Chromium's fake microphone), the practice row (parts, looping and
+  speeding up during real playback, count-in and click, tablature), the
+  report link, browsing by key, the install card on five device/browser
+  mixes, printing, and an **accessibility** check with axe (labels,
+  contrast, keyboard access, ARIA…) on seven pages, light and dark, desktop
+  and phone widths. Any JavaScript error fails the test.
 
 They run on every push and pull request (`.github/workflows/pages.yml`), and
 the site is only deployed if they pass. To run them before every push too,
@@ -70,10 +75,13 @@ relative URLs, so the site also works under a sub-path such as
 
 - **Home page:** a welcome, a big name search box, **Surprise me** (a random
   tune; also in the sidebar), **What you can do** (every feature in one list,
-  `features()` in `app.js`; keep it up to date when adding one), **Search by notes** and **Browse by type**:
+  `features()` in `app.js`; keep it up to date when adding one), **Search by notes** and **Browse by type and key**:
   buttons for each tune type (Jig, Polca, Walts, Rîl, Pibddawns, …, from `R:`,
   Welsh or English, via `tune_type()` in `build_site.py`), each with a
-  *carthen* colourway, and a list of every tune (or that type's).
+  *carthen* colourway, a second row of keys (the key each tune's first version
+  is in, most common first), and a list of every tune, or those of the chosen
+  type and/or key ("31 jigs in D major"). Key counts follow the chosen type,
+  and keys with none of that type are greyed out.
 - **Search by name** (sidebar and home page): suggestions as you type; Enter
   opens the top one; `/` jumps to search from anywhere. Matching ignores case
   and accents (`fran` finds *Frân*), tolerates typos (`llancesau trefalwdyn`
@@ -127,6 +135,22 @@ relative URLs, so the site also works under a sub-path such as
   the notes highlighted as they play.
 - **Practice mode:** just the controls and a full-width score, full screen
   where supported.
+- **Practice row** (under the key and tempo): **Loop** one part of the tune
+  (parts start at a repeat sign or double bar line, as in the chord chart;
+  `tuneParts()`), optionally **speeding up** 5% each time round up to the
+  tune's usual tempo (`partLoop()`: whenever playback reaches a note outside
+  the part it seeks back to the part's first note, and abcjs's own loop
+  brings it round after the last part; the speed-up uses `setWarp`, which
+  keeps playing from the same place). **Count-in** (one bar of woodblock
+  clicks before the tune) and **Click** (a woodblock on every felt beat, high
+  on the first of the bar) use abcjs's `drum`, `drumIntro` and `drumOff`
+  options, with General MIDI percussion 76/77 from abcjs's own sound set in
+  `static/soundfont/percussion-mp3/` (FluidR3's percussion samples are
+  near-silent stubs). **Tablature** under the stave for mandolin/fiddle
+  (GDAE), tenor banjo (GDAE an octave lower) or guitar, with abcjs's
+  tablature plugin.
+- **Report a problem with this tune:** a link on every tune page to a new
+  GitHub issue with the tune's name, page and file filled in.
 - **Suggested chords:** tunes with chord symbols in their ABC (`"G"B2 G`)
   get a chord chart under the sheet music, for accompanists: one cell per
   bar, in rows of 4 (3 or 5 for a part that divides into those but not 4),

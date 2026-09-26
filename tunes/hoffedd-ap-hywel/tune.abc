@@ -4,10 +4,12 @@ R:jig naid
 S:http://alawoncymru.com/alawon/Tunes/HoffapHy/ApHywel.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
 C:Addasiad Meurig Williams
 M:9/8
 L:1/8
 Q:3/8=80
 K:G
-|: g2 e dBG dBG | g2 e dBG c2 A | g2 e dBG dBG | ABc BAG FED :|
-G2 B BAB BAB | G2 B BAB AFD | G2 B BAB BAB | ABc BAG FED |]
+|: g2 e dBG dBG | g2 e dBG c2 A | g2 e dBG dBG |
+ABc BAG FED :: G2 B BAB BAB | G2 B BAB AFD |
+G2 B BAB BAB | ABc BAG FED :|

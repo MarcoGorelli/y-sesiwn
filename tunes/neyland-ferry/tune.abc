@@ -4,6 +4,7 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/PontCldd/SetPntCl.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
 C:Trefniant Meurig Williams
 M:6/8
 L:1/8
@@ -11,7 +12,6 @@ Q:3/8=60
 K:D
 |: dcd fdA | BGB A3 | cde cBA | cde f3 |
 dcd fdA | BGB A3 | EFG ABc | dce d3 :|
-AdA AFA | Bcd A2 z | GAB EFG | CDE A2 z |
-fdA ecA | Bcd A3 | BGE AFD | BGF E3 |
-AdA AFA | Bcd A2 z | GAB EFG | CDE A2 z |
-fdA ecA | Bcd AFD | BGE AFD | ABc d3 |]
+|: AdA AFA | Bcd A2 z | GAB EFG | CDE A2 z |
+[1 fdA ecA | Bcd A3 | BGE AFD | BGF E3 :|
+[2 fdA ecA | Bcd AFD | BGE AFD | ABc d3 |]

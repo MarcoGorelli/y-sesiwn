@@ -4,16 +4,15 @@ R:polca
 S:http://alawoncymru.com/alawon/Tunes/PolcsBob/PolcsBob.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:2/4
 L:1/8
 Q:1/4=90
 K:G
-|: D2 EF | G2 G2 | FG AF | G2 G2 |
-AB cA | B2 GB | A2 G2 | FE D2 |
-D2 EF | G2 G2 | FG AF | G2 G2 |
-AB cA | B2 GB | AG F2 | G3 z :|
-|: A2 Bc | d2 d2 | c2 B2 | A2 AB |
-cB Ac | BA GB | A2 G2 | FE D2 |
-A2 Bc | d2 d2 | c2 B2 | A2 AB |
-cB Ac | BA GB | AG F2 | G3 z :|
+|: "G"D2 EF | "G"G2 G2 | "D"FG AF | "G"G2 G2 | "C"AB cA | "G"B2 GB |
+"D"A2 G2 | "D"FE D2 | "G"D2 EF | "C"G2 G2 | "D"FG AF | "G"G2 G2 | "C"AB cA |
+"G"B2 GB | "D"AG F2 | "G"G3 z :| |: "D"A2 Bc | "D"d2 d2 | "D"c2 B2 |
+"D"A2 AB | "D"cB Ac | "D"BA GB | "D"A2 G2 | "D"FE D2 | "D"A2 Bc |
+"D"d2 d2 | "D"c2 B2 | "D"A2 AB | "D"cB Ac | "D"BA GB | "D"AG F2 | "G"G3 z :|

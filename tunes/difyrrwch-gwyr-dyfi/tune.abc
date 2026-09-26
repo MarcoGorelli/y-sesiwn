@@ -4,11 +4,13 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/DifGwDst/DifGwDst.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=53
 K:Em
-|: E/F/ | GAB BcB | cAA A2 G/F/ | GAB cAB | GEE E2 :| e/f/ |
-ggg fff | ege d2 d | ede gfe | dBB B2 B/c/ |
-ded dcB | cAA A2 G/F/ | GAB cAB | GEE E2 |]
+|: E/F/ | "Em"GAB BcB | "Am"cAA A2 G/F/ | "Bm"GAB cAB | "Em"GEE E2 :| e/f/ |
+"Em"ggg "D"fff | "C"ege "G"d2 d | "C"ede gfe | "G"dBB B2 B/c/ |
+"Em"ded dcB | "Am"cAA A2 G/F/ | "Bm"GAB cAB | "Em"GEE E2 |]

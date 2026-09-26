@@ -7,9 +7,10 @@
   --card-bg: #ffffff;
   --paper: #fbf6ea;           /* cream, behind the sheet music */
   --text: #262b31;
-  --muted: #66707a;
+  --muted: #5f6973;
   --border: #dcdfe3;
-  --link: #1c6ecf;
+  --link: #1a67c2;            /* 4.5:1 or more on every background, incl. the sidebar */
+  --brand: #C8102E;           /* the site name; lighter in dark mode, for contrast */
   --radius: 8px;
   --land: #e2e5e8;            /* the map of Wales */
   --search-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2366707a' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='m15.5 15.5 5 5'/%3E%3C/svg%3E");
@@ -24,6 +25,7 @@
     --muted: #a0a8b1;
     --border: #343b44;
     --link: #6fb1ff;
+    --brand: #ee4a66;
     --land: #2f3740;
     /* --paper stays cream: the sheet music reads best on paper colours */
   }
@@ -71,7 +73,7 @@ button, input, select { font: inherit; color: inherit; }
 .sidebar { display: flex; flex-direction: column; gap: 1.25rem; }
 .brand {
   display: flex; align-items: center; gap: .6rem;
-  font-size: 1.75rem; font-weight: 700; color: var(--accent); text-decoration: none;
+  font-size: 1.75rem; font-weight: 700; color: var(--brand); text-decoration: none;
 }
 .sidebar-actions { display: grid; gap: .5rem; }
 .sidebar-links { display: grid; gap: .35rem; border-top: 1px solid var(--border); padding-top: 1rem; }
@@ -232,6 +234,21 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .control.tempo { flex: 1 1 18rem; max-width: 32rem; }
 .control input[type="range"] { width: 100%; accent-color: var(--accent); }
 .tune-actions { display: flex; gap: .5rem; margin-left: auto; }
+/* The practice row: loop a part, speed up, count-in, click, tablature */
+.practice-row {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1.5rem;
+  margin: -.4rem 0 1.25rem; font-size: .9rem;
+}
+.practice-row .control { display: flex; align-items: center; gap: .45rem; }
+.practice-row .control label { margin: 0; font-size: .9rem; }
+.practice-row select { padding: .3rem .5rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); }
+.practice-row .switch[hidden] { display: none; }
+.speed-note:empty { display: none; }
+.report-line { margin: 1rem 0 0; font-size: .9rem; line-height: 1.4; }
+.pills.keys { margin-top: .5rem; }
+.pills.keys button { font-size: .9rem; }
+.pills.keys button[aria-pressed="true"] { border-color: var(--slate); background: color-mix(in srgb, var(--slate) 12%, transparent); font-weight: 600; }
+.pills.keys button:hover:not(:disabled) { border-color: var(--slate); color: inherit; }
 .tune-layout { display: grid; grid-template-columns: minmax(0, 3fr) minmax(14rem, 1fr); gap: 1.5rem; align-items: start; }
 .score {                     /* sheet music on cream "paper", also in dark mode */
   background: var(--paper); color: #000;
@@ -404,7 +421,7 @@ body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 
 /* Printing a tune: just the sheet music (in the key chosen on the page), full width. */
 @media print {
   body { display: block; padding: 0; background: none; color: #000; }
-  .nav, .site-footer, .controls, .versions, .aka, .tune-side, .audio, .card.chords, main > h1 { display: none !important; }
+  .nav, .site-footer, .controls, .practice-row, .versions, .aka, .tune-side, .audio, .card.chords, main > h1 { display: none !important; }
   main { padding: 0; max-width: none; animation: none; }
   .tune-layout { display: block; }
   .score { border: none; box-shadow: none; background: none; padding: 0; }

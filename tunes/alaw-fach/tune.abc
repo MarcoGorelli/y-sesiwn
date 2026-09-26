@@ -4,20 +4,13 @@ R:alaw - walts
 S:http://alawoncymru.com/alawon/Tunes/StAlawFC/SetAlFch.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
 C:Trefniant Meurig Williams
+N:Follows the score; the alawoncymru recording plays the arrangement through more times, with some double stops in other places.
 M:3/4
 L:1/8
 Q:1/4=100
 K:C
-|: DE FD EF | E2 G4 | DE FD EF | ED C4 |
-DE FD EF | E2 G4 | [FA]6 |1 [DG]6 :|
-[2 [GB]6 || [Gc]2 cd ec | [Gd]2 B2 G2 | A3 c A2
-|: [GB]6 | [Gc]2 cd ec | d2 B2 G2 |1 [FA]6 :|
-[2 A3 c A2 || [DG]6 | c2 cd ec | d2 B2 G2
-|: [FA]6 | [DG]6 | DE FD EF | E2 G4 |
-DE FD EF | ED C4 | DE FD EF | E2 G4 :|
-[FA]6 | [GB]6 | [Gc]2 cd ec | [Gd]2 B2 G2 |
-A3 c A2 |: [GB]6 | [Gc]2 cd ec | d2 B2 G2 |
-[1 [FA]6 :|2 A3 c A2 || [DG]6 | c2 cd ec |
-d2 B2 G2 | [FA]6 | [DG]6 | [Gc]6- |
-[Gc]6 |]
+|: DE FD EF | E2 G4 | DE FD EF | ED C4 | DE FD EF | E2 G4 |
+[FA]6 |1 [DG]6 :|2 [GB]6 |: [Gc]2 cd ec | [Gd]2 B2 G2 | A3 c A2 |
+[GB]6 | [Gc]2 cd ec | d2 B2 G2 | [FA]6 |1 [GB]6 :|2 [DG]6 || [Gc]6- | [Gc]6 |]

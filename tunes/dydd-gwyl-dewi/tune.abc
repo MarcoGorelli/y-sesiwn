@@ -4,12 +4,13 @@ R:Ymdeithdon
 S:http://alawoncymru.com/alawon/Tunes/DyddGDew/DyddGDew.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
 C:Addasiad Meurig Williams
 M:2/4
 L:1/8
 Q:1/4=50
 K:D
-% the MIDI plays the whole tune 2 times
-|: D/E/ | FF FF/E/ | DD DD/F/ | A>A AF | A3 :| A |
+D/E/ | FF FF/E/ | DD DD/F/ | A>A AF | A3 D/E/ |
+FF FF/E/ | DD DD/F/ | A>A AF | A3 || A |
 BB AF/E/ | D/E/F/G/ A>F | A>A AF | A3 A |
-BB A/G/F/E/ | D/E/F/G/ A>A | BE EF | E3 |]
+BB A/G/F/E/ | D/E/F/G/ A>A | BE EF | E3 :|

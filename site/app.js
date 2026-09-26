@@ -32,7 +32,9 @@ const state = {
   keyNote: null,        // the note sounding from the search-by-notes keyboard
   listening: null,      // the microphone, while "Play it to me" listens
   docs: new Map(),      // markdown files, fetched on first use
-  chords: { onScore: false, play: "tune" },  // the chord box's settings, for every tune; play: tune, both or chords
+  chords: { onScore: false, play: "tune" },
+  practice: { countIn: false, click: false, tab: "none" },  // the practice row, for every tune
+  browseKey: null,  // the chord box's settings, for every tune; play: tune, both or chords
 };
 
 // ---- Small DOM helper ----------------------------------------------------
@@ -557,13 +559,29 @@ function renderHome(main) {
   const list = el("ul", { class: "tune-list" });
   const caption = el("p", { class: "caption" });
   const pills = el("div", { class: "pills", role: "group", "aria-label": "Tune type" });
-  // No type selected (null) lists every tune; clicking the selected type again clears it.
-  const showType = (name) => {
+  const keyPills = el("div", { class: "pills keys", role: "group", "aria-label": "Key" });
+  // The key a tune is filed under: its first version's, spelled out ("E Dorian").
+  const keyOf = (t) => (t.versions[0].key ? `${t.versions[0].key.root} ${t.versions[0].key.modeName}` : null);
+  const keyCounts = new Map();
+  for (const t of tunes) if (keyOf(t)) keyCounts.set(keyOf(t), (keyCounts.get(keyOf(t)) ?? 0) + 1);
+  // Nothing selected (null) lists every tune; clicking the selected type or key again
+  // clears it. A type and a key together list, say, the jigs in D major.
+  const showType = (name, key = state.browseKey) => {
     state.browseType = name;
+    state.browseKey = key;
     const type = types.find((t) => t.name === name);
     for (const pill of pills.children) pill.setAttribute("aria-pressed", pill.dataset.type === name);
-    caption.textContent = type ? `${type.count} ${type.english}` : `All ${tunes.length} tunes`;
-    const listed = tunes.filter((t) => !type || t.type === name);
+    for (const pill of keyPills.children) {
+      // Each key's count among the tunes of the chosen type; keys it has none in are greyed out.
+      const n = tunes.filter((t) => (!type || t.type === name) && keyOf(t) === pill.dataset.key).length;
+      pill.setAttribute("aria-pressed", pill.dataset.key === key);
+      pill.lastChild.textContent = String(n);
+      pill.disabled = n === 0 && pill.dataset.key !== key;
+    }
+    const listed = tunes.filter((t) => (!type || t.type === name) && (!key || keyOf(t) === key));
+    caption.textContent = type || key
+      ? `${listed.length} ${listed.length === 1 && type ? type.name.toLowerCase() : type ? type.english : listed.length === 1 ? "tune" : "tunes"}${key ? ` in ${key}` : ""}`
+      : `All ${tunes.length} tunes`;
     list.replaceChildren(...listed.map((t) =>
       el("li", { style: `--c: ${colour[t.type]}` },
         el("span", { class: "swatch", title: t.type }),
@@ -575,20 +593,25 @@ function renderHome(main) {
       onclick: () => showType(state.browseType === type.name ? null : type.name),
     }, el("span", { class: "swatch" }), `${type.name} · ${type.count}`));
   }
+  for (const [key, count] of [...keyCounts].sort((a, b) => b[1] - a[1])) {
+    keyPills.append(el("button", {
+      type: "button", "data-key": key, onclick: () => showType(state.browseType, state.browseKey === key ? null : key),
+    }, `${key} · `, el("span", {}, String(count))));
+  }
 
   main.replaceChildren(
     el("h1", {}, "Croeso! Welcome to Y Sesiwn"),
     el("p", { class: "lead" },
       "Y Sesiwn is a ", el("strong", {}, "completely free and open-source"),
       ` resource to help you learn and share Welsh folk tunes: ${tunes.length} of them so far, `,
-      "each with its sheet music. Search by name, browse by type below, or let chance decide."),
+      "each with its sheet music. Search by name, browse by type and key below, or let chance decide."),
     heroSearch(tunes.length),
     el("button", { type: "button", class: "primary", onclick: openRandomTune }, "Surprise me"),
     features(),
     offlineCard(),
     notesSearch(),
-    el("h2", { class: "section-heading" }, "Browse by type"),
-    pills, caption, list,
+    el("h2", { class: "section-heading" }, "Browse by type and key"),
+    pills, keyPills, caption, list,
   );
   showType(state.browseType);
 }
@@ -602,11 +625,13 @@ function features() {
     [[link("#find-by-notes", "Find a tune by its notes")], ": play the first few notes on the keyboard, type them, or play them on your instrument to the microphone, in any key."],
     [["Sheet music"], " for every tune, with the versions of a tune side by side."],
     [["Any key"], ": transpose a tune to suit your instrument, your voice or the session."],
-    [["Play it back"], " at any tempo, with the notes lit up as they play, and loop it to practise."],
+    [["Play it back"], " at any tempo, with the notes lit up as they play."],
+    [["Practise"], ": loop one part of a tune and speed up a little each time round, with a count-in and a click if you like, and ", ["tablature"], " for mandolin, fiddle, tenor banjo or guitar."],
     [["Accompaniment"], `: suggested chords as a chart for guitar, piano or harp, played with or without the tune (${withChords} tunes so far, and growing).`],
     [["Practice mode"], " fills the screen with the music, for a tablet on a music stand; or ", ["print"], " it."],
     [[link("?page=map", "Tunes on the map")], ": the places in Wales that tunes are named after."],
     [[link("?page=offline", "Works offline")], ": install it on your phone and take every tune to the pub."],
+    [["Browse"], " by type and key: the jigs in D, say, or everything in G."],
     [["Free and open"], ": ", link("?page=add", "add a tune"), " or ", link("?page=fix", "suggest a correction"),
       "; everything is ", link(state.data.repo, "on GitHub"), "."],
   ];
@@ -643,19 +668,96 @@ function setTempo(abc, beat, bpm) {
   return /^Q:/m.test(abc) ? abc.replace(/^Q:.*$/m, tempo) : abc.replace(/^K:/m, `${tempo}\nK:`);
 }
 
-class Cursor {  // highlights the notes as they play
+class Cursor {  // highlights the notes as they play, and keeps playback inside a looped part
+  constructor(loop = null) { this.loop = loop; }
   onEvent(event) {
     document.querySelectorAll(".abcjs-note_playing").forEach((n) => n.classList.remove("abcjs-note_playing"));
     if (event) event.elements.flat().forEach((n) => n.classList.add("abcjs-note_playing"));
+    if (event && this.loop) this.loop.onEvent(event);
   }
   onFinished() { this.onEvent(null); }
+}
+
+// ---- Practice: loop a part, speed up, count-in, click, tablature -------------------------
+
+// A tune's parts (A, B, …) as ranges of its ABC text: a part starts at a repeat sign or
+// after a double bar line (as in the chord chart), and runs to the next.
+function tuneParts(visualObj) {
+  const starts = [0];
+  let ended = false;
+  for (const line of visualObj.lines) {
+    for (const item of line.staff?.[0]?.voices?.[0] ?? []) {
+      if (item.el_type !== "bar") continue;
+      if ((REPEAT_START.has(item.type) || ended) && !item.startEnding) starts.push(item.startChar);
+      ended = PART_END.has(item.type) && !REPEAT_START.has(item.type);
+    }
+  }
+  const unique = [...new Set(starts)].sort((a, b) => a - b);
+  // Only ranges with notes in them count (a final |] starts nothing).
+  const notes = visualObj.lines.flatMap((l) => l.staff?.[0]?.voices?.[0] ?? []).filter((e) => e.el_type === "note");
+  return unique.map((from, i) => ({ from, to: unique[i + 1] ?? Infinity }))
+    .filter((p) => notes.some((n) => n.startChar >= p.from && n.startChar < p.to))
+    .map((p, i) => ({ ...p, label: String.fromCharCode(65 + i) }));
+}
+
+// Looping one part: whenever playback reaches a note outside it (the player's own loop
+// brings it back round at the end of the tune), jump to the part's first note, played
+// the way it's written (its repeat included). With speedUp, each time round is 5%
+// faster, up to the tune's usual tempo.
+function partLoop(controller, part, tune, settings, onSpeed) {
+  let jumping = false, inside = false;
+  const firstNote = () => controller.timer.noteTimings.find((e) => e.type === "event" && e.startChar >= part.from && e.startChar < part.to);
+  const jump = () => {
+    jumping = true;
+    const seek = () => controller.seek(firstNote().milliseconds / 1000, "seconds");
+    const cap = Math.max(100, Math.round((100 * tune.bpm) / settings.bpm));
+    if (settings.speedUp && inside && controller.warp < cap) {
+      const warp = Math.min(cap, controller.warp + 5);
+      onSpeed(warp);
+      controller.setWarp(warp).then(seek);
+    } else {
+      seek();
+    }
+    inside = false;
+  };
+  return {
+    onEvent(event) {
+      if (event.startChar == null) return;  // a count-in click
+      const within = event.startChar >= part.from && event.startChar < part.to;
+      if (within) { jumping = false; inside = true; } else if (!jumping) jump();
+    },
+  };
+}
+
+// Tablature under the stave. Mandolin and fiddle share their tuning (GDAE; the numbers
+// are frets, or semitones above the open string); an Irish tenor banjo is GDAE an
+// octave lower.
+const TABS = {
+  mandolin: { instrument: "mandolin", label: "Mandolin / fiddle (%T)" },
+  banjo: { instrument: "mandolin", tuning: ["G,,", "D,", "A,", "E"], label: "Tenor banjo (%T)" },
+  guitar: { instrument: "guitar", label: "Guitar (%T)" },
+};
+
+// The click: a woodblock on every felt beat (the one the tempo slider counts), high on
+// the first of the bar. abcjs's "drum" pattern is one d per click, then the notes
+// (General MIDI 76/77: high/low woodblock) and loudnesses. The count-in is one bar of
+// it before the tune; drumOff stops it after that when the click itself is off.
+function clickParams(visualObj, tune) {
+  const { countIn, click } = state.practice;
+  if (!countIn && !click) return {};
+  const { num, den } = visualObj.getMeterFraction();
+  const [bn, bd] = tune.beat.split("/").map(Number);
+  const beats = Math.max(1, Math.round((num / den) / (bn / (bd || 1))));
+  const notes = [76, ...Array(beats - 1).fill(77)].join(" ");
+  const loud = [110, ...Array(beats - 1).fill(80)].join(" ");
+  return { drum: `${"d".repeat(beats)} ${notes} ${loud}`, drumBars: 1, drumIntro: countIn ? 1 : 0, drumOff: !click };
 }
 
 function stopPlayback() {
   if (state.synth) { state.synth.destroy(); state.synth = null; }
 }
 
-function drawScore(tune, paper, audio, chart) {
+function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   stopPlayback();
   const { transpose, bpm } = state.settings.get(tune.slug);
   // S:, Z:, B: (book), N: (notes) and A: (area) are in the Details box, so leave
@@ -665,7 +767,9 @@ function drawScore(tune, paper, audio, chart) {
     // strTranspose needs the whole array renderAbc returns, not its first tune.
     abc = ABCJS.strTranspose(abc, ABCJS.renderAbc("*", abc), transpose);
   }
-  const visualObj = ABCJS.renderAbc(paper, accompaniment(abc, state.chords.play === "both"), { responsive: "resize", add_classes: true, paddingtop: 0 })[0];
+  const tab = TABS[state.practice.tab];
+  const visualObj = ABCJS.renderAbc(paper, accompaniment(abc, state.chords.play === "both"),
+    { responsive: "resize", add_classes: true, paddingtop: 0, ...(tab ? { tablature: [tab] } : {}) })[0];
   // Chords are always drawn (so playback has them), and hidden unless asked for.
   paper.classList.toggle("hide-chords", !state.chords.onScore);
   if (chart) {
@@ -675,7 +779,11 @@ function drawScore(tune, paper, audio, chart) {
       chart.parentElement.querySelector(".print-key").textContent = `Key: ${NOTES[(pitch + transpose + 12) % 12]} ${modeName}`;
     }
   }
-  const audioParams = { ...AUDIO_PARAMS, chordsOff: state.chords.play === "tune", voicesOff: state.chords.play === "chords" };
+  const audioParams = { ...AUDIO_PARAMS, chordsOff: state.chords.play === "tune", voicesOff: state.chords.play === "chords",
+    ...clickParams(visualObj, tune) };
+  const settings = state.settings.get(tune.slug);
+  const parts = tuneParts(visualObj);
+  const part = parts[settings.loop];
 
   audio.replaceChildren();
   if (!ABCJS.synth.supportsAudio()) {
@@ -683,14 +791,23 @@ function drawScore(tune, paper, audio, chart) {
     return;
   }
   const controller = new ABCJS.synth.SynthController();
-  controller.load(audio, new Cursor(), {
+  const cursor = new Cursor();
+  controller.load(audio, cursor, {
     displayLoop: true, displayRestart: true, displayPlay: true, displayProgress: true,
   });
   controller.setTune(visualObj, false, audioParams);
   state.synth = controller;
+  // setWarp (the speed-up) also updates abcjs's own tempo box, which isn't shown.
+  if (controller.control) controller.control.setWarp = () => {};
+  if (part) {
+    // The player's own loop brings playback round again after the last part.
+    cursor.loop = partLoop(controller, part, tune, settings, onSpeed);
+    if (!controller.isLooping) controller.toggleLoop();
+  }
   // Fetch and decode this tune's notes now, so pressing play doesn't wait. The
   // audio stays paused until play is clicked; abcjs shares the decoded notes.
   new ABCJS.synth.CreateSynth().init({ visualObj, options: audioParams }).catch(() => {});
+  return { parts };
 }
 
 // ---- Chord chart -------------------------------------------------------------------
@@ -862,13 +979,19 @@ function printButton(tune, paper) {
 
 function renderTune(main, group, tune) {
   document.title = `${group.title} · Y Sesiwn`;
-  if (!state.settings.has(tune.slug)) state.settings.set(tune.slug, { transpose: 0, bpm: tune.bpm });
+  if (!state.settings.has(tune.slug)) state.settings.set(tune.slug, { transpose: 0, bpm: tune.bpm, loop: -1, speedUp: false });
   const settings = state.settings.get(tune.slug);
 
   const paper = el("div");
   const audio = el("div", { class: "audio" });
   const chords = chordCard(tune, () => redraw());
-  const redraw = () => drawScore(tune, paper, audio, chords?.querySelector(".chart-box"));
+  const speedNote = el("span", { class: "caption speed-note", "aria-live": "polite" });
+  const onSpeed = (warp) => { speedNote.textContent = `now ${Math.round((settings.bpm * warp) / 100)} bpm`; };
+  let drawn = { parts: [] };
+  const redraw = () => {
+    speedNote.textContent = "";
+    drawn = drawScore(tune, paper, audio, chords?.querySelector(".chart-box"), onSpeed);
+  };
 
   const controls = el("div", { class: "controls" });
   if (tune.key) {
@@ -907,19 +1030,62 @@ function renderTune(main, group, tune) {
         }, el("span", {}, `Version ${v.version}`), v.source ? el("small", {}, v.source) : null)))
     : null;
 
+  // The practice row: loop a part (and speed up each time), count-in, click, tablature.
+  const loopSelect = el("select", { id: "loop-select", onchange: (e) => { settings.loop = +e.target.value; redraw(); } });
+  const toggle = (label, checked, onchange, cls) => el("label", { class: `switch${cls ? ` ${cls}` : ""}` },
+    el("input", { type: "checkbox", checked, onchange: (e) => { onchange(e.target.checked); redraw(); } }), label);
+  const tabSelect = el("select", { id: "tab-select", onchange: (e) => { state.practice.tab = e.target.value; redraw(); } },
+    [["none", "No tablature"], ["mandolin", "Mandolin / fiddle"], ["banjo", "Tenor banjo"], ["guitar", "Guitar"]].map(([value, label]) =>
+      el("option", { value, selected: state.practice.tab === value }, label)));
+  const practiceRow = el("div", { class: "practice-row" },
+    el("div", { class: "control" }, el("label", { for: "loop-select" }, "Loop"), loopSelect),
+    toggle("Speed up each time", settings.speedUp, (on) => { settings.speedUp = on; }, "speed-up"),
+    speedNote,
+    toggle("Count-in", state.practice.countIn, (on) => { state.practice.countIn = on; }),
+    toggle("Click", state.practice.click, (on) => { state.practice.click = on; }),
+    el("div", { class: "control" }, el("label", { for: "tab-select" }, "Tablature"), tabSelect));
+  const fillLoops = () => {
+    loopSelect.replaceChildren(el("option", { value: -1 }, "The whole tune"),
+      ...drawn.parts.map((p, i) => el("option", { value: i, selected: settings.loop === i }, `Part ${p.label}`)));
+    loopSelect.disabled = drawn.parts.length < 2;
+    practiceRow.querySelector(".speed-up").hidden = settings.loop < 0;
+  };
+  loopSelect.addEventListener("change", fillLoops);
+
+  const report = el("a", { class: "report", href: reportUrl(group, tune) }, "Report a problem with this tune");
+
   main.replaceChildren(...[
     el("h1", {}, group.title),
     group.titles.length > 1 ? el("p", { class: "caption aka" }, `Also known as: ${group.titles.slice(1).join(", ")}`) : null,
     versions,
     controls,
+    practiceRow,
     el("div", { class: "tune-layout" },
       el("div", { class: "tune-main" }, el("div", { class: "score" }, audio, paper), chords),
       el("div", { class: "tune-side" },
         el("section", { class: "card" }, el("h2", {}, "Details"), details, gloss),
         placeCard(group),
-        el("details", { class: "abc" }, el("summary", {}, "ABC notation"), el("pre", {}, stripFields(tune.abc, "Z"))))),
+        el("details", { class: "abc" }, el("summary", {}, "ABC notation"), el("pre", { tabindex: 0 }, stripFields(tune.abc, "Z"))),
+        el("p", { class: "report-line" }, report, el("br"), el("span", { class: "caption" }, "(needs a free GitHub account)")))),
   ].filter(Boolean));
   redraw();
+  fillLoops();
+}
+
+// A new GitHub issue about this tune, with its name, page and file filled in.
+function reportUrl(group, tune) {
+  const page = `https://ysesiwn.cymru/${tuneUrl(group.slug, tune.version)}`;
+  const body = [
+    `**Tune:** ${group.title}${group.versions.length > 1 ? ` (version ${tune.version})` : ""}`,
+    `**Page:** ${page}`,
+    `**File:** \`tunes/${tune.slug}/tune.abc\``,
+    "",
+    "**What's wrong?** (for example: a wrong note in bar 5 of part B, a missing repeat, the title)",
+    "",
+    "",
+  ].join("\n");
+  const title = `Problem with ${group.title}${group.versions.length > 1 ? ` (version ${tune.version})` : ""}`;
+  return `${state.data.repo}/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
 }
 
 // Practice mode: hide everything but the controls and the score, full screen if possible.
@@ -1161,6 +1327,8 @@ async function renderGuide(main, key) {
   const guide = el("article", { class: `guide ${className ?? ""}` });
   guide.innerHTML = html;  // our own markdown, from this repo
   guide.querySelectorAll('a[href^="?"]').forEach((a) => a.setAttribute("data-route", ""));
+  // Code examples scroll sideways on a phone; focusable, so the keyboard can scroll them too.
+  guide.querySelectorAll("pre").forEach((pre) => pre.setAttribute("tabindex", "0"));
   // Only show it if we're still on this page (the fetch may finish after leaving).
   if (new URLSearchParams(location.search).get("page") === key) main.replaceChildren(guide);
 }

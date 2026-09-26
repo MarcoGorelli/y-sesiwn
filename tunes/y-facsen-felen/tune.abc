@@ -4,11 +4,11 @@ R:jig naid
 S:http://alawoncymru.com/alawon/Tunes/FacsenFel/FacsenFel.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
 C:Trefniant Meurig Williams
 M:9/8
 L:1/8
 Q:3/8=60
 K:EDor
 |: FGA BEE E3 | FGA BAG FED | FGA BEE E3 | FGA AdA FED :|
-G3 d3 dBG | F2 A ABA FED | G3 d3 dBG | F3 d2 d cde |
-G3 d3 dBG | FGA ABA FED | G3 d3 dBG | FGA AFD D2 z |]
+|: G3 d3 dBG | F2 A ABA FED | G3 d3 dBG |1 F3 d2 d cde :|2 "^Fine"FGA AFD D2 z |]

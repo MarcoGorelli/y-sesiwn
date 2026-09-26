@@ -121,12 +121,12 @@ def test_print_menu(page):
     assert page.locator(".print-menu").is_visible()
     page.mouse.click(5, 900)  # clicking elsewhere closes it
     assert not page.locator(".print-menu").is_visible()
-    page.goto_site("?tune=nyth-y-gog")  # no chords: a plain Print button
+    page.goto_site("?tune=hufen-melyn")  # no chords: a plain Print button
     assert page.locator(".tune-actions button").first.inner_text() == "Print"
 
 
 def test_no_chord_box_without_chords(page):
-    page.goto_site("?tune=nyth-y-gog")
+    page.goto_site("?tune=hufen-melyn")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.locator(".card.chords").count() == 0
 
@@ -280,3 +280,124 @@ def test_microphone(playwright_instance, site, tmp_path):
     assert heard == "C# D E F# E D C# D C# B"
     assert page.locator(".notes-results li a").first.inner_text() == "Machynlleth"
     browser.close()
+
+
+# ---- Practice: parts, looping, speed-up, count-in, click, tablature ------------------
+
+@pytest.mark.parametrize("slug, parts", [("glandyfi", 2), ("machynlleth", 4), ("ffaniglen", 2), ("morgawr", 3)])
+def test_loop_parts(page, slug, parts):
+    page.goto_site(f"?tune={slug}")
+    page.wait_for_selector(".score .abcjs-staff")
+    options = page.eval_on_selector_all("#loop-select option", "os => os.map((o) => o.textContent)")
+    assert options == ["The whole tune"] + [f"Part {chr(65 + i)}" for i in range(parts)]
+    assert not page.locator(".speed-up").is_visible()  # only when a part is looped
+    page.select_option("#loop-select", "0")
+    assert page.locator(".speed-up").is_visible()
+
+
+def test_loop_part_and_speed_up(browser, site):
+    # Loop Glandyfi's part B slowly, speeding up: each time playback reaches the end of
+    # the tune it comes back to part B (not A), 5% faster.
+    context = browser.new_context(service_workers="block")
+    page = context.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(site + "?tune=glandyfi")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.fill("#tempo", "60")
+    page.dispatch_event("#tempo", "change")
+    page.select_option("#loop-select", "1")
+    page.check("text=Speed up each time")
+    page.click(".abcjs-midi-start")
+    page.wait_for_function("document.querySelector('.abcjs-note_playing') && state.synth.timer")
+    for bpm in [63, 66]:
+        # Jump to just before the end of the tune and wait to come back round.
+        page.evaluate("() => { const e = state.synth.timer.noteTimings.filter((e) => e.type === 'event'); "
+                      "state.synth.seek((e.at(-1).milliseconds - 800) / 1000, 'seconds'); }")
+        page.wait_for_function(f"document.querySelector('.speed-note').textContent === 'now {bpm} bpm'", timeout=15000)
+        # Back in part B (not part A), still playing.
+        page.wait_for_function(f"(() => {{ const n = document.querySelector('.abcjs-note_playing'); "
+                               f"return n && state.synth.isStarted && "
+                               f"[...document.querySelectorAll('.score .abcjs-note')].indexOf(n) >= 30; }})()", timeout=15000)
+    page.click(".abcjs-midi-start")  # pause
+    assert not errors, errors
+    context.close()
+
+
+def test_count_in_and_click(page):
+    page.goto_site("?tune=glandyfi")
+    page.wait_for_selector(".score .abcjs-staff")
+    drum = """() => { const p = { ...AUDIO_PARAMS, ...clickParams(state.synth.visualObj, state.bySlug.get('glandyfi')) };
+      const [melody, , drums] = state.synth.visualObj.setUpAudio(p).tracks.map((t) => t.filter((e) => e.cmd === 'note'));
+      return { melodyStarts: melody[0].start, drums: drums ? drums.length : 0 }; }"""
+    assert page.evaluate(drum)["drums"] == 0
+    page.check("text=Count-in")
+    count_in = page.evaluate(drum)
+    assert count_in["melodyStarts"] > 0 and count_in["drums"] == 2  # one 6/8 bar: two dotted-crotchet clicks
+    page.check("text=Click")
+    assert page.evaluate(drum)["drums"] > 50  # a click on every beat of the tune
+
+
+@pytest.mark.parametrize("tab, first", [("mandolin", "0"), ("banjo", "5"), ("guitar", "0")])
+def test_tablature(page, tab, first):
+    # Glandyfi starts on D above middle C: the open D string on a mandolin, the A string's
+    # 5th fret on a tenor banjo (an octave lower), the open D string on a guitar.
+    page.goto_site("?tune=glandyfi")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.select_option("#tab-select", tab)
+    page.wait_for_function("document.querySelectorAll('.score .abcjs-tab-number, .score [data-name=\"tabNumber\"]').length > 50")
+    numbers = page.evaluate("[...document.querySelectorAll('.score svg text')].map((t) => t.textContent).filter((t) => /^\\d+$/.test(t))")
+    assert numbers[0] == first
+
+
+# ---- Report a problem, browse by key -------------------------------------------------
+
+def test_report_link(page):
+    from urllib.parse import parse_qs, urlparse
+    page.goto_site("?tune=glandyfi&v=2")
+    href = page.get_attribute("a.report", "href")
+    assert href.startswith("https://github.com/MarcoGorelli/y-sesiwn/issues/new?")
+    query = parse_qs(urlparse(href).query)
+    assert query["title"] == ["Problem with Glandyfi (version 2)"]
+    assert "https://ysesiwn.cymru/?tune=glandyfi&v=2" in query["body"][0]
+    assert "tunes/glandyfi-version-2/tune.abc" in query["body"][0]
+
+
+def test_browse_by_key(page):
+    page.goto_site()
+    page.click(".pills.keys button[data-key='D major']")
+    in_d = page.locator(".tune-list li").count()
+    assert in_d > 50 and "in D major" in page.locator("p.caption", has_text="in D major").inner_text()
+    page.click(".pills button[data-type='Jig']")  # jigs in D major
+    jigs_in_d = page.locator(".tune-list li").count()
+    assert 0 < jigs_in_d < in_d
+    assert page.locator("p.caption", has_text="jigs in D major").inner_text().startswith(str(jigs_in_d))
+    # Key counts follow the type, and keys with no jigs are greyed out.
+    assert page.locator(".pills.keys button[data-key='D major'] span").inner_text() == str(jigs_in_d)
+    assert page.locator(".pills.keys button:disabled").count() > 0
+    page.click(".pills.keys button[data-key='D major']")  # clicking again clears the key
+    assert page.locator(".tune-list li").count() > jigs_in_d
+
+
+# ---- Accessibility -------------------------------------------------------------------
+
+@pytest.mark.parametrize("scheme", ["light", "dark"])
+@pytest.mark.parametrize("width", [1300, 390])
+def test_accessibility(browser, site, scheme, width):
+    # The axe checker (the standard automated accessibility test): labels, contrast,
+    # keyboard access, ARIA, headings, … on the main pages.
+    from axe_playwright_python.sync_playwright import Axe
+    axe = Axe()
+    context = browser.new_context(service_workers="block", color_scheme=scheme, viewport={"width": width, "height": 900})
+    page = context.new_page()
+    problems = []
+    for path in ["", "?tune=glandyfi", "?tune=nyth-y-gog", "?page=map", "?page=offline", "?page=about", "?page=add"]:
+        page.goto(site + path)
+        # No fade-in: text caught half-faded would count as low contrast.
+        page.add_style_tag(content="*, *::before, *::after { animation: none !important; transition: none !important; }")
+        page.wait_for_function("typeof state !== 'undefined' && state.data && !document.querySelector('#main .loading')")
+        for v in axe.run(page).response["violations"]:
+            problems.append(f"{path or 'home'}: {v['id']} ({v['help']}) at {[n['target'] for n in v['nodes'][:3]]}")
+    context.close()
+    assert not problems, "\n".join(problems)
+

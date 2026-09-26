@@ -4,14 +4,15 @@ R:cân/alaw
 S:http://alawoncymru.com/alawon/Tunes/Nadolig24/Nadolig24.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
 C:Addasiad Meurig Williams
 M:3/4
 L:1/8
 Q:1/4=120
 K:Am
 |: E2 | A2 A2 A2 | ^G2 A2 B2 | c2 c2 c2 | B2 d2 B2 |
-c2 A2 A2 | E2 A2 ^G2 | A6- | A4 :| B2 |
+c2 A2 A2 | E2 A2 ^G2 | A6- | A4 :: B2 |
 c2 e2 e2 | e2 d2 c2 | B2 d2 d2 | d2 c2 B2 |
 A2 e2 e2 | e2 d2 c2 | B6- | B4 E2 |
 A2 A2 A2 | ^G2 A2 B2 | c2 c2 c2 | B2 d2 B2 |
-c2 A2 A2 | E2 A2 ^G2 | A6- | A6 |]
+c2 A2 A2 | E2 A2 ^G2 | A6- | A4 :|

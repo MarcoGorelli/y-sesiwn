@@ -4,11 +4,11 @@ R:alaw - walts
 S:http://alawoncymru.com/alawon/Tunes/SetBreudd/SetBreudd.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
 C:Trefniannau Stacey Blythe
 M:3/4
 L:1/8
 Q:1/4=90
 K:G
-% the MIDI plays the whole tune 2 times
 d>d | d3 d BG | d d3 GA | B3 B A>B | A G3 GA |
-B3 B AG | e d3 (3efg | B3 B A>B | A G3 |]
+B3 B AG | e d3 (3efg | B3 B A>B | A G3 :|

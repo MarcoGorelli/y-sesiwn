@@ -1,15 +1,14 @@
 X:1
 T:Diferiad y Gwerwyn (version 2)
-R:miniwet
-S:http://alawoncymru.com/alawon/Tunes/MiniwBob/MinwsBob.html
-Z:MIDI transcribed with alawon-abc
-%%alawon track=2
-C:Trefniant Meurig Williams o addasiad Bob Evans
+T:Diferiad y Gerwyn
+C:Trad
+B:Blodau'r Grug Collection Vol. 3
+S:https://trillian.mit.edu/~jc/music/abc/mirror/BrianMartin/msg/welsh_tunes_1.abc
+A:Wales
+N:Transcribed by Brian Martin
 M:3/4
 L:1/8
-Q:1/4=120
-K:D
-|: DE FG FE | DE FD D2 | DE FG FE | D2 F2 E2 |
-G2 G2 A2 | GF ED C2 | G4 G2 | G2 F4 :|
-|: d3 e fd | cF ED C2 | GA BA BG | FB, A,G, F2 |
-d3 e fd | cF ED C2 | G4 G2 | G2 F4 :|
+Q:200
+K:C
+EF GA GF|EF GE C2|EF GA GF|E2c2B2|AB cd e2|dc BA G2|AB ce dB|B2c4:||
+e3f ge|dc BA G2|AB cB cA|GF ED C2|e3f ge|dc BA G2|AB ce Bd|c2 C4:||

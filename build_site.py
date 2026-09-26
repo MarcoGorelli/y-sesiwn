@@ -269,14 +269,15 @@ def version_label(headers: dict[str, list[str]]) -> str:
     return "Alawon Cymru" if "alawoncymru" in source else ""
 
 
-CHORD = re.compile(r'"[A-G][^"]*"')  # a chord symbol; annotations start with ^_<>@
+QUOTED = re.compile(r'"([^"]*)"')  # chord symbols ("G") and annotations ("^Fine")
 
 
 def chords_source(abc: str) -> str | None:
     """None if the tune has no chord symbols, else where they come from: the
     tune's `%%chords <text>` line, or "" if it has none."""
     body = "\n".join(l for l in abc.splitlines() if not re.match(r"[A-Za-z]:|%", l))
-    if not CHORD.search(body):
+    # A chord starts with a note name; an annotation with ^ _ < > or @.
+    if not any(re.match(r"[A-G]", text) for text in QUOTED.findall(body)):
         return None
     m = re.search(r"^%%chords\s+(.*\S)", abc, re.M)
     return m.group(1) if m else ""

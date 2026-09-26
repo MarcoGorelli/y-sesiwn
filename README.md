@@ -40,7 +40,8 @@ relative URLs, so the site also works under a sub-path such as
 ## Features
 
 - **Home page:** a welcome, a big name search box, **Surprise me** (a random
-  tune; also in the sidebar), **Search by notes** and **Browse by type**:
+  tune; also in the sidebar), **What you can do** (every feature in one list,
+  `features()` in `app.js`; keep it up to date when adding one), **Search by notes** and **Browse by type**:
   buttons for each tune type (Jig, Polca, Walts, Rîl, Pibddawns, …, from `R:`,
   Welsh or English, via `tune_type()` in `build_site.py`), each with a
   *carthen* colourway, and a list of every tune (or that type's).

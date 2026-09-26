@@ -147,7 +147,7 @@ relative URLs, so the site also works under a sub-path such as
   options, with General MIDI percussion 76/77 from abcjs's own sound set in
   `static/soundfont/percussion-mp3/` (FluidR3's percussion samples are
   near-silent stubs). **Tablature** under the stave for mandolin/fiddle
-  (GDAE), tenor banjo (GDAE an octave lower) or guitar, with abcjs's
+  (GDAE) or guitar, with abcjs's
   tablature plugin.
 - **Report a problem with this tune:** a link on every tune page to a new
   GitHub issue with the tune's name, page and file filled in.

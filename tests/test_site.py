@@ -338,10 +338,9 @@ def test_count_in_and_click(page):
     assert page.evaluate(drum)["drums"] > 50  # a click on every beat of the tune
 
 
-@pytest.mark.parametrize("tab, first", [("mandolin", "0"), ("banjo", "5"), ("guitar", "0")])
+@pytest.mark.parametrize("tab, first", [("mandolin", "0"), ("guitar", "0")])
 def test_tablature(page, tab, first):
-    # Glandyfi starts on D above middle C: the open D string on a mandolin, the A string's
-    # 5th fret on a tenor banjo (an octave lower), the open D string on a guitar.
+    # Glandyfi starts on D above middle C: the open D string on a mandolin and on a guitar.
     page.goto_site("?tune=glandyfi")
     page.wait_for_selector(".score .abcjs-staff")
     page.select_option("#tab-select", tab)
@@ -401,3 +400,9 @@ def test_accessibility(browser, site, scheme, width):
     context.close()
     assert not problems, "\n".join(problems)
 
+
+
+def test_tablature_choices(page):
+    page.goto_site("?tune=glandyfi")
+    options = page.eval_on_selector_all("#tab-select option", "os => os.map((o) => o.value)")
+    assert options == ["none", "mandolin", "guitar"]

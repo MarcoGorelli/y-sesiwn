@@ -626,7 +626,7 @@ function features() {
     [["Sheet music"], " for every tune, with the versions of a tune side by side."],
     [["Any key"], ": transpose a tune to suit your instrument, your voice or the session."],
     [["Play it back"], " at any tempo, with the notes lit up as they play."],
-    [["Practise"], ": loop one part of a tune and speed up a little each time round, with a count-in and a click if you like, and ", ["tablature"], " for mandolin, fiddle, tenor banjo or guitar."],
+    [["Practise"], ": loop one part of a tune and speed up a little each time round, with a count-in and a click if you like, and ", ["tablature"], " for mandolin, fiddle or guitar."],
     [["Accompaniment"], `: suggested chords as a chart for guitar, piano or harp, played with or without the tune (${withChords} tunes so far, and growing).`],
     [["Practice mode"], " fills the screen with the music, for a tablet on a music stand; or ", ["print"], " it."],
     [[link("?page=map", "Tunes on the map")], ": the places in Wales that tunes are named after."],
@@ -730,11 +730,9 @@ function partLoop(controller, part, tune, settings, onSpeed) {
 }
 
 // Tablature under the stave. Mandolin and fiddle share their tuning (GDAE; the numbers
-// are frets, or semitones above the open string); an Irish tenor banjo is GDAE an
-// octave lower.
+// are frets, or semitones above the open string).
 const TABS = {
   mandolin: { instrument: "mandolin", label: "Mandolin / fiddle (%T)" },
-  banjo: { instrument: "mandolin", tuning: ["G,,", "D,", "A,", "E"], label: "Tenor banjo (%T)" },
   guitar: { instrument: "guitar", label: "Guitar (%T)" },
 };
 
@@ -1035,7 +1033,7 @@ function renderTune(main, group, tune) {
   const toggle = (label, checked, onchange, cls) => el("label", { class: `switch${cls ? ` ${cls}` : ""}` },
     el("input", { type: "checkbox", checked, onchange: (e) => { onchange(e.target.checked); redraw(); } }), label);
   const tabSelect = el("select", { id: "tab-select", onchange: (e) => { state.practice.tab = e.target.value; redraw(); } },
-    [["none", "No tablature"], ["mandolin", "Mandolin / fiddle"], ["banjo", "Tenor banjo"], ["guitar", "Guitar"]].map(([value, label]) =>
+    [["none", "No tablature"], ["mandolin", "Mandolin / fiddle"], ["guitar", "Guitar"]].map(([value, label]) =>
       el("option", { value, selected: state.practice.tab === value }, label)));
   const practiceRow = el("div", { class: "practice-row" },
     el("div", { class: "control" }, el("label", { for: "loop-select" }, "Loop"), loopSelect),

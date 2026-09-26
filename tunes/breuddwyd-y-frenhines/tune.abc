@@ -4,14 +4,16 @@ R:polca
 S:http://alawoncymru.com/alawon/Tunes/RalTSiSt/RalTSiSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
 M:4/4
 L:1/8
 Q:1/4=120
 K:G
-|: d3 e d2 c2 | B4 G2 AB | c2 B2 A2 G2 | F4 D4 |
-E2 F2 G2 A2 | B4 d4 | c2 B2 A3 G | G8 :|
-B2 c2 d2 c2 | B2 c2 d2 c2 | B2 e2 d2 c2 | B4 G4 |
-A2 B2 c2 B2 | A2 B2 c2 B2 | A2 d2 c2 B2 | A4 A4 |
-G3 A G2 F2 | E4 C4 | A3 B A2 G2 | F2 E2 D4 |
-E2 F2 G2 A2 | B4 d4 | c2 B2 A3 G | G8 |]
+|: "G"d3 e d2 c2 | "Em"B4 G2 AB | "C"c2 B2 A2 G2 | "D"F4 D4 |
+"C"E2 F2 G2 A2 | "G"B4 d4 | "C"c2 B2 "D"A3 G | "G"G8 :|
+"G"B2 c2 d2 c2 | "G"B2 c2 d2 c2 | "G"B2 e2 d2 c2 | "G"B4 G4 |
+"D"A2 B2 c2 B2 | "D"A2 B2 c2 B2 | "D"A2 d2 c2 B2 | "D"A4 A4 |
+"G"G3 A G2 F2 | "C"E4 C4 | "A"A3 B A2 G2 | "D"F2 E2 D4 |
+"C"E2 F2 G2 A2 | "G"B4 d4 | "C"c2 B2 "D"A3 G | "G"G8 |]

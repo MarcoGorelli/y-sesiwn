@@ -4,14 +4,15 @@ R:polca
 S:http://alawoncymru.com/alawon/Tunes/HelSgwSt/HelSgwSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
 M:4/4
 L:1/8
 Q:1/4=120
 K:G
-|: d2 | g2 fe d2 c2 | B3 c d2 B2 | A3 B c2 A2 | B2 G2 G2 A2 |
-B3 c d2 B2 | c2 d2 e2 f2 | g4 f4 | g6 :: ga |
-b2 g2 gb ag | a2 f2 fa gf | g2 e2 eg fe | f2 d2 d2 ga |
-b2 g2 gb ag | a2 f2 fa gf | g2 e2 eg fe | f2 d2 df ed |
-e2 c2 ce dc | d2 B2 Bd cB | c2 A2 Ac BA | B2 G2 G2 A2 |
-B3 c d2 B2 | c2 d2 e2 f2 | g4 f4 | g6 :|
+|: d2 | "G"g2 fe d2 c2 | B3 c d2 B2 | "D"A3 B c2 A2 | "G"B2 G2 G2 A2 |
+"G"B3 c d2 B2 | "C"c2 d2 e2 f2 | "G"g4 f4 | "G"g6 :: ga | "G"b2 g2 gb ag |
+"D"a2 f2 fa gf | "A"g2 e2 eg fe | "D"f2 d2 d2 ga | "G"b2 g2 gb ag | "D"a2 f2 fa gf |
+"A"g2 e2 eg fe | "D"f2 d2 df ed | "C"e2 c2 ce dc | "G"d2 B2 Bd cB | "D"c2 A2 Ac BA |
+"G"B2 G2 G2 A2 | B3 c d2 B2 | "C"c2 d2 e2 f2 | "G"g4 "D"f4 | "G"g6 :|

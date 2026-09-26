@@ -4,14 +4,16 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/SetLlydaw/SetLlydaw.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=60
 K:D
-|: DFA d2 c | B2 A F2 A | GFE EFG | FED D3 |
-DFA d2 c | B2 A F2 A | GAB B2 c | d3 d3 :|
-|: DFA DFA | DGA B2 G | DFA DFA | GFE E3 |
-DFA DFA | DGA B2 G | FGA GFE | FED D3 :|
-|: fed def | gfe efg | fed def | ecA A3 |
-fed def | gfe efg | fed edc | dAF D3 :|
+|: "D"DFA d2 c | "G"B2 A "D"F2 A | "Em"GFE "A"EFG | "D"FED D3 |
+"D"DFA d2 c | "G"B2 A "D"F2 A | "G"GAB "A"B2 c | "D"d3 d3 :|
+|: "D"DFA DFA | "G"DGA B2 G | "D"DFA DFA | "A"GFE E3 |
+"D"DFA DFA | "G"DGA B2 G | "D"FGA "A"GFE | "D"FED D3 :|
+|: "D"fed def | "G"gfe efg | "D"fed def | "A"ecA A3 |
+"D"fed def | "G"gfe efg | "D"fed "A"edc | "D"dAF D3 :|

@@ -100,6 +100,7 @@ def test_built_site(site):
     ("gweddi-eli-jenkins", 1), ("hela-r-wiwer", 2), ("taith-dadi", 1), ("hiraeth", 1),
     ("dydd-gwyl-dewi", 1), ("hela-r-geinach", 1), ("neyland-ferry", 2), ("pibddawns-dowlais-fel-ril", 2),
     ("roedd-yn-y-wlad-honno", 2), ("y-pibydd-du", 2), ("clawdd-offa", 3), ("distyll-y-don", 1),
+    ("cainc-y-datgeiniad", 1),
 ])
 def test_repeats_follow_the_score(slug, end_repeats):
     abc = (b.ROOT / "tunes" / slug / "tune.abc").read_text(encoding="utf-8")

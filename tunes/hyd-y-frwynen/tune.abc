@@ -4,12 +4,14 @@ R:polca
 S:http://alawoncymru.com/alawon/Tunes/MrFrenSt/MrFrenSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
 M:4/4
 L:1/8
 Q:1/4=120
 K:Em
-|: E2 B2 B2 AG | F3 E E2 ^D2 | E2 EF G2 GA |1 B2 Bc BA GF :|
-[2 BA Bc B4 || B2 Bc d2 cB | A2 AB c2 BA | B2 Bc d2 cB |
-AB AG F4 |: GA Bc B2 AG | FG AB A2 GF | G2 FE B2 AG |
-F2 E2 E4 :|
+"Em"E2 B2 B2 AG | "C"F3 E "B"E2 ^D2 | "Em"E2 EF "C"G2 GA | "B"B2 Bc BA GF |
+"Em"E2 B2 B2 AG | "C"F3 E "B"E2 ^D2 | "Em"E2 EF "C"G2 GA | "B"BA Bc B4 ||
+"G"B2 Bc d2 cB | "D"A2 AB c2 BA | "Em"B2 Bc d2 cB | "C"AB AG "B"F4 ||
+|: "G"GA Bc B2 AG | "D"FG AB A2 GF | "C"G2 FE B2 AG | "B"F2 "Em"E2 E4 :|

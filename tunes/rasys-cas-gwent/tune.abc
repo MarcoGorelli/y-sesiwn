@@ -4,13 +4,15 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/SetRasys/SetRasys.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=53
 K:G
 % the MIDI plays the whole tune 2 times
-|: gBc dGA | BDF GBd | gBc dGA | ^cde def |
-gBc dGA | BDF GBd | efg afd | aef g3 :|
-|: fdA FAd | e^cA GAc | dfa afd | egf e2 A |
-fdA FAd | e^cA GAc | dfa afd | gfe d3 :|
+|: "G"gBc "D"dGA | "D"BDF "G"GBd | "G"gBc "D"dGA | "A"^cde "D"def |
+"G"gBc "D"dGA | "D"BDF "G"GBd | "C"efg "D"afd | "D"aef "G"g3 :|
+|: "D"fdA FAd | "A"e^cA GAc | "D"dfa afd | "A"egf e2 A |
+"D"fdA FAd | "A"e^cA GAc | "D"dfa afd | "A"gfe "D"d3 :|

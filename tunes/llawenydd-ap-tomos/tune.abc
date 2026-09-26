@@ -5,12 +5,14 @@ R:polca
 S:http://alawoncymru.com/alawon/Tunes/ApTomos/ApTomos.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:4/4
 L:1/8
 Q:1/4=100
 K:G
-|: g2 f2 g2 b2 | ag fe dc BA | G2 F2 G2 B2 | AB cd e2 f2 |
-g2 f2 ga b2 | ag fe dc BA | GA B2 cd e2 | d2 f2 g4 :|
-|: ag fe dc BA | Bd ce d2 g2 | ag fe dc BA | GA Bc d2 ^d2 |
-ec eg dB dg | cA cf dG Bd | ef ge dc BA | G2 g2 g4 :|
+|: "G"g2 f2 "Em"g2 b2 | "Am"ag fe "D"dc BA | "G"G2 F2 "Em"G2 B2 | "Am"AB cd "D"e2 f2 |
+"G"g2 f2 "Em"ga b2 | "Am"ag fe "D"dc BA | "G"GA B2 "C"cd e2 | "D"d2 f2 "G"g4 :|
+|: "D"ag fe dc BA | "G"Bd ce d2 g2 | "D"ag fe dc BA | "G"GA Bc d2 ^d2 |
+"C"ec eg "G"dB dg | "D"cA cf "G"dG Bd | "C"ef ge "D"dc BA | "G"G2 g2 g4 :|

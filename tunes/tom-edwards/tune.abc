@@ -4,11 +4,13 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/TomEdwSt/TomEdwSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=67
 K:G
-|: GDG BGB | dBd gdB | GDG BGB | dBd g3 :|
-|: gbg efg | faf def | efg fed | ed^c d3 :|
-|: cec c2 A | BdB B2 G | ABc BAG | AGF G3 :|
+|: "G"GDG BGB | "G"dBd gdB | "G"GDG BGB | "G"dBd g3 :|
+|: "G"gbg efg | "D"faf def | "A"efg fed | "D"ed^c d3 :|
+|: "C"cec c2 A | "G"BdB B2 G | "Am"ABc BAG | "D"AGF "G"G3 :|

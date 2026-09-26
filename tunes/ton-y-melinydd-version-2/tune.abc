@@ -4,13 +4,15 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/SetMelin6/Melin6.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:The score holds the last note for two bars; the recording holds it for four.
 M:6/8
 L:1/8
 Q:3/8=67
 K:Em
-E | G2 G A2 F | E E4 F | G2 G A2 F | E4 z F |
-G2 G A2 F | E2 F G2 E | D2 E D2 C | B,6 |
-B,2 B, B,2 A, | G,2 A, B,2 B, | B,2 B, B,2 A, | G,2 A, B,2 B, |
-B,2 B, G2 F | E3 ^D3 | E6- | E6- |
-E6- | E6 |]
+E | "Em"G2 G "B5"A2 F | "Em"E E4 F | "Em"G2 G "B5"A2 F | "Em"E4 z F |
+"Em"G2 G "B5"A2 F | "Em"E2 F G2 E | "C"D2 E D2 C | "B5"B,6 ||
+"Em"B,2 B, B,2 A, | "C"G,2 A, "B5"B,2 B, | "Em"B,2 B, B,2 A, | "C"G,2 A, "Bm"B,2 B, |
+"Em"B,2 B, G2 F | "Am"E3 "B"^D3 | "Em"E6- | E6- | E6- | E6 |]

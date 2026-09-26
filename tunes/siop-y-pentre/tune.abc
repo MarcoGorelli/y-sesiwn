@@ -4,14 +4,16 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/SetYPentre/SetYPentre.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=60
 K:G
-|: D | G2 B A2 c | BAG E2 D | E2 G FGA | D3 DEF |
-G2 B A2 c | BAG A2 G | F2 A GFE | D3- D2 :| c |
-Bcd B2 G | ABc d2 c | B2 G FGA | E3- E2 c |
-Bcd B2 G | EFG A2 G | F2 D E2 ^C | D3- D2 D |
-G2 B A2 c | BAG E2 D | E2 G FGA | D3 DEF |
-G2 B A2 c | BAG d2 c | B2 G FGA | G3- G2 |]
+|: D | "G"G2 B "Am"A2 c | "G"BAG "C"E2 D | "Am"E2 G "D"FGA | "G"D3 "D"DEF |
+"G"G2 B "Am"A2 c | "G"BAG "Am"A2 G | "D"F2 A "A"GFE | "D"D3- D2 :| c |
+"G"Bcd B2 G | "D"ABc d2 c | "Em"B2 G "D"FGA | "C"E3- E2 c |
+"G"Bcd "Em"B2 G | "C"EFG "Am"A2 G | "D"F2 D "A"E2 ^C | "D"D3- D2 || D |
+"G"G2 B "Am"A2 c | "G"BAG "C"E2 D | "Am"E2 G "D"FGA | "G"D3 "D"DEF |
+"G"G2 B "Am"A2 c | "G"BAG "C"d2 c | "G"B2 G "D"FGA | "G"G3- G2 |]

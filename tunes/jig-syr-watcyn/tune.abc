@@ -4,13 +4,14 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/CroesOsw/CroesOsw.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=80
-K:DMix
-|: d | efg afd | g3 de=f | edc dcB | cBA G3 |
-DGA B2 G | DGA B2 G | Bcd c2 B | A3- A2 :: G |
-FGA FGA | D3 d2 B | AGF E2 D | D3 D2 G |
-d3 G3 | e3 A3 | f3 B3 | g3 f2 e |
-dBG cAF | G3- G2 :|
+K:G
+|: d | "C"efg "D"afd | "G"g3 "G7"de=f | "C"edc "G"dcB | "D"cBA "G"G3 |
+"G"DGA B2 G | "G"DGA B2 G | "G"Bcd "C"c2 B | "D"A3- A2 :| |: G |
+"D"FGA FGA | "D"D3 d2 B | "D"AGF "A"E2 D | "D"D3 D2 G | "G"d3 G3 |
+"C"e3 A3 | "D"f3 B3 | "C"g3 "D"f2 e | "G"dBG "D"cAF | "G"G3- G2 :|

@@ -4,14 +4,17 @@ R:polca
 S:http://alawoncymru.com/alawon/Tunes/MorwynyPentre/MorwynPentre.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:2/2
 L:1/8
 Q:1/2=60
 K:D
-|: AG FE D2 FA | d2 d2 c2 A2 | B2 c2 d2 df | a2 d2 c2 e2 |
-a2 g2 f2 a2 | d2 c2 B2 Bc | d2 B2 A2 d2 | c2 e2 d2 d2 :|
-|: z2 dc B2 Bc | d2 cB c2 cd | e2 dc B2 B^A | Bc de fF ^Ac |
-fe dc B2 Bc | d2 cB c2 cd | e2 dc d2 cB | c2 B^A B4 |
-AG FE D2 FA | d2 d2 c2 A2 | B2 c2 d2 df | a2 d2 c2 e2 |
-a2 g2 f2 a2 | d2 c2 B2 Bc | d2 B2 A2 d2 | c2 e2 d2 d2 :|
+"A"AG FE | "D"D2 FA d2 d2 | "A"c2 A2 B2 c2 | "D"d2 df a2 d2 |
+"A"c2 e2 a2 g2 | "D"f2 a2 d2 c2 | "G"B2 Bc d2 B2 | "D"A2 d2 "A"c2 e2 |
+"D"d2 d2 :| z2 dc | "Bm"B2 Bc d2 cB | "F#"c2 cd e2 dc |
+"Bm"B2 B^A Bc de | "F#"fF ^Ac fe dc | "Bm"B2 Bc d2 cB |
+"F#"c2 cd e2 dc | "Bm"d2 cB "F#"c2 B^A | "Bm"B4 || "A"AG FE |
+"D"D2 FA d2 d2 | "A"c2 A2 B2 c2 | "D"d2 df a2 d2 | "A"c2 e2 a2 g2 |
+"D"f2 a2 d2 c2 | "G"B2 Bc d2 B2 | "D"A2 d2 "A"c2 e2 | "D"d2 d2 |]

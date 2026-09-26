@@ -4,12 +4,14 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/SetGwanwyn/SetGwanwyn.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Steve Jeans
 M:6/8
 L:1/8
 Q:3/8=67
 K:Am
-|: E | A2 B cBA | ^G2 A BAG | A2 B cBA | B3 ^G2 E |
-A2 B cBA | ^G2 A B2 e | dcB A2 E | ^G3 A2 :: z |
-f3 d3 | Bcd e3 | f2 d f2 d | e3 A3 |
-f3 d3 | efe c2 e | dcB A2 E | ^G3 A2 :|
+|: E | "Am"A2 B cBA | "E"^G2 A BAG | "Am"A2 B cBA | "E"B3 ^G2 E |
+"Am"A2 B cBA | "E"^G2 A B2 e | "Dm"dcB "Am"A2 E | "E"^G3 "Am"A2 :| |: z |
+"Dm"f3 d3 | "E"Bcd "Am"e3 | "Dm"f2 d f2 d | "Am"e3 A3 |
+"Dm"f3 d3 | "E"efe "Am"c2 e | "Dm"dcB "Am"A2 E | "E"^G3 "Am"A2 :|

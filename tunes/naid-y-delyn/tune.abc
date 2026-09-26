@@ -4,10 +4,14 @@ R:jig naid
 S:http://alawoncymru.com/alawon/Tunes/SetPwtarNaid/SetNaidPwt.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
+N:The score has d2 c and e2 d at the ends of the first two bars; the recording plays dcc and edd.
 M:9/8
 L:1/8
 Q:3/8=60
 K:G
-|: BAG GAB dcc | cBA ABc edd | BAG GAB dcc | cBA FGA G3 :|
-|: gfe f2 e fed | gfe fge e2 d | gfe f2 e e2 d | Bcd cBA G3 :|
+|: "G"BAG GAB "C"dcc | "D"cBA ABc "G"edd |
+"G"BAG GAB "C"dcc | "D"cBA FGA G3 :: "G"gfe "D"f2 e fed |
+"G"gfe "D"fge e2 d | "G"gfe "D"f2 e e2 d | "G"Bcd "D"cBA "G"G3 :|

@@ -4,14 +4,16 @@ R:polca
 S:http://alawoncymru.com/alawon/Tunes/SetYBois/SetYBois.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Meurig Williams
+N:The score has no chords over AB ^cA | d2 d2 in part B; the A and D there are ours.
 M:2/4
 L:1/8
 Q:1/4=80
 K:G
-|: Bd GB | Ac FA | GF GA | GA B2 |
-Bd GB | Ac FA | BG FA | G2 G2 :|
-Ac FA | Bd GB | Ac FA | Bc d2 |
-Ac FA | Bd GB | AB ^cA | d2 d2 |
-Bd GB | Ac FA | GF GA | GA B2 |
-Bd GB | Ac FA | Bd ef | g2 g2 |]
+|: "G"Bd GB | "D"Ac FA | "G"GF "D"GA | "G"GA B2 | "G"Bd GB |
+"D"Ac FA | "G"BG "D"FA | "G"G2 G2 :| "D"Ac FA |
+"G"Bd GB | "D"Ac FA | "G"Bc d2 | "D"Ac FA | "G"Bd GB |
+"A"AB ^cA | "D"d2 d2 || "G"Bd GB | "D"Ac FA | "G"GF "D"GA |
+"G"GA B2 | "G"Bd GB | "D"Ac FA | "G"Bd "D"ef | "G"g2 g2 |]

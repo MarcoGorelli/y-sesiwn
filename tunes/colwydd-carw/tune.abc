@@ -4,14 +4,18 @@ R:polca/ymdaith
 S:http://alawoncymru.com/alawon/Tunes/SetYCeirw/SetYCeirw.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
 M:4/4
 L:1/8
 Q:1/4=100
 K:G
-|: GA Bc d2 f2 | f2 ef d2 g2 | ed cB Ad cd | B2 AB G2 d2 |
-Bd cd Ad cd | Bc BA Gd gf | ea gf e3 d | d8 :|
-de fg a2 d2 | b2 ag a2 d2 | g2 fe ^d2 ef | g2 fe ^d4 |
-g2 d2 d2 ef | g2 G2 G2 ef | g2 A2 A2 ef | g2 G2 G2 B2
-|: ce ge ce ge | Bd gd Bd gd | c2 de A3 G |1 G6 B2 :|
-[2 G8 |]
+|: "G"GA Bc d2 f2 | "D"f2 ef "G"d2 g2 | "C"ed cB "D"Ad cd |
+"G"B2 AB G2 d2 | "G"Bd cd "D"Ad cd | "G"Bc BA Gd gf |
+"A"ea gf e3 d | "D"d8 :| "D"de fg a2 d2 |
+"G"b2 ag "D"a2 d2 | "Em"g2 fe "B7"^d2 ef | "C"g2 fe "B7"^d4 |
+"G"g2 d2 d2 ef | "G"g2 G2 G2 ef | "C"g2 A2 A2 ef |
+"G"g2 G2 G2 B2 | "C"ce ge ce ge | "G"Bd gd Bd gd |
+"C"c2 de "D"A3 G | "G"G6 B2 | "C"ce ge ce ge |
+"G"Bd gd Bd gd | "C"c2 de "D"A3 G | "G"G8 |]

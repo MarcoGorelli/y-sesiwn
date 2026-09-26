@@ -4,11 +4,14 @@ R:alaw/polka
 S:http://alawoncymru.com/alawon/Tunes/Crwtwyst/CrwtwySt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:The score plays part A twice, part B, then part A again (D.C. al Fine).
 M:4/4
 L:1/8
 Q:1/4=100
 K:Em
-|: E2 B2 B2 A2 | B4 A2 G2 | F2 G2 A2 B2 | G2 F2 E4 :|
-G2 F2 E2 G2 | F2 E2 F4 | G2 F2 E2 G2 | F2 E2 F4 |
-E2 B2 B2 A2 | B4 A2 G2 | F2 G2 A2 B2 | G2 F2 E4 |]
+|: "Em"E2 B2 B2 A2 | "Em"B4 A2 G2 | "Bm"F2 G2 A2 B2 | "Em"G2 F2 E4 :|
+"Em"G2 F2 E2 G2 | "Em"F2 E2 F4 | "Em"G2 F2 E2 G2 | "Bm"F2 E2 F4 |
+"Em"E2 B2 B2 A2 | "Em"B4 A2 G2 | "Bm"F2 G2 A2 B2 | "Em"G2 F2 E4 |]

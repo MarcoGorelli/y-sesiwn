@@ -4,11 +4,14 @@ R:polca
 S:http://alawoncymru.com/alawon/Tunes/SetDowlais/SetDowlais.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:The score plays part A twice, part B, then part A again (D.C. al Fine).
 M:4/4
 L:1/8
 Q:1/4=90
 K:Am
-|: A2 A2 E2 G2 | ^FF ED E2 E2 | A,B, CD E2 E2 | ED CB, A,4 :|
-A2 AB c2 A2 | B2 G2 A2 A2 | A2 AB c2 A2 | B2 G2 A4 |
-A2 A2 E2 G2 | ^FF ED E2 E2 | A,B, CD E2 E2 | ED CB, A,4 |]
+|: "Am"A2 A2 E2 G2 | "D"^FF ED "Am"E2 E2 | "Am"A,B, CD E2 E2 | "Em"ED CB, "Am"A,4 :|
+"Am"A2 AB c2 A2 | "Em"B2 G2 "Am"A2 A2 | "Am"A2 AB c2 A2 | "Em"B2 G2 "Am"A4 |
+"Am"A2 A2 E2 G2 | "D"^FF ED "Am"E2 E2 | "Am"A,B, CD E2 E2 | "Em"ED CB, "Am"A,4 |]

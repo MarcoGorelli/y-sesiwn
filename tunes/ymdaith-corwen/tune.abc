@@ -4,12 +4,14 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/HelWiwSt/HelWiwSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=67
 K:G
-|: B/c/ | ded d2 g | d2 d d2 B/c/ | ded cBA | AAA A2 B/c/ |
-ded d2 g | d2 d d2 e | dcB cBA | GGG G2 :: B/c/ |
-dBG dBG | AAA A2 B/c/ | dBG dBG | DDD D2 B/c/ |
-dBG dBG | AAA ABc | ded cBA | GGG G2 :|
+|: B/c/ | "G"ded "D"d2 g | "G"d2 d "D"d2 B/c/ | "G"ded "D"cBA | "D"AAA A2 B/c/ |
+"G"ded d2 g | "C"d2 d d2 e | "D"dcB cBA | "G"GGG G2 :|
+|: B/c/ | "G"dBG dBG | "D"AAA A2 B/c/ | "G"dBG dBG | "D"DDD D2 B/c/ |
+"G"dBG dBG | "C"AAA ABc | "D"ded cBA | "G"GGG G2 :|

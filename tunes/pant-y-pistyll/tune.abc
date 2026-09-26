@@ -4,11 +4,13 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/JigsNic/JigsNic.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams o'r alaw yn llyfr Nicholas Bennett
 M:6/8
 L:1/8
 Q:3/8=60
 K:G
-|: G2 G B2 d | e2 c d2 B | AGA B2 G | E2 F G3 :|
-e2 d e2 f | g2 e d2 B | cde g2 e | def g3 |
-G2 G B2 d | e2 c d2 B | AGA B2 G | E2 F G3 |]
+|: "G"G2 G B2 d | "C"e2 c "G"d2 B | "D"AGA "G"B2 G | "C"E2 F "G"G3 :|
+"C"e2 d e2 f | "C"g2 e d2 B | "C"cde g2 e | "D"def "G"g3 |
+"G"G2 G B2 d | "C"e2 c "G"d2 B | "D"AGA "G"B2 G | "C"E2 F "G"G3 |]

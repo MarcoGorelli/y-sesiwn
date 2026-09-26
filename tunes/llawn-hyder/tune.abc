@@ -5,12 +5,14 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/SetHyder/SetHyder.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=47
 K:D
-|: A | d2 d AFD | GAB AFD | GAB AGF | E3- E2 A |
-d2 d AFD | BGD AFD | EFG ABc | d3- d2 :: d |
-c2 d ecA | def ecA | def edc | BA^G A2 A |
-GAB GFE | FGA FED | EFG FED | EDC D2 :|
+|: A | "D"d2 d AFD | "G"GAB "D"AFD | "G"GAB "D"AGF | "A"E3- E2 A |
+"D"d2 d AFD | "G"BGD "D"AFD | "G"EFG "A"ABc | "D"d3- d2 :| |: d |
+"A"c2 d ecA | "D"def "A"ecA | "D"def "A"edc | "E"BA^G "A"A2 A |
+"G"GAB "Em"GFE | "D"FGA FED | "Em"EFG "Bm"FED | "A"EDC "D"D2 :|

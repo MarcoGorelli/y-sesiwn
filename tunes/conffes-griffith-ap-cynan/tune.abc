@@ -5,12 +5,14 @@ R:polca/ymdaith
 S:http://alawoncymru.com/alawon/Tunes/SetYCeirw/SetYCeirw.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:2/2
 L:1/8
 Q:1/2=50
 K:Em
-|: G2 F2 E2 e2 | e2 B2 G4 | Bc dB d4 | FG AF D4 |
-G2 F2 E2 e2 | ef ge ^d2 ^cd | e2 B2 B2 c2 | B2 A2 B4 :|
-|: e2 ef ^d2 B2 | e2 f2 g4 | d2 de d2 c2 | Bc d2 G4 |
-A^G AB A4 | ef ge ^d2 ^cd | e2 B2 A2 B2 | G2 F2 E4 :|
+|: "Em"G2 F2 E2 e2 | "Em"e2 B2 G4 | "G"Bc dB d4 | "D"FG AF D4 |
+"Em"G2 F2 E2 e2 | "Em"ef ge "B7"^d2 ^cd | "Em"e2 B2 "Am"B2 c2 | "B7"B2 A2 B4 :|
+|: "Em"e2 ef "B7"^d2 B2 | "D"e2 f2 "G"g4 | "G"d2 de "D"d2 c2 | "G"Bc d2 G4 |
+"Am"A^G AB A4 | "Em"ef ge "B7"^d2 ^cd | "Em"e2 B2 "Am"A2 B2 | "B7"G2 F2 "Em"E4 :|

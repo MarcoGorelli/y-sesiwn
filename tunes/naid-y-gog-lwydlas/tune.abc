@@ -4,11 +4,15 @@ R:Jig naid
 S:http://alawoncymru.com/alawon/Tunes/GogLwydl/GogLwydl.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Meurig Williams
+N:The score starts the last line with c3 BcB EGE, as at the start; the recording plays cdc BcB EGE.
 M:9/8
 L:1/8
 Q:3/8=60
 K:ADor
-|: c3 BcB EGE | ABc BcB A3 | cdc BcB AGE | cdc BcB A3 :|
-e2 f geg a3 | gag fgf e3 | e2 f geg aga | gag fgf e3 |
-cdc BcB EGE | ABc BcB A3 | cdc BcB AGE | cdc B2 B A3 |]
+|: "Am"c3 BcB "Em"EGE | "Am"ABc "Em"BcB "Am"A3 | "Am"cdc "Em"BcB "Am"AGE |
+"C"cdc "Em"BcB "Am"A3 :| "Am"e2 f "C"geg "D"a3 | "Em"gag "D"fgf "C"e3 |
+"Am"e2 f "C"geg "D"aga | "Em"gag "D"fgf "C"e3 || "C"cdc "D"BcB "Em"EGE |
+"Am"ABc "Em"BcB "Am"A3 | "Em"cdc "D"BcB "C"AGE | "Am"cdc "Em"B2 B "Am"A3 |]

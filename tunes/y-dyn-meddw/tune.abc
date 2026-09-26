@@ -4,14 +4,16 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/SetDynMeddw/SetDynMeddw.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=60
 K:G
-|: G2 D G2 D | G2 B BGD | F2 D F2 D | F2 A AFD |
-G2 D G2 D | G2 B BGD | B2 e dBG | F2 A AFD :|
-|: d2 B d2 B | BdB dBG | d2 A d2 A | AdA dAF |
-B2 d dcB | e2 g gfe | dcB BAG | F2 A AFD :|
-|: dgf gdG | FAG AFD | dgf gdG | F2 A AFD |
-dgf gfe | def gfe | dcB BAG | F2 A AFD :|
+|: "G"G2 D G2 D | "G"G2 B BGD | "D"F2 D F2 D | "D"F2 A AFD |
+"G"G2 D G2 D | "G"G2 B BGD | "G"B2 e dBG | "D"F2 A AFD :|
+|: "G"d2 B d2 B | "G"BdB dBG | "D"d2 A d2 A | "D"AdA dAF |
+"G"B2 d dcB | "C"e2 g gfe | "G"dcB BAG | "D"F2 A AFD :|
+|: "G"dgf gdG | "D"FAG AFD | "G"dgf gdG | "D"F2 A AFD |
+"G"dgf gfe | "G"def gfe | "G"dcB BAG | "D"F2 A AFD :|

@@ -4,12 +4,14 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/HarbCset/HarbCoSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=80
 K:G
-|: FGA A2 B | A2 B AFD | GAG BcB | GAG BcB |
-FGA A2 B | A2 F DEF | GAB c2 B | AGF G3 :|
-|: dBd cAc | BGB AFD | GAG BcB | GAG BcB |
-dBd cAc | BGB AFD | BAG edc | BcA G3 :|
+|: "D"FGA A2 B | A2 B AFD | "G"GAG BcB | GAG BcB |
+"D"FGA A2 B | A2 F DEF | "G"GAB "C"c2 B | "D"AGF "G"G3 :|
+|: "G"dBd "C"cAc | "G"BGB "D"AFD | "G"GAG BcB | GAG BcB |
+"G"dBd "C"cAc | "G"BGB AFD | "G"BAG "C"edc | "D"BcA "G"G3 :|

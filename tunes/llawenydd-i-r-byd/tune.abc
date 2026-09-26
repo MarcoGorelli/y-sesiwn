@@ -4,13 +4,15 @@ R:polca
 S:http://alawoncymru.com/alawon/Tunes/AlwonNad/AlwonNad.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:The score has a bass part as well.
 M:2/2
 L:1/8
 Q:1/2=55
 K:D
-d4 c3 B | A6 G2 | F4 E4 | D6 A2 |
-B6 B2 | c6 c2 | d6 d2 | d2 c2 B2 A2 |
-A3 G F2 d2 | d2 c2 B2 A2 | A3 G F2 F2 | F2 F2 F2 FG |
-A6 GF | E2 E2 E2 EF | G6 FE | D2 d4 B2 |
-A3 G F2 G2 | F4 E4 | D8 |]
+"D"d4 "A"c3 B | "D"A6 G2 | "D"F4 "A"E4 | "D"D6 A2 | "G"B6 B2 | "A"c6 c2 |
+"D"d6 d2 | "D"d2 c2 B2 A2 | "D"A3 G F2 d2 | "D"d2 c2 B2 A2 |
+"D"A3 G F2 F2 | "D"F2 F2 F2 FG | "D"A6 GF | "A"E2 E2 E2 EF |
+"A"G6 FE | "D"D2 d4 "G"B2 | "D"A3 G "G"F2 "A"G2 | "D"F4 "A"E4 | "D"D8 |]

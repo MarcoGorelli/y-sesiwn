@@ -4,12 +4,14 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/JigsYWerin/JigsWerin.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=60
 K:D
-|: A | A2 d d2 d | B2 g g2 g | f2 e B2 c | d2 d d2 A |
-A2 d d2 d | B2 g g2 g | e2 e B2 c | d2 d d2 :: d |
-B2 g g2 g | B2 d g2 g | B2 g ggf | efd c2 A |
-A2 d d2 d | B2 g g2 f | a2 A ABc | d2 d d2 :|
+|: A | "D"A2 d d2 d | "G"B2 g g2 g | "A"f2 e B2 c | "D"d2 d d2 A |
+"D"A2 d d2 d | "G"B2 g g2 g | "A"e2 e B2 c | "D"d2 d d2 :| |: d |
+"G"B2 g g2 g | "G"B2 d g2 g | "G"B2 g ggf | "G"efd "A"c2 A |
+"D"A2 d d2 d | "G"B2 g g2 f | "A"a2 A ABc | "D"d2 d d2 :|

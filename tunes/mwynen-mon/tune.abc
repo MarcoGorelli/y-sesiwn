@@ -4,12 +4,15 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/MwynMonS/MwynMon.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
+N:The score has c2 B2 cB A2 in the seventh bar of part B; the recording plays c3 B A2 A2.
 M:2/2
 L:1/8
 Q:1/2=45
 K:Am
-|: E2 | E2 A2 ^G2 A2 | Bc BA B2 e2 | d3 c B2 A2 | ^G3 A Bc dB |
-c2 A2 ^G2 B2 | A2 A4 :: B2 | c3 d e2 f2 | g3 e d2 c2 |
-B2 g2 d2 c2 | B3 c B4 | e3 d c2 c2 | d3 c B2 B2 |
-c3 B A2 A2 | ^G2 ^F2 E2 e2 | d3 c B2 A2 | ^G3 A Bc dB |
-c2 A2 ^G2 B2 | A2 A4 :|
+|: E2 | "Am"E2 A2 ^G2 A2 | "E"Bc BA B2 e2 | "Dm"d3 c B2 A2 |
+"E"^G3 A Bc dB | "Am"c2 A2 "E"^G2 B2 | "Am"A2 A4 :| |: B2 |
+"C"c3 d e2 f2 | "C"g3 e d2 c2 | "G"B2 g2 d2 c2 | "G"B3 c B4 |
+"Am"e3 d c2 c2 | "G"d3 c B2 B2 | "F"c3 B A2 A2 | "E"^G2 ^F2 E2 e2 |
+"Dm"d3 c B2 A2 | "E"^G3 A Bc dB | "Am"c2 A2 "E"^G2 B2 | "Am"A2 A4 :|

@@ -4,12 +4,14 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/SetGwanwyn/SetGwanwyn.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams o alaw Steve Jeans
 M:6/8
 L:1/8
 Q:3/8=67
 K:G
-|: D | G2 B A2 c | B2 d c2 e | d2 B cBA | B2 G A2 D |
-G2 B A2 c | B2 d c2 e | dcB cBA | B3 G2 :: B |
-d2 B c2 A | B2 G A2 B | d2 B cBA | BAG A2 D |
-G2 B A2 c | B2 d c2 e | dcB cBA | B2 A G2 :|
+|: D | "G"G2 B "D"A2 c | "G"B2 d "C"c2 e | "G"d2 B "D"cBA | "G"B2 G "D"A2 D |
+"G"G2 B "D"A2 c | "G"B2 d "C"c2 e | "G"dcB "D"cBA | "G"B3 G2 :|
+|: B | "G"d2 B "D"c2 A | "G"B2 G "D"A2 B | "G"d2 B "D"cBA | "G"BAG "D"A2 D |
+"G"G2 B "D"A2 c | "G"B2 d "C"c2 e | "G"dcB "D"cBA | "G"B2 A G2 :|

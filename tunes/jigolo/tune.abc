@@ -4,12 +4,14 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/JigsJeff/JigsJeff.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Alaw Iolo Jones ©
 M:6/8
 L:1/8
 Q:3/8=67
 K:A
-|: c3 BcB | Ace agf | e3 gfe | d3 fed |
-c3 BcB | Ace agf | e3 gfe | dcB A3 :|
-|: B3 BAB | c2 d cBA | B3 BAB | cea ecA |
-B3 BAB | c2 A Bcd | e2 e gfe | dcB A3 :|
+|: "A"c3 "E"BcB | "A"Ace agf | "E"e3 gfe | "D"d3 fed |
+"A"c3 "E"BcB | "A"Ace agf | "E"e3 gfe | "E"dcB "A"A3 :|
+|: "E"B3 BAB | "A"c2 d cBA | "E"B3 BAB | "A"cea ecA |
+"E"B3 BAB | "A"c2 A Bcd | "E"e2 e gfe | "E"dcB "A"A3 :|

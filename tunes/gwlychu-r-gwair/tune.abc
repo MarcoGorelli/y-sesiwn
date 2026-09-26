@@ -5,12 +5,15 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/SetyDwr/SetYDwr.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:The score has a second (harmony) part as well.
 M:6/8
 L:1/8
 Q:3/8=80
 K:G
-|: G2 G G3/2A/B/c/ | d2 B G2 B | A2 B A2 B | A2 B AFD |
-G2 G G3/2A/B/c/ | d2 B G2 B | A2 G F2 E | D3 D3 :|
-|: A2 B A2 B | A2 B AFD | B2 c d2 e | d2 e dBG |
-c2 B c2 d | e2 f gfe | dcB AGF | G3 G3 :|
+|: "G"G2 G G3/2A/B/c/ | "G"d2 B G2 B | "D"A2 B A2 B | "D"A2 B AFD |
+"G"G2 G G3/2A/B/c/ | "G"d2 B G2 B | "C"A2 G F2 E | "D"D3 D3 :|
+|: "D"A2 B A2 B | "D"A2 B AFD | "G"B2 c d2 e | "G"d2 e dBG |
+"C"c2 B c2 d | "C"e2 f gfe | "D"dcB AGF | "G"G3 G3 :|

@@ -4,14 +4,17 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/ApSienc/ApSienc.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:The score plays A twice, B, then A again (D.C. al Fine), with eighth-note pick-ups (dc, ga) and BGG G at the ends of part A; the recording plays the pick-ups as sixteenths.
 M:6/8
 L:1/8
 Q:3/8=60
 K:G
-|: d/c/ | B2 B Bgf | e2 e efg | ded dcB | cAA Adc |
-B2 B Bgf | e2 e efg | ded cBA | BGG G2 :| g/a/ |
-b2 g a2 f | gfe dcB | cde dgB | BAA Aga |
-b2 g a2 f | gfe agf | bag fge | dgf edc |
-B2 B Bgf | e2 e efg | ded dcB | cAA Adc |
-B2 B Bgf | e2 e efg | ded cBA | BGG G2 |]
+|: d/c/ | "G"B2 B Bgf | "C"e2 e efg | "G"ded dcB | "D"cAA Adc |
+"G"B2 B Bgf | "C"e2 e efg | "G"ded "D"cBA | "G"BGG G2 :| g/a/ |
+"G"b2 g "D"a2 f | "C"gfe "G"dcB | "C"cde "G"dgB | "D"BAA Aga |
+"G"b2 g "D"a2 f | "Em"gfe "D"agf | "A"bag fge | "D"dgf edc |
+"G"B2 B Bgf | "C"e2 e efg | "G"ded dcB | "D"cAA Adc |
+"G"B2 B Bgf | "C"e2 e efg | "G"ded "D"cBA | "G"BGG G2 |]

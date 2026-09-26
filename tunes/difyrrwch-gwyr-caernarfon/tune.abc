@@ -4,11 +4,14 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/JigsGog/JigsGogs.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:The score plays part A twice, part B, then part A again (D.C. al Fine).
 M:6/8
 L:1/8
 Q:3/8=60
 K:G
-|: D | G2 G GFG | A2 A ABc | BAG DEF | G3- G2 :| B/c/ |
-d2 d d2 B | c2 c c2 A | B2 B BAG | A3- A2 D |
-G2 G GFG | A2 A ABc | BAG DEF | G3- G2 |]
+|: D | "G"G2 G GFG | "D"A2 A ABc | "G"BAG "D"DEF | "G"G3- G2 :| B/c/ |
+"G"d2 d d2 B | "C"c2 c c2 A | "G"B2 B BAG | "D"A3- A2 D |
+"G"G2 G GFG | "D"A2 A ABc | "G"BAG "D"DEF | "G"G3- G2 |]

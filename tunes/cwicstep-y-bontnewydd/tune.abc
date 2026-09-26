@@ -4,12 +4,14 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/SetCwicstep/SetBontnew.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=80
 K:D
-|: A | Add d2 e | fgf f2 g | afd dcd | fee e2 A |
-Add d2 e | fgf f2 g | afd gec | edd d2 :: a |
-afa afa | geg geg | fdf fdf | fee e2 A |
-Add d2 e | fgf f2 g | afd gec | edd d2 :|
+|: A | "D"Add d2 e | "D"fgf f2 g | "D"afd dcd | "A"fee e2 A |
+"D"Add d2 e | "D"fgf f2 g | "D"afd "A"gec | "D"edd d2 :: a |
+"D"afa afa | "A"geg geg | "D"fdf fdf | "A"fee e2 A |
+"D"Add d2 e | "D"fgf f2 g | "D"afd "A"gec | "D"edd d2 :|

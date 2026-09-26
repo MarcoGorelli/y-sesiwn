@@ -4,11 +4,14 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/HarbCset/HarbCoSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
+N:The score has four verses of words.
 M:6/8
 L:1/8
 Q:3/8=80
 K:G
-D | B,2 D G2 A | B3 B2 A | GFG AGE | D3 G2 E |
-D3- D2 B, | DEF G2 c | B2 B AGF | G4 AB |
-c2 c cBA | B3 B2 A | GFG AGE | D3 G2 E |
-D3- D2 B, | DEF G2 c | B2 B AGF | G3- G2 |]
+D | "G"B,2 D G2 A | B3 B2 A | "C"GFG AGE | "G"D3 "C"G2 E |
+"G"D3- D2 B, | DEF G2 c | "C"B2 B AGF | "G"G4 AB |
+"C"c2 c cBA | "G"B3 B2 A | "C"GFG AGE | "G"D3 "C"G2 E |
+"G"D3- D2 B, | DEF G2 c | "C"B2 B AGF | "G"G3- G2 |]

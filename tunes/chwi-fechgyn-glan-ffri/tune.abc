@@ -4,11 +4,14 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/DifGwDst/DifGwDst.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:The score ends part A with Adc d2 and starts part B with a pick-up e; the recording has no pick-up.
 M:6/8
 L:1/8
 Q:3/8=53
 K:D
-|: dAA BGG | ABA f2 e | dAA BGG | Adc d3 :|
-fef gfg | agf gfe | fed eAA | ABA f2 e |
-dAA A2 d | BGG G2 E | FGA BAG | Adc d3 |]
+|: "D"dAA "G"BGG | "D"ABA "A"f2 e | "D"dAA "G"BGG | "A"Adc "D"d3 :|
+"D"fef "A"gfg | "G"agf "D"gfe | "D"fed "A"eAA | "D"ABA "A"f2 e |
+"D"dAA A2 d | "G"BGG G2 E | "D"FGA "G"BAG | "A"Adc "D"d3 |]

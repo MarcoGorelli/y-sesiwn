@@ -3,11 +3,14 @@ T:Du fel y Glo
 R:jig
 S:http://alawoncymru.com/alawon/Tunes/SetHuwBach/SetHuwBach.html
 Z:MIDI transcribed with alawon-abc
-%%alawon track=1
+%%alawon track=1 pickup=0
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:9/8
 L:1/8
 Q:3/8=67
 K:G
-|: GBB GBB | D3 GBB GBB | c3 GBB GBB | D3 dcB A2 G | G3 :|
-|: dBG GAB | D3 dBG GAB | c3 dBG GAB | D3 dcB A2 G | G3 :|
+|: "G"GBB "D"GBB D3 | "G"GBB GBB "C"c3 | "G"GBB "D"GBB D3 |
+"G"dcB "D"A2 G "G"G3 :: "G"dBG GAB D3 | "G"dBG GAB "C"c3 |
+"G"dBG GAB D3 | "G"dcB "D"A2 G "G"G3 :|

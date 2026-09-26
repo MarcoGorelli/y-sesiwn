@@ -4,12 +4,13 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/JigMrgSt/JigMrgSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=80
 K:D
-|: d2 d fed | dcB AGF | B2 B Bcd | AFD DEF |
-GFG BAG | FGE D3 :: A2 A ABc | def ecA |
-ABA ABc | def edc | B2 d A2 d | G2 d FGA |
-BAB Bcd | AFD DEF | GFG BAG | FGE D3 :|
+|: "D"d2 d fed | dcB AGF | "G"B2 B Bcd | "D"AFD DEF | "G"GFG BAG | "A"FGE "D"D3 :|
+|: "A"A2 A ABc | "D"def "A"ecA | ABA ABc | "D"def edc | "G"B2 d "D"A2 d |
+"G"G2 d "D"FGA | "G"BAB Bcd | "D"AFD DEF | "G"GFG BAG | "A"FGE "D"D3 :|

@@ -26,16 +26,14 @@ const state = {
   bySlug: new Map(),    // every tune file ("version"), by folder name
   groups: new Map(),    // one page per tune: its versions, by the first version's folder
   groupList: [],        // groups sorted by title
-  browseType: null,
   settings: new Map(),  // per tune: { transpose, bpm }, kept while the page is open
   synth: null,          // the playing SynthController, stopped when leaving a tune
   keyNote: null,        // the note sounding from the search-by-notes keyboard
   listening: null,      // the microphone, while "Play it to me" listens
   autoListen: false,    // start listening when the notes page opens (from the home page)
   docs: new Map(),      // markdown files, fetched on first use
-  chords: { onScore: false, play: "tune" },
+  chords: { onScore: false, play: "tune" },  // the chord box's settings, for every tune; play: tune, both or chords
   practice: { countIn: false, click: false, tab: "none" },  // the practice row, for every tune
-  browseKey: null,  // the chord box's settings, for every tune; play: tune, both or chords
 };
 
 // ---- Small DOM helper ----------------------------------------------------
@@ -607,15 +605,17 @@ function render() {
   const map = page === "map";
   const offline = page === "offline";
   const notes = page === "notes";
+  const browse = page === "browse";
   const main = document.getElementById("main");
   if (!tune) setPractice(false);
   main.style.animation = "none"; void main.offsetWidth; main.style.animation = "";  // replay fade-in
-  document.getElementById("home-button").disabled = !tune && !guide && !map && !offline && !notes;
+  document.getElementById("home-button").disabled = !tune && !guide && !map && !offline && !notes && !browse;
   if (tune) renderTune(main, group, tune);
   else if (guide) renderGuide(main, guide);
   else if (map) renderMap(main);
   else if (offline) renderOffline(main);
   else if (notes) renderNotesPage(main);
+  else if (browse) renderBrowse(main);
   else renderHome(main);
 }
 
@@ -623,8 +623,31 @@ function render() {
 
 function renderHome(main) {
   document.title = "Y Sesiwn";
-  const { types, repo } = state.data;
-  const tunes = state.groupList;  // one entry per tune, whatever its number of versions
+  const count = state.groupList.length;  // one entry per tune, whatever its number of versions
+  main.replaceChildren(
+    el("h1", {}, "Croeso! Welcome to Y Sesiwn"),
+    el("p", { class: "lead" },
+      "Y Sesiwn is a ", el("strong", {}, "completely free and open-source"),
+      ` resource to help you learn and share Welsh folk tunes: ${count} of them so far, `,
+      "each with its sheet music. Search by name, browse by type and key, or let chance decide."),
+    heroSearch(count),
+    el("div", { class: "home-actions" },
+      el("button", { type: "button", class: "primary", onclick: openRandomTune }, "Surprise me"),
+      el("a", { href: "?page=browse", "data-route": true, class: "button-link" }, `Browse all ${count} tunes`)),
+    notesInvite(),
+    features(),
+    offlineCard(),
+  );
+}
+
+// ---- Browse page -------------------------------------------------------------------
+
+// Every tune, narrowed down by type and key. The choice is kept in the address
+// (?page=browse&type=Jig&key=D%20major), so "the jigs in D" can be shared.
+function renderBrowse(main) {
+  document.title = "Browse · Y Sesiwn";
+  const { types } = state.data;
+  const tunes = state.groupList;
   const colour = Object.fromEntries(types.map((t) => [t.name, t.colour]));
 
   const list = el("ul", { class: "tune-list" });
@@ -637,9 +660,15 @@ function renderHome(main) {
   for (const t of tunes) if (keyOf(t)) keyCounts.set(keyOf(t), (keyCounts.get(keyOf(t)) ?? 0) + 1);
   // Nothing selected (null) lists every tune; clicking the selected type or key again
   // clears it. A type and a key together list, say, the jigs in D major.
-  const showType = (name, key = state.browseKey) => {
-    state.browseType = name;
-    state.browseKey = key;
+  const params = new URLSearchParams(location.search);
+  let chosenType = types.some((t) => t.name === params.get("type")) ? params.get("type") : null;
+  let chosenKey = keyCounts.has(params.get("key")) ? params.get("key") : null;
+  const show = (name, key) => {
+    [chosenType, chosenKey] = [name, key];
+    const url = new URLSearchParams({ page: "browse" });
+    if (name) url.set("type", name);
+    if (key) url.set("key", key);
+    history.replaceState(null, "", `?${url}`);
     const type = types.find((t) => t.name === name);
     for (const pill of pills.children) pill.setAttribute("aria-pressed", pill.dataset.type === name);
     for (const pill of keyPills.children) {
@@ -661,31 +690,21 @@ function renderHome(main) {
   for (const type of types) {
     pills.append(el("button", {
       type: "button", "data-type": type.name, style: `--c: ${type.colour}`,
-      onclick: () => showType(state.browseType === type.name ? null : type.name),
+      onclick: () => show(chosenType === type.name ? null : type.name, chosenKey),
     }, el("span", { class: "swatch" }), `${type.name} · ${type.count}`));
   }
   for (const [key, count] of [...keyCounts].sort((a, b) => b[1] - a[1])) {
     keyPills.append(el("button", {
-      type: "button", "data-key": key, onclick: () => showType(state.browseType, state.browseKey === key ? null : key),
+      type: "button", "data-key": key, onclick: () => show(chosenType, chosenKey === key ? null : key),
     }, `${key} · `, el("span", {}, String(count))));
   }
 
   main.replaceChildren(
-    el("h1", {}, "Croeso! Welcome to Y Sesiwn"),
-    el("p", { class: "lead" },
-      "Y Sesiwn is a ", el("strong", {}, "completely free and open-source"),
-      ` resource to help you learn and share Welsh folk tunes: ${tunes.length} of them so far, `,
-      "each with its sheet music. Search by name, browse by type and key below, or let chance decide."),
-    heroSearch(tunes.length),
-    el("div", { class: "home-actions" },
-      el("button", { type: "button", class: "primary", onclick: openRandomTune }, "Surprise me")),
-    notesInvite(),
-    el("h2", { class: "section-heading" }, "Browse by type and key"),
+    el("h1", {}, "Browse by type and key"),
+    el("p", { class: "lead" }, "Pick a type of tune, a key, or both: the jigs in D, say, or everything in G."),
     pills, keyPills, caption, list,
-    features(),
-    offlineCard(),
   );
-  showType(state.browseType);
+  show(chosenType, chosenKey);
 }
 
 // On the home page, the way into the notes page: "Play it to me" goes there and starts
@@ -715,7 +734,7 @@ function features() {
     [["Practice mode"], " fills the screen with the music, for a tablet on a music stand; or ", ["print"], " it."],
     [[link("?page=map", "Tunes on the map")], ": the places in Wales that tunes are named after."],
     [[link("?page=offline", "Works offline")], ": install it on your phone and take every tune to the pub."],
-    [["Browse"], " by type and key: the jigs in D, say, or everything in G."],
+    [[link("?page=browse", "Browse")], " by type and key: the jigs in D, say, or everything in G."],
     [["Free and open"], ": ", link("?page=add", "add a tune"), " or ", link("?page=fix", "suggest a correction"),
       "; everything is ", link(state.data.repo, "on GitHub"), "."],
   ];

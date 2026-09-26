@@ -5,11 +5,14 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/HelSgyf/HelSgSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
+N:The score plays part A twice, part B, then part A again (D.C. al Fine), and suggests Bm as an alternative chord over FGA.
 M:6/8
 L:1/8
 Q:3/8=60
 K:D
-|: d2 D FGA | B2 e cBA | d2 D FGA | Bec d3 :|
-fed fed | fed fed | ecd ecd | egf e3 |
-d2 D FGA | B2 e cBA | d2 D FGA | Bec d3 |]
+|: "D"d2 D FGA | "G"B2 e "A"cBA | "D"d2 D FGA | "G"Bec "D"d3 :|
+"D"fed fed | fed fed | "A"ecd ecd | egf e3 |
+"D"d2 D FGA | "G"B2 e "A"cBA | "D"d2 D FGA | "G"Bec "D"d3 |]

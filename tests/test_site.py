@@ -183,7 +183,7 @@ def test_map(page):
     assert page.locator(".card.place h2").inner_text() == "Machynlleth"
 
 
-@pytest.mark.parametrize("path", ["", "?tune=glandyfi", "?page=map", "?page=offline", "?page=about",
+@pytest.mark.parametrize("path", ["", "?page=browse", "?tune=glandyfi", "?page=map", "?page=offline", "?page=about",
                                   "?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A"])
 def test_fits_a_phone(browser, site, path):
     context = browser.new_context(viewport={"width": 360, "height": 800}, service_workers="block")
@@ -199,7 +199,11 @@ def test_home_page(page):
     features = page.locator(".features li").all_inner_texts()
     assert len(features) >= 8 and any("Accompaniment" in f for f in features)
     assert page.locator(".offline-card").is_visible()
-    assert len(page.locator(".tune-list li").all()) == len(page.evaluate("state.groupList"))
+    # Browsing every tune has its own page; the home page links to it.
+    assert page.locator(".tune-list").count() == 0
+    page.click("a.button-link:has-text('Browse all')")
+    page.wait_for_selector(".tune-list li")
+    assert page.locator(".tune-list li").count() == len(page.evaluate("state.groupList"))
 
 
 @pytest.mark.parametrize("user_agent, touch, says", [
@@ -365,7 +369,7 @@ def test_report_link(page):
 
 
 def test_browse_by_key(page):
-    page.goto_site()
+    page.goto_site("?page=browse")
     page.click(".pills.keys button[data-key='D major']")
     in_d = page.locator(".tune-list li").count()
     assert in_d > 50 and "in D major" in page.locator("p.caption", has_text="in D major").inner_text()
@@ -376,8 +380,13 @@ def test_browse_by_key(page):
     # Key counts follow the type, and keys with no jigs are greyed out.
     assert page.locator(".pills.keys button[data-key='D major'] span").inner_text() == str(jigs_in_d)
     assert page.locator(".pills.keys button:disabled").count() > 0
+    # The choice is kept in the address, so "the jigs in D" can be shared.
+    assert "type=Jig" in page.url and "key=D+major" in page.url
+    page.goto_site("?page=browse&type=Jig&key=D%20major")
+    assert page.locator(".tune-list li").count() == jigs_in_d
     page.click(".pills.keys button[data-key='D major']")  # clicking again clears the key
     assert page.locator(".tune-list li").count() > jigs_in_d
+    assert "key=" not in page.url
 
 
 # ---- Accessibility -------------------------------------------------------------------
@@ -392,7 +401,7 @@ def test_accessibility(browser, site, scheme, width):
     context = browser.new_context(service_workers="block", color_scheme=scheme, viewport={"width": width, "height": 900})
     page = context.new_page()
     problems = []
-    for path in ["", "?tune=glandyfi", "?tune=nyth-y-gog", "?page=map", "?page=offline", "?page=about", "?page=add",
+    for path in ["", "?page=browse", "?tune=glandyfi", "?tune=nyth-y-gog", "?page=map", "?page=offline", "?page=about", "?page=add",
                  "?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A"]:
         page.goto(site + path)
         # No fade-in: text caught half-faded would count as low contrast.

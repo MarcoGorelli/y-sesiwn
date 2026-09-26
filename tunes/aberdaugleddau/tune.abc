@@ -4,16 +4,17 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/BonhBala/SetBonBala.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:The score has AFD DEF in the second bar of part B, as in its second half; the recording plays A2 D DEF.
 M:6/8
 L:1/8
 Q:3/8=73
 K:G
-GAB B2 A | G3 D3 | Bcd d2 c | B3 G3 |
-g2 f g2 d | e2 f g2 B | c2 B A2 G | A3 D3 |
-GAB B2 A | G3 D3 | Bcd d2 c | B3 G3 |
-g2 f g2 d | e2 f g2 c | B3 A3 | G6 |
-G2 B d2 B | A2 D DEF | G2 B d2 B | A3 D3 |
-G2 B d2 B | e2 c B2 A | Bcd DEF | G6 |
-GAB d2 B | AFD DEF | GAB d2 B | A3 D3 |
-G2 B d2 B | e2 c B2 A | Bcd DEF | G6 |]
+"G"GAB "D"B2 A | "G"G3 D3 | "G"Bcd "D"d2 c | "G"B3 G3 | "G"g2 f g2 d |
+"C"e2 f g2 B | "Am"c2 B A2 G | "D"A3 D3 | "G"GAB "D"B2 A | "G"G3 D3 |
+"G"Bcd "D"d2 c | "G"B3 G3 | "Em"g2 f g2 d | "C"e2 f g2 c | "D"B3 A3 | "G"G6 ||
+"G"G2 B d2 B | "D"A2 D DEF | "G"G2 B d2 B | "D"A3 D3 | "G"G2 B d2 B |
+"C"e2 c B2 A | "D"Bcd DEF | "G"G6 | "G"GAB d2 B | "D"AFD DEF |
+"G"GAB d2 B | "D"A3 D3 | "G"G2 B d2 B | "C"e2 c B2 A | "D"Bcd DEF | "G"G6 |]

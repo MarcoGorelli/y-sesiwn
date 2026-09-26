@@ -4,13 +4,16 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/ApSienc/ApSienc.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:The score plays part A twice, part B twice, then part A again (D.C. al Fine).
 M:6/8
 L:1/8
 Q:3/8=60
 K:G
-|: d/c/ | B2 B AGA | c2 A A2 d/c/ | BAG GFG | FAd dAF |
-B2 B AGA | c2 A A2 d/c/ | Bcd Adc | B2 G G2 :: a/g/ |
-f2 d def | g2 d d2 d | d^c=c BAG | FAd d2 :| d/c/ |
-B2 B AGA | c2 A A2 d/c/ | BAG GFG | FAd dAF |
-B2 B AGA | c2 A A2 d/c/ | Bcd Adc | B2 G G2 |]
+|: d/c/ | "G"B2 B AGA | "D"c2 A A2 d/c/ | "G"BAG GFG | "D"FAd dAF |
+"G"B2 B AGA | "D"c2 A A2 d/c/ | "G"Bcd "D"Adc | "G"B2 G G2 :|
+|: a/g/ | "D"f2 d def | "G"g2 d d2 d | "A"d^c=c BAG | "D"FAd d2 :| d/c/ |
+"G"B2 B AGA | "D"c2 A A2 d/c/ | "G"BAG GFG | "D"FAd dAF |
+"G"B2 B AGA | "D"c2 A A2 d/c/ | "G"Bcd "D"Adc | "G"B2 G G2 |]

@@ -4,14 +4,16 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/CroesOsw/CroesOsw.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=80
-K:DMix
-|: d | efg f2 e | dcB A2 G | gfe f2 g | a3- a2 d |
-efg f2 e | dcB A2 d | BGc AFB | G3- G2 :: A |
-Bcd d2 e | d2 e dBG | ABA c2 d | e3 edc |
-Bcd def | g3 d3 | bgd afd | g3- g2 :: d |
-gdB gdB | gdB A2 G | gfe f2 g | a3- a2 f |
-gba gfe | fag fed | egB A2 G | G3- G2 :|
+K:G
+|: d | "C"efg "D"f2 e | "G"dcB A2 G | "C"gfe "Am"f2 g | "D"a3- a2 d |
+"C"efg "D"f2 e | "G"dcB A2 d | "C"BGc "D"AFB | "G"G3- G2 :|
+|: A | "G"Bcd d2 e | "G"d2 e dBG | "Am"ABA c2 d | "Am"e3 edc |
+"G"Bcd def | "G"g3 d3 | "G"bgd "D"afd | "G"g3- g2 :|
+|: d | "G"gdB gdB | "G"gdB A2 G | "G"gfe "C"f2 g | "D"a3- a2 f |
+"G"gba gfe | "D"fag fed | "C"egB "D"A2 G | "G"G3- G2 :|

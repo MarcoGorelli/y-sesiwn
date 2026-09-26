@@ -4,12 +4,14 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/SetyDwr/SetYDwr.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=100
 K:Am
-|: E | A2 B c2 e | d2 c B2 B | c2 B A2 c | B2 G E2 E |
-A2 B c2 e | d2 c B2 B | cBA BAG | A3- A2 :: B |
-c2 d e2 c | d2 c B2 B | c2 B A2 A | B2 G E2 G |
-c2 d e2 c | d2 c B2 B | cBA BGE | A3- A2 :|
+|: E | "Am"A2 B c2 e | "Dm"d2 c "Em"B2 B | "F"c2 B A2 c | "Em"B2 G E2 E |
+"Am"A2 B c2 e | "Dm"d2 c "Em"B2 B | "F"cBA "Em"BAG | "Am"A3- A2 :: B |
+"C"c2 d e2 c | "G"d2 c B2 B | "Am"c2 B A2 A | "Em"B2 G E2 G |
+"C"c2 d e2 c | "G"d2 c B2 B | "F"cBA "Em"BGE | "Am"A3- A2 :|

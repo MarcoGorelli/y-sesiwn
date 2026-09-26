@@ -4,12 +4,14 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/SetRosmari/SetRosmari.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=60
 K:D
-|: A | d2 d dcd | B2 d A3 | ABc def | g2 e c2 A |
-d2 d dcd | B2 d A3 | ABc def | gec d2 :: z |
-d2 e f3 | fgf e2 d | e2 d e2 d | e2 f ecA |
-d2 e f3 | fgf e2 d | e2 d e2 f | d3 d2 :|
+|: A | "D"d2 d dcd | "G"B2 d "A"A3 | "D"ABc "G"def | "A"g2 e c2 A |
+"D"d2 d dcd | "G"B2 d "A"A3 | "D"ABc "G"def | "A"gec "D"d2 :: z |
+"D"d2 e f3 | "G"fgf "A"e2 d | "A"e2 d e2 d | "A"e2 f ecA |
+"D"d2 e f3 | "G"fgf "A"e2 d | "A"e2 d e2 f | "D"d3 d2 :|

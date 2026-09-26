@@ -4,12 +4,15 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/SetHyder/SetHyder.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams o'r alaw draddodiadol
+N:The score has ABA ^G2 B in bar 4; the recording plays ABA B2 B.
 M:6/8
 L:1/8
 Q:3/8=47
 K:ADor
-|: E | AEA ^GAB | cBA ^GFE | cBA ^GAB | ABA B2 B |
-cBA Bcd | edc ABd | cdc BA^G | A3- A2 :: B |
-cBc cde | dcB dcB | ABc cBA | A^GE AGE |
-ABc Bcd | ede dcd | cBc BA^G | A3- A2 :|
+|: E | "Am"AEA "E"^GAB | "Am"cBA "E"^GFE | "Am"cBA "E"^GAB | "Am"ABA "E"B2 B |
+"Am"cBA "G"Bcd | "C"edc "E"ABd | "Am"cdc "E"BA^G | "Am"A3- A2 :: B |
+"C"cBc cde | "G"dcB dcB | "Am"ABc cBA | "E"A^GE AGE |
+"Am"ABc "E"Bcd | "Am"ede "Dm"dcd | "Am"cBc "E"BA^G | "Am"A3- A2 :|

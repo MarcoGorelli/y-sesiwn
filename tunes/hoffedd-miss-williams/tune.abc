@@ -4,12 +4,13 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/CylchCym/CylchCym.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=80
 K:G
-|: dBG GAG | g3 e3 | dBG GAG | FAA A3 |
-dBG GAG | g3 e3 | BdB cAF | GGG G3 :|
-|: d3 dgb | c3 cea | B3 Bcd | cAA A3 |
-G3 GBd | efg gfe | ded cBA | BGG G3 :|
+|: "G"dBG GAG | "C"g3 e3 | "G"dBG GAG | "D"FAA A3 | "G"dBG GAG |
+"C"g3 e3 | "G"BdB "D"cAF | "G"GGG G3 :: "G"d3 dgb | "D"c3 cea | "G"B3 Bcd |
+"D"cAA A3 | "Em"G3 GBd | "C"efg gfe | "G"ded "D"cBA | "G"BGG G3 :|

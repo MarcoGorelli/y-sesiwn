@@ -3,11 +3,14 @@ T:Breuddwyd y Wrach
 R:jig naid
 S:http://alawoncymru.com/alawon/Tunes/HoffapHy/ApHywel.htm
 Z:MIDI transcribed with alawon-abc
-%%alawon track=1
+%%alawon track=1 pickup=0
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
 M:9/8
 L:1/8
 Q:3/8=80
 K:D
-|: dfd | f2 g afd dfd | f2 f ecA dfd | f2 g afd faf | gec d3 :: AcA |
-c2 d ecA fef | c2 d ecA AcA | c2 d ecA faf | gec d3 :|
+|: "D"dfd f2 g afd | "D"dfd f2 f "A"ecA | "D"dfd f2 g afd |
+"D"faf "A"gec "D"d3 :: "A"AcA c2 d ecA | "A"fef c2 d ecA |
+"A"AcA c2 d ecA | "A"faf gec "D"d3 :|

@@ -4,12 +4,14 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/EisCaerf/EisCaerf.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=67
 K:G
-|: G2 G G2 A | B2 d d2 B | A2 A A2 B | c2 e e2 d |
-G2 G G2 A | Bdd dcB | A2 A A2 B | cee edd :|
-|: g2 e d2 B | g2 e d2 B | efg d2 B | ABc B2 A |
-G2 G G2 A | B2 G d3 | ded B2 A | G6 :|
+|: "G"G2 G G2 A | "G"B2 d d2 B | "Am"A2 A A2 B | "D"c2 e e2 d |
+"G"G2 G G2 A | "G"Bdd dcB | "Am"A2 A A2 B | "D"cee edd :|
+|: "G"g2 e d2 B | "G"g2 e d2 B | "D"efg d2 B | "Am"ABc "D"B2 A |
+"G"G2 G G2 A | "G"B2 G d3 | "D"ded B2 A | "G"G6 :|

@@ -4,11 +4,14 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/JigiauNosGalan/JigiauNosGal.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
+N:The score suggests Am as an alternative chord over A2 B in bar 3.
 M:6/8
 L:1/8
 Q:3/8=73
 K:G
-|: gfg f2 g | e2 d B2 G | EFG A2 B | G2 F G3 :|
-d2 d Bcd | e2 f gdB | d2 d Bcd | e d2 A3 |
-G2 A B2 d | e2 f gfe | d2 c B2 A | G2 F G3 |]
+|: "G"gfg f2 g | "Em"e2 d B2 G | "C"EFG A2 B | "D"G2 F "G"G3 :|
+"G"d2 d Bcd | "C"e2 f "G"gdB | "G"d2 d "Em"Bcd | "Am"e d2 "D"A3 |
+"Em"G2 A "G"B2 d | "C"e2 f "Em"gfe | "G"d2 c "Em"B2 A | "D"G2 F "G"G3 |]

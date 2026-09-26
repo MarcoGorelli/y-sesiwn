@@ -4,9 +4,11 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/HelSgyf/HelSgSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 M:6/8
 L:1/8
 Q:3/8=60
 K:D
-|: d2 d AFA | d2 f ecA | d2 d AFA | dec d2 A :|
-|: d2 A BAG | e2 B cBA | e2 g fed | edc d3 :|
+|: "D"d2 d AFA | d2 f "A"ecA | "D"d2 d AFA | "A"dec "D"d2 A :|
+|: "D"d2 A "G"BAG | "E"e2 B "A"cBA | e2 g fed | "D"edc d3 :|

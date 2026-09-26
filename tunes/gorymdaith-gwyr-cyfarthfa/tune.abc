@@ -4,12 +4,14 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/TomJonSt/TomJonSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=67
 K:D
-|: a | afd d2 f | ecA A2 A | Bcd a2 f | f3 e2 a |
-afd d2 f | ecA A2 A | Baf edc | d3 d2 :: A |
-dff faf | gee e2 d | cee ege | fdd d2 a |
-aff f2 a | gee e2 a | faf gec | ddd d2 :|
+|: a | "D"afd d2 f | "A"ecA A2 A | "G"Bcd a2 f | "A"f3 e2 a |
+"D"afd d2 f | "A"ecA A2 A | "G"Baf "A"edc | "D"d3 d2 :|
+|: A | "D"dff faf | "A"gee e2 d | cee ege | "D"fdd d2 a |
+"D"aff f2 a | "G"gee e2 a | "D"faf "A"gec | "D"ddd d2 :|

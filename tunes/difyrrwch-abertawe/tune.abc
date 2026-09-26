@@ -4,14 +4,16 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/SetDynMeddw/SetDynMeddw.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=60
 K:G
-|: D | Ged dBG | ced dBG | Ggg gfe | edB d2 D |
-Ged dBG | ced dBG | EAA EAG | FDF G2 :: g |
-bag bag | fdd d2 f | agf agf | dBB B2 G |
-Adc Bed | cfg d2 B | AEF GBd | eaf g2 :: D |
-c2 c ABc | BAG GED | GFG AGA | Bdc A2 c |
-BAG BAG | cBA cBA | dBG EDc | BcA G2 :|
+|: D | "G"Ged dBG | "C"ced "G"dBG | "G"Ggg "C"gfe | "Am"edB "D"d2 D |
+"G"Ged dBG | "C"ced "G"dBG | "Am"EAA EAG | "D"FDF "G"G2 :|
+|: g | "G"bag bag | "D"fdd d2 f | "D"agf agf | "G"dBB B2 G |
+"D"Adc "G"Bed | "D"cfg "G"d2 B | "D"AEF "G"GBd | "D"eaf "G"g2 :|
+|: D | "D"c2 c ABc | "G"BAG GED | "G"GFG "D"AGA | "G"Bdc "D"A2 c |
+"G"BAG BAG | "C"cBA cBA | "G"dBG "C"EDc | "D"BcA "G"G2 :|

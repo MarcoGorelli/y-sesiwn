@@ -4,12 +4,14 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/SetRasys/SetRasys.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams o addasiad Gareth Westacott
 M:6/8
 L:1/8
 Q:3/8=53
 K:G
-|: GBG FGA | BGB AFD | GBG FGA | GFE D2 E/F/ |
-GBG FGA | BGB AFD | GBd ecd | BcA G3 :|
-|: GBd gdB | ecA dBG | ceg dBG | cdB A2 B/A/ |
-GBG FGA | BGB AFD | GBd ecd | BcA G3 :|
+|: "G"GBG "D"FGA | "G"BGB "D"AFD | "G"GBG "D"FGA | "A"GFE "D"D2 E/F/ |
+"G"GBG "D"FGA | "G"BGB "D"AFD | "G"GBd "C"ecd | "G"BcA "D"G3 :|
+|: "G"GBd gdB | "C"ecA "G"dBG | "C"ceg "G"dBG | "A"cdB A2 B/A/ |
+"G"GBG "D"FGA | "G"BGB "D"AFD | "G"GBd "C"ecd | "D"BcA "G"G3 :|

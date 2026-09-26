@@ -5,13 +5,14 @@ S:http://alawoncymru.com/alawon/Tunes/CoronSet/CoronSt.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 N:Written in even quavers, as on the score; the alawoncymru recording swings it.
 M:4/4
 L:1/8
 Q:1/4=90
 K:D
-|: DE | FG AB A2 dc | B2 ef e2 ed | c2 BA B2 c2 | d2 f2 a2 DE |
-FG AB A2 dc | B2 ef e2 ed | c2 BA B2 c2 | d4 d2 :|
-|: cd | ef ec Ac e2 | fa fd Ad f2 | ga ge fg fd | ef ed cB AG |
-FG AB A2 dc | B2 ef e2 ed | c2 BA B2 c2 | d4 d2 :|
+|: DE | "D"FG AB A2 dc | "G"B2 ef e2 ed | "A"c2 BA B2 c2 | "D"d2 f2 "A"a2 DE |
+"D"FG AB A2 dc | "G"B2 ef e2 ed | "A"c2 BA B2 c2 | "D"d4 d2 :|
+|: cd | "A"ef ec Ac e2 | "D"fa fd Ad f2 | ga ge "D"fg fd | "A"ef ed cB AG |
+"D"FG AB A2 dc | "G"B2 ef e2 ed | "A"c2 BA B2 c2 | "D"d4 d2 :|

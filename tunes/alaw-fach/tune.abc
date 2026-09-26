@@ -5,12 +5,13 @@ S:http://alawoncymru.com/alawon/Tunes/StAlawFC/SetAlFch.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 N:Follows the score; the alawoncymru recording plays the arrangement through more times, with some double stops in other places.
 M:3/4
 L:1/8
 Q:1/4=100
 K:C
-|: DE FD EF | E2 G4 | DE FD EF | ED C4 | DE FD EF | E2 G4 |
-[FA]6 |1 [DG]6 :|2 [GB]6 |: [Gc]2 cd ec | [Gd]2 B2 G2 | A3 c A2 |
-[GB]6 | [Gc]2 cd ec | d2 B2 G2 | [FA]6 |1 [GB]6 :|2 [DG]6 || [Gc]6- | [Gc]6 |]
+|: "Dm"DE FD EF | "C"E2 G4 | "Dm"DE FD EF | "C"ED C4 | "Dm"DE FD EF | "C"E2 G4 |
+"F"[FA]6 |1 "G"[DG]6 :|2 "G"[GB]6 |: "C"[Gc]2 cd ec | "G"[Gd]2 B2 G2 | "F"A3 c A2 |
+"G"[GB]6 | "C"[Gc]2 cd ec | "G"d2 B2 G2 | "F"[FA]6 |1 "G"[GB]6 :|2 "G"[DG]6 || "C"[Gc]6- | [Gc]6 |]

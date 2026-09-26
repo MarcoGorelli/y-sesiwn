@@ -74,8 +74,9 @@ relative URLs, so the site also works under a sub-path such as
 ## Features
 
 - **Home page:** a welcome, a big name search box, **Surprise me** (a random
-  tune; also in the sidebar), **What you can do** (every feature in one list,
-  `features()` in `app.js`; keep it up to date when adding one), **Search by notes** and **Browse by type and key**:
+  tune; also in the sidebar), an invitation to find a tune by its notes, **Browse by type and key**,
+  **What you can do** (every feature in one list, `features()` in `app.js`;
+  keep it up to date when adding one) and the offline card. Browsing:
   buttons for each tune type (Jig, Polca, Walts, Rîl, Pibddawns, …, from `R:`,
   Welsh or English, via `tune_type()` in `build_site.py`), each with a
   *carthen* colourway, a second row of keys (the key each tune's first version
@@ -90,7 +91,12 @@ relative URLs, so the site also works under a sub-path such as
   searches alternative titles (extra `T:` lines, e.g. *Knights of Snowdon*).
   Partial names match at the start of a word (`mon` finds *Mwynen Môn*, not
   *harmoni*), and an exact name comes first.
-- **Search by notes:** type the first few notes (4 or more), play them on
+- **Find a tune by its notes** (its own page, `?page=notes`, linked from the
+  sidebar and from the home page, whose **Play it to me** opens it and starts
+  listening straight away): the search is kept in the address
+  (`?page=notes&q=D%20E%20F%23%20G%20A`), so it can be bookmarked or shared,
+  and the five best matches show their opening line as a small score with a
+  play button (`tunePreview()`). Type the first few notes (4 or more), play them on
   the piano keyboard (G3, the fiddle's open G, to A5; each key sounds its
   note), or press **Play it to me** and play them on an instrument to the
   microphone, in any key. Listening (`startListening()` in `app.js`) measures

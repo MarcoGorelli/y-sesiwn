@@ -168,6 +168,26 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .offline-card.full { margin-top: 0; }
 .share-icon { width: 1.15em; height: 1.15em; vertical-align: -.2em; color: var(--link); }
 
+/* Home page: the way into the notes page */
+.home-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+.notes-invite {
+  max-width: 40rem; margin: 1.25rem 0 .5rem; padding: .9rem 1.1rem 1rem;
+  border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: var(--radius);
+  background: var(--card-bg);
+}
+.notes-invite p { margin: 0 0 .7rem; }
+.invite-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; }
+.button-link { font-weight: 600; }
+
+/* The notes page: previews of the top matches */
+.notes-results .preview { display: flex; align-items: center; gap: .5rem; margin: .2rem 0 .6rem; max-width: 36rem; }
+.preview-score { flex: 1; min-width: 0; background: var(--paper); border-radius: 6px; padding: .2rem .4rem; color: #000; }
+.preview-score .abcjs-tempo { display: none; }  /* the tempo only sets playback speed */
+.preview-play { flex: none; width: 2.2rem; height: 2.2rem; padding: 0; border-radius: 50%; font-size: .9rem; }
+.notes-search .listen { font-size: 1.05rem; padding: .6rem 1.1rem; margin-bottom: .8rem; }
+.notes-search .listen:not(.on) { background: var(--accent); border-color: var(--accent); color: #fff; }
+.notes-how { margin-top: 2rem; }
+
 /* Search by notes */
 .notes-search { max-width: 40rem; }
 .notes-search input {
@@ -197,7 +217,7 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .piano .white:hover { background: #f3ead3; border-color: #b9bcc2; color: var(--accent); }
 .piano .black:hover { background: #3b4550; border-color: #111; }
 .piano .white:active, .piano .black:active, .piano .key.heard { background: var(--accent); }
-.note-edit .listen.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.notes-search .listen.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 .listen-status { margin: .2rem 0 .3rem; font-size: .95rem; }
 .mic-icon { width: 1.1em; height: 1.1em; vertical-align: -.2em; }
 .note-edit { display: flex; gap: .4rem; margin: .1rem 0 .3rem; }

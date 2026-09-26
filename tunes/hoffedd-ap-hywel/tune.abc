@@ -5,11 +5,12 @@ S:http://alawoncymru.com/alawon/Tunes/HoffapHy/ApHywel.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
 M:9/8
 L:1/8
 Q:3/8=80
 K:G
-|: g2 e dBG dBG | g2 e dBG c2 A | g2 e dBG dBG |
-ABc BAG FED :: G2 B BAB BAB | G2 B BAB AFD |
-G2 B BAB BAB | ABc BAG FED :|
+|: "G"g2 e dBG dBG | "G"g2 e dBG "D"c2 A | "G"g2 e dBG dBG |
+"Am"ABc BAG "D"FED :: "G"G2 B BAB BAB | "G"G2 B BAB "D"AFD |
+"G"G2 B BAB BAB | "Am"ABc BAG "D"FED :|

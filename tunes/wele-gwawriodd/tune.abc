@@ -5,12 +5,13 @@ S:http://alawoncymru.com/alawon/Tunes/BachMain/BachMain.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1 transpose=-7 pickup=3/8
 %%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 N:In G, as on the score; the alawoncymru recording is a fifth higher.
 M:9/8
 L:1/8
 Q:3/8=80
 K:G
-|: D2 D | G3 B3 B2 B | A3 G3 GAB | c3 B3 AGA | G6 :| B2 c |
-d3 B3 e2 e | e3 d3 B2 c | d3 B3 e2 e | d6 B2 c |
-B3 G3 B2 B | A3 G3 GAB | c3 B3 AGA | G6 |]
+|: D2 D | "G"G3 B3 B2 B | "D"A3 "G"G3 GAB | "C"c3 "G"B3 "D"AGA | "G"G6 :| B2 c |
+"G"d3 B3 "C"e2 e | "C"e3 "G"d3 B2 c | "G"d3 B3 "C"e2 e | "D"d6 B2 c |
+"G"B3 G3 B2 B | "Em"A3 G3 GAB | "C"c3 "G"B3 "D"AGA | "G"G6 |]

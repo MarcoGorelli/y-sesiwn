@@ -4,11 +4,12 @@ S:http://alawoncymru.com/alawon/Tunes/SetHelGeinach/SetHelGeinach.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:2/4
 L:1/8
 Q:1/4=80
 K:D
-D>E DF | A>B AF | DF AF | E2 EA | D>E DF |
-A>B AF | DF AF | E2 E2 || A>B AF | A>B AG/A/ |
-BA GF | ED C2 | DF A2 | BA F2 | DF AF | E2 D2 :|
+"D"D>E DF | "D"A>B AF | "D"DF AF | "A"E2 EA | "D"D>E DF |
+"D"A>B AF | "D"DF AF | "A"E2 E2 || "D"A>B AF | "D"A>B AG/A/ |
+"G"BA GF | "A"ED C2 | "D"DF A2 | "D"BA F2 | "D"DF AF | "A"E2 "D"D2 :|

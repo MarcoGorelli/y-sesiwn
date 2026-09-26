@@ -5,10 +5,11 @@ S:http://alawoncymru.com/alawon/Tunes/FacsenFel/FacsenFel.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:9/8
 L:1/8
 Q:3/8=60
 K:EDor
-|: FGA BEE E3 | FGA BAG FED | FGA BEE E3 | FGA AdA FED :|
-|: G3 d3 dBG | F2 A ABA FED | G3 d3 dBG |1 F3 d2 d cde :|2 "^Fine"FGA AFD D2 z |]
+|: "D"FGA "Em"BEE E3 | "D"FGA "Em"BAG "D"FED | "D"FGA "Em"BEE E3 | "D"FGA "Em"AdA "D"FED :|
+|: "G"G3 d3 dBG | "D"F2 A ABA FED | "G"G3 d3 dBG |1 "D"F3 d2 d cde :|2 "^Fine""D"FGA AFD D2 z |]

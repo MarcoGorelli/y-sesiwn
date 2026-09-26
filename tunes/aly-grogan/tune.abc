@@ -5,11 +5,12 @@ S:http://alawoncymru.com/alawon/Tunes/StLlCaer/StLlCaer.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=60
 K:G
-|: dBG dBG | cAF cAF | B/c/dB cAF | G2 G G3 :|
-|: gag gfe | ded dBG | gag efg | A2 A A3 |
-gag gfe | ded dBG | B/c/dB cAF | G2 G G3 :|
+|: "G"dBG dBG | "D"cAF cAF | "G"B/c/dB "D"cAF | "G"G2 G G3 :|
+|: "G"gag "C"gfe | "D"ded "G"dBG | "G"gag efg | A2 A A3 |
+"G"gag "C"gfe | "D"ded "Em"dBG | "G"B/c/dB "D"cAF | "G"G2 G G3 :|

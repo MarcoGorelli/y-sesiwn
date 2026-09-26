@@ -3,12 +3,14 @@ T:Mae'r Nos yn Fwyn ym Methlehem
 R:carol
 S:http://alawoncymru.com/alawon/Tunes/Nadol22/Nadol22.html
 Z:MIDI transcribed with alawon-abc
-%%alawon track=1
+%%alawon track=1 transpose=2 pickup=1/8
 %%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:In D, as on the score; the alawoncymru recording is a tone lower.
 M:6/8
 L:1/8
 Q:3/8=53
-K:C
-c | B2 A G2 c | B2 A G2 G | A2 A G2 C | F3- F2 F |
-EAG FBA | GcB A2 A | G2 G GAG | G3- G2 :|
+K:D
+d | "A"c2 B "D"A2 d | "A"c2 B "D"A2 A | "G"B2 B "D"A2 D | "Em"G3- "A"G2 G |
+"D"FBA "A"GcB | "D"Adc "G"B2 B | "D"A2 A "A"ABA | "D"A3- A2 :|

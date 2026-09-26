@@ -5,10 +5,12 @@ S:http://alawoncymru.com/alawon/Tunes/SetBreudd/SetBreudd.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniannau Stacey Blythe
+N:The score gives three sets of chords; these are the first. The others: C C Em Em G G C C, and Am7 Am7 Cmaj7 Cmaj7 Em7 Em7 G G.
 M:3/4
 L:1/8
 Q:1/4=90
 K:G
-d>d | d3 d BG | d d3 GA | B3 B A>B | A G3 GA |
-B3 B AG | e d3 (3efg | B3 B A>B | A G3 :|
+d>d | "G"d3 d BG | "G"d d3 GA | "Gmaj7/F#"B3 B A>B | "Gmaj7/F#"A G3 GA |
+"Em"B3 B AG | "Em"e d3 (3efg | "G/D"B3 B A>B | "G/D"A G3 :|

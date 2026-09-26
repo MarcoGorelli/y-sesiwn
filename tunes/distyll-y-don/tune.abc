@@ -5,12 +5,13 @@ S:http://alawoncymru.com/alawon/Tunes/SetyGarreg/SetyGarreg.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1 transpose=-2
 %%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 N:In G Dorian, as on the score; the alawoncymru recording is a tone higher.
 M:6/8
 L:1/8
 Q:3/8=67
 K:Gdor
-D | G2 G GAG | ^F3 D2 D | B2 B BcB |
-A3 ^F2 A | B2 A G2 G | ^F2 E D2 D |
-E^FG ABG | ^F3 D2 C | DE^F G z2 | z6 :|
+D | "Gm"G2 G GAG | "D"^F3 D2 D | "Gm"B2 B BcB |
+"D"A3 ^F2 A | "Gm"B2 A G2 G | "D"^F2 E D2 D |
+"C"E^FG ABG | "D"^F3 D2 C | "D"DE^F "Gm"G z2 | z6 :|

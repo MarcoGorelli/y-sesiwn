@@ -4,11 +4,12 @@ S:http://alawoncymru.com/alawon/Tunes/SetTredegar/SetTredegar.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:3/4
 L:1/8
 Q:1/4=90
 K:D
-A2 | A2 F2 G2 | A2 F2 E2 | D2 D2 D2 | D4 A2 | G2 G3 F |
-E2 E2 A2 | G2 A2 F2 | E4 FE | D2 D2 D2 | d2 d2 c2 |
-B2 A2 Bc | d4 cB | A2 A2 B2 | A2 F3 A | G2 F2 E2 | D4 :|
+A2 | "D"A2 F2 G2 | "D"A2 F2 E2 | "D"D2 D2 D2 | "D"D4 A2 | "A"G2 G3 F |
+"A"E2 E2 A2 | "A"G2 A2 F2 | "A"E4 FE | "D"D2 D2 D2 | "D"d2 d2 c2 |
+"G"B2 A2 Bc | "G"d4 cB | "D"A2 A2 B2 | "D"A2 F3 A | "A"G2 F2 E2 | "D"D4 :|

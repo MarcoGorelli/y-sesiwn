@@ -59,7 +59,7 @@ def test_chords_source():
     read = lambda slug: (b.ROOT / "tunes" / slug / "tune.abc").read_text(encoding="utf-8")
     assert b.chords_source(read("glandyfi")) == "From the Alawon Cymru score"
     assert b.chords_source(read("dawns-y-glocsen")) is None  # "^Fine" and "^D.C." are text, not chords
-    assert b.chords_source(read("hufen-melyn")) is None
+    assert b.chords_source(read("cawl-cennin")) is None
 
 
 def test_types_and_tempos():

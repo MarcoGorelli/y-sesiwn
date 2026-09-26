@@ -5,13 +5,14 @@ S:http://alawoncymru.com/alawon/Tunes/PontCldd/SetPntCl.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=60
 K:D
-|: dcd fdA | BGB A3 | cde cBA | cde f3 |
-dcd fdA | BGB A3 | EFG ABc | dce d3 :|
-|: AdA AFA | Bcd A2 z | GAB EFG | CDE A2 z |
-[1 fdA ecA | Bcd A3 | BGE AFD | BGF E3 :|
-[2 fdA ecA | Bcd AFD | BGE AFD | ABc d3 |]
+|: "D"dcd fdA | "G"BGB "D"A3 | "A"cde cBA | "A"cde "D"f3 |
+"D"dcd fdA | "G"BGB "D"A3 | "G"EFG "A"ABc | "D"dce d3 :|
+|: "D"AdA AFA | "G"Bcd "D"A2 z | "G"GAB "Em"EFG | "A"CDE A2 z |
+[1 "D"fdA "A"ecA | "G"Bcd "D"A3 | "G"BGE "D"AFD | "G"BGF "A"E3 :|
+[2 "D"fdA "A"ecA | "G"Bcd "D"AFD | "G"BGE "D"AFD | "A"ABc "D"d3 |]

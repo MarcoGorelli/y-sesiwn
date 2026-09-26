@@ -6,14 +6,15 @@ S:http://alawoncymru.com/alawon/Tunes/PibPrydn/PibPrydn.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 N:Written in even quavers, as on the score; the alawoncymru recording swings it.
 M:4/4
 L:1/8
 Q:1/4=90
 K:D
-|: A2 | d2 cd Bd AG | FG AG FD Ac | d2 cd Bd Ad |
-Gd FG E2 A2 | d2 cd Bd AG | FG AG FA FD |
-B,D GB cA Bc | dD DC D2 :: A2 | F2 EF DF DE |
-FD FA GF ED | G2 FG EG EF | GF GA BA Bd |
-F2 EF DF DE | FD FA GF ED | B,D GB cA Bc | dD DC D2 :|
+|: A2 | "D"d2 cd Bd AG | "D"FG AG FD Ac | "D"d2 cd Bd Ad |
+"Em"Gd FG "A"E2 A2 | "D"d2 cd Bd AG | "D"FG AG FA FD |
+"G"B,D GB "A"cA Bc | "D"dD DC D2 :: A2 | "D"F2 EF DF DE |
+"D"FD FA GF ED | "Em"G2 FG EG EF | "G"GF GA "A"BA Bd |
+"D"F2 EF DF DE | "D"FD FA GF ED | "G"B,D GB "A"cA Bc | "D"dD DC D2 :|

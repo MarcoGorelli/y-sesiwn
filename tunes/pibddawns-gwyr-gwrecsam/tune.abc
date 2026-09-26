@@ -5,13 +5,14 @@ S:http://alawoncymru.com/alawon/Tunes/MwyndCor/MwyndCor.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addaswyd gan Meurig Williams
 N:Written in even quavers, as on the score; the alawoncymru recording swings it.
 M:4/4
 L:1/8
 Q:1/4=90
 K:G
-|: Bc | d2 d2 gd Bd | c2 e2 e2 ge | dB dB ed cB | AB cB AG FD |
-d2 g2 gd Bd | c2 e2 e2 ge | dB dB ec AF | G2 B2 G2 :: Bc |
-dB dB d2 ge | ge ge ce ge | dB dB ed cB | AB cB AG FD |
-dB dB d2 gd | ec ec e2 ge | dB dB ec AF | G2 B2 G2 :|
+|: Bc | "G"d2 d2 gd Bd | "C"c2 e2 e2 ge | "G"dB dB "C"ed cB | "Am"AB cB "D"AG FD |
+"G"d2 g2 gd Bd | "C"c2 e2 e2 ge | "G"dB dB "D"ec AF | "G"G2 B2 G2 :: Bc |
+"G"dB dB d2 ge | "C"ge ge ce ge | "G"dB dB "C"ed cB | "Am"AB cB "D"AG FD |
+"G"dB dB d2 gd | "C"ec ec e2 ge | "G"dB dB "D"ec AF | "G"G2 B2 G2 :|

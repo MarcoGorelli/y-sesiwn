@@ -5,14 +5,15 @@ S:http://alawoncymru.com/alawon/Tunes/PibCaerf/PibCaerf.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 N:Written in even quavers, as on the score; the alawoncymru recording swings it.
 M:4/4
 L:1/8
 Q:1/4=90
 K:D
-|: (3ABc | df ed cA Bc | dc de fe fg | (3agf ge df ed |
-c2 a2 a2 (3ABc | df ed cA Bc | dc de fe fg |
-(3agf (3gfe fd ec | d2 f2 d2 :: cd | ed cB Ac eg |
-fg ef de cd | B2 cd ef ge | ce ae A2 dc |
-BG Ed cA Fe | dB Gg ec Aa | gf ed aA Bc | d2 f2 d2 :|
+|: (3ABc | "D"df ed "A"cA Bc | "D"dc de "A"fe fg | "D"(3agf ge df ed |
+"A"c2 a2 a2 (3ABc | "D"df ed "A"cA Bc | "D"dc de "A"fe fg |
+"D"(3agf (3gfe "A"fd ec | "D"d2 f2 d2 :: cd | "A"ed cB Ac eg |
+"D"fg "A"ef "D"de cd | "G"B2 cd ef ge | "A"ce ae A2 dc |
+"G"BG Ed "A"cA Fe | "G"dB Gg "A"ec Aa | "G"gf ed "A"aA Bc | "D"d2 f2 d2 :|

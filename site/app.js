@@ -31,6 +31,7 @@ const state = {
   synth: null,          // the playing SynthController, stopped when leaving a tune
   keyNote: null,        // the note sounding from the search-by-notes keyboard
   listening: null,      // the microphone, while "Play it to me" listens
+  autoListen: false,    // start listening when the notes page opens (from the home page)
   docs: new Map(),      // markdown files, fetched on first use
   chords: { onScore: false, play: "tune" },
   practice: { countIn: false, click: false, tab: "none" },  // the practice row, for every tune
@@ -347,11 +348,21 @@ function detectPitch(samples, sampleRate) {
 async function startListening({ onNote, onHear, onStop }) {
   stopListening();
   if ("audioSession" in navigator) navigator.audioSession.type = "play-and-record";  // iPhone: allow the mic
-  // Raw sound: phone "voice" processing (echo and noise cancelling, level control) warps notes.
-  const stream = await navigator.mediaDevices.getUserMedia({
-    audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
-  });
+  // Made before the permission prompt, while the tap that started this still counts
+  // as the user's go-ahead for sound; otherwise some browsers start it suspended.
   const context = new AudioContext();
+  // Raw sound: phone "voice" processing (echo and noise cancelling, level control) warps notes.
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+    });
+  } catch (error) {
+    context.close().catch(() => {});
+    if ("audioSession" in navigator) navigator.audioSession.type = "playback";
+    throw error;
+  }
+  await context.resume().catch(() => {});
   const analyser = context.createAnalyser();
   analyser.fftSize = 2048;  // ~45 ms of sound: two periods of the lowest note
   context.createMediaStreamSource(stream).connect(analyser);
@@ -394,14 +405,75 @@ function stopListening() {
   state.listening?.stop("left");
 }
 
-function notesSearch() {
+const micIcon = () => svg("svg", { viewBox: "0 0 24 24", class: "mic-icon", "aria-hidden": "true" },
+  svg("rect", { x: 9, y: 3, width: 6, height: 11, rx: 3, fill: "currentColor" }),
+  svg("path", { d: "M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7", fill: "none", stroke: "currentColor",
+    "stroke-width": 1.8, "stroke-linecap": "round" }));
+const canListen = () => !!navigator.mediaDevices?.getUserMedia && "AudioContext" in window;
+
+// ---- The notes page: find a tune by its notes (?page=notes&q=D E F# G A) ----------
+
+const PREVIEWS = 5;  // results shown with their opening bars
+
+// The opening of a tune, as a small score with a play button: its header and first
+// line of music (chords hidden). Enough to recognise it by eye or by ear.
+function tunePreview(tune) {
+  const lines = tune.abc.split("\n");
+  const k = lines.findIndex((l) => l.startsWith("K:"));
+  const head = lines.slice(0, k + 1).filter((l) => /^[XMLK]:/.test(l));
+  const first = lines.slice(k + 1).find((l) => l.trim() && !/^(%|[A-Za-z]:)/.test(l)) ?? "";
+  const abc = setTempo([...head, first.replace(/\s*(:\||\|)?\s*$/, " |]")].join("\n"), tune.beat, tune.bpm);
+  const paper = el("div", { class: "preview-score hide-chords" });
+  const button = el("button", { type: "button", class: "preview-play", "aria-label": `Play the opening of ${tune.base}` }, "▶");
+  const box = el("div", { class: "preview" }, button, paper);
+  requestAnimationFrame(() => {
+    const visualObj = ABCJS.renderAbc(paper, abc, { responsive: "resize", paddingtop: 0, paddingbottom: 0, add_classes: true })[0];
+    button.onclick = () => {
+      state.keyNote?.stop();
+      const synth = new ABCJS.synth.CreateSynth();
+      state.keyNote = synth;  // one sound at a time, like the keyboard
+      synth.init({ visualObj, options: AUDIO_PARAMS }).then(() => synth.prime()).then(() => {
+        if (state.keyNote === synth) synth.start();
+      }).catch(() => {});
+    };
+  });
+  return box;
+}
+
+function renderNotesPage(main) {
+  document.title = "Find a tune by its notes · Y Sesiwn";
+  const autoListen = state.autoListen;
+  state.autoListen = false;
+  main.replaceChildren(
+    el("h1", {}, "Find a tune by its notes"),
+    el("p", { class: "lead" }, "Know how a tune goes but not what it's called? Play its first few notes on your ",
+      "instrument, tap them on the keyboard or type them. The key doesn't matter."),
+    notesSearch({ autoListen }),
+    el("section", { class: "guide notes-how" },
+      el("h2", {}, "How it works"),
+      el("ul", {},
+        el("li", {}, el("strong", {}, "Play it to me"), " listens to a fiddle, whistle, flute or guitar through your ",
+          "microphone and writes down the notes as you play (it doesn't work for humming). Nothing is recorded or sent anywhere."),
+        el("li", {}, "Six to eight notes is usually plenty. A tune's lead-in notes can be left out, or played; ",
+          "either way it's found."),
+        el("li", {}, "The key and the octave don't matter: the search compares the steps between the notes."),
+        el("li", {}, "A wrong, missing or extra note still finds the tune, among the ", el("em", {}, "close"),
+          " matches. If nothing matches, the nearest tunes are shown."),
+        el("li", {}, "The address of this page keeps your notes, so you can bookmark a search or send it to someone."))));
+}
+
+function notesSearch({ autoListen = false } = {}) {
   const input = el("input", {
     id: "notes-search", type: "text", autocomplete: "off", spellcheck: "false",
     placeholder: "e.g. D E F# G A (any key)", "aria-describedby": "notes-help",
+    value: new URLSearchParams(location.search).get("q") ?? "",
   });
   const results = el("ol", { class: "notes-results", "aria-live": "polite" });
   const help = el("p", { id: "notes-help", class: "caption" });
   const update = () => {
+    // The notes are kept in the address, so a search can be bookmarked or shared.
+    const q = input.value.trim();
+    history.replaceState(null, "", q ? `?page=notes&q=${encodeURIComponent(q)}` : "?page=notes");
     const found = searchByNotes(input.value);
     if (!found) {
       const n = collapse(parseNotes(input.value).map((x) => x.midi ?? x.pc)).length;
@@ -418,11 +490,12 @@ function notesSearch() {
       : closeOnes
         ? `No tunes with exactly these notes, but ${plural(closeOnes)} close to them${found.length > 12 ? " (showing the closest 12)" : ""}.`
         : "No tunes with these notes, or close to them. These are the nearest; check a note or two, or try fewer notes.";
-    results.replaceChildren(...found.slice(0, 12).map(({ tune, how }) => {
+    results.replaceChildren(...found.slice(0, 12).map(({ tune, how }, i) => {
       const several = state.groups.get(tune.group).versions.length > 1;
       return el("li", {},
         el("a", { href: tuneUrl(tune.group, tune.version), "data-route": true }, tune.base),
-        el("span", { class: "caption" }, `${several ? ` (version ${tune.version})` : ""} · ${how}`));
+        el("span", { class: "caption" }, `${several ? ` (version ${tune.version})` : ""} · ${how}`),
+        i < PREVIEWS ? tunePreview(tune) : null);
     }));
   };
   input.addEventListener("input", update);
@@ -430,10 +503,6 @@ function notesSearch() {
   const piano = keyboard(press);
   const listenStatus = el("p", { class: "listen-status", "aria-live": "polite", hidden: true });
   const listenButton = el("button", { type: "button", class: "listen", onclick: () => toggleListening() });
-  const micIcon = () => svg("svg", { viewBox: "0 0 24 24", class: "mic-icon", "aria-hidden": "true" },
-    svg("rect", { x: 9, y: 3, width: 6, height: 11, rx: 3, fill: "currentColor" }),
-    svg("path", { d: "M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7", fill: "none", stroke: "currentColor",
-      "stroke-width": 1.8, "stroke-linecap": "round" }));
   const showListening = (on) => {
     listenButton.replaceChildren(on ? "■ Stop listening" : micIcon(), on ? "" : " Play it to me");
     listenButton.classList.toggle("on", on);
@@ -472,16 +541,16 @@ function notesSearch() {
     }
   };
   showListening(false);
-  const canListen = !!navigator.mediaDevices?.getUserMedia && "AudioContext" in window;
   const edit = el("div", { class: "note-edit" },
-    canListen ? listenButton : null,
     el("button", { type: "button", "aria-label": "Delete last note", onclick: () => {
       input.value = input.value.trimEnd().replace(/\s*\S+$/, ""); update(); } }, "⌫ Delete"),
     el("button", { type: "button", onclick: () => { input.value = ""; update(); } }, "Clear"));
   update();
+  // From the home page's "Play it to me": start listening straight away.
+  if (autoListen && canListen()) toggleListening();
   return el("section", { class: "notes-search", id: "find-by-notes" },
-    el("h2", { class: "section-heading" }, "Search by notes"),
     el("label", { for: "notes-search", class: "visually-hidden" }, "First notes of the tune"),
+    canListen() ? listenButton : null,
     input, el("div", { class: "piano-wrap" }, piano), edit, listenStatus, help, results);
 }
 
@@ -537,14 +606,16 @@ function render() {
   const guide = PAGES[page] ? page : null;
   const map = page === "map";
   const offline = page === "offline";
+  const notes = page === "notes";
   const main = document.getElementById("main");
   if (!tune) setPractice(false);
   main.style.animation = "none"; void main.offsetWidth; main.style.animation = "";  // replay fade-in
-  document.getElementById("home-button").disabled = !tune && !guide && !map && !offline;
+  document.getElementById("home-button").disabled = !tune && !guide && !map && !offline && !notes;
   if (tune) renderTune(main, group, tune);
   else if (guide) renderGuide(main, guide);
   else if (map) renderMap(main);
   else if (offline) renderOffline(main);
+  else if (notes) renderNotesPage(main);
   else renderHome(main);
 }
 
@@ -606,14 +677,27 @@ function renderHome(main) {
       ` resource to help you learn and share Welsh folk tunes: ${tunes.length} of them so far, `,
       "each with its sheet music. Search by name, browse by type and key below, or let chance decide."),
     heroSearch(tunes.length),
-    el("button", { type: "button", class: "primary", onclick: openRandomTune }, "Surprise me"),
-    features(),
-    offlineCard(),
-    notesSearch(),
+    el("div", { class: "home-actions" },
+      el("button", { type: "button", class: "primary", onclick: openRandomTune }, "Surprise me")),
+    notesInvite(),
     el("h2", { class: "section-heading" }, "Browse by type and key"),
     pills, keyPills, caption, list,
+    features(),
+    offlineCard(),
   );
   showType(state.browseType);
+}
+
+// On the home page, the way into the notes page: "Play it to me" goes there and starts
+// listening at once (the tap is still the go-ahead for the microphone and sound).
+function notesInvite() {
+  return el("section", { class: "notes-invite" },
+    el("p", {}, el("strong", {}, "Know the tune but not its name?"),
+      " Play it on your instrument, or tap the notes, and Y Sesiwn will find it."),
+    el("div", { class: "invite-actions" },
+      canListen() ? el("button", { type: "button", class: "primary listen-start",
+        onclick: () => { state.autoListen = true; navigate("?page=notes"); } }, micIcon(), " Play it to me") : null,
+      el("a", { href: "?page=notes", "data-route": true, class: "button-link" }, "Tap or type the notes")));
 }
 
 function features() {
@@ -622,7 +706,7 @@ function features() {
   const withChords = state.groupList.filter((g) => g.versions.some((v) => v.chords != null)).length;
   const items = [
     [["Find a tune by name"], ": typos, accents and other spellings are forgiven."],
-    [[link("#find-by-notes", "Find a tune by its notes")], ": play the first few notes on the keyboard, type them, or play them on your instrument to the microphone, in any key."],
+    [[link("?page=notes", "Find a tune by its notes")], ": play the first few notes on your instrument to the microphone, tap them on the keyboard or type them, in any key."],
     [["Sheet music"], " for every tune, with the versions of a tune side by side."],
     [["Any key"], ": transpose a tune to suit your instrument, your voice or the session."],
     [["Play it back"], " at any tempo, with the notes lit up as they play."],

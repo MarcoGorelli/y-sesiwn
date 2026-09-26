@@ -6,13 +6,14 @@ Z:MIDI transcribed with alawon-abc
 C:Trefniant Meurig Williams o gasgliad alawon Llewelyn Alaw
 %%alawon track=1
 %%alawon-reviewed
+%%chords From the Alawon Cymru score
 M:3/4
 L:1/8
 Q:1/4=90
 K:D
-|: A2 | A2 d2 d2 | d3 c d2 | f3 e c2 | e3 d A2 | A2 e2 e2 |
-e3 d e2 | g2 f2 e2 | f3 e d2 | f2 a2 a2 | a3 g f2 | e g3 g2 |
-g2 f2 e2 | d f3 f2 | c e3 e2 | d f3 e2 | d4 :: e2 |
-f2 ag ag | a3 f c2 | B2 gf gf | g e3 ce | A3 d f2 | a f3 d2 |
-e g3 e2 | c e3 A2 | f2 aA df | aA df af | e2 gA ce |
-gA ce ge | fF Ad fd | gA ce ge | fA df ec | d4 :|
+|: A2 | "D"A2 d2 d2 | "D"d3 c d2 | "A"f3 e c2 | "D"e3 d A2 | "A"A2 e2 e2 |
+"A"e3 d e2 | "A"g2 f2 e2 | "D"f3 e d2 | "D"f2 a2 a2 | "D"a3 g f2 | "A"e g3 g2 |
+"A"g2 f2 e2 | "D"d f3 f2 | "A"c e3 e2 | "D"d f3 "A"e2 | "D"d4 :: e2 |
+"D"f2 ag ag | "D"a3 f c2 | "G"B2 gf gf | "A"g e3 ce | "D"A3 d f2 | "D"a f3 d2 |
+"Em"e g3 e2 | "A"c e3 A2 | "D"f2 aA df | "D"aA df af | "A"e2 gA ce |
+"A"gA ce ge | "D"fF Ad fd | "A"gA ce ge | "D"fA df "A"ec | "D"d4 :|

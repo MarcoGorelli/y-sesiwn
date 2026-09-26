@@ -121,12 +121,12 @@ def test_print_menu(page):
     assert page.locator(".print-menu").is_visible()
     page.mouse.click(5, 900)  # clicking elsewhere closes it
     assert not page.locator(".print-menu").is_visible()
-    page.goto_site("?tune=hufen-melyn")  # no chords: a plain Print button
+    page.goto_site("?tune=cawl-cennin")  # no chords: a plain Print button
     assert page.locator(".tune-actions button").first.inner_text() == "Print"
 
 
 def test_no_chord_box_without_chords(page):
-    page.goto_site("?tune=hufen-melyn")
+    page.goto_site("?tune=cawl-cennin")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.locator(".card.chords").count() == 0
 
@@ -165,7 +165,7 @@ def test_search_by_notes(page, notes, group, how):
 
 
 def test_search_by_notes_never_empty(page):
-    page.goto_site()
+    page.goto_site("?page=notes")
     page.fill("#notes-search", "C C# D D# E F F# G G# A")
     assert page.locator(".notes-results li").count() == 5
     assert "nearest" in page.locator("#notes-help").inner_text()
@@ -183,7 +183,8 @@ def test_map(page):
     assert page.locator(".card.place h2").inner_text() == "Machynlleth"
 
 
-@pytest.mark.parametrize("path", ["", "?tune=glandyfi", "?page=map", "?page=offline", "?page=about"])
+@pytest.mark.parametrize("path", ["", "?tune=glandyfi", "?page=map", "?page=offline", "?page=about",
+                                  "?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A"])
 def test_fits_a_phone(browser, site, path):
     context = browser.new_context(viewport={"width": 360, "height": 800}, service_workers="block")
     page = context.new_page()
@@ -272,9 +273,10 @@ def test_microphone(playwright_instance, site, tmp_path):
         f"--use-file-for-fake-audio-capture={tmp_path / 'fiddle.wav'}%noloop",
     ])
     page = browser.new_context(service_workers="block", permissions=["microphone"]).new_page()
+    # From the home page: "Play it to me" opens the notes page and starts listening.
     page.goto(site)
-    page.wait_for_selector("button.listen")
-    page.click("button.listen")
+    page.click("button.listen-start")
+    page.wait_for_selector("button.listen.on")
     page.wait_for_function("!document.querySelector('button.listen').classList.contains('on')", timeout=30000)
     heard = page.input_value("#notes-search")
     assert heard == "C# D E F# E D C# D C# B"
@@ -390,7 +392,8 @@ def test_accessibility(browser, site, scheme, width):
     context = browser.new_context(service_workers="block", color_scheme=scheme, viewport={"width": width, "height": 900})
     page = context.new_page()
     problems = []
-    for path in ["", "?tune=glandyfi", "?tune=nyth-y-gog", "?page=map", "?page=offline", "?page=about", "?page=add"]:
+    for path in ["", "?tune=glandyfi", "?tune=nyth-y-gog", "?page=map", "?page=offline", "?page=about", "?page=add",
+                 "?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A"]:
         page.goto(site + path)
         # No fade-in: text caught half-faded would count as low contrast.
         page.add_style_tag(content="*, *::before, *::after { animation: none !important; transition: none !important; }")
@@ -406,3 +409,48 @@ def test_tablature_choices(page):
     page.goto_site("?tune=glandyfi")
     options = page.eval_on_selector_all("#tab-select option", "os => os.map((o) => o.value)")
     assert options == ["none", "mandolin", "guitar"]
+
+
+# ---- The notes page ---------------------------------------------------------------
+
+def test_notes_page(page):
+    # From the home page's invitation, typed notes are searched and kept in the address.
+    page.goto_site()
+    page.click("text=Tap or type the notes")
+    page.fill("#notes-search", "D G B D C B G A")
+    assert "q=D%20G%20B%20D%20C%20B%20G%20A" in page.url
+    assert page.locator(".notes-results li a").first.inner_text() == "Glandyfi"
+    # The best matches show their opening bars, with a play button.
+    page.wait_for_function("document.querySelectorAll('.notes-results .preview svg').length === 5")
+    assert page.locator(".notes-results .preview-play").count() == 5
+
+
+def test_notes_page_link(page):
+    # A shared link opens with the notes filled in and the results shown.
+    page.goto_site("?page=notes&q=G%20B%20D%20C%20B%20G%20A")
+    assert page.input_value("#notes-search") == "G B D C B G A"
+    assert page.locator(".notes-results li a").first.inner_text() == "Glandyfi"
+    # And it's in the sidebar on every page.
+    page.goto_site("?tune=glandyfi")
+    page.click(".sidebar-links >> text=Find a tune by its notes")
+    assert page.locator("h1").inner_text() == "Find a tune by its notes"
+
+
+
+def test_every_chord_chart(page):
+    # Every tune with chords gets a chart with a chord in every row, in its own key and
+    # transposed (chord names like "Gmaj7/F#" or "B5" must survive both).
+    page.goto_site()
+    problems = page.evaluate("""() => {
+      const problems = [];
+      for (const tune of state.data.tunes.filter((t) => t.chords != null)) {
+        for (const shift of [0, 2]) {
+          let abc = stripFields(tune.abc, "SZBNA");
+          if (shift) abc = ABCJS.strTranspose(abc, ABCJS.renderAbc("*", abc), shift);
+          const rows = [...chordChart(ABCJS.renderAbc("*", abc)[0]).children];
+          if (!rows.length || rows.some((r) => !r.textContent.trim())) problems.push(`${tune.slug} (+${shift})`);
+        }
+      }
+      return problems;
+    }""")
+    assert problems == []

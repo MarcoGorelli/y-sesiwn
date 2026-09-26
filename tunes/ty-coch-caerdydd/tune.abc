@@ -6,13 +6,14 @@ Z:MIDI transcribed with alawon-abc
 C:Addasiad Meurig Williams
 %%alawon track=1
 %%alawon-reviewed
+%%chords From the Alawon Cymru score
 M:4/4
 L:1/8
 Q:1/4=120
 K:G
-|: BA | G2 g2 gf e2 | d4 c2 B2 | c2 e2 ed c2 | Bc BA G2 BA |
-G2 g2 gf e2 | d4 c2 B2 | B2 G2 FG AF | G2 B2 G2 :: Bc |
-dc BA GA Bc | d2 d2 dc BA | cB AG FG AB | c2 c2 cB AG |
-dc BA GA Bc | d2 d2 dc BA | B2 G2 FG AF | G2 B2 G2 :: B2 |
-AB c2 c2 c2 | AB c2 c2 c2 | Bc d2 d2 d2 | Bc d2 d2 d2 |
-AB c2 c2 c2 | AB c2 c2 c2 | B2 G2 FG AF | G2 B2 G2 :|
+|: BA | "G"G2 g2 gf e2 | d4 c2 B2 | "Am"c2 e2 ed c2 | "D"Bc BA "G"G2 BA |
+"G"G2 g2 gf e2 | d4 c2 B2 | "Am"B2 G2 "D"FG AF | "G"G2 B2 G2 :: Bc |
+"G"dc BA GA Bc | d2 d2 dc BA | "D"cB AG FG AB | c2 c2 cB AG |
+"G"dc BA GA Bc | d2 d2 dc BA | "Am"B2 G2 "D"FG AF | "G"G2 B2 G2 :: B2 |
+"Am"AB c2 c2 c2 | "D"AB c2 c2 c2 | "G"Bc d2 d2 d2 | Bc d2 d2 d2 |
+"Am"AB c2 c2 c2 | "D"AB c2 c2 c2 | "G"B2 G2 "D"FG AF | "G"G2 B2 G2 :|

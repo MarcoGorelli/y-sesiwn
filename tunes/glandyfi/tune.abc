@@ -3,12 +3,14 @@ T:Glandyfi
 S:http://alawoncymru.com/alawon/Tunes/SetyDwr/SetYDwr.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=107
 K:G
-|: D | G2 G G2 B | d2 c B2 G | A2 A AGA | B2 G E2 D |
-G2 G G2 B | d2 c B2 G | c2 B AGA | G3- G2 :: d |
-e2 d e2 d | e2 f g2 d | e2 d cBA | B2 G E2 D |
-G2 G G2 B | d2 c B2 G | c2 B AGA | G3- G2 :|
+|: D | "G"G2 G G2 B | "Em"d2 c B2 G | "Am"A2 A AGA | "G"B2 G "D"E2 D |
+"Em"G2 G G2 B | d2 c B2 G | "Am"c2 B "D"AGA | "G"G3- G2 :: d |
+"C"e2 d e2 d | e2 f g2 d | "Am"e2 d cBA | "G"B2 G "C"E2 D |
+"G"G2 G G2 B | "Em"d2 c B2 G | "Am"c2 B "D"AGA | "G"G3- G2 :|

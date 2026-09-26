@@ -4,12 +4,14 @@ R:polca
 S:http://alawoncymru.com/alawon/Tunes/RowndHor/RowndHSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
 M:2/4
 L:1/8
 Q:1/4=80
 K:D
-|: D>F Ad | cA BG | FD FA | E2 E2 |
-D>F Ad | cA BG | FD FA | d2 d2 :|
-|: f>g af | ge fd | e>f ge | ae cA |
-f>g af | ge fd | ce AB/c/ | d2 d2 :|
+|: "D"D>F Ad | "A"cA "G"BG | "D"FD FA | "A"E2 E2 |
+"D"D>F Ad | "A"cA "G"BG | "D"FD "A"FA | "D"d2 d2 :|
+|: "D"f>g af | ge fd | "A"e>f ge | ae cA |
+"Bm"f>g af | "A"ge "D"fd | "A"ce AB/c/ | "D"d2 d2 :|

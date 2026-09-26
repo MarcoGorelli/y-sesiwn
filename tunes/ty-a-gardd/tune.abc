@@ -4,12 +4,14 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/HelSgyf/HelSgSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
 M:6/8
 L:1/8
 Q:3/8=60
 K:G
-|: B2 G GFG | B2 G GFG | A2 A ABc | d3 B3 |
-B2 G GFG | B2 G GFG | A2 A ABA | G6 :|
-|: g2 g gfe | d2 d dcB | A2 A ABc | d3 B3 |
-g2 g gfe | d2 d dcB | A2 A ABA | G6 :|
+|: "G"B2 G GFG | B2 G GFG | "D7"A2 A ABc | "G"d3 B3 |
+"G"B2 G GFG | B2 G GFG | "D7"A2 A ABA | "G"G6 :|
+|: "C"g2 g gfe | "G"d2 d dcB | "D7"A2 A ABc | "G"d3 B3 |
+"C"g2 g gfe | "G"d2 d dcB | "D7"A2 A ABA | "G"G6 :|

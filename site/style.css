@@ -111,6 +111,7 @@ button.primary:hover { color: #fff; filter: brightness(1.1); }
   border: 1px solid var(--border); border-radius: 4px; padding: .2rem .4rem; pointer-events: none;
 }
 .search input:focus ~ .shortcut { display: none; }
+@media (hover: none) { .shortcut { display: none; } }  /* touchscreens have no "/" key */
 .suggestions {
   position: absolute; left: 0; right: 0; z-index: 20;
   margin: .35rem 0 0; padding: .3rem 0;
@@ -141,6 +142,22 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .pills button { display: inline-flex; align-items: center; }
 .pills button:hover:not(:disabled) { border-color: var(--c); color: inherit; }
 .pills button[aria-pressed="true"] { border-color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); font-weight: 600; }
+
+/* "Take it to the session": installing the app and using it offline */
+.offline-card {  /* with a strip of carthen along the top */
+  max-width: 40rem; margin: 1.75rem 0 .5rem; padding: calc(1rem + 7px) 1.2rem 1.1rem;
+  background: url("carthen.svg") repeat-x top left / auto 7px, var(--card-bg);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: 0 1px 3px #0000000f;
+}
+.offline-card h2 { margin: 0 0 .35rem; font-size: 1.2rem; }
+.offline-card p { margin: 0 0 .7rem; }
+.offline-card .steps { margin: 0 0 .7rem; padding-left: 1.3rem; }
+.offline-card .steps li { margin-bottom: .25rem; }
+.offline-card .status { color: var(--muted); font-size: .9rem; margin: .7rem 0 0; }
+.offline-card .more { font-size: .9rem; margin: .3rem 0 0; }
+.offline-card.full { margin-top: 0; }
+.share-icon { width: 1.15em; height: 1.15em; vertical-align: -.2em; color: var(--link); }
 
 /* Search by notes */
 .notes-search { max-width: 40rem; }
@@ -280,6 +297,29 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .map-popup a { color: var(--text); }
 .map-popup a:hover { color: var(--accent); }
 .card.place { margin-top: 1rem; }
+
+/* Suggested chords: a chart for accompanists, and switches for the score and playback */
+.card.chords { margin-top: 1.5rem; }
+.chart { display: grid; gap: .3rem; font-weight: 600; font-size: 1.1rem; max-width: 44rem; }
+.chart-row { display: grid; grid-template-columns: repeat(var(--columns), minmax(0, 1fr)); border-left: 1px solid var(--muted); }
+.chart .bar {
+  display: flex; align-items: baseline; gap: .15rem; min-height: 1.8rem; padding: .15rem .4rem;
+  border-right: 1px solid var(--muted); white-space: nowrap;
+}
+.chart .beats { flex: 1; display: grid; min-width: 0; }
+.chart .beats > span { min-width: 0; }
+.chart .held { color: var(--muted); font-weight: 400; }
+/* Repeat signs: a thick bar line with a colon beside it, in red */
+.chart .repeat-start { margin-left: -1px; border-left: 3px solid var(--accent); }
+.chart .repeat-end { border-right: 3px solid var(--accent); }
+.chart .repeat-start::before { content: ":"; color: var(--accent); font-weight: 700; margin-right: .1rem; }
+.chart .repeat-end::after { content: ":"; color: var(--accent); font-weight: 700; margin-left: auto; }
+.chart sup { font-size: .65rem; color: var(--muted); font-weight: 400; }
+.switches { display: flex; flex-wrap: wrap; gap: .3rem 1.5rem; margin: 1rem 0 .5rem; font-size: .9rem; }
+.switch { display: flex; align-items: center; gap: .45rem; cursor: pointer; }
+.switch input { accent-color: var(--accent); width: 1rem; height: 1rem; margin: 0; }
+.card.chords .caption { margin: 0; }
+.hide-chords .abcjs-chord { display: none; }
 .card.place .wales-map { max-width: 14rem; margin: .25rem auto .5rem; }
 .card.place .caption { margin: 0; }
 .map-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2rem; align-items: start; }
@@ -292,7 +332,7 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 
 /* Practice mode: just the controls and a big score, for a tablet on a music stand */
 body.practice { grid-template-columns: 1fr; }
-body.practice .nav, body.practice .tune-side, body.practice .site-footer, body.practice main h1::after, body.practice .aka { display: none; }
+body.practice .nav, body.practice .tune-side, body.practice .card.chords, body.practice .site-footer, body.practice main h1::after, body.practice .aka { display: none; }
 body.practice main { max-width: none; padding: 1rem 1.5rem 2rem; }
 body.practice h1 { font-size: 1.4rem; }
 body.practice .controls { margin: .5rem 0 1rem; }
@@ -308,7 +348,8 @@ body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 
 
 /* Narrow screens: brand + search pinned to the top, everything else in one column */
 @media (max-width: 800px) {
-  body { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr auto; }  /* top bar, sidebar, page, footer */
+  /* top bar, sidebar, page, footer; minmax(0, …) so wide things (the piano) scroll instead of widening the page */
+  body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto 1fr auto; }
   .nav { display: contents; }
   .topbar {
     position: sticky; top: 0; z-index: 30;
@@ -332,7 +373,7 @@ body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 
 /* Printing a tune: just the sheet music (in the key chosen on the page), full width. */
 @media print {
   body { display: block; padding: 0; background: none; color: #000; }
-  .nav, .site-footer, .controls, .versions, .aka, .tune-side, .audio, main > h1 { display: none !important; }
+  .nav, .site-footer, .controls, .versions, .aka, .tune-side, .audio, .card.chords, main > h1 { display: none !important; }
   main { padding: 0; max-width: none; animation: none; }
   .tune-layout { display: block; }
   .score { border: none; box-shadow: none; background: none; padding: 0; }

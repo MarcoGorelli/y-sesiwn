@@ -4,13 +4,15 @@ R:jig
 S:http://alawoncymru.com/alawon/Tunes/SetHuwBach/SetHuwBach.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Alaw Huw Roberts
 M:6/8
 L:1/8
 Q:3/8=67
 K:A
-|: E2 c cBA | FAF E3 | E2 c cBA | cde B3 |
-E2 c cBA | FAd f2 a | efe dcB |1 cAA A3 :|
-[2 cAA Ace |: a3 agf | e3 edc | Bcd dcB |
-caf e3 | a3 agf | e3 edc | Bdf ecA |
-GAB A3 :|
+|: "A"E2 c cBA | "D"FAF "A"E3 | "A"E2 c cBA | "A"cde "E"B3 |
+"A"E2 c cBA | "D"FAd f2 a | "A"efe "E"dcB |1 "A"cAA A3 :|
+[2 "A"cAA Ace |: "D"a3 agf | "A"e3 edc | "E"Bcd dcB |
+"A"caf e3 | "D"a3 agf | "A"e3 edc | "D"Bdf "A"ecA |
+"A"GAB A3 :|

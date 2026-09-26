@@ -4,12 +4,14 @@ R:polca/pibddawns
 S:http://alawoncymru.com/alawon/Tunes/MantSian/MantSian.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 M:2/2
 L:1/8
 Q:1/2=60
 K:G
-|: B2 d2 c2 e2 | d2 B2 A2 G2 | G2 g2 d2 B2 | A2 A2 A4 |
-B2 d2 c2 e2 | d2 B2 A2 G2 | B2 d2 A2 c2 | B2 G2 G4 :|
-|: g4 d2 B2 | g4 d2 B2 | G2 g2 d2 B2 | A2 A2 A4 |
-g4 d2 B2 | g4 d2 B2 | B2 d2 A2 c2 | B2 G2 G4 :|
+|: "G"B2 d2 "C"c2 e2 | "G"d2 B2 A2 G2 | G2 g2 d2 B2 | "D"A2 A2 A4 |
+"G"B2 d2 "C"c2 e2 | "G"d2 B2 A2 G2 | B2 d2 "D"A2 c2 | "G"B2 G2 G4 :|
+|: "G"g4 d2 B2 | g4 d2 B2 | G2 g2 d2 B2 | "D"A2 A2 A4 |
+"G"g4 d2 B2 | g4 d2 B2 | "G"B2 d2 "D"A2 c2 | "G"B2 G2 G4 :|

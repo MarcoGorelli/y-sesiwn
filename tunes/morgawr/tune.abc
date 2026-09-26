@@ -4,11 +4,13 @@ R:rîl
 S:http://alawoncymru.com/alawon/Tunes/MorgaSet/MorgawSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
 C:Alaw Simon Owen
 M:4/4
 L:1/8
 Q:1/4=90
 K:D
-|: DF AF G2 AG | FE DE =C2 A,2 | DF AF G2 AG | FE D=C D4 :|
-|: D =c2 D B4 | =cB AG FG A2 | D =c2 D B4 | =cB AF d4 :|
-|: DF Ad =c2 Ad | =c2 Ad cA GE | DF Ad =c2 Ad | =cA GE D4 :|
+|: "D"DF AF "C"G2 AG | "D"FE DE "C"=C2 A,2 | "D"DF AF "C"G2 AG | "C"FE D=C "D"D4 :|
+|: "D"D =c2 D "G"B4 | "C"=cB AG "D"FG A2 | "D"D =c2 D "G"B4 | "C"=cB AF "D"d4 :|
+|: "D"DF Ad "C"=c2 Ad | "D"=c2 Ad "C"cA GE | "D"DF Ad "C"=c2 Ad | "C"=cA GE "D"D4 :|

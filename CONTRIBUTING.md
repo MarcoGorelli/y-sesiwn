@@ -48,6 +48,12 @@ About titles:
   with a tab for each; a `B:` line (the book it's from) labels your tab.
 - Tempo lines (`Q:`) are ignored: the app's tempo slider decides.
 
+Chords are optional. Put each one in double quotes just before the note it
+starts on (`"G"B2 G GFG | "D7"A2 A ABc |`), and say where they come from in
+a `%%chords` line in the header, e.g. `%%chords From the Alawon Cymru score`.
+The tune's page shows them as a chart for accompanists, in whichever key is
+chosen.
+
 If you're new to ABC, the [ABC notation primer](https://abcnotation.com/learn)
 explains the notes and bar lines.
 

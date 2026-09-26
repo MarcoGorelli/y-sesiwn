@@ -77,6 +77,19 @@ relative URLs, so the site also works under a sub-path such as
   the notes highlighted as they play.
 - **Practice mode:** just the controls and a full-width score, full screen
   where supported.
+- **Suggested chords:** tunes with chord symbols in their ABC (`"G"B2 G`)
+  get a chord chart under the sheet music, for accompanists: one row per
+  line of music, one cell per bar, repeats and endings marked. Within a bar
+  each chord gets the share of the width it lasts for (`| G  D |` in 4/4 is
+  G on beat 1, D on beat 3; triplets counted at their played length), and a
+  bar that doesn't start with a chord of its own begins with the one still
+  sounding, faintly. It's
+  built from abcjs's parsed tune (`chordChart()` in `app.js`), so it follows
+  the key drop-down. Switches show the chords on the sheet music (always
+  drawn, hidden by CSS unless on) and add them to playback (abcjs's
+  `chordsOff`). A `%%chords <text>` line says where they come from; the build
+  passes it on as `chords` (`null` when a tune has no chords). The first
+  chords were copied from the Alawon Cymru score images.
 - **Print:** a button on the tune page; the print styles leave just the
   sheet music, in the key chosen on the page.
 - **Map:** tunes named after a place have a small map of Wales on their page,
@@ -90,7 +103,14 @@ relative URLs, so the site also works under a sub-path such as
   fills in `sw.js`'s file lists and a version made from the files' contents,
   so each deploy is picked up in the background and used from the next visit.
   The piano notes are cached separately, so a deploy doesn't download them
-  again.
+  again. A **"Take it to the session"** card on the home page (and the *Use
+  it offline* page, `?page=offline`) advertises it: on Chrome/Edge it's an
+  **Install the app** button (from the `beforeinstallprompt` event), on
+  iPhones and iPads the Share → Add to Home Screen steps (Apple has no install
+  prompt for websites), elsewhere a pointer to the browser's menu. It shows
+  "✓ Saved on this device" once the service worker is active (it only
+  activates after saving every file), and is hidden when the site is already
+  open as an installed app.
 - **Details:** tune type, key (written out), time signature,
   composer/arranger with an English gloss for Welsh credit words
   (*Trefniant* = arranged by), and any other standard ABC fields (book, notes,

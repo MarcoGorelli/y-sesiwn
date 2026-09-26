@@ -269,6 +269,19 @@ def version_label(headers: dict[str, list[str]]) -> str:
     return "Alawon Cymru" if "alawoncymru" in source else ""
 
 
+CHORD = re.compile(r'"[A-G][^"]*"')  # a chord symbol; annotations start with ^_<>@
+
+
+def chords_source(abc: str) -> str | None:
+    """None if the tune has no chord symbols, else where they come from: the
+    tune's `%%chords <text>` line, or "" if it has none."""
+    body = "\n".join(l for l in abc.splitlines() if not re.match(r"[A-Za-z]:|%", l))
+    if not CHORD.search(body):
+        return None
+    m = re.search(r"^%%chords\s+(.*\S)", abc, re.M)
+    return m.group(1) if m else ""
+
+
 def tune_record(path: Path) -> dict:
     abc = path.read_text(encoding="utf-8")
     headers = parse_headers(abc)
@@ -301,6 +314,7 @@ def tune_record(path: Path) -> dict:
         "details": rows,
         "melody": melody_string(abc),
         "gloss": gloss,
+        "chords": chords_source(abc),
         "abc": abc,
     }
 

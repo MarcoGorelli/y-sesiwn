@@ -717,7 +717,8 @@ function accompaniment(abc, withTune) {
   if (withTune && !has("bassvol")) lines.push(`%%MIDI bassvol ${BASS_VOLUME}`);
   const strum = STRUMS[abc.match(/^M:\s*(\S+)/m)?.[1]];
   if (strum && !has("gchord")) lines.push(`%%MIDI gchord ${strum}`);
-  return abc.replace(/^K:/m, `${lines.join("\n")}\nK:`);
+  // Nothing to add: leave it as it is (an empty line before K: would end the tune).
+  return lines.length ? abc.replace(/^K:/m, `${lines.join("\n")}\nK:`) : abc;
 }
 
 function chordChart(visualObj) {

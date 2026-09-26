@@ -114,6 +114,10 @@ and open http://localhost:8000.
 
 ## What happens next
 
+Your pull request is tested automatically: GitHub checks that every tune
+(yours included) still draws and plays, and that the site works. If a check
+fails, the pull request says which one and why.
+
 The maintainer reviews the pull request and may suggest changes. Once it's
 merged, the [live app](https://ysesiwn.cymru/) redeploys and the tune
 appears in search.

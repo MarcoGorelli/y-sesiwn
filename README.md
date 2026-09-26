@@ -29,10 +29,39 @@ python -m http.server -d _site 8000     # then open http://localhost:8000
 Opening `_site/index.html` directly won't work: browsers block `file://`
 fetches of `tunes.json`. Rebuild after editing a tune or anything in `site/`.
 
+## Tests
+
+```bash
+pip install -r requirements-dev.txt        # pytest and Playwright
+python -m playwright install chromium      # the headless browser (once)
+python -m pytest                           # everything, about 30 seconds
+python -m pytest -m "not browser"          # just the quick file and build checks
+```
+
+(With uv instead of pip: `uv run --no-project --with-requirements
+requirements-dev.txt python -m pytest`.)
+
+- `tests/test_build.py` checks every `tune.abc` (headers, folder name,
+  key, melody, no blank line in the music, text above the stave written as
+  `"^text"`) and `build_site.py` (versions, lead-ins, chords, places, and
+  that `sw.js` lists only files that exist).
+- `tests/test_site.py` builds the site, serves it and opens it in headless
+  Chromium: every tune and version draws notes with each playback setting;
+  tune pages, key changes, the chord chart (spacing, repeats, switches),
+  search by name and by notes (lead-ins, close matches, never empty), the
+  map and its popups, the home page, phone widths (no sideways scrolling),
+  working offline, and the microphone (a generated fiddle recording played
+  to Chromium's fake microphone). Any JavaScript error fails the test.
+
+They run on every push and pull request (`.github/workflows/pages.yml`), and
+the site is only deployed if they pass. To run them before every push too,
+turn on the hook once per clone: `git config core.hooksPath .githooks`
+(`git push --no-verify` skips it).
+
 ## Deploying
 
-`.github/workflows/pages.yml` runs `build_site.py` and publishes `_site/` to
-GitHub Pages on every push to `main` (repo **Settings → Pages → Source: GitHub
+`.github/workflows/pages.yml` runs the tests, then `build_site.py`, and
+publishes `_site/` to GitHub Pages on every push to `main` (repo **Settings → Pages → Source: GitHub
 Actions**), served at the custom domain `ysesiwn.cymru`. Everything uses
 relative URLs, so the site also works under a sub-path such as
 `marcogorelli.github.io/y-sesiwn/`.
@@ -169,7 +198,8 @@ relative URLs, so the site also works under a sub-path such as
 | `static/marked/`, `static/harp.svg` | [marked](https://marked.js.org/) 15 (Markdown pages); the icon. |
 | `download_assets.py` | Re-downloads everything in `static/` (skips files that exist). Only needed if `static/` is lost or you want to change version. |
 | `tunes/<folder>/tune.abc` | One tune (or version) per folder; the site reads only these. |
-| `.github/workflows/pages.yml` | Builds and publishes the site. |
+| `.github/workflows/pages.yml` | Tests, builds and publishes the site. |
+| `tests/`, `pytest.ini`, `requirements-dev.txt`, `.githooks/pre-push` | The tests (see Tests), and the hook that runs them before a push. |
 | `.claude/skills/alawon-abc/` | The Claude Code skill that downloaded the first tunes and made their ABC files (see below). |
 
 Not in git (see `.gitignore`): `_site/`, each tune's `score.gif`, `tune.mid`

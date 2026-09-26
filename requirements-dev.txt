@@ -1,0 +1,4 @@
+# For the tests (tests/); the site itself needs nothing but Python.
+#   pip install -r requirements-dev.txt && python -m playwright install chromium
+pytest
+playwright

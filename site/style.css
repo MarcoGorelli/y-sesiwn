@@ -319,6 +319,10 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .chart .beats { flex: 1; display: grid; min-width: 0; column-gap: .35rem; }
 .chart .beats > span { min-width: 0; }
 .chart .held { color: var(--muted); font-weight: 400; }
+/* A second-time ending's row starts under the first-time ending: blank cells before it */
+.chart-row.indented { border-left-color: transparent; }
+.chart .spacer { border-right-color: transparent; }
+.chart .spacer + .bar:not(.spacer) { border-left: 1px solid var(--muted); }
 /* Repeat signs: a thick bar line with a colon beside it, in red */
 .chart .repeat-start { margin-left: -1px; border-left: 3px solid var(--accent); }
 .chart .repeat-end { border-right: 3px solid var(--accent); }
@@ -405,7 +409,29 @@ body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 
   .tune-layout { display: block; }
   .score { border: none; box-shadow: none; background: none; padding: 0; }
   .score .abcjs-note_playing { fill: currentColor; }
+  /* "Chord chart": the title, the key and the chart, big enough for a music stand */
+  body[data-print="chart"] .score { display: none !important; }
+  body[data-print="chart"] main > h1 { display: block !important; font-size: 1.8rem; }
+  body[data-print="chart"] main > h1::after { display: none; }
+  body[data-print="chart"] .card.chords { display: block !important; border: none; padding: 0; margin: 0; background: none; }
+  body[data-print="chart"] .card.chords > h2, body[data-print="chart"] .chord-controls { display: none; }
+  body[data-print="chart"] .print-key { display: block; margin: 0 0 1rem; font-size: 1.1rem; }
+  body[data-print="chart"] .chart { font-size: 1.5rem; max-width: none; gap: .6rem; }
+  body[data-print="chart"] .chart .bar { min-height: 2.6rem; border-color: #000; }
+  body[data-print="chart"] .chart-row { border-color: #000; }
+  body[data-print="chart"] .chart .held { color: #777; }
+  body[data-print="chart"] .card.chords .caption { margin-top: 1.2rem; }
 }
+.print-key { display: none; }  /* only on the printed chart */
+.print-wrap { position: relative; }
+.print-menu {
+  position: absolute; right: 0; top: calc(100% + .3rem); z-index: 10; display: grid; min-width: 14rem;
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: 0 8px 24px #00000026; padding: .3rem;
+}
+.print-menu[hidden] { display: none; }
+.print-menu button { border: none; background: none; text-align: left; padding: .45rem .7rem; border-radius: 6px; white-space: nowrap; }
+.print-menu button:hover { background: var(--accent-soft); }
 @page { margin: 15mm; }
 
 @media (prefers-reduced-motion: reduce) { main { animation: none; } }

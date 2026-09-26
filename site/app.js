@@ -668,7 +668,13 @@ function drawScore(tune, paper, audio, chart) {
   const visualObj = ABCJS.renderAbc(paper, accompaniment(abc, state.chords.play === "both"), { responsive: "resize", add_classes: true, paddingtop: 0 })[0];
   // Chords are always drawn (so playback has them), and hidden unless asked for.
   paper.classList.toggle("hide-chords", !state.chords.onScore);
-  if (chart) chart.replaceChildren(chordChart(visualObj));
+  if (chart) {
+    chart.replaceChildren(chordChart(visualObj));
+    if (tune.key) {  // printed above the chart (print-only)
+      const { pitch, modeName } = tune.key;
+      chart.parentElement.querySelector(".print-key").textContent = `Key: ${NOTES[(pitch + transpose + 12) % 12]} ${modeName}`;
+    }
+  }
   const audioParams = { ...AUDIO_PARAMS, chordsOff: state.chords.play === "tune", voicesOff: state.chords.play === "chords" };
 
   audio.replaceChildren();
@@ -689,7 +695,7 @@ function drawScore(tune, paper, audio, chart) {
 
 // ---- Chord chart -------------------------------------------------------------------
 // Chord symbols in the ABC ("G"d2 cd) are shown as a chart for accompanists: one
-// row per line of music, one cell per bar. It's made from the drawn tune, so it
+// cell per bar, four bars to a row, each part of the tune starting a new row. It's made from the drawn tune, so it
 // follows the key drop-down. Within a bar, each chord takes up as much room as it
 // lasts (| G  D | is G on beat 1 and D on beat 3). A bar that doesn't start with a
 // chord of its own begins with the one still sounding, shown faintly; a pick-up
@@ -697,6 +703,7 @@ function drawScore(tune, paper, audio, chart) {
 
 const REPEAT_START = new Set(["bar_left_repeat", "bar_dbl_repeat"]);  // drawn as |: and :| by style.css
 const REPEAT_END = new Set(["bar_right_repeat", "bar_dbl_repeat"]);
+const PART_END = new Set([...REPEAT_END, "bar_thin_thin", "bar_thin_thick"]);  // :| || |]
 
 // How the chords are played. abcjs already voices them below most melodies (about
 // A2-D4), but three piano notes at once drown the tune, so with the tune they're
@@ -723,15 +730,12 @@ function accompaniment(abc, withTune) {
 
 function chordChart(visualObj) {
   const { num, den } = visualObj.getMeterFraction();
-  let held = null, carry = null;
-  const rows = [];
+  // Every bar of the tune, in order, with its chords and where each starts.
+  const bars = [];
+  let bar = { chords: [], length: 0 };
+  let tuplet = 1;  // a triplet's notes last 2/3 of their written length
   for (const line of visualObj.lines) {
-    const voice = line.staff?.[0]?.voices?.[0];
-    if (!voice) continue;
-    const bars = [];
-    let bar = { chords: [], length: 0 };
-    let tuplet = 1;  // a triplet's notes last 2/3 of their written length
-    for (const item of voice) {
+    for (const item of line.staff?.[0]?.voices?.[0] ?? []) {
       if (item.el_type === "note") {
         if (item.startTriplet) tuplet = item.tripletMultiplier ?? 1;
         for (const chord of item.chord ?? []) {
@@ -749,29 +753,55 @@ function chordChart(visualObj) {
         if (item.startEnding) bar.ending = item.startEnding;
       }
     }
-    if (bar.length) bars.push(bar);
-    const cells = [];
-    for (const b of bars) {
-      if (carry) { if (!REPEAT_START.has(b.start)) b.start = carry.start; b.ending ??= carry.ending; carry = null; }
-      if (!b.chords.length && (held === null || b.length < num / den - 1e-6)) {
-        carry = b;  // a pick-up is left out; its repeat sign or ending goes on the next bar
-        continue;
-      }
-      const classes = ["bar",
-        REPEAT_START.has(b.start) ? "repeat-start" : null, REPEAT_END.has(b.end) ? "repeat-end" : null];
-      // Each chord gets the share of the bar it lasts for, in percent (fr values that add
-      // up to less than 1 would leave part of the bar empty).
-      const parts = b.chords.map((c, i) => ({ name: c.name, from: c.at, to: b.chords[i + 1]?.at ?? b.length }));
-      if (!parts.length || parts[0].from > 1e-6) parts.unshift({ name: held, from: 0, to: parts[0]?.from ?? b.length, held: true });
-      cells.push(el("span", { class: classes.filter(Boolean).join(" ") },
-        b.ending ? el("sup", {}, `${b.ending}.`) : null,
-        el("span", { class: "beats", style: `grid-template-columns: ${parts.map((c) => `${(100 * (c.to - c.from)) / b.length}fr`).join(" ")}` },
-          parts.map((c) => el("span", { class: c.held ? "held" : null }, c.name)))));
-      held = b.chords.at(-1)?.name ?? held;
-    }
-    if (cells.length) rows.push(el("div", { class: "chart-row" }, cells));
   }
-  // As many columns as the longest line has bars, so bars line up down the chart.
+  if (bar.length) bars.push(bar);
+
+  // One cell per bar, grouped into the tune's parts (a part starts at a repeat sign
+  // or after a double bar line; a second-time ending stays with its part).
+  const parts = [[]];
+  let held = null, carry = null, partEnded = false;
+  for (const b of bars) {
+    if (carry) { if (!REPEAT_START.has(b.start)) b.start = carry.start; b.ending ??= carry.ending; carry = null; }
+    if ((REPEAT_START.has(b.start) || partEnded) && !b.ending && parts.at(-1).length) parts.push([]);
+    partEnded = PART_END.has(b.end);
+    // A pick-up (a short bar leading into the next, without a chord) is left out;
+    // its repeat sign or ending goes on the next bar. A short bar that closes a part
+    // (the tune's last half-bar, say) stays.
+    if (!b.chords.length && (held === null || (b.length < num / den - 1e-6 && !PART_END.has(b.end)))) {
+      carry = b;
+      continue;
+    }
+    const classes = ["bar",
+      REPEAT_START.has(b.start) ? "repeat-start" : null, REPEAT_END.has(b.end) ? "repeat-end" : null];
+    // Each chord gets the share of the bar it lasts for, in percent (fr values that add
+    // up to less than 1 would leave part of the bar empty).
+    const shares = b.chords.map((c, i) => ({ name: c.name, from: c.at, to: b.chords[i + 1]?.at ?? b.length }));
+    if (!shares.length || shares[0].from > 1e-6) shares.unshift({ name: held, from: 0, to: shares[0]?.from ?? b.length, held: true });
+    parts.at(-1).push(Object.assign(el("span", { class: classes.filter(Boolean).join(" ") },
+      b.ending ? el("sup", {}, `${b.ending}.`) : null,
+      el("span", { class: "beats", style: `grid-template-columns: ${shares.map((c) => `${(100 * (c.to - c.from)) / b.length}fr`).join(" ")}` },
+        shares.map((c) => el("span", { class: c.held ? "held" : null }, c.name)))), { ending: b.ending }));
+    held = b.chords.at(-1)?.name ?? held;
+  }
+
+  // Rows of 4 bars (the usual phrase length), or 3 or 5 for a part that divides into
+  // those but not 4; each part starts a new row. A second-time ending goes on a row
+  // of its own, under the first-time ending, as in a printed chord chart.
+  const rows = [];
+  for (const cells of parts.filter((p) => p.length)) {
+    const second = cells.findIndex((c) => c.ending && c.ending !== "1");
+    const main = second < 0 ? cells : cells.slice(0, second);
+    const n = main.length % 4 === 0 ? 4 : main.length % 3 === 0 ? 3 : main.length % 5 === 0 ? 5 : 4;
+    for (let i = 0; i < main.length; i += n) rows.push(el("div", { class: "chart-row" }, main.slice(i, i + n)));
+    if (second >= 0) {
+      const first = cells.findIndex((c) => c.ending === "1");
+      const indent = first >= 0 ? first % n : 0;
+      rows.push(el("div", { class: `chart-row${indent ? " indented" : ""}` },
+        Array.from({ length: indent }, () => el("span", { class: "bar spacer", "aria-hidden": "true" })),
+        cells.slice(second)));
+    }
+  }
+  // As many columns as the longest row, so bars line up down the chart.
   const columns = Math.max(1, ...rows.map((row) => row.children.length));
   return el("div", { class: "chart", style: `--columns: ${columns}` }, rows);
 }
@@ -789,12 +819,45 @@ function chordCard(tune, redraw) {
         el("span", {}, label))));
   return el("section", { class: "card chords" },
     el("h2", {}, "Suggested chords"),
+    el("p", { class: "print-key" }),
     el("div", { class: "chart-box" }),
     el("div", { class: "chord-controls" },
       el("div", { class: "playback" }, el("span", { class: "label" }, "Play"), playback), showOnScore),
     el("p", { class: "caption" },
       tune.chords ? `${tune.chords}. ` : "",
       "One way of accompanying it: use your ear, and your own."));
+}
+
+// Printing: the sheet music, in the key chosen on the page. A tune with chords
+// can also be printed with them above the stave, or as just its chord chart;
+// body[data-print] tells the print styles (style.css) which, until it's printed.
+function printAs(mode, paper) {
+  document.body.dataset.print = mode;
+  paper.classList.toggle("hide-chords", mode !== "with-chords");
+  window.addEventListener("afterprint", () => {
+    delete document.body.dataset.print;
+    paper.classList.toggle("hide-chords", !state.chords.onScore);
+  }, { once: true });
+  window.print();
+}
+
+function printButton(tune, paper) {
+  if (tune.chords == null) return el("button", { type: "button", onclick: () => printAs("music", paper) }, "Print");
+  const menu = el("div", { class: "print-menu", role: "menu", hidden: true },
+    [["music", "Sheet music"], ["with-chords", "Sheet music with chords"], ["chart", "Chord chart"]].map(([mode, label]) =>
+      el("button", { type: "button", role: "menuitem", onclick: () => { menu.hidden = true; printAs(mode, paper); } }, label)));
+  const toggle = el("button", { type: "button", "aria-haspopup": "menu", "aria-expanded": "false", onclick: () => {
+    menu.hidden = !menu.hidden;
+    toggle.setAttribute("aria-expanded", String(!menu.hidden));
+  } }, "Print ▾");
+  // Clicking anywhere else closes it (and once the page has gone, stop listening).
+  const close = (e) => {
+    if (!wrap.isConnected) document.removeEventListener("pointerdown", close);
+    else if (!wrap.contains(e.target)) { menu.hidden = true; toggle.setAttribute("aria-expanded", "false"); }
+  };
+  document.addEventListener("pointerdown", close);
+  const wrap = el("div", { class: "print-wrap" }, toggle, menu);
+  return wrap;
 }
 
 function renderTune(main, group, tune) {
@@ -828,7 +891,7 @@ function renderTune(main, group, tune) {
       oninput: (e) => { settings.bpm = +e.target.value; showTempo(); },
       onchange: redraw,
     })), el("div", { class: "tune-actions" },
-      el("button", { type: "button", onclick: () => window.print() }, "Print"), practice));
+      printButton(tune, paper), practice));
 
   const details = el("dl", {}, tune.details.map(([label, value]) => [el("dt", {}, label), el("dd", {}, value)]));
   const gloss = tune.gloss.length
@@ -975,6 +1038,10 @@ window.addEventListener("appinstalled", () => { installPrompt = null; refreshOff
 const isInstalled = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
 const isApple = () => /iPhone|iPad|iPod/.test(navigator.userAgent)
   || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);  // iPadOS says it's a Mac
+const isPhone = () => isApple() || /Android|Mobi/.test(navigator.userAgent);  // phones and tablets
+const isFirefox = () => /Firefox\//.test(navigator.userAgent);
+const isMacSafari = () => /Macintosh/.test(navigator.userAgent) && /Version\/[\d.]+ Safari\//.test(navigator.userAgent)
+  && !/Chrome|Chromium|Edg\//.test(navigator.userAgent) && !isApple();
 
 const SHARE_ICON = () => svg("svg", { viewBox: "0 0 24 24", class: "share-icon", "aria-label": "Share" },
   svg("path", { d: "M12 3v12M7.5 7.5 12 3l4.5 4.5M7 10.5H5.5v10h13v-10H17", fill: "none",
@@ -1012,14 +1079,27 @@ function fillOfflineCard(card) {
       el("li", {}, "Tap ", SHARE_ICON(), " ", el("strong", {}, "Share"), " (at the bottom in Safari, or by the address bar)."),
       el("li", {}, "Choose ", el("strong", {}, "Add to Home Screen"), "."),
       el("li", {}, "Open Y Sesiwn from your home screen once while you have signal, so it can save its copy."));
+  } else if (isPhone()) {
+    how = el("p", {}, "In your browser's menu (", el("strong", {}, "⋮"), "), choose ", el("strong", {}, "Install app"),
+      " or ", el("strong", {}, "Add to Home screen"), ".");
+  } else if (isMacSafari()) {
+    how = el("p", {}, "In Safari's menu bar, choose ", el("strong", {}, "File → Add to Dock"),
+      " (macOS Sonoma or later). Y Sesiwn then opens from the Dock in its own window.");
+  } else if (isFirefox()) {
+    how = el("p", {}, "Firefox can't install websites as apps, but you don't need to: once it's loaded, Y Sesiwn ",
+      "works offline in this browser too. For an app with its own window, open it in Chrome, Edge or Safari.");
   } else {
-    how = el("p", {}, "In your browser's menu, choose ", el("strong", {}, "Install app"), " or ",
-      el("strong", {}, "Add to Home screen"), ". On a computer, look for the install icon in the address bar.");
+    // Chrome or Edge on a computer when the browser doesn't offer our button (e.g. it's
+    // already installed, or hasn't decided yet).
+    how = el("p", {}, "Click the install icon at the right-hand end of the address bar, or open the browser's menu and look for ",
+      el("strong", {}, "Install Y Sesiwn"), " (in Chrome under ", el("strong", {}, "Cast, save and share"), ", in Edge under ",
+      el("strong", {}, "Apps"), "). It then opens in its own window, like any other program.");
   }
   card.replaceChildren(...[
     el("h2", {}, "Take it to the session"),
-    el("p", {}, "Add Y Sesiwn to your home screen and it opens like an app, with every tune ",
-      "saved on your phone: it works in the pub even with no signal."),
+    el("p", {}, isPhone() || isInstalled()
+      ? "Add Y Sesiwn to your home screen and it opens like an app, with every tune saved on your phone: it works in the pub even with no signal."
+      : "Install Y Sesiwn on this computer and it opens like an app, in its own window, with every tune saved: it works even with no internet. (On a phone, add it to your home screen.)"),
     how, status,
     full ? null : el("p", { class: "more" }, el("a", { href: "?page=offline", "data-route": true }, "More about using it offline")),
   ].filter(Boolean));
@@ -1027,17 +1107,30 @@ function fillOfflineCard(card) {
 
 function renderOffline(main) {
   document.title = "Use it offline · Y Sesiwn";
+  const b = (text) => el("strong", {}, text);
   main.replaceChildren(
     el("h1", {}, "Use Y Sesiwn offline"),
     el("div", { class: "guide" },
       offlineCard({ full: true }),
+      el("h2", {}, "On a phone or tablet"),
+      el("ul", {},
+        el("li", {}, b("iPhone or iPad"), ": in Safari (or Chrome), ", b("Share → Add to Home Screen"), "."),
+        el("li", {}, b("Android"), ": the ", b("Install the app"), " button above, or the browser's menu (⋮) → ",
+          b("Install app"), " or ", b("Add to Home screen"), ".")),
+      el("h2", {}, "On a computer"),
+      el("ul", {},
+        el("li", {}, b("Chrome or Edge"), " (Windows, Mac, Linux): the ", b("Install the app"),
+          " button above, or the install icon at the right-hand end of the address bar."),
+        el("li", {}, b("Safari on a Mac"), ": ", b("File → Add to Dock"), " (macOS Sonoma or later)."),
+        el("li", {}, b("Firefox"), ": it can't install websites as apps, but Y Sesiwn still works offline in the browser once it's loaded.")),
       el("h2", {}, "How it works"),
       el("p", {}, "The first time you open the site, it quietly saves a copy of itself on your ",
         "device: every tune, the piano sounds for playback, the map and these pages, about 3 MB ",
         "in all. After that it works without a connection, whether or not you install it."),
-      el("p", {}, "Installing it (adding it to your home screen) gives it its own icon and opens it ",
-        "full screen, without the browser's address bar. On an iPhone or iPad the installed app ",
-        "keeps its own copy, separate from Safari's, so open it once while you have signal."),
+      el("p", {}, "Installing it gives it its own icon and opens it without the browser's address bar: ",
+        "full screen on a phone (from the home screen), in its own window on a computer (from the Dock, ",
+        "Start menu or desktop). On an iPhone or iPad the installed app keeps its own copy, separate ",
+        "from Safari's, so open it once while you have signal."),
       el("p", {}, "When tunes are added or corrected, the new version downloads in the background ",
         "the next time you're online, and you'll see it from the next time you open Y Sesiwn.")));
 }

@@ -65,6 +65,66 @@ def test_chord_chart(page):
     assert volumes["melody"] == [0] and max(volumes["chords"]) > 0
 
 
+def chart_rows(page):
+    """The chord chart as text: one string per row, "_" for a blank (indent) cell."""
+    page.wait_for_selector(".chart .bar")
+    return page.evaluate("""() => [...document.querySelectorAll('.chart-row')].map((r) => [...r.children]
+      .map((c) => c.classList.contains('spacer') ? '_' : c.innerText.replace(/\\s+/g, '')).join(' '))""")
+
+
+@pytest.mark.parametrize("slug", ["ffaniglen", "glandyfi", "machynlleth", "morgawr", "ty-a-gardd", "dic-y-cymro"])
+def test_chord_chart_rows_of_four(page, slug):
+    # Even rows of 4 bars, whatever the lines of the sheet music (Ffaniglen's has 5 and 3).
+    page.goto_site(f"?tune={slug}")
+    assert {len(row.split()) for row in chart_rows(page)} == {4}
+
+
+def test_chord_chart_endings(page):
+    # Byth Adre's A part: 8 bars with a first-time ending, then the second-time ending
+    # on its own row, under the first.
+    page.goto_site("?tune=byth-adre")
+    rows = chart_rows(page)
+    assert rows[:3] == ["A DA A AE", "A D AE 1.A", "_ _ _ 2.A"]
+    assert [len(r.split()) for r in rows[3:]] == [4, 4]
+
+
+@pytest.mark.parametrize("mode, score, chords_on_score, chart", [
+    ("Sheet music", True, False, False),
+    ("Sheet music with chords", True, True, False),
+    ("Chord chart", False, False, True),
+])
+def test_print(page, mode, score, chords_on_score, chart):
+    page.goto_site("?tune=glandyfi")
+    page.wait_for_selector(".chart .bar")
+    page.evaluate("window.print = () => {}")  # the real print dialog can't be driven
+    page.select_option("#key-select", "2")  # prints in the key chosen on the page
+    page.click("text=Print ▾")
+    page.click(f".print-menu >> text='{mode}'")
+    page.emulate_media(media="print")
+    assert page.locator(".score").is_visible() == score
+    assert page.locator(".score .abcjs-chord").first.is_visible() == chords_on_score
+    assert page.locator(".chart").is_visible() == chart
+    if chart:
+        assert page.locator(".print-key").inner_text() == "Key: A major"
+        assert page.locator("main > h1").is_visible()
+    assert not page.locator(".nav").is_visible() and not page.locator(".controls").is_visible()
+    # Afterwards the page is as it was.
+    page.emulate_media(media="screen")
+    page.evaluate("window.dispatchEvent(new Event('afterprint'))")
+    assert page.evaluate("document.body.dataset.print") is None
+    assert page.locator(".score .hide-chords").count() == 1
+
+
+def test_print_menu(page):
+    page.goto_site("?tune=glandyfi")
+    page.click("text=Print ▾")
+    assert page.locator(".print-menu").is_visible()
+    page.mouse.click(5, 900)  # clicking elsewhere closes it
+    assert not page.locator(".print-menu").is_visible()
+    page.goto_site("?tune=nyth-y-gog")  # no chords: a plain Print button
+    assert page.locator(".tune-actions button").first.inner_text() == "Print"
+
+
 def test_no_chord_box_without_chords(page):
     page.goto_site("?tune=nyth-y-gog")
     page.wait_for_selector(".score .abcjs-staff")
@@ -139,6 +199,36 @@ def test_home_page(page):
     assert len(features) >= 8 and any("Accompaniment" in f for f in features)
     assert page.locator(".offline-card").is_visible()
     assert len(page.locator(".tune-list li").all()) == len(page.evaluate("state.groupList"))
+
+
+@pytest.mark.parametrize("user_agent, touch, says", [
+    ("Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15",
+     False, "File → Add to Dock"),
+    ("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:130.0) Gecko/20100101 Firefox/130.0", False, "Firefox can't install"),
+    ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36",
+     False, "install icon at the right-hand end of the address bar"),
+    ("Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Mobile Safari/537.36",
+     True, "Add to Home screen"),
+    ("Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1",
+     True, "Add to Home Screen"),
+])
+def test_install_card(browser, site, user_agent, touch, says):
+    # How to install depends on the device and browser; the card should say the right thing.
+    context = browser.new_context(user_agent=user_agent, has_touch=touch, service_workers="block")
+    page = context.new_page()
+    page.goto(site)
+    assert says in page.locator(".offline-card").inner_text()
+    context.close()
+
+
+def test_install_button(page):
+    # Chrome and Edge offer their own install dialog; the card's button opens it.
+    page.goto_site()
+    page.evaluate("""() => { const e = new Event("beforeinstallprompt");
+      e.prompt = () => { window.prompted = true; }; e.userChoice = Promise.resolve({ outcome: "accepted" });
+      window.dispatchEvent(e); }""")
+    page.click("text=Install the app")
+    assert page.evaluate("window.prompted")
 
 
 def test_works_offline(browser, site):

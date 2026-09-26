@@ -128,8 +128,11 @@ relative URLs, so the site also works under a sub-path such as
 - **Practice mode:** just the controls and a full-width score, full screen
   where supported.
 - **Suggested chords:** tunes with chord symbols in their ABC (`"G"B2 G`)
-  get a chord chart under the sheet music, for accompanists: one row per
-  line of music, one cell per bar, repeats and endings marked. Within a bar
+  get a chord chart under the sheet music, for accompanists: one cell per
+  bar, in rows of 4 (3 or 5 for a part that divides into those but not 4),
+  each part (after a repeat sign or double bar line) starting a new row, a
+  second-time ending on its own row under the first-time one, and repeat
+  signs marked. Within a bar
   each chord gets the share of the width it lasts for (`| G  D |` in 4/4 is
   G on beat 1, D on beat 3; triplets counted at their played length), and a
   bar that doesn't start with a chord of its own begins with the one still
@@ -149,7 +152,11 @@ relative URLs, so the site also works under a sub-path such as
   passes it on as `chords` (`null` when a tune has no chords). The first
   chords were copied from the Alawon Cymru score images.
 - **Print:** a button on the tune page; the print styles leave just the
-  sheet music, in the key chosen on the page.
+  sheet music, in the key chosen on the page. For a tune with chords it's a
+  menu: *Sheet music*, *Sheet music with chords* (above the stave), or
+  *Chord chart* (title, key and chart only, big). `printAs()` sets
+  `body[data-print]` for the print styles and puts things back on
+  `afterprint`.
 - **Map:** tunes named after a place have a small map of Wales on their page,
   and *Tunes on the map* (`?page=map`) shows every place with its tunes. The
   places and their tunes are listed by hand in `places.json` (name, latitude,
@@ -165,7 +172,10 @@ relative URLs, so the site also works under a sub-path such as
   it offline* page, `?page=offline`) advertises it: on Chrome/Edge it's an
   **Install the app** button (from the `beforeinstallprompt` event), on
   iPhones and iPads the Share → Add to Home Screen steps (Apple has no install
-  prompt for websites), elsewhere a pointer to the browser's menu. It shows
+  prompt for websites), on a Mac in Safari *File → Add to Dock*, in Firefox (which can't
+  install sites) a note that it works offline anyway, and otherwise the
+  install icon in the address bar or the browser's menu. The *Use it
+  offline* page lists every case, for phones and computers. It shows
   "✓ Saved on this device" once the service worker is active (it only
   activates after saving every file), and is hidden when the site is already
   open as an installed app.

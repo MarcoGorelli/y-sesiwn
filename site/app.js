@@ -438,18 +438,18 @@ function tunePreview(tune) {
       state.keyNote?.stop();
       const synth = new ABCJS.synth.CreateSynth();
       let timer = 0;
-      const stop = synth.stop.bind(synth);
-      // Stopped by this button, another preview, a key of the keyboard or leaving the page.
-      synth.stop = () => { clearTimeout(timer); stop(); if (playing === synth) done(); };
-      state.keyNote = synth;  // one sound at a time, like the keyboard
-      playing = synth;
+      // Stopped by this button, another preview, a key of the keyboard or leaving the
+      // page. (A handle, not the synth's own stop, which abcjs also calls while priming.)
+      const preview = { stop() { clearTimeout(timer); synth.stop(); if (playing === preview) done(); } };
+      state.keyNote = preview;  // one sound at a time, like the keyboard
+      playing = preview;
       button.textContent = "■";
       button.setAttribute("aria-label", `Stop the opening of ${tune.base}`);
       synth.init({ visualObj, options: AUDIO_PARAMS }).then(() => synth.prime()).then(({ duration }) => {
-        if (state.keyNote !== synth || playing !== synth) return;
+        if (state.keyNote !== preview || playing !== preview) return;
         synth.start();
-        timer = setTimeout(() => { if (playing === synth) done(); }, duration * 1000 + 200);
-      }).catch(done);
+        timer = setTimeout(() => { if (playing === preview) done(); }, duration * 1000 + 200);
+      }).catch(() => { if (playing === preview) done(); });
     };
   });
   return box;

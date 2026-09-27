@@ -502,8 +502,16 @@ def test_preview_can_be_stopped(page):
     page.goto_site("?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A")
     button = page.locator(".notes-results .preview-play").first
     page.wait_for_selector(".notes-results .preview .abcjs-staff")
+    page.evaluate("""() => { window.__started = 0; const P = ABCJS.synth.CreateSynth;
+      ABCJS.synth.CreateSynth = function () { const s = new P(); const start = s.start;
+        s.start = function (...a) { window.__started++; return start.apply(this, a); }; return s; }; }""")
     button.click()
     assert button.inner_text() == "■" and button.get_attribute("aria-label").startswith("Stop")
+    # It really plays: abcjs stops the synth itself while getting it ready, which must
+    # not count as pressing stop.
+    page.wait_for_function("window.__started === 1")
+    page.wait_for_timeout(500)
+    assert button.inner_text() == "■"
     button.click()
     assert button.inner_text() == "▶" and button.get_attribute("aria-label").startswith("Play")
     # Starting another preview stops the first.

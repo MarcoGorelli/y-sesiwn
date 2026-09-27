@@ -235,7 +235,7 @@ relative URLs, so the site also works under a sub-path such as
 | `CONTRIBUTING.md` | How to add a tune, and how to submit corrections. Each `# ` section is one page on the site, and GitHub shows the whole file, so edit it in one place. Keep the two `# ` headings as they are: the site finds the sections by them. |
 | `static/abcjs/` | [abcjs](https://www.abcjs.net/) 6.4.4 (`abcjs-basic-min.js`, `abcjs-audio.css`): draws and plays the music. |
 | `static/soundfont/acoustic_grand_piano-mp3/` | The 88 piano notes (A0–C8) from the FluidR3_GM soundfont, one MP3 each; a tune loads only the notes it uses. |
-| `static/marked/`, `static/harp.svg` | [marked](https://marked.js.org/) 15 (Markdown pages); the icon. |
+| `static/marked/`, `static/harp.svg` | [marked](https://marked.js.org/) 15 (Markdown pages); the icon, a Welsh triple harp drawn by `design/triple-harp.py` (the PNG icons and link-preview card are screenshots of it, see above). |
 | `download_assets.py` | Re-downloads everything in `static/` (skips files that exist). Only needed if `static/` is lost or you want to change version. |
 | `tunes/<folder>/tune.abc` | One tune (or version) per folder; the site reads only these. |
 | `.github/workflows/pages.yml` | Tests, builds and publishes the site. |

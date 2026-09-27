@@ -1,22 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <!-- strings -->
-    <g stroke="#c9a227" stroke-width="1.6">
-      <line x1="21" y1="12" x2="21" y2="50"/>
-      <line x1="27" y1="11" x2="27" y2="43"/>
-      <line x1="33" y1="13" x2="33" y2="36"/>
-      <line x1="39" y1="16" x2="39" y2="29"/>
-      <line x1="45" y1="16" x2="45" y2="22"/>
-    </g>
-    <g stroke="#7a3e12">
-      <!-- soundboard -->
-      <line x1="15" y1="57" x2="52" y2="13" stroke-width="6"/>
-      <!-- neck -->
-      <path d="M13 11 C 22 3, 30 8, 36 14 S 48 20, 54 10" stroke-width="4.5"/>
-      <!-- pillar -->
-      <path d="M13 11 C 10 26, 11 44, 13 57" stroke-width="5"/>
-      <!-- base -->
-      <line x1="9" y1="58" x2="20" y2="58" stroke-width="4"/>
-    </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="2.5 0 64 64">
+  <!-- A Welsh triple harp (telyn deires): tall soundbox, straight fore-pillar with a
+       scrolled head, and a neck that sweeps up to it. Made by design/triple-harp.py. -->
+  <g stroke="#c9a227" stroke-width="0.9" stroke-linecap="round">
+    <line x1="24.9" y1="17.4" x2="24.9" y2="22.5"/>
+    <line x1="27.2" y1="17.6" x2="27.2" y2="26.7"/>
+    <line x1="29.6" y1="17.6" x2="29.6" y2="31.0"/>
+    <line x1="31.9" y1="17.3" x2="31.9" y2="35.2"/>
+    <line x1="34.2" y1="16.6" x2="34.2" y2="39.5"/>
+    <line x1="36.6" y1="15.5" x2="36.6" y2="43.7"/>
+    <line x1="39.0" y1="13.8" x2="39.0" y2="48.0"/>
+    <line x1="41.3" y1="11.8" x2="41.3" y2="52.2"/>
+    <line x1="43.7" y1="10.0" x2="43.7" y2="56.5"/>
+    <line x1="46.0" y1="8.9" x2="46.0" y2="60.7"/>
   </g>
+  <g fill="none" stroke="#7a3e12" stroke-linecap="round" stroke-linejoin="round">
+    <!-- fore-pillar, with the head's scroll curling forward at the top -->
+    <path d="M47.5 59 L48 7.5 C 48 4, 51.8 3, 52.6 5.4 C 53.2 7.3, 51.2 8.4, 50.2 7" stroke-width="3"/>
+    <!-- neck -->
+    <path d="M16.5 12.5 C 24 16, 32 17, 38.5 12 C 42 9, 44.5 6.5, 47.5 6.5" stroke-width="3.2"/>
+  </g>
+  <!-- soundbox: narrow at the top, wide at the foot -->
+  <path d="M16 11.5 L20.5 13 L43.5 56.5 L42.5 59.5 L37 59.5 Z" fill="#7a3e12" stroke="#7a3e12" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- feet -->
+  <path d="M35 60.5 H50" stroke="#5c2d0c" stroke-width="2.4" stroke-linecap="round"/>
 </svg>

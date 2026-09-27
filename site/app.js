@@ -1002,7 +1002,8 @@ function chordChart(visualObj) {
     parts.at(-1).push(Object.assign(el("span", { class: classes.filter(Boolean).join(" ") },
       b.ending ? el("sup", {}, `${b.ending}.`) : null,
       el("span", { class: "beats", style: `grid-template-columns: ${shares.map((c) => `${(100 * (c.to - c.from)) / b.length}fr`).join(" ")}` },
-        shares.map((c) => el("span", { class: c.held ? "held" : null }, c.name)))), { ending: b.ending }));
+        shares.map((c) => el("span", { class: c.held ? "held" : null }, c.name)))),
+      { ending: b.ending, chords: shares.map((c) => `${c.name}:${(c.to - c.from) / b.length}`).join(" ") }));
     held = b.chords.at(-1)?.name ?? held;
   }
 
@@ -1010,8 +1011,20 @@ function chordChart(visualObj) {
   // those but not 4; each part starts a new row. A second-time ending goes on a row
   // of its own, under the first-time ending, as in a printed chord chart.
   const rows = [];
-  for (const cells of parts.filter((p) => p.length)) {
-    const second = cells.findIndex((c) => c.ending && c.ending !== "1");
+  for (let cells of parts.filter((p) => p.length)) {
+    let second = cells.findIndex((c) => c.ending && c.ending !== "1");
+    // First- and second-time endings with the same chords (the melody differs, the
+    // chords don't): one plain repeat is all a player needs.
+    const first = cells.findIndex((c) => c.ending === "1");
+    if (first >= 0 && second > first) {
+      const one = cells.slice(first, second), two = cells.slice(second);
+      if (one.length === two.length && one.every((c, i) => c.chords === two[i].chords)) {
+        one[0].querySelector("sup")?.remove();
+        one[0].ending = undefined;
+        cells = cells.slice(0, second);
+        second = -1;
+      }
+    }
     const main = second < 0 ? cells : cells.slice(0, second);
     const n = main.length % 4 === 0 ? 4 : main.length % 3 === 0 ? 3 : main.length % 5 === 0 ? 5 : 4;
     for (let i = 0; i < main.length; i += n) rows.push(el("div", { class: "chart-row" }, main.slice(i, i + n)));

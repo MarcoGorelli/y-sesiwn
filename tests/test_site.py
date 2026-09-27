@@ -80,12 +80,24 @@ def test_chord_chart_rows_of_four(page, slug):
 
 
 def test_chord_chart_endings(page):
-    # Byth Adre's A part: 8 bars with a first-time ending, then the second-time ending
-    # on its own row, under the first.
-    page.goto_site("?tune=byth-adre")
+    # Yr Eingion Dur's A part: 4 bars with a first-time ending, then the second-time
+    # ending (different chords) on its own row, under the first.
+    page.goto_site("?tune=yr-eingion-dur")
     rows = chart_rows(page)
-    assert rows[:3] == ["A DA A AE", "A D AE 1.A", "_ _ _ 2.A"]
-    assert [len(r.split()) for r in rows[3:]] == [4, 4]
+    assert rows[:2] == ["DG DG DG 1.DA", "_ _ _ 2.AD"]
+
+
+@pytest.mark.parametrize("slug, first_rows", [
+    ("llancesau-trefaldwyn", ["DA D G A", "DA D GA D"]),
+    ("byth-adre", ["A DA A AE", "A D AE A"]),
+])
+def test_chord_chart_same_endings(page, slug, first_rows):
+    # Endings whose chords are the same (only the melody differs) become a plain repeat.
+    page.goto_site(f"?tune={slug}")
+    rows = chart_rows(page)
+    assert rows[:2] == first_rows
+    assert not any("1." in r or "2." in r for r in rows)
+    assert "repeat-end" in page.locator(".chart-row").nth(1).locator(".bar").last.get_attribute("class")
 
 
 @pytest.mark.parametrize("mode, score, chords_on_score, chart", [

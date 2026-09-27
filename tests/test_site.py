@@ -195,6 +195,24 @@ def test_map(page):
     assert page.locator(".card.place h2").inner_text() == "Machynlleth"
 
 
+def test_map_on_a_phone(browser, site):
+    # Tapping a dot opens its popup, which stays open after the finger lifts (issue #8);
+    # tapping elsewhere closes it.
+    context = browser.new_context(viewport={"width": 390, "height": 800}, has_touch=True, is_mobile=True,
+                                  service_workers="block")
+    page = context.new_page()
+    page.goto(site + "?page=map")
+    page.wait_for_selector(".wales-map .target")
+    caernarfon = page.evaluate("state.data.places.findIndex((p) => p.name === 'Caernarfon')")
+    page.tap(f".target[data-place='{caernarfon}']", force=True)
+    page.wait_for_timeout(600)  # longer than the delay before a mouse-out closes it
+    assert page.locator(".map-popup").is_visible()
+    assert "Castell Caernarfon" in page.locator(".map-popup").inner_text()
+    page.tap("h1")
+    assert not page.locator(".map-popup").is_visible()
+    context.close()
+
+
 @pytest.mark.parametrize("path", ["", "?page=browse", "?tune=glandyfi", "?page=map", "?page=offline", "?page=about",
                                   "?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A"])
 def test_fits_a_phone(browser, site, path):
@@ -502,3 +520,18 @@ def test_browse_groups_are_labelled(page):
     types = page.locator(".pills").first.bounding_box()
     keys = page.locator(".pills.keys").bounding_box()
     assert keys["y"] - (types["y"] + types["height"]) > 30
+
+
+def test_chord_playback_next_to_the_player(page):
+    # "Play: Tune only / Tune and chords / Chords only" is just under the player (issue #9).
+    page.goto_site("?tune=glandyfi")
+    page.wait_for_selector(".score .abcjs-inline-audio")
+    assert page.locator(".score > .playback").count() == 1
+    player = page.locator(".score .audio").bounding_box()
+    choice = page.locator(".score > .playback").bounding_box()
+    score = page.locator(".score .abcjs-staff").first.bounding_box()
+    assert player["y"] < choice["y"] < score["y"]
+    assert page.locator(".card.chords .segmented").count() == 0
+    page.goto_site("?tune=cawl-cennin")  # no chords, no choice
+    page.wait_for_selector(".score .abcjs-inline-audio")
+    assert page.locator(".score > .playback").count() == 0

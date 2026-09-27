@@ -368,6 +368,9 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .chart .repeat-end::after { content: ":"; color: var(--accent); font-weight: 700; margin-left: auto; }
 .chart sup { font-size: .65rem; color: var(--muted); font-weight: 400; }
 .chord-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1.5rem; margin: 1rem 0 .6rem; font-size: .9rem; }
+.score > .playback { margin: .5rem 0 .8rem; font-size: .9rem;
+  /* on the cream paper, so in its light-mode colours even in dark mode */
+  --text: #262b31; --muted: #5f6973; --card-bg: #ffffff; --border: #dcdfe3; color: var(--text); }
 .playback { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .5rem; min-width: 0; }
 .playback .label { color: var(--muted); }
 /* Three buttons in a row, one pressed: which parts playback plays */
@@ -442,7 +445,7 @@ body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 
 /* Printing a tune: just the sheet music (in the key chosen on the page), full width. */
 @media print {
   body { display: block; padding: 0; background: none; color: #000; }
-  .nav, .site-footer, .controls, .practice-row, .versions, .aka, .tune-side, .audio, .card.chords, main > h1 { display: none !important; }
+  .nav, .site-footer, .controls, .practice-row, .versions, .aka, .tune-side, .audio, .score > .playback, .card.chords, main > h1 { display: none !important; }
   main { padding: 0; max-width: none; animation: none; }
   .tune-layout { display: block; }
   .score { border: none; box-shadow: none; background: none; padding: 0; }

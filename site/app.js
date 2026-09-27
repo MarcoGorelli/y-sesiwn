@@ -1065,21 +1065,26 @@ function chordCard(tune, redraw) {
   const showOnScore = el("label", { class: "switch" },
     el("input", { type: "checkbox", checked: state.chords.onScore,
       onchange: (e) => { state.chords.onScore = e.target.checked; redraw(); } }), "Show on the sheet music");
+  return el("section", { class: "card chords" },
+    el("h2", {}, "Suggested chords"),
+    el("p", { class: "print-key" }),
+    el("div", { class: "chart-box" }),
+    el("div", { class: "chord-controls" }, showOnScore),
+    el("p", { class: "caption" },
+      tune.chords ? `${tune.chords}. ` : "",
+      "One way of accompanying it: use your ear, and your own."));
+}
+
+// What the player plays, for a tune with chords: under the player, where it's used.
+function chordPlayback(tune, redraw) {
+  if (tune.chords == null) return null;
   const playback = el("div", { class: "segmented", role: "radiogroup", "aria-label": "Playback" },
     [["tune", "Tune only"], ["both", "Tune and chords"], ["chords", "Chords only"]].map(([value, label]) =>
       el("label", {},
         el("input", { type: "radio", name: "chord-playback", value, checked: state.chords.play === value,
           onchange: () => { state.chords.play = value; redraw(); } }),
         el("span", {}, label))));
-  return el("section", { class: "card chords" },
-    el("h2", {}, "Suggested chords"),
-    el("p", { class: "print-key" }),
-    el("div", { class: "chart-box" }),
-    el("div", { class: "chord-controls" },
-      el("div", { class: "playback" }, el("span", { class: "label" }, "Play"), playback), showOnScore),
-    el("p", { class: "caption" },
-      tune.chords ? `${tune.chords}. ` : "",
-      "One way of accompanying it: use your ear, and your own."));
+  return el("div", { class: "playback" }, el("span", { class: "label" }, "Play"), playback);
 }
 
 // Printing: the sheet music, in the key chosen on the page. A tune with chords
@@ -1198,7 +1203,7 @@ function renderTune(main, group, tune) {
     controls,
     practiceRow,
     el("div", { class: "tune-layout" },
-      el("div", { class: "tune-main" }, el("div", { class: "score" }, audio, paper), chords),
+      el("div", { class: "tune-main" }, el("div", { class: "score" }, audio, chordPlayback(tune, () => redraw()), paper), chords),
       el("div", { class: "tune-side" },
         el("section", { class: "card" }, el("h2", {}, "Details"), details, gloss),
         placeCard(group),
@@ -1306,10 +1311,14 @@ function renderMap(main) {
     popup.hidden = false;
   };
   const target = (event) => event.target.closest?.(".target");
-  map.addEventListener("pointerover", (e) => { if (target(e)) show(state.data.places[target(e).dataset.place]); });
-  map.addEventListener("pointerout", (e) => { if (target(e)) hideSoon(); });
+  const place = (e) => state.data.places[target(e).dataset.place];
+  map.addEventListener("pointerover", (e) => { if (target(e) && e.pointerType !== "touch") show(place(e)); });
+  // A touch "leaves" the dot as soon as the finger lifts: only a mouse closes it that way.
+  map.addEventListener("pointerout", (e) => { if (target(e) && e.pointerType !== "touch") hideSoon(); });
+  // Tapping (or clicking) a dot opens its popup, and it stays open until you tap elsewhere.
+  map.addEventListener("click", (e) => { if (target(e)) show(place(e)); });
   popup.addEventListener("pointerenter", () => clearTimeout(hideTimer));
-  popup.addEventListener("pointerleave", hideSoon);
+  popup.addEventListener("pointerleave", (e) => { if (e.pointerType !== "touch") hideSoon(); });
   // On a touchscreen, tapping elsewhere closes it.
   main.addEventListener("pointerdown", (e) => { if (!target(e) && !popup.contains(e.target)) hide(); });
   const list = el("ul", { class: "place-list" }, places.map((place) =>

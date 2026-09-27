@@ -1,26 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="2.5 0 64 64">
-  <!-- A Welsh triple harp (telyn deires): tall soundbox, straight fore-pillar with a
-       scrolled head, and a neck that sweeps up to it. Made by design/triple-harp.py. -->
-  <g stroke="#c9a227" stroke-width="0.9" stroke-linecap="round">
-    <line x1="24.9" y1="17.4" x2="24.9" y2="22.5"/>
-    <line x1="27.2" y1="17.6" x2="27.2" y2="26.7"/>
-    <line x1="29.6" y1="17.6" x2="29.6" y2="31.0"/>
-    <line x1="31.9" y1="17.3" x2="31.9" y2="35.2"/>
-    <line x1="34.2" y1="16.6" x2="34.2" y2="39.5"/>
-    <line x1="36.6" y1="15.5" x2="36.6" y2="43.7"/>
-    <line x1="39.0" y1="13.8" x2="39.0" y2="48.0"/>
-    <line x1="41.3" y1="11.8" x2="41.3" y2="52.2"/>
-    <line x1="43.7" y1="10.0" x2="43.7" y2="56.5"/>
-    <line x1="46.0" y1="8.9" x2="46.0" y2="60.7"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="1.5 0 64 64">
+  <!-- A Welsh triple harp (telyn deires). Made by design/triple-harp.py. -->
+  <g stroke-width="0.8" stroke-linecap="round">
+    <line x1="26.30" y1="28.30" x2="26.30" y2="28.70" stroke="#c9a227"/>
+    <line x1="28.15" y1="28.08" x2="28.15" y2="31.78" stroke="#c8102e"/>
+    <line x1="30.00" y1="27.45" x2="30.00" y2="34.87" stroke="#c9a227"/>
+    <line x1="31.85" y1="26.40" x2="31.85" y2="37.95" stroke="#c9a227"/>
+    <line x1="33.70" y1="24.93" x2="33.70" y2="41.03" stroke="#c8102e"/>
+    <line x1="35.55" y1="23.06" x2="35.55" y2="44.12" stroke="#c9a227"/>
+    <line x1="37.40" y1="20.72" x2="37.40" y2="47.20" stroke="#c9a227"/>
+    <line x1="39.25" y1="17.96" x2="39.25" y2="50.28" stroke="#c8102e"/>
+    <line x1="41.10" y1="14.59" x2="41.10" y2="53.37" stroke="#c9a227"/>
   </g>
   <g fill="none" stroke="#7a3e12" stroke-linecap="round" stroke-linejoin="round">
-    <!-- fore-pillar, with the head's scroll curling forward at the top -->
-    <path d="M47.5 59 L48 7.5 C 48 4, 51.8 3, 52.6 5.4 C 53.2 7.3, 51.2 8.4, 50.2 7" stroke-width="3"/>
-    <!-- neck -->
-    <path d="M16.5 12.5 C 24 16, 32 17, 38.5 12 C 42 9, 44.5 6.5, 47.5 6.5" stroke-width="3.2"/>
+    <!-- neck, climbing to the top of the pillar -->
+    <path d="M21.5 25 C 29 29.5, 37 23, 43.5 7.5" stroke-width="3"/>
+    <!-- pillar, with a scroll on top curling back over the strings -->
+    <path d="M45 58 V7 C 45 3.2, 40.6 2.6, 40.2 5.2 C 39.9 7, 42 7.8, 42.8 6.3" stroke-width="3.2"/>
   </g>
-  <!-- soundbox: narrow at the top, wide at the foot -->
-  <path d="M16 11.5 L20.5 13 L43.5 56.5 L42.5 59.5 L37 59.5 Z" fill="#7a3e12" stroke="#7a3e12" stroke-width="1.5" stroke-linejoin="round"/>
-  <!-- feet -->
-  <path d="M35 60.5 H50" stroke="#5c2d0c" stroke-width="2.4" stroke-linecap="round"/>
+  <!-- finial where the neck meets the soundbox -->
+  <circle cx="21" cy="23.6" r="1.9" fill="#7a3e12"/>
+  <!-- soundbox: short, widening to the foot -->
+  <path d="M20 25 L25 26 L43 56 L43 58 L29 58 Z" fill="#7a3e12" stroke="#7a3e12" stroke-width="1.2" stroke-linejoin="round"/>
+  <!-- plinth -->
+  <rect x="27" y="58" width="21.5" height="3" rx="0.8" fill="#5c2d0c"/>
 </svg>

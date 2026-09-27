@@ -1,49 +1,52 @@
 # Draws static/harp.svg, the site's icon: python3 design/triple-harp.py static/harp.svg
 # (then regenerate the PNG icons from the other design/ pages; see the README).
-# Welsh triple harp, side view: soundbox on the left leaning back, straight fore-pillar
-# on the right rising to a scrolled head, neck sweeping up from the soundbox to the head.
+#
+# A Welsh triple harp (telyn deires), after the photo on Wikipedia's "Triple harp" page:
+# a tall straight pillar with a scroll on top, a "high head" (the neck climbs in a long
+# curve from the short soundbox to the top of the pillar), a soundbox that widens down
+# to the foot of the pillar, a plinth, and red strings among the plain ones.
 import sys
 
 def bez(p0, p1, p2, p3, t):
     return tuple((1-t)**3*a + 3*(1-t)**2*t*b + 3*(1-t)*t**2*c + t**3*d for a, b, c, d in zip(p0, p1, p2, p3))
 
-# neck: two cubic segments
-N1 = [(16.5, 12.5), (24, 16), (32, 17), (38.5, 12)]
-N2 = [(38.5, 12), (42, 9), (44.5, 6.5), (47.5, 6.5)]
-neck_pts = [bez(*N1, t/200) for t in range(201)] + [bez(*N2, t/200) for t in range(201)]
-def neck_y(x):  # underside is ~ the centre line; strings start a bit below
-    return min(neck_pts, key=lambda p: abs(p[0]-x))[1]
+# The neck's centre line, from the top of the soundbox (left) to the pillar (right).
+NECK = [(21.5, 25), (29, 29.5), (37, 23), (43.5, 7.5)]
+neck = [bez(*NECK, t / 400) for t in range(401)]
+def neck_y(x):
+    return min(neck, key=lambda p: abs(p[0] - x))[1]
 
-# soundboard (string side of the soundbox): straight line
-SB = ((19.5, 14), (43, 56.5))
+# The soundboard: the front of the soundbox, where the strings end.
+BOARD = ((24.5, 26.5), (42.5, 56.5))
 def board_y(x):
-    (x0, y0), (x1, y1) = SB
+    (x0, y0), (x1, y1) = BOARD
     return y0 + (x - x0) * (y1 - y0) / (x1 - x0)
 
+wood, dark, gold, red = "#7a3e12", "#5c2d0c", "#c9a227", "#c8102e"
 strings = []
-xs = [22.5 + i * 2.35 for i in range(11)]
-for i, x in enumerate(xs):
-    top, bottom = neck_y(x) + 2.2, board_y(x) - 1.2
-    if bottom - top > 2:
-        strings.append(f'<line x1="{x:.1f}" y1="{top:.1f}" x2="{x:.1f}" y2="{bottom:.1f}"/>')
+for i in range(9):
+    x = 26.3 + i * 1.85
+    top, bottom = neck_y(x) + 1.9, board_y(x) - 0.8
+    colour = red if i % 3 == 1 else gold
+    strings.append(f'<line x1="{x:.2f}" y1="{top:.2f}" x2="{x:.2f}" y2="{bottom:.2f}" stroke="{colour}"/>')
 
-wood, dark, gold = "#7a3e12", "#5c2d0c", "#c9a227"
-svg = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="2.5 0 64 64">
-  <!-- A Welsh triple harp (telyn deires): tall soundbox, straight fore-pillar with a
-       scrolled head, and a neck that sweeps up to it. Made by design/triple-harp.py. -->
-  <g stroke="{gold}" stroke-width="0.9" stroke-linecap="round">
-    {chr(10).join("    " + s for s in strings).strip()}
+svg = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="1.5 0 64 64">
+  <!-- A Welsh triple harp (telyn deires). Made by design/triple-harp.py. -->
+  <g stroke-width="0.8" stroke-linecap="round">
+    {(chr(10) + "    ").join(strings)}
   </g>
   <g fill="none" stroke="{wood}" stroke-linecap="round" stroke-linejoin="round">
-    <!-- fore-pillar, with the head's scroll curling forward at the top -->
-    <path d="M47.5 59 L48 7.5 C 48 4, 51.8 3, 52.6 5.4 C 53.2 7.3, 51.2 8.4, 50.2 7" stroke-width="3"/>
-    <!-- neck -->
-    <path d="M{N1[0][0]} {N1[0][1]} C {N1[1][0]} {N1[1][1]}, {N1[2][0]} {N1[2][1]}, {N1[3][0]} {N1[3][1]} C {N2[1][0]} {N2[1][1]}, {N2[2][0]} {N2[2][1]}, {N2[3][0]} {N2[3][1]}" stroke-width="3.2"/>
+    <!-- neck, climbing to the top of the pillar -->
+    <path d="M{NECK[0][0]} {NECK[0][1]} C {NECK[1][0]} {NECK[1][1]}, {NECK[2][0]} {NECK[2][1]}, {NECK[3][0]} {NECK[3][1]}" stroke-width="3"/>
+    <!-- pillar, with a scroll on top curling back over the strings -->
+    <path d="M45 58 V7 C 45 3.2, 40.6 2.6, 40.2 5.2 C 39.9 7, 42 7.8, 42.8 6.3" stroke-width="3.2"/>
   </g>
-  <!-- soundbox: narrow at the top, wide at the foot -->
-  <path d="M16 11.5 L20.5 13 L43.5 56.5 L42.5 59.5 L37 59.5 Z" fill="{wood}" stroke="{wood}" stroke-width="1.5" stroke-linejoin="round"/>
-  <!-- feet -->
-  <path d="M35 60.5 H50" stroke="{dark}" stroke-width="2.4" stroke-linecap="round"/>
+  <!-- finial where the neck meets the soundbox -->
+  <circle cx="21" cy="23.6" r="1.9" fill="{wood}"/>
+  <!-- soundbox: short, widening to the foot -->
+  <path d="M20 25 L25 26 L43 56 L43 58 L29 58 Z" fill="{wood}" stroke="{wood}" stroke-width="1.2" stroke-linejoin="round"/>
+  <!-- plinth -->
+  <rect x="27" y="58" width="21.5" height="3" rx="0.8" fill="{dark}"/>
 </svg>
 '''
 open(sys.argv[1], "w").write(svg)

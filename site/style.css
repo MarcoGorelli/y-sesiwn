@@ -265,7 +265,8 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .practice-row .switch[hidden] { display: none; }
 .speed-note:empty { display: none; }
 .report-line { margin: 1rem 0 0; font-size: .9rem; line-height: 1.4; }
-.pills.keys { margin-top: .5rem; }
+.pills.keys { margin-top: 0; }
+.pills-label { margin: 1.5rem 0 .5rem; font-size: .8rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .pills.keys button { font-size: .9rem; }
 .pills.keys button[aria-pressed="true"] { border-color: var(--slate); background: color-mix(in srgb, var(--slate) 12%, transparent); font-weight: 600; }
 .pills.keys button:hover:not(:disabled) { border-color: var(--slate); color: inherit; }

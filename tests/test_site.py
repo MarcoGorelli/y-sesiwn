@@ -477,3 +477,28 @@ def test_every_chord_chart(page):
       return problems;
     }""")
     assert problems == []
+
+
+def test_preview_can_be_stopped(page):
+    # A result's play button becomes a stop button while its opening plays (issue #6).
+    page.goto_site("?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A")
+    button = page.locator(".notes-results .preview-play").first
+    page.wait_for_selector(".notes-results .preview .abcjs-staff")
+    button.click()
+    assert button.inner_text() == "■" and button.get_attribute("aria-label").startswith("Stop")
+    button.click()
+    assert button.inner_text() == "▶" and button.get_attribute("aria-label").startswith("Play")
+    # Starting another preview stops the first.
+    button.click()
+    page.locator(".notes-results .preview-play").nth(1).click()
+    assert button.inner_text() == "▶"
+    assert page.locator(".notes-results .preview-play").nth(1).inner_text() == "■"
+
+
+def test_browse_groups_are_labelled(page):
+    # The type and key buttons are two separate groups, each with a label (issue #7).
+    page.goto_site("?page=browse")
+    assert page.locator(".pills-label").all_text_contents() == ["Type", "Key"]
+    types = page.locator(".pills").first.bounding_box()
+    keys = page.locator(".pills.keys").bounding_box()
+    assert keys["y"] - (types["y"] + types["height"]) > 30

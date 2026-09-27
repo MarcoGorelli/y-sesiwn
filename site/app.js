@@ -426,13 +426,30 @@ function tunePreview(tune) {
   const box = el("div", { class: "preview" }, button, paper);
   requestAnimationFrame(() => {
     const visualObj = ABCJS.renderAbc(paper, abc, { responsive: "resize", paddingtop: 0, paddingbottom: 0, add_classes: true })[0];
+    // ▶ plays the opening; while it plays the button is ■, which stops it.
+    let playing = null;
+    const done = () => {
+      playing = null;
+      button.textContent = "▶";
+      button.setAttribute("aria-label", `Play the opening of ${tune.base}`);
+    };
     button.onclick = () => {
+      if (playing) { playing.stop(); return; }
       state.keyNote?.stop();
       const synth = new ABCJS.synth.CreateSynth();
+      let timer = 0;
+      const stop = synth.stop.bind(synth);
+      // Stopped by this button, another preview, a key of the keyboard or leaving the page.
+      synth.stop = () => { clearTimeout(timer); stop(); if (playing === synth) done(); };
       state.keyNote = synth;  // one sound at a time, like the keyboard
-      synth.init({ visualObj, options: AUDIO_PARAMS }).then(() => synth.prime()).then(() => {
-        if (state.keyNote === synth) synth.start();
-      }).catch(() => {});
+      playing = synth;
+      button.textContent = "■";
+      button.setAttribute("aria-label", `Stop the opening of ${tune.base}`);
+      synth.init({ visualObj, options: AUDIO_PARAMS }).then(() => synth.prime()).then(({ duration }) => {
+        if (state.keyNote !== synth || playing !== synth) return;
+        synth.start();
+        timer = setTimeout(() => { if (playing === synth) done(); }, duration * 1000 + 200);
+      }).catch(done);
     };
   });
   return box;
@@ -595,6 +612,7 @@ document.addEventListener("keydown", (event) => {
 function render() {
   stopPlayback();
   stopListening();
+  state.keyNote?.stop();
   const params = new URLSearchParams(location.search);
   let group = state.groups.get(params.get("tune"));
   let version = Number(params.get("v")) || 1;
@@ -706,7 +724,8 @@ function renderBrowse(main) {
   main.replaceChildren(
     el("h1", {}, "Browse by type and key"),
     el("p", { class: "lead" }, "Pick a type of tune, a key, or both: the jigs in D, say, or everything in G."),
-    pills, keyPills, caption, list,
+    el("p", { class: "pills-label" }, "Type"), pills,
+    el("p", { class: "pills-label" }, "Key"), keyPills, caption, list,
   );
   show(chosenType, chosenKey);
 }

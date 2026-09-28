@@ -1,0 +1,28 @@
+X:1
+T:O Uchel Dras Oedd Siencyn (version 2)
+T:Y Gadlys
+T:The Camp
+T:"Of noble race was Shenkin"
+C:Trad
+B:51 Welsh Airs
+S:https://trillian.mit.edu/~jc/music/abc/mirror/BrianMartin/msg/ejones.abc
+A:Wales
+H:From a facsimile c.1840: A Choice Collection of Fifty-One Welsh Airs adapted for The Harp, Piano-Forte, Harpsichord, Violin, or Flute by Edward Jones "Harper to His Late Majesty King George IV, when Prince of Wales".
+N:I'm not quite sure how Mr Jones thought this was "adapted for  the
+N:violin or flute".  Part A is in the treble clef; Part B is in the
+N:bass clef and should be played an octave lower than written. BM.
+N:.
+N:Transcribed by Brian Martin
+M:C
+L:1/8
+Q:130
+K:Cm
+P:A
+d2|e2dc =BcdB|c2C2C2z2|z8|z6d2|e2 dc =BcdB|c2C2C2z2|z8|z6:||
+ed|e2e2B2B2|e2e4z2|z8|z6gf|e2efd2de|cedc=B3G|A2GFG2=B2|c4z2gf|
+(eg)fe (df)ed|cdef{G=Bd}g3G|A2GFG2=B2|c6:||
+P:B
+z2|c2C2G2G,2|C4z2CD|ECFD G2G,2|C2G,2C,2z2|
+c2C2G2G,2|C6CD|EDEFG2G,2|C6:||
+z2|E4D4|E2E,4z2|E,2E2D,2D2|C,2C2=B,2G,2|c4_B4|
+A4G4|F2D2G2G,2|C2G,2C,2z2|C4_B,4|A,4G,4|F2D2G2G,2|C6:||

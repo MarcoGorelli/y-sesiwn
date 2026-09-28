@@ -38,9 +38,12 @@ collection of Welsh traditional tunes to play, with notation and recordings.
 Most of its arrangements and adaptations are by **Meurig Williams**, alongside
 tunes and arrangements by many other musicians.
 
-More tunes come from the ***Blodau'r Grug*** collection (volumes 1–3),
-transcribed into ABC by **Brian Martin** and kept in
-[John Chambers' ABC archive](https://trillian.mit.edu/~jc/music/abc/mirror/BrianMartin/msg/).
+More tunes come from **Brian Martin**'s transcriptions into ABC, kept in
+[John Chambers' ABC archive](https://trillian.mit.edu/~jc/music/abc/mirror/BrianMartin/msg/):
+the ***Blodau'r Grug*** collection (volumes 1–3), Edward Jones's *Choice
+Collection of Fifty-One Welsh Airs*, Mary Richards' collection, and tunes
+from Robin Huw Bowen, Michael Raven, the Cadw Twmpath collection, Cat's Claw
+and others. Each tune's Details say which.
 Where both collections have a tune, its page shows each as a version, with
 tabs to switch between them.
 

@@ -1,0 +1,24 @@
+X:1
+T:Mwynen Cynwyd (version 3)
+T:The Melody of Cynwyd
+R:Jig
+C:Trad
+B:51 Welsh Airs
+S:https://trillian.mit.edu/~jc/music/abc/mirror/BrianMartin/msg/ejones.abc
+A:Wales
+H:From a facsimile c.1840: A Choice Collection of Fifty-One Welsh Airs adapted for The Harp, Piano-Forte, Harpsichord, Violin, or Flute by Edward Jones "Harper to His Late Majesty King George IV, when Prince of Wales".
+N:I'm not convinced by the last two bars of the A music.
+N:Other versions have something like |BAB GcB|AGA F2:||
+N:Similarly in bar 7 of the B music,  the  e and B would normally be
+N:flattened.  BM.
+N:.
+N:Transcribed by Brian Martin
+M:6/8
+L:1/8
+Q:130
+K:F
+"^Tenderly"c|AFFF2F|FAc cBA|dGGG2G|B>cd dcB|AFFF2F|FAc cBA|BAB Gdc|BABG2:||
+z|d2fd2f|d2f dBd|c2fc2f|c2f cAc|dGGG2G|B2c dcB|ecc d=BB|cd_e dcB|
+AFFF2F|FAc cBA|dGGG2G|B>dc dcB|
+(c3AF)A|(d3B)GB|(A>Bc) cdB|A>BGF3|
+{CFA}(c3AF)A|(d3B)GB|A>Bc cdB|A>BGF2:||

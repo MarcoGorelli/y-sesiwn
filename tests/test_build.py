@@ -107,12 +107,14 @@ def test_tune_pages(site):
     assert "<title>Llancesau Trefaldwyn · Y Sesiwn</title>" in page
     assert f'<meta property="og:url" content="{url}">' in page and f'<link rel="canonical" href="{url}">' in page
     assert '<meta property="og:title" content="Llancesau Trefaldwyn · Y Sesiwn">' in page
-    description = "Llancesau Trefaldwyn: a Welsh jig in D major. Sheet music, suggested chords and playback in any key, at any tempo."
+    description = "Llancesau Trefaldwyn: a Welsh jig in D major. Sheet music, suggested chords and playback in any key, at any tempo (2 versions)."
     assert f'<meta name="description" content="{description}">' in page
     assert f'<meta property="og:description" content="{description}">' in page
     data = json.loads(re.search(r'<script type="application/ld\+json">(.*?)</script>', page).group(1))
     assert data["name"] == "Llancesau Trefaldwyn" and data["musicalKey"] == "D major"
     assert "<h1>Llancesau Trefaldwyn</h1>" in page and "K:D" in page  # readable without the app
+    source = "http://alawoncymru.com/alawon/Tunes/"
+    assert f'<dt>Source</dt><dd><a href="{source}' in page and "<dt>Notes</dt>" not in page
     # A title with an apostrophe, safely written into the page.
     page = (out / "alaw" / "codi-r-hwyl" / "index.html").read_text(encoding="utf-8")
     assert "<title>Codi&#x27;r Hwyl · Y Sesiwn</title>" in page and "<h1>Codi&#x27;r Hwyl</h1>" in page

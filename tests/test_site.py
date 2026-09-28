@@ -18,7 +18,7 @@ def test_every_tune_draws(page):
       const empty = [];
       for (const tune of state.data.tunes) {
         for (const play of ["tune", "both", "chords"]) {
-          const abc = accompaniment(setTempo(stripFields(tune.abc, "SZBNA"), tune.beat, tune.bpm), play === "both");
+          const abc = accompaniment(setTempo(stripFields(tune.abc, "SZBNAH"), tune.beat, tune.bpm), play === "both");
           const lines = ABCJS.renderAbc("*", abc)[0].lines;
           const notes = lines.flatMap((l) => l.staff?.[0].voices[0] ?? []).filter((e) => e.el_type === "note");
           if (!notes.length) empty.push(`${tune.slug} (${play})`);
@@ -37,6 +37,12 @@ EXPECTED_ODD_BARS = {
     "bonheddwr-mawr-o-r-bala": "its second part starts with a lead-in, without a double bar",
     "merch-megan-version-2": "its third part starts with a lead-in, without a double bar",
     "rownd-yr-horn": "its endings are split across a tie, as on the score",
+    "erddigan-caer-waen": "has a part in 6/8",
+    "ffarwel-trwy-r-pwll": "has a part in 6/8",
+    # A note short in Brian Martin's file, and in the tune's N: line; the right note isn't known.
+    "castell-aberystwyth": "bar 4 of part B is a quaver short",
+    "megan-a-gollodd-ei-gardas-version-3": "two bars are a quaver short",
+    "plygiad-y-bedol": "bar 8 is two quavers short",
 }
 
 
@@ -70,6 +76,25 @@ def test_tune_page(page, slug):
     page.wait_for_selector(".score .abcjs-staff")
     assert page.locator(".score .abcjs-note").count() > 20
     assert page.locator(".abcjs-inline-audio").count() == 1
+
+
+def test_details(page):
+    # The source (S:) is a link; notes (N:) aren't shown.
+    page.goto_site("?tune=glwysen&v=2")
+    page.wait_for_selector(".card dl")
+    dts = page.locator(".card dt").all_inner_texts()
+    assert "Source" in dts and "Notes" not in dts
+    link = page.locator(".card dd a")
+    assert link.get_attribute("href") == "https://trillian.mit.edu/~jc/music/abc/mirror/BrianMartin/msg/welsh_tunes_1.abc"
+    assert "Transcribed by Brian Martin" not in page.locator(".card dl").inner_text()
+
+
+def test_history_in_details_not_on_the_score(page):
+    # A long H: (history) would run off the edge of the score; it's in Details instead.
+    page.goto_site("alaw/gorhoffedd-gwyr-harlech/")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert "facsimile" not in page.inner_text(".score")
+    assert "facsimile" in page.inner_text(".tune-side .card dl")
 
 
 def test_transposing(page):
@@ -208,7 +233,8 @@ def test_search_by_name(page, query, expected):
 def test_search_by_notes(page, notes, group, how):
     page.goto_site()
     results = page.evaluate("(n) => searchByNotes(n).map((r) => [r.tune.group, matchText(r)])", notes)
-    assert results[0][0] == group and how in results[0][1], results[:3]
+    # Among the first few: another tune may start the same way (listed alphabetically).
+    assert any(g == group and how in h for g, h in results[:3]), results[:3]
 
 
 def test_search_by_notes_never_empty(page):
@@ -828,7 +854,7 @@ def test_every_chord_chart(page):
       const problems = [];
       for (const tune of state.data.tunes.filter((t) => t.chords != null)) {
         for (const shift of [0, 2]) {
-          let abc = stripFields(tune.abc, "SZBNA");
+          let abc = stripFields(tune.abc, "SZBNAH");
           if (shift) abc = ABCJS.strTranspose(abc, ABCJS.renderAbc("*", abc), shift);
           const rows = [...chordChart(ABCJS.renderAbc("*", abc)[0]).children];
           if (!rows.length || rows.some((r) => !r.textContent.trim())) problems.push(`${tune.slug} (+${shift})`);

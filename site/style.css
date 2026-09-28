@@ -292,7 +292,7 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .card h2 { margin: 0 0 .6rem; font-size: 1.15rem; }
 .card dl { margin: 0; }
 .card dt { font-weight: 600; }
-.card dd { margin: 0 0 .5rem; }
+.card dd { margin: 0 0 .5rem; overflow-wrap: anywhere; }  /* long source URLs, on a phone */
 details.abc { margin-top: 1rem; border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .9rem; background: var(--card-bg); }
 details.abc summary { cursor: pointer; }
 details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }

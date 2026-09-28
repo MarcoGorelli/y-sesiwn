@@ -1,0 +1,20 @@
+X:1
+T:Megan a gollodd ei gardas (version 3)
+T:Megan a Gollod ei Gardas
+T:Margaret that Lost her Garter
+R:Waltz
+C:Trad
+B:51 Welsh Airs
+S:https://trillian.mit.edu/~jc/music/abc/mirror/BrianMartin/msg/ejones.abc
+A:Wales
+H:From a facsimile c.1840: A Choice Collection of Fifty-One Welsh Airs adapted for The Harp, Piano-Forte, Harpsichord, Violin, or Flute by Edward Jones "Harper to His Late Majesty King George IV, when Prince of Wales".
+N:Transcribed by Brian Martin
+N:Bar 4 ({AB}A2GF2) and the last bar but one (G>AF2{FDF}E) are a quaver short, as in the source.
+M:3/4
+L:1/8
+Q:150
+K:F
+"^Majestic"F2F2F2|E3DC2|F2F>AG>B|{AB}A2GF2|B4B2|A4A2|G2E2F2|G6:||
+f2fagf|e2egfe|d2dfed|c4c2|f2fagf|e2egfe|d2dfed|edc2B2|
+(A2f2){cd}c2|(A2f2){cd}c2|A2f2{cd}c2|BdcBA2|
+(GABcdB)|c2B2A2|G>AF2{FDF}E|F6:||

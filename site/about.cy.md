@@ -37,9 +37,12 @@ CLERA o alawon traddodiadol Cymreig i'w chwarae, gyda nodiant a recordiadau.
 **Meurig Williams** a wnaeth y rhan fwyaf o'i drefniannau a'i addasiadau,
 ochr yn ochr ag alawon a threfniannau gan lawer o gerddorion eraill.
 
-Daw rhagor o alawon o gasgliad ***Blodau'r Grug*** (cyfrolau 1–3), wedi'u
-trawsgrifio i ABC gan **Brian Martin** a'u cadw yn
-[archif ABC John Chambers](https://trillian.mit.edu/~jc/music/abc/mirror/BrianMartin/msg/).
+Daw rhagor o alawon o drawsgrifiadau ABC **Brian Martin**, a gedwir yn
+[archif ABC John Chambers](https://trillian.mit.edu/~jc/music/abc/mirror/BrianMartin/msg/):
+casgliad ***Blodau'r Grug*** (cyfrolau 1–3), *Choice Collection of Fifty-One
+Welsh Airs* Edward Jones, casgliad Mary Richards, ac alawon gan Robin Huw
+Bowen, Michael Raven, casgliad Cadw Twmpath, Cat's Claw ac eraill. Mae
+Manylion pob alaw yn dweud o ble.
 Lle mae alaw yn y ddau gasgliad, mae ei thudalen yn dangos pob un fel
 fersiwn, gyda thabiau i newid rhyngddynt.
 

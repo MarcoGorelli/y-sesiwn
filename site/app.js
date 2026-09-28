@@ -1028,9 +1028,9 @@ function stopPlayback() {
 function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   stopPlayback();
   const { transpose, bpm } = state.settings.get(tune.slug);
-  // S:, Z:, B: (book), N: (notes) and A: (area) are in the Details box, so leave
-  // them off the score; the version tabs say which version it is.
-  let abc = setTempo(stripFields(tune.abc, "SZBNA"), tune.beat, bpm).replace(/^(T:.*) \(version \d+\)$/m, "$1");
+  // S:, Z:, B: (book), N: (notes), A: (area) and H: (history) are in the Details box,
+  // so leave them off the score; the version tabs say which version it is.
+  let abc = setTempo(stripFields(tune.abc, "SZBNAH"), tune.beat, bpm).replace(/^(T:.*) \(version \d+\)$/m, "$1");
   if (transpose) {
     // strTranspose needs the whole array renderAbc returns, not its first tune.
     abc = ABCJS.strTranspose(abc, ABCJS.renderAbc("*", abc), transpose);
@@ -1279,7 +1279,13 @@ function printButton(tune, paper) {
 // The Details box's labels (from build_site.py's HEADER_LABELS), in Welsh.
 const CY_DETAILS = { "Tune type": "Math o alaw", Key: "Cywair", "Time signature": "Amseriad",
   "Composer / arranger": "Cyfansoddwr / trefnydd", Area: "Ardal", Origin: "Tarddiad", Book: "Llyfr",
-  Discography: "Disgograffi", History: "Hanes", Notes: "Nodiadau" };
+  Discography: "Disgograffi", History: "Hanes", Source: "Ffynhonnell" };
+
+function detailValue(label, value) {
+  if (label === "Key") return keyLabel(value);
+  if (label === "Source") return el("a", { href: value, target: "_blank", rel: "noopener" }, value);
+  return value;
+}
 
 function renderTune(main, group, tune) {
   document.title = `${group.title} · Y Sesiwn`;
@@ -1328,7 +1334,7 @@ function renderTune(main, group, tune) {
       printButton(tune, paper), qrButton(group, tune), practice));
 
   const details = el("dl", {}, tune.details.map(([label, value]) =>
-    [el("dt", {}, tr(label, CY_DETAILS[label] ?? label)), el("dd", {}, label === "Key" ? keyLabel(value) : value)]));
+    [el("dt", {}, tr(label, CY_DETAILS[label] ?? label)), el("dd", {}, detailValue(label, value))]));
   // What the Welsh credit words mean (trefniant = arranged by, …), for English readers.
   const gloss = tune.gloss.length && state.lang !== "cy"
     ? el("p", { class: "caption" }, tune.gloss.flatMap(([word, meaning], i) =>

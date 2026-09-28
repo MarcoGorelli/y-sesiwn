@@ -83,7 +83,7 @@ HEADER_LABELS = {
     "B": "Book",
     "D": "Discography",
     "H": "History",
-    "N": "Notes",
+    "S": "Source",  # a URL, shown as a link
 }
 # The credits (C:) are in Welsh, as printed on the original scores.
 CREDIT_WORDS = {
@@ -491,7 +491,9 @@ def tune_pages(tunes: list[dict]) -> None:
         if key:
             data["musicalKey"] = key
         ld = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
-        details = "".join(f"<dt>{esc(label)}</dt><dd>{esc(value)}</dd>" for label, value in first["details"])
+        details = "".join(f"<dt>{esc(label)}</dt><dd>"
+                          + (f'<a href="{esc(value)}">{esc(value)}</a>' if label == "Source" else esc(value))
+                          + "</dd>" for label, value in first["details"])
         page = template
         page = swap(page, '<base href="./">', '<base href="../../">')
         page = swap(page, "<title>Y Sesiwn</title>", f"<title>{esc(name)} · Y Sesiwn</title>")

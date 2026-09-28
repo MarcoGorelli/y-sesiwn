@@ -236,6 +236,88 @@ def test_home_page(page):
     assert page.locator(".tune-list li").count() == len(page.evaluate("state.groupList"))
 
 
+# The home page's text, sidebar and footer as the reader sees them, except text marked
+# lang="en" on purpose (the "English" button, browsers' own menu names).
+VISIBLE_TEXT = """() => {
+  const texts = [];
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  while (walker.nextNode()) {
+    if (!walker.currentNode.parentElement.closest('.lang-switch, .suggestions, strong[lang="en"]')) texts.push(walker.currentNode.textContent.trim());
+  }
+  for (const n of document.querySelectorAll('[placeholder], [title]')) {
+    if (!n.closest('.lang-switch')) texts.push(n.getAttribute('placeholder') ?? '', n.getAttribute('title') ?? '');
+  }
+  return texts.filter(Boolean).join('\\n');
+}"""
+
+
+def test_welsh_home_page(page):
+    import re
+    page.goto_site()
+    assert page.evaluate("document.documentElement.lang") == "en"
+    assert page.get_attribute(".lang-switch [data-lang=en]", "aria-pressed") == "true"
+    english = page.evaluate(VISIBLE_TEXT)
+    page.click(".lang-switch [data-lang=cy]")
+    assert page.inner_text("h1") == "Croeso i'r Sesiwn!"
+    assert page.evaluate("document.documentElement.lang") == "cy"
+    assert page.get_attribute(".lang-switch [data-lang=cy]", "aria-pressed") == "true"
+    assert page.inner_text("#home-button") == "Yn ôl i'r hafan"
+    assert page.get_attribute("#search-input", "placeholder") == "Chwilio am alaw…"
+    assert page.locator(".features li").count() == 12
+    # Nothing left in English: no sentence of the English page shows up in the Welsh one.
+    welsh = page.evaluate(VISIBLE_TEXT)
+    fragments = {f.strip() for f in re.split(r"[.:;?!()\n]", english) if len(f.strip()) >= 12}
+    assert fragments and not [f for f in fragments if f in welsh]
+    # The choice is remembered.
+    page.reload()
+    page.wait_for_function("typeof state !== 'undefined' && state.data")
+    assert page.inner_text("h1") == "Croeso i'r Sesiwn!"
+    # Only the home page is translated so far: other pages say they're English.
+    page.click(".sidebar-links a[href='?page=browse']")
+    page.wait_for_selector(".tune-list li")
+    assert page.get_attribute("#main", "lang") == "en"
+    assert page.inner_text(".sidebar-links a[href='?page=browse']") == "Pori yn ôl math a chywair"
+    page.click("#home-button")
+    page.click(".lang-switch [data-lang=en]")
+    assert page.inner_text("h1") == "Croeso! Welcome to Y Sesiwn"
+    assert page.inner_text("#home-button") == "Back to home"
+    assert page.evaluate(VISIBLE_TEXT) == english
+
+
+def test_untranslated_pages_say_so(page):
+    # In Welsh, the pages that are still English say so at the top.
+    page.goto_site("?page=browse")
+    assert page.locator(".lang-note").count() == 0
+    page.click(".lang-switch [data-lang=cy]")
+    assert page.inner_text("#main > .lang-note:first-child") == "Dyw'r dudalen hon ddim ar gael yn Gymraeg eto: dyma hi yn Saesneg."
+    assert page.get_attribute(".lang-note", "lang") == "cy"
+    for link in ["?page=about", "?page=map", "?page=notes"]:  # About is fetched first, then drawn
+        page.click(f".sidebar-links a[href='{link}']")
+        page.wait_for_selector("#main h1, #main h2")
+        page.wait_for_selector("#main > .lang-note:first-child")
+        assert page.locator(".lang-note").count() == 1
+    page.click(".sidebar-links a[href='?page=browse']")
+    page.click(".tune-list a >> nth=0")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.locator("#main > .lang-note").count() == 1
+    page.click("#home-button")
+    page.wait_for_selector(".features")
+    assert page.locator(".lang-note").count() == 0
+    page.go_back()
+    page.wait_for_selector(".score .abcjs-staff")
+    page.click(".lang-switch [data-lang=en]")
+    assert page.locator(".lang-note").count() == 0
+
+
+def test_welsh_browser_gets_welsh(browser, site):
+    context = browser.new_context(locale="cy-GB", service_workers="block")
+    page = context.new_page()
+    page.goto(site)
+    page.wait_for_selector("h1")
+    assert page.inner_text("h1") == "Croeso i'r Sesiwn!"
+    context.close()
+
+
 @pytest.mark.parametrize("user_agent, touch, says", [
     ("Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15",
      False, "File → Add to Dock"),
@@ -434,8 +516,10 @@ def test_accessibility(browser, site, scheme, width):
     page = context.new_page()
     problems = []
     for path in ["", "?page=browse", "?tune=glandyfi", "?tune=nyth-y-gog", "?page=map", "?page=offline", "?page=about", "?page=add",
-                 "?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A"]:
-        page.goto(site + path)
+                 "?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A", "cy:", "cy:?tune=glandyfi"]:
+        if path.startswith("cy:"):  # in Welsh: the home page, and a page with the not-in-Welsh-yet note
+            page.evaluate("localStorage.setItem('lang', 'cy')")
+        page.goto(site + path.removeprefix("cy:"))
         # No fade-in: text caught half-faded would count as low contrast.
         page.add_style_tag(content="*, *::before, *::after { animation: none !important; transition: none !important; }")
         page.wait_for_function("typeof state !== 'undefined' && state.data && !document.querySelector('#main .loading')")

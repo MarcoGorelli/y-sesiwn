@@ -34,7 +34,60 @@ const state = {
   docs: new Map(),      // markdown files, fetched on first use
   chords: { onScore: false, play: "tune" },  // the chord box's settings, for every tune; play: tune, both or chords
   practice: { countIn: false, click: false, tab: "none" },  // the practice row, for every tune
+  lang: savedLang(),    // "cy" or "en": the home page, sidebar and footer (the rest is English for now)
 };
+
+// ---- Welsh or English --------------------------------------------------------------
+
+function savedLang() {
+  try {
+    const saved = localStorage.getItem("lang");
+    if (saved === "cy" || saved === "en") return saved;
+  } catch {}
+  return (navigator.languages ?? [navigator.language]).some((l) => /^cy\b/i.test(l)) ? "cy" : "en";
+}
+
+// The text in the chosen language: tr("Browse", "Pori").
+function tr(en, cy) {
+  return state.lang === "cy" ? cy : en;
+}
+
+// The sidebar, top bar and footer are in index.html, with the Welsh in data-cy attributes.
+function applyLang() {
+  document.documentElement.lang = state.lang;
+  for (const node of document.querySelectorAll("[data-cy]")) {
+    node.dataset.en ??= node.textContent;
+    node.textContent = tr(node.dataset.en, node.dataset.cy);
+  }
+  for (const attr of ["placeholder", "title"]) {
+    for (const node of document.querySelectorAll(`[data-cy-${attr}]`)) {
+      if (!node.hasAttribute(`data-en-${attr}`)) node.setAttribute(`data-en-${attr}`, node.getAttribute(attr));
+      node.setAttribute(attr, tr(node.getAttribute(`data-en-${attr}`), node.getAttribute(`data-cy-${attr}`)));
+    }
+  }
+  for (const button of document.querySelectorAll(".lang-switch button")) {
+    button.setAttribute("aria-pressed", button.dataset.lang === state.lang);
+  }
+}
+
+function setLang(lang) {
+  state.lang = lang;
+  try { localStorage.setItem("lang", lang); } catch {}
+  applyLang();
+  const main = document.getElementById("main");
+  if (main.dataset.page === "home") renderHome(main);
+  else showLangNote(main);
+}
+
+// In Welsh, the pages not translated yet say so at the top, rather than just being English.
+function showLangNote(main) {
+  const wanted = state.lang === "cy" && main.dataset.page === "other";
+  const note = main.querySelector(":scope > .lang-note");
+  if (wanted && !note) {
+    main.prepend(el("p", { class: "lang-note", lang: "cy" },
+      "Dyw'r dudalen hon ddim ar gael yn Gymraeg eto: dyma hi yn Saesneg."));
+  } else if (!wanted) note?.remove();
+}
 
 // ---- Small DOM helper ----------------------------------------------------
 
@@ -631,31 +684,41 @@ function render() {
   const main = document.getElementById("main");
   if (!tune) setPractice(false);
   main.style.animation = "none"; void main.offsetWidth; main.style.animation = "";  // replay fade-in
-  document.getElementById("home-button").disabled = !tune && !guide && !map && !offline && !notes && !browse;
-  if (tune) renderTune(main, group, tune);
-  else if (guide) renderGuide(main, guide);
-  else if (map) renderMap(main);
-  else if (offline) renderOffline(main);
-  else if (notes) renderNotesPage(main);
-  else if (browse) renderBrowse(main);
-  else renderHome(main);
+  const home = !tune && !guide && !map && !offline && !notes && !browse;
+  document.getElementById("home-button").disabled = home;
+  main.dataset.page = home ? "home" : "other";
+  main.lang = home ? state.lang : "en";  // only the home page is translated so far
+  let drawn;
+  if (tune) drawn = renderTune(main, group, tune);
+  else if (guide) drawn = renderGuide(main, guide);  // async: the text is fetched first
+  else if (map) drawn = renderMap(main);
+  else if (offline) drawn = renderOffline(main);
+  else if (notes) drawn = renderNotesPage(main);
+  else if (browse) drawn = renderBrowse(main);
+  else drawn = renderHome(main);
+  Promise.resolve(drawn).then(() => showLangNote(main));
 }
 
 // ---- Home page -----------------------------------------------------------------
 
 function renderHome(main) {
   document.title = "Y Sesiwn";
+  main.lang = state.lang;
   const count = state.groupList.length;  // one entry per tune, whatever its number of versions
   main.replaceChildren(
-    el("h1", {}, "Croeso! Welcome to Y Sesiwn"),
-    el("p", { class: "lead" },
-      "Y Sesiwn is a ", el("strong", {}, "completely free and open-source"),
-      ` resource to help you learn and share Welsh folk tunes: ${count} of them so far, `,
-      "each with its sheet music. Search by name, browse by type and key, or let chance decide."),
+    el("h1", {}, tr("Croeso! Welcome to Y Sesiwn", "Croeso i'r Sesiwn!")),
+    el("p", { class: "lead" }, ...tr(
+      ["Y Sesiwn is a ", el("strong", {}, "completely free and open-source"),
+        ` resource to help you learn and share Welsh folk tunes: ${count} of them so far, `,
+        "each with its sheet music. Search by name, browse by type and key, or let chance decide."],
+      ["Mae'r Sesiwn yn adnodd ", el("strong", {}, "hollol am ddim a chod agored"),
+        ` i'ch helpu i ddysgu a rhannu alawon gwerin Cymru: ${count} ohonyn nhw hyd yma, `,
+        "pob un â'i sgôr. Chwiliwch yn ôl enw, porwch yn ôl math a chywair, neu gadewch i ffawd ddewis."])),
     heroSearch(count),
     el("div", { class: "home-actions" },
-      el("button", { type: "button", class: "primary", onclick: openRandomTune }, "Surprise me"),
-      el("a", { href: "?page=browse", "data-route": true, class: "button-link" }, `Browse all ${count} tunes`)),
+      el("button", { type: "button", class: "primary", onclick: openRandomTune }, tr("Surprise me", "Alaw ar hap")),
+      el("a", { href: "?page=browse", "data-route": true, class: "button-link" },
+        tr(`Browse all ${count} tunes`, `Pori'r ${count} alaw`))),
     notesInvite(),
     features(),
     offlineCard(),
@@ -734,19 +797,35 @@ function renderBrowse(main) {
 // listening at once (the tap is still the go-ahead for the microphone and sound).
 function notesInvite() {
   return el("section", { class: "notes-invite" },
-    el("p", {}, el("strong", {}, "Know the tune but not its name?"),
-      " Play it on your instrument, or tap the notes, and Y Sesiwn will find it."),
+    el("p", {}, el("strong", {}, tr("Know the tune but not its name?", "Gwybod yr alaw ond nid ei henw?")),
+      tr(" Play it on your instrument, or tap the notes, and Y Sesiwn will find it.",
+        " Chwaraewch hi ar eich offeryn, neu tapiwch y nodau, a daw'r Sesiwn o hyd iddi.")),
     el("div", { class: "invite-actions" },
       canListen() ? el("button", { type: "button", class: "primary listen-start",
-        onclick: () => { state.autoListen = true; navigate("?page=notes"); } }, micIcon(), " Play it to me") : null,
-      el("a", { href: "?page=notes", "data-route": true, class: "button-link" }, "Tap or type the notes")));
+        onclick: () => { state.autoListen = true; navigate("?page=notes"); } }, micIcon(), tr(" Play it to me", " Chwaraewch hi i mi")) : null,
+      el("a", { href: "?page=notes", "data-route": true, class: "button-link" },
+        tr("Tap or type the notes", "Tapio neu deipio'r nodau"))));
 }
 
 function features() {
   // What the site does, in one list: each item's first words say it, the rest how.
   const link = (href, text) => el("a", { href, "data-route": href.startsWith("?") ? true : null }, text);
   const withChords = state.groupList.filter((g) => g.versions.some((v) => v.chords != null)).length;
-  const items = [
+  const items = state.lang === "cy" ? [
+    [["Canfod alaw wrth ei henw"], ": maddeuir gwallau teipio, acenion a sillafiadau eraill."],
+    [[link("?page=notes", "Canfod alaw o'i nodau")], ": chwaraewch yr ychydig nodau cyntaf ar eich offeryn i'r meicroffon, tapiwch nhw ar y bysellfwrdd neu teipiwch nhw, mewn unrhyw gywair."],
+    [["Sgôr"], " i bob alaw, gyda gwahanol fersiynau alaw ochr yn ochr."],
+    [["Unrhyw gywair"], ": trawsgyweiriwch alaw i siwtio'ch offeryn, eich llais neu'r sesiwn."],
+    [["Gwrandewch arni"], " ar unrhyw dempo, gyda'r nodau'n goleuo wrth iddyn nhw gael eu chwarae."],
+    [["Ymarfer"], ": chwaraewch un rhan o alaw drosodd a throsodd gan gyflymu ychydig bob tro, gyda chyfrif i mewn a chlic os mynnwch, a ", ["thablatur"], " ar gyfer mandolin, ffidil neu gitâr."],
+    [["Cyfeiliant"], `: cordiau awgrymedig fel siart ar gyfer gitâr, piano neu delyn, i'w chwarae gyda'r alaw neu hebddi (${withChords} o alawon hyd yma, a mwy i ddod).`],
+    [["Modd ymarfer"], " sy'n llenwi'r sgrin â'r gerddoriaeth, ar gyfer llechen ar stand gerddoriaeth; neu ", ["argraffwch"], " hi."],
+    [[link("?page=map", "Alawon ar y map")], ": y lleoedd yng Nghymru y mae alawon wedi'u henwi ar eu hôl."],
+    [[link("?page=offline", "Gweithio all-lein")], ": gosodwch hi ar eich ffôn ac ewch â phob alaw i'r dafarn."],
+    [[link("?page=browse", "Pori")], " yn ôl math a chywair: y jigiau yn D, dyweder, neu bopeth yn G."],
+    [["Rhydd ac agored"], ": ", link("?page=add", "ychwanegwch alaw"), " neu ", link("?page=fix", "awgrymwch gywiriad"),
+      "; mae popeth ", link(state.data.repo, "ar GitHub"), "."],
+  ] : [
     [["Find a tune by name"], ": typos, accents and other spellings are forgiven."],
     [[link("?page=notes", "Find a tune by its notes")], ": play the first few notes on your instrument to the microphone, tap them on the keyboard or type them, in any key."],
     [["Sheet music"], " for every tune, with the versions of a tune side by side."],
@@ -764,22 +843,22 @@ function features() {
   // [["words"]] is the bold lead-in (possibly a link); plain strings and links follow it.
   const bold = (part) => Array.isArray(part) ? el("strong", {}, part) : part;
   return el("section", { class: "features" },
-    el("h2", { class: "section-heading" }, "What you can do"),
+    el("h2", { class: "section-heading" }, tr("What you can do", "Beth allwch chi ei wneud")),
     el("ul", {}, items.map((parts) => el("li", {}, parts.map(bold)))));
 }
 
 function heroSearch(count) {
   const input = el("input", {
     id: "hero-search", type: "search", autocomplete: "off", spellcheck: "false",
-    placeholder: `Search ${count} tunes by name…`, role: "combobox", "aria-expanded": "false",
+    placeholder: tr(`Search ${count} tunes by name…`, `Chwilio'r ${count} alaw yn ôl enw…`), role: "combobox", "aria-expanded": "false",
     "aria-controls": "hero-suggestions", "aria-autocomplete": "list",
   });
   const list = el("ul", { id: "hero-suggestions", class: "suggestions", role: "listbox", hidden: true });
   // The list below already shows every tune, so only suggest once something is typed.
   attachSearch(input, list, { showAllOnFocus: false });
   return el("div", { class: "search hero-search" },
-    el("label", { for: "hero-search", class: "visually-hidden" }, "Search tunes by name"),
-    input, el("kbd", { class: "shortcut", title: "Press / to search" }, "/"), list);
+    el("label", { for: "hero-search", class: "visually-hidden" }, tr("Search tunes by name", "Chwilio am alawon yn ôl enw")),
+    input, el("kbd", { class: "shortcut", title: tr("Press / to search", "Pwyswch / i chwilio") }, "/"), list);
 }
 
 // ---- Tune page -------------------------------------------------------------------
@@ -1371,49 +1450,66 @@ function refreshOfflineCards() {
 
 function fillOfflineCard(card) {
   const full = card.classList.contains("full");
+  // Welsh on the home page only: the offline page itself is English for now.
+  const tr = (en, cy) => (state.lang === "cy" && !full ? cy : en);
+  // Browsers' own menus are rarely in Welsh, so their names stay in English.
+  const ui = (text) => el("strong", { lang: "en" }, text);
   const status = "serviceWorker" in navigator
-    ? el("p", { class: "status" }, state.offlineReady ? "✓ Saved on this device: works without a signal" : "Saving a copy for offline use…")
+    ? el("p", { class: "status" }, state.offlineReady
+      ? tr("✓ Saved on this device: works without a signal", "✓ Wedi'i chadw ar y ddyfais hon: mae'n gweithio heb signal")
+      : tr("Saving a copy for offline use…", "Wrthi'n cadw copi i'w ddefnyddio all-lein…"))
     : null;
   // Already opened as an app: nothing to advertise on the home page.
   card.hidden = isInstalled() && !full;
   let how;
   if (isInstalled()) {
-    how = el("p", {}, "You're using the app. Every tune, the playback and the map work offline.");
+    how = el("p", {}, tr("You're using the app. Every tune, the playback and the map work offline.",
+      "Rydych chi'n defnyddio'r ap. Mae pob alaw, y chwarae a'r map yn gweithio all-lein."));
   } else if (installPrompt) {
     how = el("button", { type: "button", class: "primary", onclick: async () => {
       installPrompt.prompt();
       await installPrompt.userChoice;
       installPrompt = null;
       refreshOfflineCards();
-    } }, "Install the app");
+    } }, tr("Install the app", "Gosod yr ap"));
   } else if (isApple()) {
     how = el("ol", { class: "steps" },
-      el("li", {}, "Tap ", SHARE_ICON(), " ", el("strong", {}, "Share"), " (at the bottom in Safari, or by the address bar)."),
-      el("li", {}, "Choose ", el("strong", {}, "Add to Home Screen"), "."),
-      el("li", {}, "Open Y Sesiwn from your home screen once while you have signal, so it can save its copy."));
+      el("li", {}, tr("Tap ", "Tapiwch "), SHARE_ICON(), " ", ui("Share"),
+        tr(" (at the bottom in Safari, or by the address bar).", " (ar y gwaelod yn Safari, neu wrth y bar cyfeiriad).")),
+      el("li", {}, tr("Choose ", "Dewiswch "), ui("Add to Home Screen"), "."),
+      el("li", {}, tr("Open Y Sesiwn from your home screen once while you have signal, so it can save its copy.",
+        "Agorwch Y Sesiwn o'ch sgrin gartref unwaith tra bod gennych signal, er mwyn iddi gadw ei chopi.")));
   } else if (isPhone()) {
-    how = el("p", {}, "In your browser's menu (", el("strong", {}, "⋮"), "), choose ", el("strong", {}, "Install app"),
-      " or ", el("strong", {}, "Add to Home screen"), ".");
+    how = el("p", {}, tr("In your browser's menu (", "Yn newislen eich porwr ("), el("strong", {}, "⋮"),
+      tr("), choose ", "), dewiswch "), ui("Install app"), tr(" or ", " neu "), ui("Add to Home screen"), ".");
   } else if (isMacSafari()) {
-    how = el("p", {}, "In Safari's menu bar, choose ", el("strong", {}, "File → Add to Dock"),
-      " (macOS Sonoma or later). Y Sesiwn then opens from the Dock in its own window.");
+    how = el("p", {}, tr("In Safari's menu bar, choose ", "Ym mar dewislen Safari, dewiswch "), ui("File → Add to Dock"),
+      tr(" (macOS Sonoma or later). Y Sesiwn then opens from the Dock in its own window.",
+        " (macOS Sonoma neu'n hwyrach). Wedyn mae Y Sesiwn yn agor o'r Doc yn ei ffenest ei hun."));
   } else if (isFirefox()) {
-    how = el("p", {}, "Firefox can't install websites as apps, but you don't need to: once it's loaded, Y Sesiwn ",
-      "works offline in this browser too. For an app with its own window, open it in Chrome, Edge or Safari.");
+    how = el("p", {}, tr("Firefox can't install websites as apps, but you don't need to: once it's loaded, Y Sesiwn "
+      + "works offline in this browser too. For an app with its own window, open it in Chrome, Edge or Safari.",
+      "Ni all Firefox osod gwefannau fel apiau, ond does dim angen: unwaith y bydd wedi llwytho, mae Y Sesiwn yn "
+      + "gweithio all-lein yn y porwr hwn hefyd. Am ap yn ei ffenest ei hun, agorwch hi yn Chrome, Edge neu Safari."));
   } else {
     // Chrome or Edge on a computer when the browser doesn't offer our button (e.g. it's
     // already installed, or hasn't decided yet).
-    how = el("p", {}, "Click the install icon at the right-hand end of the address bar, or open the browser's menu and look for ",
-      el("strong", {}, "Install Y Sesiwn"), " (in Chrome under ", el("strong", {}, "Cast, save and share"), ", in Edge under ",
-      el("strong", {}, "Apps"), "). It then opens in its own window, like any other program.");
+    how = el("p", {}, tr("Click the install icon at the right-hand end of the address bar, or open the browser's menu and look for ",
+      "Cliciwch yr eicon gosod ym mhen draw'r bar cyfeiriad ar y dde, neu agorwch ddewislen y porwr a chwiliwch am "),
+      ui("Install Y Sesiwn"), tr(" (in Chrome under ", " (yn Chrome o dan "), ui("Cast, save and share"),
+      tr(", in Edge under ", ", yn Edge o dan "), ui("Apps"),
+      tr("). It then opens in its own window, like any other program.", "). Wedyn mae'n agor yn ei ffenest ei hun, fel unrhyw raglen arall."));
   }
   card.replaceChildren(...[
-    el("h2", {}, "Take it to the session"),
+    el("h2", {}, tr("Take it to the session", "Ewch â hi i'r sesiwn")),
     el("p", {}, isPhone() || isInstalled()
-      ? "Add Y Sesiwn to your home screen and it opens like an app, with every tune saved on your phone: it works in the pub even with no signal."
-      : "Install Y Sesiwn on this computer and it opens like an app, in its own window, with every tune saved: it works even with no internet. (On a phone, add it to your home screen.)"),
+      ? tr("Add Y Sesiwn to your home screen and it opens like an app, with every tune saved on your phone: it works in the pub even with no signal.",
+        "Ychwanegwch Y Sesiwn at eich sgrin gartref ac mae'n agor fel ap, gyda phob alaw wedi'i chadw ar eich ffôn: mae'n gweithio yn y dafarn hyd yn oed heb signal.")
+      : tr("Install Y Sesiwn on this computer and it opens like an app, in its own window, with every tune saved: it works even with no internet. (On a phone, add it to your home screen.)",
+        "Gosodwch Y Sesiwn ar y cyfrifiadur hwn ac mae'n agor fel ap, yn ei ffenest ei hun, gyda phob alaw wedi'i chadw: mae'n gweithio hyd yn oed heb y rhyngrwyd. (Ar ffôn, ychwanegwch hi at eich sgrin gartref.)")),
     how, status,
-    full ? null : el("p", { class: "more" }, el("a", { href: "?page=offline", "data-route": true }, "More about using it offline")),
+    full ? null : el("p", { class: "more" }, el("a", { href: "?page=offline", "data-route": true },
+      tr("More about using it offline", "Rhagor am ei defnyddio all-lein"))),
   ].filter(Boolean));
 }
 
@@ -1546,6 +1642,10 @@ async function start() {
   buildGroups();
   document.getElementById("home-button").addEventListener("click", () => navigate("./"));
   document.getElementById("surprise-sidebar").addEventListener("click", openRandomTune);
+  for (const button of document.querySelectorAll(".lang-switch button")) {
+    button.addEventListener("click", () => setLang(button.dataset.lang));
+  }
+  applyLang();
   attachSearch(document.getElementById("search-input"), document.getElementById("suggestions"));
   render();
 }

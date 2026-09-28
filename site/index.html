@@ -34,27 +34,32 @@
     <header class="topbar">
       <a class="brand" href="./" data-route><img src="static/harp.svg" alt="" width="36" height="36">Y Sesiwn</a>
       <div class="search">
-        <label for="search-input" class="visually-hidden">Find a tune</label>
+        <label for="search-input" class="visually-hidden" data-cy="Chwilio am alaw">Find a tune</label>
         <input id="search-input" type="search" autocomplete="off" spellcheck="false"
-               placeholder="Find a tune…"
+               placeholder="Find a tune…" data-cy-placeholder="Chwilio am alaw…"
                role="combobox" aria-expanded="false" aria-controls="suggestions" aria-autocomplete="list">
-        <kbd class="shortcut" title="Press / to search">/</kbd>
+        <kbd class="shortcut" title="Press / to search" data-cy-title="Pwyswch / i chwilio">/</kbd>
         <ul id="suggestions" class="suggestions" role="listbox" hidden></ul>
       </div>
     </header>
     <aside class="sidebar">
+      <!-- Welsh or English for the page chrome and the home page; app.js swaps in the data-cy text. -->
+      <div class="lang-switch" role="group" aria-label="Iaith / Language">
+        <button type="button" data-lang="cy" lang="cy">Cymraeg</button>
+        <button type="button" data-lang="en" lang="en">English</button>
+      </div>
       <div class="sidebar-actions">
-        <button type="button" id="home-button">Back to home</button>
-        <button type="button" id="surprise-sidebar">Surprise me</button>
+        <button type="button" id="home-button" data-cy="Yn ôl i'r hafan">Back to home</button>
+        <button type="button" id="surprise-sidebar" data-cy="Alaw ar hap">Surprise me</button>
       </div>
       <nav class="sidebar-links">
-        <a href="?page=browse" data-route>Browse by type and key</a>
-        <a href="?page=notes" data-route>Find a tune by its notes</a>
-        <a href="?page=add" data-route>How to add a tune</a>
-        <a href="?page=fix" data-route>How to submit corrections</a>
-        <a href="?page=map" data-route>Tunes on the map</a>
-        <a href="?page=offline" data-route>Use it offline</a>
-        <a href="?page=about" data-route>About Y Sesiwn</a>
+        <a href="?page=browse" data-route data-cy="Pori yn ôl math a chywair">Browse by type and key</a>
+        <a href="?page=notes" data-route data-cy="Canfod alaw o'i nodau">Find a tune by its notes</a>
+        <a href="?page=add" data-route data-cy="Sut i ychwanegu alaw">How to add a tune</a>
+        <a href="?page=fix" data-route data-cy="Sut i gyflwyno cywiriadau">How to submit corrections</a>
+        <a href="?page=map" data-route data-cy="Alawon ar y map">Tunes on the map</a>
+        <a href="?page=offline" data-route data-cy="Defnyddio all-lein">Use it offline</a>
+        <a href="?page=about" data-route data-cy="Am Y Sesiwn">About Y Sesiwn</a>
         <a href="https://github.com/MarcoGorelli/y-sesiwn">GitHub</a>
       </nav>
     </aside>
@@ -62,10 +67,10 @@
   <main id="main"><p class="loading">Loading tunes…</p></main>
   <footer class="site-footer">
     <p>
-      <strong>Y Sesiwn</strong> · free and open source ·
-      <a href="?page=about" data-route>About</a> ·
+      <strong>Y Sesiwn</strong> · <span data-cy="am ddim a chod agored">free and open source</span> ·
+      <a href="?page=about" data-route data-cy="Amdanom">About</a> ·
       <a href="?page=map" data-route>Map</a> ·
-      <a href="?page=add" data-route>Add a tune</a> ·
+      <a href="?page=add" data-route data-cy="Ychwanegu alaw">Add a tune</a> ·
       <a href="https://github.com/MarcoGorelli/y-sesiwn">GitHub</a>
     </p>
   </footer>

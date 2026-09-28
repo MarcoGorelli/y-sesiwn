@@ -75,6 +75,7 @@ function setLang(lang) {
   state.lang = lang;
   try { localStorage.setItem("lang", lang); } catch {}
   applyLang();
+  countEvent(`language-${lang}`, lang === "cy" ? "Switched to Welsh" : "Switched to English");
   render();  // the page again, in the other language
 }
 
@@ -733,6 +734,7 @@ function render() {
   else if (browse) renderBrowse(main);
   else if (contact) renderContact(main);
   else renderHome(main);
+  countView();
 }
 
 // ---- Home page -----------------------------------------------------------------
@@ -1869,6 +1871,40 @@ function attachSearch(input, list, { showAllOnFocus = true } = {}) {
     else if (e.key === "Enter" && results.length && !list.hidden) { e.preventDefault(); open(results[active]); }
     else if (e.key === "Escape") close();
   });
+}
+
+// ---- Visit counts --------------------------------------------------------------------
+// GoatCounter counts page views with no cookies and nothing that identifies anyone. Only
+// the live site loads it (not a copy on your computer, or the tests), and pages change
+// without reloading, so render() counts each one. Only these parts of the address are
+// sent: never the notes typed into the notes search, or which tune a message is about.
+
+const COUNTED_PARAMS = ["tune", "v", "page", "type", "key"];
+let uncounted = null;  // a view before the counter has loaded
+
+function viewPath() {
+  const params = new URLSearchParams(location.search);
+  const kept = new URLSearchParams([...params].filter(([name]) => COUNTED_PARAMS.includes(name)));
+  return `${location.pathname}${kept.size ? `?${kept}` : ""}`;
+}
+
+function countView() {
+  const view = { path: viewPath(), title: document.title };
+  if (window.goatcounter?.count) window.goatcounter.count(view);
+  else uncounted = view;
+}
+
+function countEvent(path, title) {
+  window.goatcounter?.count?.({ path, title, event: true });
+}
+
+if (location.hostname === "ysesiwn.cymru") {
+  document.head.append(el("script", {
+    async: true, src: "https://gc.zgo.at/count.js",
+    "data-goatcounter": "https://marcogorelli.goatcounter.com/count",
+    "data-goatcounter-settings": JSON.stringify({ no_onload: true }),  // render() counts instead
+    onload: () => { if (uncounted) window.goatcounter?.count?.(uncounted); uncounted = null; },
+  }));
 }
 
 // ---- Start -----------------------------------------------------------------------------

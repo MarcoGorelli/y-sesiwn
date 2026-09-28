@@ -593,6 +593,46 @@ def test_address_is_hidden(page, site):
         assert ADDRESS not in page.content()
 
 
+# ---- Visit counts --------------------------------------------------------------------------
+
+def test_visit_counts(page):
+    # Each page is counted (with a stand-in for GoatCounter), with only the safe parts of
+    # its address: not the notes typed into the search, nor the tune a message is about.
+    page.add_init_script("window.goatcounter = { count: (view) => (window.counted ||= []).push(view) }")
+    page.goto_site("?page=contact&about=glandyfi-version-2")
+    page.wait_for_selector(".email-form")
+    page.click(".lang-switch [data-lang=cy]")
+    counted = page.evaluate("window.counted")
+    assert counted == [{"path": "/?page=contact", "title": "Contact · Y Sesiwn"},
+                       {"path": "language-cy", "title": "Switched to Welsh", "event": True},
+                       {"path": "/?page=contact", "title": "Cysylltu · Y Sesiwn"}]
+    page.goto_site("?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A")
+    assert page.evaluate("window.counted") == [{"path": "/?page=notes", "title": "Canfod alaw o'i nodau · Y Sesiwn"}]
+
+
+def test_visit_counts_in_order(page):
+    page.add_init_script("window.goatcounter = { count: (view) => (window.counted ||= []).push(view.path) }")
+    page.goto_site()
+    page.wait_for_selector(".features")
+    page.click(".sidebar-links a[href='?page=browse']")
+    page.click(".pills button[data-type='Jig']")  # a filter isn't a new page
+    page.click(".tune-list a >> nth=0")
+    page.wait_for_selector(".score .abcjs-staff")
+    slug = page.evaluate("new URLSearchParams(location.search).get('tune')")
+    assert page.evaluate("window.counted") == ["/", "/?page=browse", f"/?tune={slug}"]
+
+
+def test_no_counting_away_from_the_live_site(page):
+    # Only ysesiwn.cymru loads the counter: the tests (and anyone's own copy) send nothing.
+    requests = []
+    page.on("request", lambda r: requests.append(r.url))
+    page.goto_site("?tune=glandyfi")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.locator("script[src*='goatcounter'], script[src*='zgo.at']").count() == 0
+    assert not [u for u in requests if "goatcounter" in u or "zgo.at" in u]
+    assert page.context.cookies() == []
+
+
 def test_browse_by_key(page):
     page.goto_site("?page=browse")
     page.click(".pills.keys button[data-key='D major']")

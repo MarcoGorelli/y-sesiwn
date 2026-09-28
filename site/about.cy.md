@@ -26,6 +26,8 @@ lefydd da i ddechrau:
 
 - [CLERA](http://www.clera.org), *Cymdeithas Offerynnau Traddodiadol Cymru*.
 - [trac cymru](https://www.trac.cymru): datblygu gwerin yng Nghymru.
+- [Tŷ Cerdd](https://www.tycerdd.org): hyrwyddo cerddoriaeth o Gymru, gan
+  gynnwys cerddoriaeth draddodiadol.
 
 ## O ble mae'r alawon yn dod
 
@@ -64,6 +66,13 @@ anfon alaw aton ni drwy e-bost, heb angen GitHub. Gweler hefyd
 
 Cwestiynau, syniadau, alaw rydych chi'n chwilio amdani, neu dim ond helo:
 [ysgrifennwch aton ni](?page=contact).
+
+## Preifatrwydd
+
+Mae'r Sesiwn yn cyfrif ymweliadau gyda [GoatCounter](https://www.goatcounter.com),
+i weld pa dudalennau ac alawon sy'n cael eu defnyddio: dyw e ddim yn gosod
+cwcis nac yn cadw dim sy'n dweud pwy ydych chi. Mae'r nodau rydych chi'n eu
+chwarae neu'n eu teipio i ganfod alaw yn aros ar eich dyfais.
 
 ## Y patrymau
 

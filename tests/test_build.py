@@ -91,6 +91,34 @@ def test_built_site(site):
     assert {"static/soundfont/percussion-mp3/E5.mp3", "static/soundfont/percussion-mp3/F5.mp3"} <= set(sounds)  # the click
     for f in files[1:] + sounds:
         assert (out / f).is_file(), f"sw.js would cache a missing file: {f}"
+    # The tunes' own pages aren't in the offline copy (the app stands in for them).
+    assert not [f for f in files if f.startswith("alaw/")]
+
+
+def test_tune_pages(site):
+    # A real page per tune (alaw/<folder>/), for link previews and search engines.
+    out = b.OUT
+    index = json.loads((out / "tunes.json").read_text(encoding="utf-8"))
+    groups = {t["group"] for t in index["tunes"]}
+    assert {p.name for p in (out / "alaw").iterdir()} == groups
+    page = (out / "alaw" / "llancesau-trefaldwyn" / "index.html").read_text(encoding="utf-8")
+    url = "https://ysesiwn.cymru/alaw/llancesau-trefaldwyn/"
+    assert '<base href="../../">' in page
+    assert "<title>Llancesau Trefaldwyn · Y Sesiwn</title>" in page
+    assert f'<meta property="og:url" content="{url}">' in page and f'<link rel="canonical" href="{url}">' in page
+    assert '<meta property="og:title" content="Llancesau Trefaldwyn · Y Sesiwn">' in page
+    description = "Llancesau Trefaldwyn: a Welsh jig in D major. Sheet music, suggested chords and playback in any key, at any tempo."
+    assert f'<meta name="description" content="{description}">' in page
+    assert f'<meta property="og:description" content="{description}">' in page
+    data = json.loads(re.search(r'<script type="application/ld\+json">(.*?)</script>', page).group(1))
+    assert data["name"] == "Llancesau Trefaldwyn" and data["musicalKey"] == "D major"
+    assert "<h1>Llancesau Trefaldwyn</h1>" in page and "K:D" in page  # readable without the app
+    # A title with an apostrophe, safely written into the page.
+    page = (out / "alaw" / "codi-r-hwyl" / "index.html").read_text(encoding="utf-8")
+    assert "<title>Codi&#x27;r Hwyl · Y Sesiwn</title>" in page and "<h1>Codi&#x27;r Hwyl</h1>" in page
+    sitemap = (out / "sitemap.xml").read_text(encoding="utf-8")
+    assert sitemap.count("<loc>https://ysesiwn.cymru/alaw/") == len(groups)
+    assert "Sitemap: https://ysesiwn.cymru/sitemap.xml" in (out / "robots.txt").read_text(encoding="utf-8")
 
 
 # Repeats checked against the score images (the recordings, which the ABC was made from,

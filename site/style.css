@@ -257,7 +257,7 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .control select { padding: .4rem .6rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); }
 .control.tempo { flex: 1 1 18rem; max-width: 32rem; }
 .control input[type="range"] { width: 100%; accent-color: var(--accent); }
-.tune-actions { display: flex; gap: .5rem; margin-left: auto; }
+.tune-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-left: auto; }
 /* The practice row: loop a part, speed up, count-in, click, tablature */
 .practice-row {
   display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1.5rem;
@@ -506,3 +506,11 @@ body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 
 .email-sent:not(:empty) { margin-top: 1rem; padding: .75rem 1rem; border-left: 3px solid var(--accent); background: var(--sidebar-bg); border-radius: 0 var(--radius) var(--radius) 0; }
 .email-sent p { margin: 0 0 .6rem; }
 .copy-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+
+/* QR code for a tune: always black on white, as scanners expect, also in dark mode */
+.qr-dialog { border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1.5rem; background: var(--card-bg); color: var(--text); text-align: center; max-width: min(24rem, calc(100vw - 2rem)); }
+.qr-dialog::backdrop { background: #0008; }
+.qr-dialog h2 { margin: 0 0 .75rem; }
+.qr-dialog .qr { width: min(18rem, 70vw); height: auto; display: block; margin: 0 auto; border-radius: 4px; }
+.qr-dialog .qr-link { word-break: break-all; }
+.qr-dialog form { margin-top: .75rem; }

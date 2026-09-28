@@ -9,9 +9,10 @@ M:2/4
 L:1/8
 Q:220
 K:G
+% Bar line fixed (a bar line added between d2 and ee); the source file has it the other way.
 d/e/d/c/ B/c/B/A/|GG GA/B/|cA AA|cA AB/c/|d/e/d/c/ B/c/B/A/|GG
 GA/B/|cA GF|G2G2:||
 F/A/c/A/ F/A/c/A/|G/B/d/B/ G/B/d/B/|F/A/c/A/ F/A/c/A/|F/A/c/A/
 G/B/d/g/|ee eg|dd dg|dc BA|G2G2:||
 d>e dc|B2 Bc|d>g fe|ed d2|d>e dc|B2 Bd|cA GF|G2G2:||
-AA/B/ cA|B/c/d/e/ d2|AA/B/ cA|B/c/d/e/ d2ee eg|dd dg|dc BA|G2G2:||
+AA/B/ cA|B/c/d/e/ d2|AA/B/ cA|B/c/d/e/ d2|ee eg|dd dg|dc BA|G2G2:||

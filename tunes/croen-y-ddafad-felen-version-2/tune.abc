@@ -10,5 +10,6 @@ M:2/2
 L:1/8
 Q:150
 K:G
+% Bar line fixed (the bar line between B>c and d2d2 taken out); the source file has it the other way.
 G>A B>c d2d2|c>B c>A d2d2|c>B A>A B>A G>G|A>G F>G A2D2|
-G>A B>c|d2d2|c>B c>A d2d2|c>B A>A B>A G>G|A>A d>d G2G2:||
+G>A B>c d2d2|c>B c>A d2d2|c>B A>A B>A G>G|A>A d>d G2G2:||

@@ -1,0 +1,26 @@
+X:1
+T:Morwyn y Pentre llawn
+R:polca/ymdaith
+S:http://alawoncymru.com/alawon/Tunes/MorwynyPentre/MorwynPentre.html
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
+C:Trefniant Meurig Williams
+N:Transcribed from the score. The alawoncymru recording plays parts C, D and C twice each, and some rhythms more simply (ED D2 for ED DE, GF F2 for GF F>G, A2 A2 for A2 A/G/F/E/).
+M:2/4
+L:1/8
+Q:1/4=110
+K:Dm
+"Dm"D2 D>F | "Dm"ED DE | "Dm"F2 F>A | "Dm"GF F>G |
+"Dm"Ad Ad | "Dm"Ad (de) | "Am"(f>e) d^c | "Dm"d2 d2 :|
+"Dm"f>d dB | "C"e>c cA | "Bb"d>B GB | "Am"A2- A2 |
+"Dm"f>d Bd | "C"e>c Ac | "Bb"d>B GB | "Am"A2 A/G/F/E/ |
+"Dm"D2 D>F | "Dm"ED DE | "Dm"F2 F>A | "Dm"GF F>G |
+"Dm"Ad Ae | "Dm"Af Ag | "Am"f>e d^c | "Dm"d2 d2 ||
+"Dm"F>A AG | "Dm"FA AF | "Gm"G>B BA | "Gm"GB BG |
+"Dm"F>A AG | "Dm"FA AF | "Am"G>E D^C | "Dm"D2 D2 ||
+"Dm"D>F AG | "Dm"Fd ^cd | "Gm"A>B AG | "Dm"Fd ^cd |
+"Gm"B>g fg | "Dm"A>f ef | "Em"e>d cB | "Am"AG FE |
+"Dm"F>A AG | "Dm"FA AF | "Gm"G>B BA | "Gm"GB BG |
+"Dm"F>A AG | "Dm"FA AF | "Am"G>E D^C | "Dm"D2 D2 |]

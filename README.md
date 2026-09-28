@@ -131,9 +131,9 @@ relative URLs, so the site also works under a sub-path such as
 - **One page per tune, with its versions:** titles ending ` (version N)` are
   grouped with their tune (`build_site.py` adds `group`, `base`, `version` and
   a `source` label, e.g. *Alawon Cymru* or the `B:` book); the page has a tab
-  per version (`?tune=rheged&v=2`), and browsing, counts and search show one
-  entry per tune. Old links to a version's folder (`?tune=rheged-version-2`)
-  open the right tab.
+  per version (`alaw/rheged/?v=2`), and browsing, counts and search show one
+  entry per tune. Older links (`?tune=rheged`, or a version's folder,
+  `?tune=rheged-version-2`) move to the tune's own address and the right tab.
 - **Sheet music** on cream "paper", with a **key** drop-down (the same mode on
   any root, up to half an octave either way, e.g. *E Dorian*), a **tempo**
   slider (defaults: jigs 112, reels 90, polcas 100, others 100 bpm, in the
@@ -225,15 +225,21 @@ relative URLs, so the site also works under a sub-path such as
   bottom (`site/carthen.svg`) and under section headings, Welsh slate, and
   Welsh red for accents. Works in dark mode and on phones (search pinned to
   the top).
-- **Every tune has its own link** (`?tune=sawdl-y-fuwch`), and the back button
-  works.
+- **Every tune has its own page**, `alaw/sawdl-y-fuwch/`: `build_site.py`
+  writes a real one per tune (the app, with the tune's name, description,
+  details and ABC in it), so link previews (WhatsApp, Facebook, …) and search
+  engines, which don't run the app, see the tune; there's also a `sitemap.xml`
+  and `robots.txt`. Visitors get the app as usual, and the back button works.
+  Offline, the service worker answers a tune's page with the app (the tune
+  pages aren't in the offline copy). A **QR code** button on each tune shows
+  its link for someone else to scan.
 
 ## Files
 
 | Path | What it is |
 |---|---|
 | `build_site.py` | Builds `_site/` (git-ignored): copies `site/`, `static/`, `CONTRIBUTING.md`, and writes `tunes.json`: every `tune.abc` plus what the page needs about it (type, key, default tempo and beat, Details rows, credit glosses, melody for the note search, version grouping), worked out once in Python. Tune types, colourways and default tempos are set at the top. |
-| `site/index.html`, `site/style.css`, `site/app.js` | The page. `app.js` does searching (a port of the original Python matching, including `difflib`'s similarity ratio), browsing, routing (`?tune=…&v=…`, `?page=add\|fix\|about`), sheet music and playback with abcjs, and renders the Markdown pages with marked. |
+| `site/index.html`, `site/style.css`, `site/app.js` | The page. `app.js` does searching (a port of the original Python matching, including `difflib`'s similarity ratio), browsing, routing (`alaw/<folder>/?v=…`, `?page=add\|fix\|about`, all relative to `<base href>`), sheet music and playback with abcjs, and renders the Markdown pages with marked. |
 | `site/about.md`, `site/carthen.svg` | The About page; the tapestry band. |
 | `site/about.cy.md`, `site/guides.cy.md` | The Welsh About page, and the Welsh *How to add a tune* and *How to submit corrections* (keep in step with `about.md` and `CONTRIBUTING.md`). |
 | `places.json`, `site/wales.svg` | The places named in tune titles, for the map; the outline of Wales (made once from the ONS local authority boundaries via [UK-GeoJSON](https://github.com/martinjc/UK-GeoJSON), merged and simplified; its projection is in a comment in the file and in `MAP` in `build_site.py`). The outline is used as a CSS mask, so it takes the page's colours. |
@@ -242,7 +248,7 @@ relative URLs, so the site also works under a sub-path such as
 | `CONTRIBUTING.md` | How to add a tune, and how to submit corrections. Each `# ` section is one page on the site, and GitHub shows the whole file, so edit it in one place. Keep the two `# ` headings as they are: the site finds the sections by them. |
 | `static/abcjs/` | [abcjs](https://www.abcjs.net/) 6.4.4 (`abcjs-basic-min.js`, `abcjs-audio.css`): draws and plays the music. |
 | `static/soundfont/acoustic_grand_piano-mp3/` | The 88 piano notes (A0–C8) from the FluidR3_GM soundfont, one MP3 each; a tune loads only the notes it uses. |
-| `static/marked/`, `static/harp.svg` | [marked](https://marked.js.org/) 15 (Markdown pages); the icon, a Welsh triple harp drawn by `design/triple-harp.py` (the PNG icons and link-preview card are screenshots of it, see above). |
+| `static/marked/`, `static/qrcode/`, `static/harp.svg` | [marked](https://marked.js.org/) 15 (Markdown pages); [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 1.4.4 (MIT, the QR code, loaded when first used); the icon, a Welsh triple harp drawn by `design/triple-harp.py` (the PNG icons and link-preview card are screenshots of it, see above). |
 | `download_assets.py` | Re-downloads everything in `static/` (skips files that exist). Only needed if `static/` is lost or you want to change version. |
 | `tunes/<folder>/tune.abc` | One tune (or version) per folder; the site reads only these. |
 | `.github/workflows/pages.yml` | Tests, builds and publishes the site. |
@@ -295,7 +301,7 @@ email address left out), and ABC2Win's `!` line breaks turned into real ones.
 **Versions share a page.** Titles ending ` (version N)` are grouped with the
 tune they're a version of (`build_site.py` adds `group`, `base`, `version` and a
 `source` label to each tune); the site shows one entry per tune in browsing,
-counts and search, and tabs on the tune page (`?tune=rheged&v=2`). The type
+counts and search, and tabs on the tune page (`alaw/rheged/?v=2`). The type
 used for browsing is version 1's; `R:` can be Welsh or English (*Waltz*,
 *Hornpipe*, *March*, *Set Dance*…).
 

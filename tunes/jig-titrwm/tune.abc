@@ -7,10 +7,12 @@ Z:MIDI transcribed with alawon-abc
 %%alawon-reviewed
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:Follows the score. The alawoncymru recording plays part B in four bars, leaving out the middle four, and starts the second line of part A with G2 G FEF where the score has GFG FEF.
 M:6/8
 L:1/8
 Q:3/8=60
 K:Em
 |: "Em"G2 G "B5"FGF | "Em"E2 F E2 E | "Am"BAB "C"AGA | "B5"G F4 F |
-"Em"G2 G "B5"FEF | "C"E2 F G2 A | "B5"BcB F2 G | "Em"F E2 z3 :|
-|: "Em"G2 E B2 B | "G"B2 G F2 F | "Em"E2 G "B5"F2 G | "Em"E E3 z2 :|
+"Em"GFG "B5"FEF | "C"E2 F G2 A | "B5"BcB F2 G | "Em"F E2 z3 :|
+|: "Em"G2 E B2 B | "G"B2 G F2 F | "Em"E2 G "Am"A2 G | "B5"F F2 z3 |
+"Em"G2 A B2 B | "G"B2 G F2 F | "Em"E2 G "B5"F2 G | "Em"E E2- E z2 :|

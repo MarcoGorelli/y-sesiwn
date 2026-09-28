@@ -11,10 +11,11 @@ M:2/4
 L:1/8
 Q:240
 K:G
+% Bar line fixed (a bar line added between AG/F/ and EEEz); the source file has it the other way.
 g2dB|Gd cA|Fc AF|GB/d/ g/d/B/d/|g2 dB|Gd cA|FA FD|G2G2:||
 Dc2A|Bd fg|Dc2A|Bd BG|Bd gb|ce ac'|ac' af|g2g2:||
 K:D
-dc/d/ dD|dc/d/ dD|dc/B/ AG/F/ EEEz|dc/d/ dD|dc/d/ dD|fg ef|d>edz||
+dc/d/ dD|dc/d/ dD|dc/B/ AG/F/|EEEz|dc/d/ dD|dc/d/ dD|fg ef|d>edz||
 f3a|d3f|fe dc|d2D2|f3a|d3f|fe dc|dAD||]
 K:G
 d|Bd ce|dB AG|Gg dB|.A.A.A d|Bd ce|dB AG|Bd Ad|BGG:||

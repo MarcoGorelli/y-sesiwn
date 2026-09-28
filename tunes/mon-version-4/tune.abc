@@ -9,5 +9,6 @@ M:2/4
 L:1/8
 Q:130
 K:D
+% Bar line fixed (the bar line between de/f/ and gf taken out); the source file has it the other way.
 A|d>d AA|FA de/f/|g>f ed|e>d c/B/A|d>d AA|FA dd/e/|ff ee|d3:||
-d/e/|f>f dd|ee cc|de/f/|gf|e>d c/B/A|d>d AA|FA dd/e/|ff ee|d3:||
+d/e/|f>f dd|ee cc|de/f/ gf|e>d c/B/A|d>d AA|FA dd/e/|ff ee|d3:||

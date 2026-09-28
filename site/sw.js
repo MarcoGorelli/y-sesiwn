@@ -32,8 +32,19 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET" || new URL(request.url).origin !== location.origin) return;
-  // Every page (?tune=…, ?page=…) is the same index.html.
-  const key = request.mode === "navigate" ? "./" : request;
-  event.respondWith((async () =>
-    (await caches.match(key, { ignoreSearch: request.mode === "navigate" })) ?? fetch(request))());
+  if (request.mode !== "navigate") {
+    event.respondWith((async () => (await caches.match(request)) ?? fetch(request))());
+    return;
+  }
+  // Every page (?page=…, a tune's alaw/<folder>/) is the app, index.html. A tune's page
+  // is folders down from it, so its copy points <base href> back up (../../).
+  const path = new URL(request.url).pathname.slice(new URL(self.registration.scope).pathname.length);
+  const up = "../".repeat(path.split("/").length - 1);
+  event.respondWith((async () => {
+    const app = await caches.match("./", { ignoreSearch: true });
+    if (!app) return fetch(request);
+    if (!up) return app;
+    const html = (await app.text()).replace('<base href="./">', `<base href="${up}">`);
+    return new Response(html, { headers: app.headers });
+  })());
 });

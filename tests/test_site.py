@@ -29,6 +29,41 @@ def test_every_tune_draws(page):
     assert empty == []
 
 
+# Bars that don't fill the time signature, other than a lead-in and the short bars at
+# the end of a part, are usually a slip (a bar line missing or one too many).
+EXPECTED_ODD_BARS = {
+    "blwyddyn-newydd-dda": "changes to 6/8 for two bars",
+    "llongau-caernarfon": "has one bar in 6/4",
+    "bonheddwr-mawr-o-r-bala": "its second part starts with a lead-in, without a double bar",
+    "merch-megan-version-2": "its third part starts with a lead-in, without a double bar",
+    "rownd-yr-horn": "its endings are split across a tie, as on the score",
+}
+
+
+def test_bars_fill_the_time_signature(page):
+    page.goto_site()
+    odd = page.evaluate("""() => state.data.tunes.map((t) => {
+      const v = ABCJS.renderAbc('*', t.abc)[0];
+      const { num, den } = v.getMeterFraction();
+      const bars = [];
+      let length = 0, tuplet = 1;
+      for (const line of v.lines) for (const item of line.staff?.[0]?.voices?.[0] ?? []) {
+        if (item.el_type === 'note') {
+          if (item.startTriplet) tuplet = item.tripletMultiplier ?? 1;
+          length += (item.duration ?? 0) * tuplet;
+          if (item.endTriplet) tuplet = 1;
+        } else if (item.el_type === 'bar') {
+          if (length > 1e-6) bars.push({ length, type: item.type });
+          length = 0;
+        }
+      }
+      const partEnd = (type) => /repeat|thin_thin|thin_thick/.test(type ?? '');
+      return [t.slug, bars.filter((b, i) => i > 0 && i < bars.length - 1 && Math.abs(b.length - num / den) > 1e-6
+        && !partEnd(b.type) && !partEnd(bars[i - 1].type)).length];
+    }).filter(([, n]) => n).map(([slug]) => slug)""")
+    assert sorted(odd) == sorted(EXPECTED_ODD_BARS)
+
+
 @pytest.mark.parametrize("slug", ["pibddawns-gwyr-gwrecsam", "glandyfi", "nyth-y-gog", "erddygan-y-pibydd-coch"])
 def test_tune_page(page, slug):
     page.goto_site(f"?tune={slug}")
@@ -367,7 +402,52 @@ def test_works_offline(browser, site):
     page.goto(site + "?tune=glandyfi")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.locator(".score .abcjs-note").count() > 20
+    # A tune's own page isn't kept offline: the app stands in for it.
+    page.goto(site + "alaw/llancesau-trefaldwyn/?v=1")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.inner_text("main h1") == "Llancesau Trefaldwyn"
+    page.click(".sidebar-links a[href='?page=map']")
+    page.wait_for_selector(".wales-map circle")
+    assert page.url == site + "?page=map"
     context.close()
+
+
+def test_tune_page_address(page, site):
+    # Each tune has its own page, alaw/<folder>/, which opens straight into the app.
+    failed = []
+    page.on("response", lambda r: failed.append(r.url) if r.status >= 400 else None)
+    page.on("requestfailed", lambda r: failed.append(r.url))
+    page.goto(site + "alaw/glandyfi/?v=2")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.inner_text("main h1") == "Glandyfi"
+    assert page.locator(".versions a.active span").inner_text() == "Version 2"
+    assert failed == []  # every file found from two folders down
+    # Links from it lead back to the site's root, and to the other tunes' own pages.
+    page.click(".versions a >> nth=0")
+    assert page.url == site + "alaw/glandyfi/"
+    page.click(".card.place a")
+    page.wait_for_selector(".place-list a")
+    assert page.url == site + "?page=map"
+    page.click(".place-list a:text-is('Machynlleth')")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.url == site + "alaw/machynlleth/"
+    page.reload()  # a real page: reloading (or sharing the link) works
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.inner_text("main h1") == "Machynlleth"
+    page.go_back()
+    page.wait_for_selector(".place-list a")
+    assert failed == []
+
+
+@pytest.mark.parametrize("old, new", [
+    ("?tune=glandyfi", "alaw/glandyfi/"),
+    ("?tune=glandyfi&v=2", "alaw/glandyfi/?v=2"),
+    ("?tune=glandyfi-version-2", "alaw/glandyfi/?v=2"),  # a version's own folder
+])
+def test_old_tune_links(page, site, old, new):
+    page.goto_site(old)
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.url == site + new
 
 
 def fiddle_recording(path, notes, seconds_per_note=0.13, rate=48000):
@@ -488,7 +568,7 @@ def test_report_link(page):
     assert href.startswith("https://github.com/MarcoGorelli/y-sesiwn/issues/new?")
     query = parse_qs(urlparse(href).query)
     assert query["title"] == ["Problem with Glandyfi (version 2)"]
-    assert "https://ysesiwn.cymru/?tune=glandyfi&v=2" in query["body"][0]
+    assert "https://ysesiwn.cymru/alaw/glandyfi/?v=2" in query["body"][0]
     assert "tunes/glandyfi-version-2/tune.abc" in query["body"][0]
 
 
@@ -567,7 +647,7 @@ def test_contact_page(page):
     page.click(".email-form button[type=submit]")
     to, subject, body = sent_mail(page)
     assert to == ADDRESS and subject == "Y Sesiwn: About Glandyfi (version 2)"
-    assert body.startswith("Bar 3 of the B part") and "https://ysesiwn.cymru/?tune=glandyfi&v=2" in body
+    assert body.startswith("Bar 3 of the B part") and "https://ysesiwn.cymru/alaw/glandyfi/?v=2" in body
     # From the sidebar: no tune, no subject needed.
     page.click(".sidebar-links a[href='?page=contact']")
     page.wait_for_selector(".email-form")
@@ -591,6 +671,33 @@ def test_address_is_hidden(page, site):
         page.goto_site(path)
         page.wait_for_selector("main h1")
         assert ADDRESS not in page.content()
+
+
+# ---- QR code ---------------------------------------------------------------------------------
+
+@pytest.mark.parametrize("scheme", ["light", "dark"])
+def test_qr_code(browser, site, scheme):
+    # The QR code opens this tune (and version): read back from a screenshot, as a phone would.
+    import io
+    import zxingcpp
+    from PIL import Image
+    context = browser.new_context(service_workers="block", color_scheme=scheme)
+    page = context.new_page()
+    requests = []
+    page.on("request", lambda r: requests.append(r.url))
+    page.goto(site + "alaw/glandyfi/?v=2")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert not [u for u in requests if "qrcode" in u]  # only loaded when asked for
+    page.click(".qr-button")
+    page.wait_for_selector("dialog.qr-dialog[open] svg.qr")
+    image = Image.open(io.BytesIO(page.locator("dialog svg.qr").screenshot()))
+    assert [r.text for r in zxingcpp.read_barcodes(image)] == ["https://ysesiwn.cymru/alaw/glandyfi/?v=2"]
+    page.keyboard.press("Escape")
+    page.wait_for_selector("dialog.qr-dialog", state="detached")
+    page.click(".qr-button")  # again, and closed with its button
+    page.click("dialog.qr-dialog button:text-is('Close')")
+    page.wait_for_selector("dialog.qr-dialog", state="detached")
+    context.close()
 
 
 # ---- Visit counts --------------------------------------------------------------------------
@@ -618,8 +725,8 @@ def test_visit_counts_in_order(page):
     page.click(".pills button[data-type='Jig']")  # a filter isn't a new page
     page.click(".tune-list a >> nth=0")
     page.wait_for_selector(".score .abcjs-staff")
-    slug = page.evaluate("new URLSearchParams(location.search).get('tune')")
-    assert page.evaluate("window.counted") == ["/", "/?page=browse", f"/?tune={slug}"]
+    slug = page.evaluate("addressTune()")
+    assert page.evaluate("window.counted") == ["/", "/?page=browse", f"/alaw/{slug}/"]
 
 
 def test_no_counting_away_from_the_live_site(page):

@@ -3,3 +3,5 @@
 pytest
 playwright
 axe-playwright-python  # the axe accessibility checker, bundled
+zxing-cpp  # reads the QR codes back
+pillow

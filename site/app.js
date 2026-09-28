@@ -1,6 +1,7 @@
 "use strict";
 // Y Sesiwn: everything runs in the browser from tunes.json (see build_site.py).
-// Pages: ./ (home), ?tune=<folder> (a tune), ?page=add / ?page=fix (guides), ?page=contact, …
+// Pages: ./ (home), alaw/<folder>/ (a tune; ?v=2 for its second version), ?page=add / ?page=fix
+// (guides), ?page=contact, … Every address is relative to <base href> in index.html.
 
 const NOTES = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
 const AUDIO_PARAMS = {
@@ -666,8 +667,17 @@ function notesSearch({ autoListen = false } = {}) {
 
 // ---- Routing ----------------------------------------------------------------
 
+// A tune's own page: a real one (build_site.py writes it, for link previews and search
+// engines), which the app shows like any other.
 function tuneUrl(group, version = 1) {
-  return `?tune=${encodeURIComponent(group)}${version > 1 ? `&v=${version}` : ""}`;
+  return `alaw/${encodeURIComponent(group)}/${version > 1 ? `?v=${version}` : ""}`;
+}
+
+// The tune in the address: alaw/<folder>/, or an older link's ?tune=<folder>.
+function addressTune() {
+  const path = location.pathname.slice(new URL(document.baseURI).pathname.length);
+  const match = path.match(/^alaw\/([^/]+)\/?$/);
+  return match ? decodeURIComponent(match[1]) : new URLSearchParams(location.search).get("tune");
 }
 
 function navigate(url) {
@@ -677,7 +687,7 @@ function navigate(url) {
 }
 
 function openRandomTune() {
-  const current = new URLSearchParams(location.search).get("tune");
+  const current = addressTune();
   const choices = state.groupList.filter((g) => g.slug !== current);
   navigate(tuneUrl(choices[Math.floor(Math.random() * choices.length)].slug));
 }
@@ -705,12 +715,17 @@ function render() {
   stopListening();
   state.keyNote?.stop();
   const params = new URLSearchParams(location.search);
-  let group = state.groups.get(params.get("tune"));
+  const slug = addressTune();
+  let group = state.groups.get(slug);
   let version = Number(params.get("v")) || 1;
-  const file = state.bySlug.get(params.get("tune"));
-  if (!group && file) {  // an old link to a version's own folder, e.g. ?tune=rheged-version-2
-    [group, version] = [state.groups.get(file.group), file.version];
+  const file = state.bySlug.get(slug);
+  if (!group && file) [group, version] = [state.groups.get(file.group), file.version];  // a version's own folder
+  // Older links (?tune=…) and a version's folder move to the tune's own address; an
+  // unknown tune goes to the home page.
+  if (group && (params.has("tune") || !location.pathname.endsWith(`/alaw/${group.slug}/`))) {
     history.replaceState(null, "", tuneUrl(group.slug, version));
+  } else if (slug && !group) {
+    history.replaceState(null, "", "./");
   }
   const tune = group ? group.versions.find((v) => v.version === version) ?? group.versions[0] : null;
   const page = params.get("page");
@@ -1310,7 +1325,7 @@ function renderTune(main, group, tune) {
       oninput: (e) => { settings.bpm = +e.target.value; showTempo(); },
       onchange: redraw,
     })), el("div", { class: "tune-actions" },
-      printButton(tune, paper), practice));
+      printButton(tune, paper), qrButton(group, tune), practice));
 
   const details = el("dl", {}, tune.details.map(([label, value]) =>
     [el("dt", {}, tr(label, CY_DETAILS[label] ?? label)), el("dd", {}, label === "Key" ? keyLabel(value) : value)]));
@@ -1371,6 +1386,47 @@ function renderTune(main, group, tune) {
   ].filter(Boolean));
   redraw();
   fillLoops();
+}
+
+// ---- QR code: this tune's link, for someone across the table to scan ----------------------
+// The QR library (static/qrcode, 56 KB) is only loaded when it's first needed.
+
+let qrLibrary = null;
+function loadQr() {
+  qrLibrary ??= new Promise((resolve, reject) => document.head.append(
+    el("script", { src: "static/qrcode/qrcode.js", onload: () => resolve(window.qrcode), onerror: reject })));
+  return qrLibrary;
+}
+
+// The QR code as an SVG: one square per dark module, drawn as a single path.
+function qrSvg(text) {
+  const qr = window.qrcode(0, "M");
+  qr.addData(text);
+  qr.make();
+  const n = qr.getModuleCount(), margin = 4;
+  let d = "";
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) d += `M${c + margin} ${r + margin}h1v1h-1z`;
+  return svg("svg", { viewBox: `0 0 ${n + 2 * margin} ${n + 2 * margin}`, class: "qr", role: "img",
+    "aria-label": tr(`QR code for ${text}`, `Cod QR ar gyfer ${text}`), "shape-rendering": "crispEdges" },
+    svg("rect", { width: "100%", height: "100%", fill: "#fff" }), svg("path", { d, fill: "#000" }));
+}
+
+function qrButton(group, tune) {
+  return el("button", { type: "button", class: "qr-button", onclick: async () => {
+    const link = `https://ysesiwn.cymru/${tuneUrl(group.slug, tune.version)}`;
+    await loadQr();
+    const dialog = el("dialog", { class: "qr-dialog", "aria-labelledby": "qr-title" },
+      el("h2", { id: "qr-title" }, group.title),
+      qrSvg(link),
+      el("p", { class: "caption" }, tr("Scan with a phone's camera to open this tune.", "Sganiwch gyda chamera ffôn i agor yr alaw hon.")),
+      el("p", { class: "caption qr-link" }, link),
+      el("form", { method: "dialog" }, el("button", { class: "primary" }, tr("Close", "Cau"))));
+    dialog.addEventListener("close", () => dialog.remove());
+    // A click on the backdrop (outside the box) closes it too.
+    dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
+    document.body.append(dialog);
+    dialog.showModal();
+  } }, tr("QR code", "Cod QR"));
 }
 
 // A new GitHub issue about this tune, with its name, page and file filled in.

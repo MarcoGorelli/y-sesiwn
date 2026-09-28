@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Every address is relative to the site's root, also on a tune's own page (alaw/<folder>/,
+       whose copy build_site.py writes with ../../ here) and after the app changes the address. -->
+  <base href="./">
   <title>Y Sesiwn</title>
   <meta name="description" content="A free, open-source resource to help you learn and share Welsh folk tunes: sheet music, playback and any key.">
   <link rel="icon" href="static/harp.svg" type="image/svg+xml">
@@ -11,7 +14,8 @@
   <meta name="theme-color" content="#fdfbf7" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#111418" media="(prefers-color-scheme: dark)">
   <!-- Link previews (WhatsApp, iMessage, Slack, Facebook, …). Crawlers don't run
-       JavaScript, so every link to the site gets this card. -->
+       JavaScript, so every link gets this card; a tune's own page (alaw/<folder>/)
+       has its own title and description (build_site.py). -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Y Sesiwn">
   <meta property="og:title" content="Y Sesiwn: Welsh folk tunes">

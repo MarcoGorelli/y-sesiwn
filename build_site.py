@@ -10,6 +10,7 @@ in the browser. The GitHub Pages workflow runs this on every push to main.
 """
 
 import hashlib
+import html
 import json
 import re
 import shutil
@@ -20,6 +21,8 @@ from pathlib import Path
 ROOT = Path(__file__).parent
 OUT = ROOT / "_site"
 REPO_URL = "https://github.com/MarcoGorelli/y-sesiwn"
+SITE_URL = "https://ysesiwn.cymru/"
+TUNE_DIR = "alaw"  # each tune's own page is alaw/<folder>/ (see tune_pages)
 
 PITCH = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
 MODE_NAMES = {
@@ -61,6 +64,12 @@ TYPE_ORDER = {
     "Cân": ("songs", "#a3456a"),          # rose
     "Carol": ("carols", "#6b7b2c"),       # olive
     "Other": ("untyped and other tunes", "#6b737c"),  # slate grey
+}
+
+# One tune of each type, for the tune pages' descriptions ("a jig in G major").
+TYPE_SINGULAR = {
+    "Jig": "jig", "Polca": "polka", "Walts": "waltz", "Rîl": "reel", "Pibddawns": "hornpipe",
+    "Ymdaith": "march", "Dawns": "dance", "Alaw": "air", "Cân": "song", "Carol": "carol", "Other": "tune",
 }
 
 # ABC header fields shown under Details, in display order (only if present).
@@ -425,7 +434,7 @@ def main() -> None:
     if OUT.exists():
         shutil.rmtree(OUT)
     shutil.copytree(ROOT / "site", OUT)
-    for part in ["abcjs", "soundfont", "marked", "harp.svg"]:
+    for part in ["abcjs", "soundfont", "marked", "qrcode", "harp.svg"]:
         src = ROOT / "static" / part
         if src.is_dir():
             shutil.copytree(src, OUT / "static" / part)
@@ -435,12 +444,79 @@ def main() -> None:
     (OUT / "tunes.json").write_text(
         json.dumps(index, ensure_ascii=False, separators=(",", ":")), encoding="utf-8"
     )
+    tune_pages(tunes)
     write_service_worker()
     print(f"built {OUT.relative_to(ROOT)}/ with {len(tunes)} tunes")
 
 
 # Not needed offline: link-preview images and the source of the service worker itself.
-NOT_OFFLINE = {"sw.js", "og-image.png", "CNAME"}
+NOT_OFFLINE = {"sw.js", "og-image.png", "CNAME", "sitemap.xml", "robots.txt"}
+
+
+def tune_pages(tunes: list[dict]) -> None:
+    """A real page for each tune, at alaw/<folder>/: the app (index.html) with the tune's
+    name and description in its head, for link previews (WhatsApp, Facebook, …) and
+    search engines, which don't run the app. Visitors get the app as usual, which
+    reads the tune from the address. Also sitemap.xml and robots.txt."""
+    template = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
+    groups: dict[str, list[dict]] = {}
+    for tune in tunes:
+        groups.setdefault(tune["group"], []).append(tune)
+
+    def swap(page: str, old: str, new: str) -> str:
+        if page.count(old) != 1:
+            raise SystemExit(f"site/index.html: expected one {old!r} (for the tune pages)")
+        return page.replace(old, new)
+
+    esc = lambda text: html.escape(text, quote=True)
+    urls = []
+    for group, versions in groups.items():
+        versions.sort(key=lambda t: t["version"])
+        first = versions[0]
+        name = first["base"]
+        url = f"{SITE_URL}{TUNE_DIR}/{group}/"
+        urls.append(url)
+        titles = list(dict.fromkeys(VERSION.sub(r"\1", t) for v in versions for t in v["titles"]))
+        kind = TYPE_SINGULAR[first["type"]]
+        key = f"{first['key']['root']} {first['key']['modeName']}" if first["key"] else None
+        about = f"a{'n' if kind[0] in 'aeiou' else ''} Welsh {kind}" + (f" in {key}" if key else "")
+        chords = any(v["chords"] is not None for v in versions)
+        description = (f"{name}: {about}. Sheet music{', suggested chords' if chords else ''} "
+                       f"and playback in any key, at any tempo"
+                       + (f" ({len(versions)} versions)" if len(versions) > 1 else "") + ".")
+        data = {"@context": "https://schema.org", "@type": "MusicComposition", "name": name, "url": url,
+                "genre": "Welsh folk music"}
+        if len(titles) > 1:
+            data["alternateName"] = titles[1:]
+        if key:
+            data["musicalKey"] = key
+        ld = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
+        details = "".join(f"<dt>{esc(label)}</dt><dd>{esc(value)}</dd>" for label, value in first["details"])
+        page = template
+        page = swap(page, '<base href="./">', '<base href="../../">')
+        page = swap(page, "<title>Y Sesiwn</title>", f"<title>{esc(name)} · Y Sesiwn</title>")
+        page = re.sub(r'(<meta (?:name|property)="(?:og:)?description" content=")[^"]*"',
+                      lambda m: m.group(1) + esc(description) + '"', page)
+        page = swap(page, '<meta property="og:title" content="Y Sesiwn: Welsh folk tunes">',
+                    f'<meta property="og:title" content="{esc(name)} · Y Sesiwn">')
+        page = swap(page, f'<meta property="og:url" content="{SITE_URL}">',
+                    f'<meta property="og:url" content="{url}">\n  <link rel="canonical" href="{url}">\n'
+                    f'  <script type="application/ld+json">{ld}</script>')
+        # What shows before the app has loaded (and what search engines read).
+        page = swap(page, '<main id="main"><p class="loading">Loading tunes…</p></main>',
+                    f'<main id="main"><h1>{esc(name)}</h1>'
+                    + (f'<p class="caption">Also known as: {esc(", ".join(titles[1:]))}</p>' if len(titles) > 1 else "")
+                    + f"<p>{esc(description)}</p><dl>{details}</dl>"
+                    + f'<pre>{esc(first["abc"])}</pre><p class="loading">Loading the sheet music…</p></main>')
+        folder = OUT / TUNE_DIR / group
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / "index.html").write_text(page, encoding="utf-8")
+
+    pages = [SITE_URL] + [f"{SITE_URL}?page={p}" for p in ("browse", "notes", "map", "about", "add", "fix", "offline", "contact")]
+    (OUT / "sitemap.xml").write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        + "".join(f"  <url><loc>{esc(u)}</loc></url>\n" for u in pages + urls) + "</urlset>\n", encoding="utf-8")
+    (OUT / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {SITE_URL}sitemap.xml\n", encoding="utf-8")
 
 
 def write_service_worker() -> None:
@@ -452,7 +528,9 @@ def write_service_worker() -> None:
             h.update(f.relative_to(OUT).as_posix().encode() + f.read_bytes())
         return h.hexdigest()[:12]
 
-    files = sorted(f for f in OUT.rglob("*") if f.is_file() and f.name not in NOT_OFFLINE)
+    # The tunes' own pages aren't kept: offline, sw.js answers them with the app itself.
+    files = sorted(f for f in OUT.rglob("*") if f.is_file() and f.name not in NOT_OFFLINE
+                   and not f.is_relative_to(OUT / TUNE_DIR))
     sounds = [f for f in files if f.is_relative_to(OUT / "static" / "soundfont")]
     site = [f for f in files if f not in sounds]
     urls = lambda fs: json.dumps([f.relative_to(OUT).as_posix() for f in fs])

@@ -135,7 +135,8 @@ who composed a tune? There are two ways to fix it.
 
 ## Tell us about it
 
-[Open an issue](https://github.com/MarcoGorelli/y-sesiwn/issues/new) on
+[Write to us](https://ysesiwn.cymru/?page=contact), or
+[open an issue](https://github.com/MarcoGorelli/y-sesiwn/issues/new) on
 GitHub (you'll need a free GitHub account). Say:
 
 - which tune, with its title as shown in the app;

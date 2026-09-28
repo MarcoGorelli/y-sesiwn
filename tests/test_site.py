@@ -172,7 +172,7 @@ def test_search_by_name(page, query, expected):
 ])
 def test_search_by_notes(page, notes, group, how):
     page.goto_site()
-    results = page.evaluate("(n) => searchByNotes(n).map((r) => [r.tune.group, r.how])", notes)
+    results = page.evaluate("(n) => searchByNotes(n).map((r) => [r.tune.group, matchText(r)])", notes)
     assert results[0][0] == group and how in results[0][1], results[:3]
 
 
@@ -213,11 +213,15 @@ def test_map_on_a_phone(browser, site):
     context.close()
 
 
-@pytest.mark.parametrize("path", ["", "?page=browse", "?tune=glandyfi", "?page=map", "?page=offline", "?page=about",
+@pytest.mark.parametrize("lang", ["en", "cy"])  # Welsh labels are often longer
+@pytest.mark.parametrize("path", ["", "?page=browse", "?tune=glandyfi", "?tune=llancesau-trefaldwyn", "?page=map",
+                                  "?page=offline", "?page=about", "?page=add", "?page=contact",
                                   "?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A"])
-def test_fits_a_phone(browser, site, path):
+def test_fits_a_phone(browser, site, path, lang):
     context = browser.new_context(viewport={"width": 360, "height": 800}, service_workers="block")
     page = context.new_page()
+    page.goto(site)
+    page.evaluate(f"localStorage.setItem('lang', '{lang}')")
     page.goto(site + path)
     page.wait_for_timeout(700)
     assert page.evaluate("document.documentElement.scrollWidth") <= 360
@@ -236,13 +240,13 @@ def test_home_page(page):
     assert page.locator(".tune-list li").count() == len(page.evaluate("state.groupList"))
 
 
-# The home page's text, sidebar and footer as the reader sees them, except text marked
-# lang="en" on purpose (the "English" button, browsers' own menu names).
+# A page's text, sidebar and footer as the reader sees them, except what is English on
+# purpose: the "English" button, browsers' own menu names, and code examples.
 VISIBLE_TEXT = """() => {
   const texts = [];
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   while (walker.nextNode()) {
-    if (!walker.currentNode.parentElement.closest('.lang-switch, .suggestions, strong[lang="en"]')) texts.push(walker.currentNode.textContent.trim());
+    if (!walker.currentNode.parentElement.closest('.lang-switch, .suggestions, strong[lang="en"], pre, code, style, .abcjs-css-warning')) texts.push(walker.currentNode.textContent.trim());
   }
   for (const n of document.querySelectorAll('[placeholder], [title]')) {
     if (!n.closest('.lang-switch')) texts.push(n.getAttribute('placeholder') ?? '', n.getAttribute('title') ?? '');
@@ -272,11 +276,10 @@ def test_welsh_home_page(page):
     page.reload()
     page.wait_for_function("typeof state !== 'undefined' && state.data")
     assert page.inner_text("h1") == "Croeso i'r Sesiwn!"
-    # Only the home page is translated so far: other pages say they're English.
     page.click(".sidebar-links a[href='?page=browse']")
     page.wait_for_selector(".tune-list li")
-    assert page.get_attribute("#main", "lang") == "en"
-    assert page.inner_text(".sidebar-links a[href='?page=browse']") == "Pori yn ôl math a chywair"
+    assert page.get_attribute("#main", "lang") == "cy"
+    assert page.inner_text("main h1") == "Pori yn ôl math a chywair"
     page.click("#home-button")
     page.click(".lang-switch [data-lang=en]")
     assert page.inner_text("h1") == "Croeso! Welcome to Y Sesiwn"
@@ -284,29 +287,36 @@ def test_welsh_home_page(page):
     assert page.evaluate(VISIBLE_TEXT) == english
 
 
-def test_untranslated_pages_say_so(page):
-    # In Welsh, the pages that are still English say so at the top.
-    page.goto_site("?page=browse")
-    assert page.locator(".lang-note").count() == 0
+# GitHub's and other tools' own names, left in English in the Welsh guides.
+ENGLISH_ON_PURPOSE = {"abcjs Quick Editor", "Add file → Create new file", "Commit changes…", "Propose changes",
+                      "Create pull request", "Edit this file", "pull request", "Add to Home Screen",
+                      "Windows, Mac, Linux", "F2 F GFG | AFD DFA | …",
+                      # Welsh on the English pages too
+                      "Diolch yn fawr", "Cymdeithas Offerynnau Traddodiadol Cymru"}
+
+
+@pytest.mark.parametrize("path", [
+    "?page=browse", "?page=browse&type=Jig&key=D%20major", "?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A",
+    "?tune=glandyfi&v=2", "?tune=machynlleth", "?tune=llancesau-trefaldwyn", "?page=map", "?page=offline",
+    "?page=about", "?page=add", "?page=fix", "?page=contact&about=glandyfi-version-2",
+])
+def test_every_page_in_welsh(page, path):
+    # Switching to Welsh on a page redraws it, with no English left: no sentence of the
+    # English page shows up in the Welsh one, except the tunes' own words (titles,
+    # sources, notes), which stay as written.
+    import re
+    ready = "typeof state !== 'undefined' && state.data && document.querySelector('#main h1') && !document.querySelector('#main .loading')"
+    page.goto_site(path)
+    page.wait_for_function(ready)
+    english = page.evaluate(VISIBLE_TEXT)
+    data = page.evaluate("JSON.stringify(state.data)")
     page.click(".lang-switch [data-lang=cy]")
-    assert page.inner_text("#main > .lang-note:first-child") == "Dyw'r dudalen hon ddim ar gael yn Gymraeg eto: dyma hi yn Saesneg."
-    assert page.get_attribute(".lang-note", "lang") == "cy"
-    for link in ["?page=about", "?page=map", "?page=notes"]:  # About is fetched first, then drawn
-        page.click(f".sidebar-links a[href='{link}']")
-        page.wait_for_selector("#main h1, #main h2")
-        page.wait_for_selector("#main > .lang-note:first-child")
-        assert page.locator(".lang-note").count() == 1
-    page.click(".sidebar-links a[href='?page=browse']")
-    page.click(".tune-list a >> nth=0")
-    page.wait_for_selector(".score .abcjs-staff")
-    assert page.locator("#main > .lang-note").count() == 1
-    page.click("#home-button")
-    page.wait_for_selector(".features")
-    assert page.locator(".lang-note").count() == 0
-    page.go_back()
-    page.wait_for_selector(".score .abcjs-staff")
-    page.click(".lang-switch [data-lang=en]")
-    assert page.locator(".lang-note").count() == 0
+    page.wait_for_function(f"document.querySelector('#main').lang === 'cy' && {ready}")
+    welsh = page.evaluate(VISIBLE_TEXT)
+    fragments = {f.strip() for f in re.split(r"[.:;?!()\n]", english) if len(f.strip()) >= 12}
+    tune_words = lambda f: re.sub(r" · \d+$", "", f) in data  # e.g. a type, "Pibddawns · 29"
+    left = [f for f in fragments if f in welsh and not tune_words(f) and f not in ENGLISH_ON_PURPOSE]
+    assert len(fragments) > 5 and not left, left
 
 
 def test_welsh_browser_gets_welsh(browser, site):

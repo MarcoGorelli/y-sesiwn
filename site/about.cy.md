@@ -1,0 +1,72 @@
+# Am Y Sesiwn
+
+Mae'r Sesiwn yn gasgliad am ddim a chod agored o alawon gwerin Cymru, i bawb
+sydd eisiau eu dysgu, eu chwarae neu eu rhannu. Mae gan bob alaw ei sgôr,
+gellir ei chwarae ar unrhyw dempo a'i newid i unrhyw gywair, ac mae ganddi ei
+dolen ei hun y gallwch ei hanfon at ffrind cyn sesiwn.
+
+## Mewn sesiwn
+
+Unwaith y byddwch wedi agor y wefan, mae'n cadw copi o bob alaw, felly mae'n
+gweithio heb signal. Ar ffôn, dewiswch **Add to Home Screen** o fotwm rhannu
+neu ddewislen y porwr i'w chadw fel ap. Mae'r botwm **Argraffu** ar bob alaw
+yn rhoi sgôr glân yn y cywair rydych chi wedi'i ddewis, ac mae
+[Alawon ar y map](?page=map) yn dangos o ble mae'r alawon sydd wedi'u henwi
+ar ôl lleoedd yn dod.
+
+## Y sesiwn
+
+Mae *sesiwn* yn gyfarfod anffurfiol o gerddorion yn chwarae alawon
+traddodiadol gyda'i gilydd, yn aml mewn tafarn neu ŵyl. Mae alawon yn cael eu
+trosglwyddo o chwaraewr i chwaraewr ac yn newid ychydig ar hyd y ffordd, a
+dyna pam mae rhai alawon yma mewn mwy nag un fersiwn.
+
+I ddod o hyd i sesiwn, dysgu offeryn neu gwrdd â chwaraewyr eraill, dyma
+lefydd da i ddechrau:
+
+- [CLERA](http://www.clera.org), *Cymdeithas Offerynnau Traddodiadol Cymru*.
+- [trac cymru](https://www.trac.cymru): datblygu gwerin yng Nghymru.
+
+## O ble mae'r alawon yn dod
+
+Daw'r alawon cyntaf o
+[Alawon Cymru](http://alawoncymru.com/alawon/Tunes/Tunesal.html), casgliad
+CLERA o alawon traddodiadol Cymreig i'w chwarae, gyda nodiant a recordiadau.
+**Meurig Williams** a wnaeth y rhan fwyaf o'i drefniannau a'i addasiadau,
+ochr yn ochr ag alawon a threfniannau gan lawer o gerddorion eraill.
+
+Daw rhagor o alawon o gasgliad ***Blodau'r Grug*** (cyfrolau 1–3), wedi'u
+trawsgrifio i ABC gan **Brian Martin** a'u cadw yn
+[archif ABC John Chambers](https://trillian.mit.edu/~jc/music/abc/mirror/BrianMartin/msg/).
+Lle mae alaw yn y ddau gasgliad, mae ei thudalen yn dangos pob un fel
+fersiwn, gyda thabiau i newid rhyngddynt.
+
+Mae pob alaw yn dangos pwy a'i cyfansoddodd, ei threfnu neu ei haddasu, fel
+y'i hargraffwyd ar ei sgôr wreiddiol.
+
+**Diolch yn fawr** i bawb a ysgrifennodd, a drefnodd ac a rannodd yr alawon
+hyn.
+
+Os gwnaethoch chi gyfansoddi neu drefnu un o'r alawon hyn a hoffech newid ei
+chydnabyddiaeth, neu dynnu'r alaw i lawr, [ysgrifennwch aton ni](?page=contact)
+neu [agorwch *issue*](https://github.com/MarcoGorelli/y-sesiwn/issues/new) ar
+GitHub a byddwn ni'n ei gywiro.
+
+## Ychwanegu at y casgliad
+
+Mae croeso bob amser i ragor o alawon, o unrhyw ffynhonnell rydych chi'n
+rhydd i'w rhannu: mae'r ffurflen ar [Sut i ychwanegu alaw](?page=add) yn
+anfon alaw aton ni drwy e-bost, heb angen GitHub. Gweler hefyd
+[Sut i gyflwyno cywiriadau](?page=fix). Mae popeth
+[ar GitHub](https://github.com/MarcoGorelli/y-sesiwn).
+
+## Cysylltu
+
+Cwestiynau, syniadau, alaw rydych chi'n chwilio amdani, neu dim ond helo:
+[ysgrifennwch aton ni](?page=contact).
+
+## Y patrymau
+
+Mae'r band ar hyd top a gwaelod pob tudalen wedi'i ysbrydoli gan y
+*garthen*, y blanced frethyn draddodiadol Gymreig, a lliwiau'r mathau o
+alawon gan y lliwiau y mae'r blancedi hynny'n cael eu gwehyddu ynddynt.

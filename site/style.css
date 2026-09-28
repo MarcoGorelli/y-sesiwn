@@ -80,11 +80,6 @@ button, input, select { font: inherit; color: inherit; }
 .lang-switch button { border: 0; border-radius: 0; padding: .25rem .7rem; }
 .lang-switch button + button { border-left: 1px solid var(--border); }
 .lang-switch button[aria-pressed="true"], .lang-switch button[aria-pressed="true"]:hover:not(:disabled) { background: var(--accent); color: #fff; font-weight: 600; }
-/* On pages not translated yet, when Welsh is chosen */
-.lang-note {
-  margin: 0 0 1.25rem; padding: .5rem .8rem; font-size: .9rem; color: var(--muted);
-  border-left: 3px solid var(--accent); background: var(--card-bg); border-radius: 0 var(--radius) var(--radius) 0;
-}
 .sidebar-links { display: grid; gap: .35rem; border-top: 1px solid var(--border); padding-top: 1rem; }
 .sidebar-links a { text-decoration: none; }
 .sidebar-links a:hover { color: var(--accent); text-decoration: underline; }
@@ -390,6 +385,10 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .segmented span { display: block; padding: .3rem .7rem; background: var(--card-bg); white-space: nowrap; transition: background-color .15s; }
 @media (max-width: 420px) {
   .segmented span { padding: .3rem .45rem; font-size: .85rem; }
+  /* Longer labels (in Welsh, say) wrap inside equal columns instead of widening the page */
+  .segmented { max-width: 100%; }
+  .segmented label { flex: 1 1 0; min-width: 0; display: flex; }
+  .segmented span { flex: 1; white-space: normal; text-align: center; display: flex; align-items: center; justify-content: center; }
   .chart { font-size: .95rem; }
   .chart .bar { padding: .15rem .25rem; }
   .chart .beats { column-gap: .25rem; }
@@ -413,7 +412,7 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 
 /* Practice mode: just the controls and a big score, for a tablet on a music stand */
 body.practice { grid-template-columns: 1fr; }
-body.practice .nav, body.practice .lang-note, body.practice .tune-side, body.practice .card.chords, body.practice .site-footer, body.practice main h1::after, body.practice .aka { display: none; }
+body.practice .nav, body.practice .tune-side, body.practice .card.chords, body.practice .site-footer, body.practice main h1::after, body.practice .aka { display: none; }
 body.practice main { max-width: none; padding: 1rem 1.5rem 2rem; }
 body.practice h1 { font-size: 1.4rem; }
 body.practice .controls { margin: .5rem 0 1rem; }
@@ -454,7 +453,7 @@ body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 
 /* Printing a tune: just the sheet music (in the key chosen on the page), full width. */
 @media print {
   body { display: block; padding: 0; background: none; color: #000; }
-  .nav, .lang-note, .site-footer, .controls, .practice-row, .versions, .aka, .tune-side, .audio, .score > .playback, .card.chords, main > h1 { display: none !important; }
+  .nav, .site-footer, .controls, .practice-row, .versions, .aka, .tune-side, .audio, .score > .playback, .card.chords, main > h1 { display: none !important; }
   main { padding: 0; max-width: none; animation: none; }
   .tune-layout { display: block; }
   .score { border: none; box-shadow: none; background: none; padding: 0; }

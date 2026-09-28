@@ -15,10 +15,11 @@ const AUDIO_PARAMS = {
 if ("audioSession" in navigator) navigator.audioSession.type = "playback";
 
 // Markdown pages: ?page=<key> shows the "# heading" section of file (or all of it).
+// The Welsh versions (cy) are separate files, kept in step with the English ones.
 const PAGES = {
-  add: { file: "CONTRIBUTING.md", heading: "How to add a tune" },
-  fix: { file: "CONTRIBUTING.md", heading: "How to submit corrections" },
-  about: { file: "about.md", heading: "About Y Sesiwn", className: "about" },
+  add: { file: "CONTRIBUTING.md", heading: "How to add a tune", cy: { file: "guides.cy.md", heading: "Sut i ychwanegu alaw" } },
+  fix: { file: "CONTRIBUTING.md", heading: "How to submit corrections", cy: { file: "guides.cy.md", heading: "Sut i gyflwyno cywiriadau" } },
+  about: { file: "about.md", heading: "About Y Sesiwn", className: "about", cy: { file: "about.cy.md", heading: "Am Y Sesiwn" } },
 };
 
 const state = {
@@ -34,7 +35,7 @@ const state = {
   docs: new Map(),      // markdown files, fetched on first use
   chords: { onScore: false, play: "tune" },  // the chord box's settings, for every tune; play: tune, both or chords
   practice: { countIn: false, click: false, tab: "none" },  // the practice row, for every tune
-  lang: savedLang(),    // "cy" or "en": the home page, sidebar and footer (the rest is English for now)
+  lang: savedLang(),    // "cy" or "en", for the whole site (tune names and the tunes' own notes stay as written)
 };
 
 // ---- Welsh or English --------------------------------------------------------------
@@ -74,20 +75,19 @@ function setLang(lang) {
   state.lang = lang;
   try { localStorage.setItem("lang", lang); } catch {}
   applyLang();
-  const main = document.getElementById("main");
-  if (main.dataset.page === "home") renderHome(main);
-  else showLangNote(main);
+  render();  // the page again, in the other language
 }
 
-// In Welsh, the pages not translated yet say so at the top, rather than just being English.
-function showLangNote(main) {
-  const wanted = state.lang === "cy" && main.dataset.page === "other";
-  const note = main.querySelector(":scope > .lang-note");
-  if (wanted && !note) {
-    main.prepend(el("p", { class: "lang-note", lang: "cy" },
-      "Dyw'r dudalen hon ddim ar gael yn Gymraeg eto: dyma hi yn Saesneg."));
-  } else if (!wanted) note?.remove();
-}
+// Musical names in Welsh: the key menu and details ("D major" -> "D fwyaf"), note values.
+const CY_MODES = { major: "fwyaf", minor: "leiaf", Dorian: "Doriaidd", Phrygian: "Phrygaidd", Lydian: "Lydaidd",
+  Mixolydian: "Mixolydaidd", Locrian: "Locriaidd" };
+const CY_BEATS = { "dotted crotchet": "crosiet dotiog", minim: "minim", crotchet: "crosiet", quaver: "cwafer" };
+const modeName = (name) => tr(name, CY_MODES[name] ?? name);
+const keyLabel = (text) => tr(text, text.replace(/\b(major|minor|Dorian|Phrygian|Lydian|Mixolydian|Locrian)\b/g, (m) => CY_MODES[m]));
+// A type of tune after a number, in Welsh ("96 jig"); in English the type's plural ("96 jigs").
+const CY_TYPE = { Jig: "jig", Polca: "polca", Walts: "walts", "Rîl": "rîl", Pibddawns: "pibddawns", Ymdaith: "ymdaith",
+  Dawns: "dawns", Alaw: "alaw", "Cân": "cân", Carol: "carol", Other: "alaw arall" };
+const typeName = (name) => (name === "Other" ? tr("Other", "Arall") : name);
 
 // ---- Small DOM helper ----------------------------------------------------
 
@@ -274,12 +274,12 @@ function searchByNotes(text) {
     const atStart = (q) => [...starts].find((i) => steps.startsWith(q, i));
     let score = 0, where = 0, how = "";
     if (atStart(query) !== undefined) {
-      [score, how] = [6, "starts like this"];
+      [score, how] = [6, "start"];
     } else if (trimmed.some((q) => atStart(q) !== undefined)) {
-      [score, how] = [5, "starts like this, after a different lead-in"];
+      [score, how] = [5, "lead"];
     } else {
       const at = steps.indexOf(query);
-      if (at >= 0) [score, where, how] = at <= 2 ? [4, at, "starts like this"] : [3, at, "later in the tune"];
+      if (at >= 0) [score, where, how] = at <= 2 ? [4, at, "start"] : [3, at, "later"];
     }
     if (score) { results.push({ tune, score, where, how }); continue; }
     // Not a match: how close is it? Near the start (with or without the tune's
@@ -289,8 +289,7 @@ function searchByNotes(text) {
     const anywhere = editDistance(query, steps, false, octaves);
     const atStartToo = fromStart <= anywhere + 1;
     const off = atStartToo ? fromStart : anywhere;
-    close.push({ tune, score: 0, where: atStartToo ? off : off + 1, close: true,
-      how: `close: ${off} note${off > 1 ? "s" : ""} different${atStartToo ? ", near the start" : ""}` });
+    close.push({ tune, score: 0, where: atStartToo ? off : off + 1, close: true, how: "close", off, nearStart: atStartToo });
   }
   const byRank = (a, b) => b.score - a.score || a.where - b.where || (a.tune.title < b.tune.title ? -1 : 1);
   // One entry per tune: its best-matching version.
@@ -302,8 +301,18 @@ function searchByNotes(text) {
   const near = best(close.filter((r) => r.where <= limit));
   // Too few? Add the nearest of the rest (labelled as such) up to NEAREST.
   const more = best(close.filter((r) => r.where > limit)).slice(0, Math.max(0, NEAREST - found.length - near.length))
-    .map((r) => ({ ...r, how: r.how.replace("close", "nearest") }));
+    .map((r) => ({ ...r, how: "nearest" }));
   return [...found, ...near, ...more];
+}
+
+// How a result matches, in words: "starts like this", "close: 2 notes different", ….
+function matchText({ how, off, nearStart }) {
+  if (how === "start") return tr("starts like this", "yn dechrau fel hyn");
+  if (how === "lead") return tr("starts like this, after a different lead-in", "yn dechrau fel hyn, ar ôl nodau arwain gwahanol");
+  if (how === "later") return tr("later in the tune", "yn nes ymlaen yn yr alaw");
+  const word = how === "close" ? tr("close", "agos") : tr("nearest", "agosaf");
+  return tr(`${word}: ${off} note${off > 1 ? "s" : ""} different${nearStart ? ", near the start" : ""}`,
+    `${word}: ${off} nodyn yn wahanol${nearStart ? ", ger y dechrau" : ""}`);
 }
 
 function playNote(midi) {
@@ -329,7 +338,7 @@ function keyboard(onPress) {
   for (let midi = KEYBOARD.from; midi <= KEYBOARD.to; midi++) {
     const name = NOTE_NAMES[midi % 12] + (Math.floor(midi / 12) - 1);
     const key = el("button", {
-      type: "button", "aria-label": name.replace("#", " sharp "), title: name.replace("#", "♯"), "data-midi": midi,
+      type: "button", "aria-label": name.replace("#", tr(" sharp ", " llon ")), title: name.replace("#", "♯"), "data-midi": midi,
       onclick: () => { playNote(midi); onPress(name); },
     });
     if (name.includes("#")) {
@@ -342,7 +351,7 @@ function keyboard(onPress) {
       whites.push(key);
     }
   }
-  return el("div", { class: "piano", role: "group", "aria-label": "Piano keyboard, G3 to A5", style: `--whites: ${whites.length}` },
+  return el("div", { class: "piano", role: "group", "aria-label": tr("Piano keyboard, G3 to A5", "Bysellfwrdd piano, G3 i A5"), style: `--whites: ${whites.length}` },
     whites, blacks);
 }
 
@@ -475,16 +484,17 @@ function tunePreview(tune) {
   const first = lines.slice(k + 1).find((l) => l.trim() && !/^(%|[A-Za-z]:)/.test(l)) ?? "";
   const abc = setTempo([...head, first.replace(/\s*(:\||\|)?\s*$/, " |]")].join("\n"), tune.beat, tune.bpm);
   const paper = el("div", { class: "preview-score hide-chords" });
-  const button = el("button", { type: "button", class: "preview-play", "aria-label": `Play the opening of ${tune.base}` }, "▶");
+  const button = el("button", { type: "button", class: "preview-play", "aria-label": tr(`Play the opening of ${tune.base}`, `Chwarae dechrau ${tune.base}`) }, "▶");
   const box = el("div", { class: "preview" }, button, paper);
   requestAnimationFrame(() => {
     const visualObj = ABCJS.renderAbc(paper, abc, { responsive: "resize", paddingtop: 0, paddingbottom: 0, add_classes: true })[0];
+    nameScore(paper);
     // ▶ plays the opening; while it plays the button is ■, which stops it.
     let playing = null;
     const done = () => {
       playing = null;
       button.textContent = "▶";
-      button.setAttribute("aria-label", `Play the opening of ${tune.base}`);
+      button.setAttribute("aria-label", tr(`Play the opening of ${tune.base}`, `Chwarae dechrau ${tune.base}`));
     };
     button.onclick = () => {
       if (playing) { playing.stop(); return; }
@@ -497,7 +507,7 @@ function tunePreview(tune) {
       state.keyNote = preview;  // one sound at a time, like the keyboard
       playing = preview;
       button.textContent = "■";
-      button.setAttribute("aria-label", `Stop the opening of ${tune.base}`);
+      button.setAttribute("aria-label", tr(`Stop the opening of ${tune.base}`, `Stopio dechrau ${tune.base}`));
       synth.init({ visualObj, options: AUDIO_PARAMS }).then(() => synth.prime()).then(({ duration }) => {
         if (state.keyNote !== preview || playing !== preview) return;
         synth.start();
@@ -509,35 +519,49 @@ function tunePreview(tune) {
 }
 
 function renderNotesPage(main) {
-  document.title = "Find a tune by its notes · Y Sesiwn";
+  document.title = tr("Find a tune by its notes · Y Sesiwn", "Canfod alaw o'i nodau · Y Sesiwn");
   const autoListen = state.autoListen;
   state.autoListen = false;
+  const how = state.lang === "cy" ? [
+    [el("strong", {}, "Chwaraewch hi i mi"), " sy'n gwrando ar ffidil, chwisl, ffliwt neu gitâr drwy'ch meicroffon ",
+      "ac yn ysgrifennu'r nodau wrth i chi chwarae (dyw e ddim yn gweithio i hymian). Does dim yn cael ei recordio na'i anfon i unman."],
+    ["Mae chwech i wyth nodyn fel arfer yn ddigon. Gallwch adael nodau arwain alaw allan, neu eu chwarae; ",
+      "y naill ffordd neu'r llall, caiff ei chanfod."],
+    ["Does dim ots am y cywair na'r wythfed: mae'r chwilio'n cymharu'r camau rhwng y nodau."],
+    ["Mae nodyn anghywir, coll neu ychwanegol yn dal i ganfod yr alaw, ymhlith y cyfatebiaethau ", el("em", {}, "agos"),
+      ". Os nad oes dim yn cyfateb, dangosir yr alawon agosaf."],
+    ["Mae cyfeiriad y dudalen hon yn cadw'ch nodau, felly gallwch roi nod tudalen ar chwiliad neu ei anfon at rywun."],
+  ] : [
+    [el("strong", {}, "Play it to me"), " listens to a fiddle, whistle, flute or guitar through your ",
+      "microphone and writes down the notes as you play (it doesn't work for humming). Nothing is recorded or sent anywhere."],
+    ["Six to eight notes is usually plenty. A tune's lead-in notes can be left out, or played; ",
+      "either way it's found."],
+    ["The key and the octave don't matter: the search compares the steps between the notes."],
+    ["A wrong, missing or extra note still finds the tune, among the ", el("em", {}, "close"),
+      " matches. If nothing matches, the nearest tunes are shown."],
+    ["The address of this page keeps your notes, so you can bookmark a search or send it to someone."],
+  ];
   main.replaceChildren(
-    el("h1", {}, "Find a tune by its notes"),
-    el("p", { class: "lead" }, "Know how a tune goes but not what it's called? Play its first few notes on your ",
-      "instrument, tap them on the keyboard or type them. The key doesn't matter."),
+    el("h1", {}, tr("Find a tune by its notes", "Canfod alaw o'i nodau")),
+    el("p", { class: "lead" }, tr("Know how a tune goes but not what it's called? Play its first few notes on your "
+      + "instrument, tap them on the keyboard or type them. The key doesn't matter.",
+      "Gwybod sut mae alaw'n mynd ond nid beth yw ei henw? Chwaraewch ei hychydig nodau cyntaf ar eich offeryn, "
+      + "tapiwch nhw ar y bysellfwrdd neu teipiwch nhw. Does dim ots am y cywair.")),
     notesSearch({ autoListen }),
     el("section", { class: "guide notes-how" },
-      el("h2", {}, "How it works"),
-      el("ul", {},
-        el("li", {}, el("strong", {}, "Play it to me"), " listens to a fiddle, whistle, flute or guitar through your ",
-          "microphone and writes down the notes as you play (it doesn't work for humming). Nothing is recorded or sent anywhere."),
-        el("li", {}, "Six to eight notes is usually plenty. A tune's lead-in notes can be left out, or played; ",
-          "either way it's found."),
-        el("li", {}, "The key and the octave don't matter: the search compares the steps between the notes."),
-        el("li", {}, "A wrong, missing or extra note still finds the tune, among the ", el("em", {}, "close"),
-          " matches. If nothing matches, the nearest tunes are shown."),
-        el("li", {}, "The address of this page keeps your notes, so you can bookmark a search or send it to someone."))));
+      el("h2", {}, tr("How it works", "Sut mae'n gweithio")),
+      el("ul", {}, how.map((parts) => el("li", {}, parts)))));
 }
 
 function notesSearch({ autoListen = false } = {}) {
   const input = el("input", {
     id: "notes-search", type: "text", autocomplete: "off", spellcheck: "false",
-    placeholder: "e.g. D E F# G A (any key)", "aria-describedby": "notes-help",
+    placeholder: tr("e.g. D E F# G A (any key)", "e.e. D E F# G A (unrhyw gywair)"), "aria-describedby": "notes-help",
     value: new URLSearchParams(location.search).get("q") ?? "",
   });
   const results = el("ol", { class: "notes-results", "aria-live": "polite" });
   const help = el("p", { id: "notes-help", class: "caption" });
+  const plural = (n) => `${n} tune${n > 1 ? "s" : ""}`;
   const update = () => {
     // The notes are kept in the address, so a search can be bookmarked or shared.
     const q = input.value.trim();
@@ -545,27 +569,36 @@ function notesSearch({ autoListen = false } = {}) {
     const found = searchByNotes(input.value);
     if (!found) {
       const n = collapse(parseNotes(input.value).map((x) => x.midi ?? x.pc)).length;
-      help.textContent = n ? `Keep going: ${MIN_NOTES - n} more note${MIN_NOTES - n > 1 ? "s" : ""}.`
-        : "Type or play the first few notes of a tune. The key doesn't matter.";
+      help.textContent = n
+        ? tr(`Keep going: ${MIN_NOTES - n} more note${MIN_NOTES - n > 1 ? "s" : ""}.`, `Daliwch ati: ${MIN_NOTES - n} nodyn arall.`)
+        : tr("Type or play the first few notes of a tune. The key doesn't matter.",
+          "Teipiwch neu chwaraewch ychydig nodau cyntaf alaw. Does dim ots am y cywair.");
       results.replaceChildren();
       return;
     }
     const exact = found.filter((r) => !r.close).length;
-    const closeOnes = found.filter((r) => r.how.startsWith("close")).length;
-    const plural = (n) => `${n} tune${n > 1 ? "s" : ""}`;
-    help.textContent = exact
-      ? `${plural(exact)} with these notes${closeOnes ? `, then ${plural(closeOnes)} close to them` : ""}${found.length > 12 ? " (showing the best 12; add notes to narrow it down)" : ""}.`
-      : closeOnes
-        ? `No tunes with exactly these notes, but ${plural(closeOnes)} close to them${found.length > 12 ? " (showing the closest 12)" : ""}.`
-        : "No tunes with these notes, or close to them. These are the nearest; check a note or two, or try fewer notes.";
+    const closeOnes = found.filter((r) => r.how === "close").length;
+    const many = found.length > 12;
+    help.textContent = state.lang === "cy"
+      ? exact
+        ? `${exact} alaw gyda'r nodau hyn${closeOnes ? `, yna ${closeOnes} sy'n agos atynt` : ""}${many ? " (yn dangos y 12 gorau; ychwanegwch nodau i gyfyngu)" : ""}.`
+        : closeOnes
+          ? `Dim alawon gyda'r union nodau hyn, ond ${closeOnes} sy'n agos atynt${many ? " (yn dangos y 12 agosaf)" : ""}.`
+          : "Dim alawon gyda'r nodau hyn, nac yn agos atynt. Dyma'r agosaf; gwiriwch nodyn neu ddau, neu rhowch gynnig ar lai o nodau."
+      : exact
+        ? `${plural(exact)} with these notes${closeOnes ? `, then ${plural(closeOnes)} close to them` : ""}${many ? " (showing the best 12; add notes to narrow it down)" : ""}.`
+        : closeOnes
+          ? `No tunes with exactly these notes, but ${plural(closeOnes)} close to them${many ? " (showing the closest 12)" : ""}.`
+          : "No tunes with these notes, or close to them. These are the nearest; check a note or two, or try fewer notes.";
     // No previews while listening: drawing them would hold up the listening and miss
     // notes. They're drawn when it stops.
     const previews = state.listening ? 0 : PREVIEWS;
-    results.replaceChildren(...found.slice(0, 12).map(({ tune, how }, i) => {
+    results.replaceChildren(...found.slice(0, 12).map((result, i) => {
+      const { tune } = result;
       const several = state.groups.get(tune.group).versions.length > 1;
       return el("li", {},
         el("a", { href: tuneUrl(tune.group, tune.version), "data-route": true }, tune.base),
-        el("span", { class: "caption" }, `${several ? ` (version ${tune.version})` : ""} · ${how}`),
+        el("span", { class: "caption" }, `${several ? tr(` (version ${tune.version})`, ` (fersiwn ${tune.version})`) : ""} · ${matchText(result)}`),
         i < previews ? tunePreview(tune) : null);
     }));
   };
@@ -575,7 +608,7 @@ function notesSearch({ autoListen = false } = {}) {
   const listenStatus = el("p", { class: "listen-status", "aria-live": "polite", hidden: true });
   const listenButton = el("button", { type: "button", class: "listen", onclick: () => toggleListening() });
   const showListening = (on) => {
-    listenButton.replaceChildren(on ? "■ Stop listening" : micIcon(), on ? "" : " Play it to me");
+    listenButton.replaceChildren(on ? tr("■ Stop listening", "■ Stopio gwrando") : micIcon(), on ? "" : tr(" Play it to me", " Chwaraewch hi i mi"));
     listenButton.classList.toggle("on", on);
   };
   const light = (midi) => {
@@ -592,7 +625,8 @@ function notesSearch({ autoListen = false } = {}) {
     input.value = ""; update();
     showListening(true);
     listenStatus.hidden = false;
-    listenStatus.textContent = "Listening… play the first few notes of the tune on your instrument.";
+    listenStatus.textContent = tr("Listening… play the first few notes of the tune on your instrument.",
+      "Yn gwrando… chwaraewch ychydig nodau cyntaf yr alaw ar eich offeryn.");
     try {
       await startListening({
         onNote: (midi) => { press(NOTE_NAMES[midi % 12]); },
@@ -601,27 +635,30 @@ function notesSearch({ autoListen = false } = {}) {
           showListening(false);
           light(null);
           if (reason !== "left") update();  // now with the previews
-          listenStatus.textContent = reason === "done" && input.value ? "Stopped listening. Play it again, or add notes on the keyboard." : "";
+          listenStatus.textContent = reason === "done" && input.value
+            ? tr("Stopped listening. Play it again, or add notes on the keyboard.",
+              "Wedi stopio gwrando. Chwaraewch hi eto, neu ychwanegwch nodau ar y bysellfwrdd.") : "";
           listenStatus.hidden = !listenStatus.textContent;
         },
       });
     } catch (error) {
       showListening(false);
       listenStatus.textContent = error.name === "NotAllowedError"
-        ? "The microphone isn't allowed. Allow it for this site in your browser's settings, then try again."
-        : "Couldn't use the microphone on this device.";
+        ? tr("The microphone isn't allowed. Allow it for this site in your browser's settings, then try again.",
+          "Dyw'r meicroffon ddim wedi'i ganiatáu. Caniatewch ef i'r wefan hon yng ngosodiadau eich porwr, yna rhowch gynnig arall arni.")
+        : tr("Couldn't use the microphone on this device.", "Methu defnyddio'r meicroffon ar y ddyfais hon.");
     }
   };
   showListening(false);
   const edit = el("div", { class: "note-edit" },
-    el("button", { type: "button", "aria-label": "Delete last note", onclick: () => {
-      input.value = input.value.trimEnd().replace(/\s*\S+$/, ""); update(); } }, "⌫ Delete"),
-    el("button", { type: "button", onclick: () => { input.value = ""; update(); } }, "Clear"));
+    el("button", { type: "button", "aria-label": tr("Delete last note", "Dileu'r nodyn olaf"), onclick: () => {
+      input.value = input.value.trimEnd().replace(/\s*\S+$/, ""); update(); } }, tr("⌫ Delete", "⌫ Dileu")),
+    el("button", { type: "button", onclick: () => { input.value = ""; update(); } }, tr("Clear", "Clirio")));
   update();
   // From the home page's "Play it to me": start listening straight away.
   if (autoListen && canListen()) toggleListening();
   return el("section", { class: "notes-search", id: "find-by-notes" },
-    el("label", { for: "notes-search", class: "visually-hidden" }, "First notes of the tune"),
+    el("label", { for: "notes-search", class: "visually-hidden" }, tr("First notes of the tune", "Nodau cyntaf yr alaw")),
     canListen() ? listenButton : null,
     input, el("div", { class: "piano-wrap" }, piano), edit, listenStatus, help, results);
 }
@@ -687,25 +724,21 @@ function render() {
   main.style.animation = "none"; void main.offsetWidth; main.style.animation = "";  // replay fade-in
   const home = !tune && !guide && !map && !offline && !notes && !browse && !contact;
   document.getElementById("home-button").disabled = home;
-  main.dataset.page = home ? "home" : "other";
-  main.lang = home ? state.lang : "en";  // only the home page is translated so far
-  let drawn;
-  if (tune) drawn = renderTune(main, group, tune);
-  else if (guide) drawn = renderGuide(main, guide);  // async: the text is fetched first
-  else if (map) drawn = renderMap(main);
-  else if (offline) drawn = renderOffline(main);
-  else if (notes) drawn = renderNotesPage(main);
-  else if (browse) drawn = renderBrowse(main);
-  else if (contact) drawn = renderContact(main);
-  else drawn = renderHome(main);
-  Promise.resolve(drawn).then(() => showLangNote(main));
+  main.lang = state.lang;
+  if (tune) renderTune(main, group, tune);
+  else if (guide) renderGuide(main, guide);
+  else if (map) renderMap(main);
+  else if (offline) renderOffline(main);
+  else if (notes) renderNotesPage(main);
+  else if (browse) renderBrowse(main);
+  else if (contact) renderContact(main);
+  else renderHome(main);
 }
 
 // ---- Home page -----------------------------------------------------------------
 
 function renderHome(main) {
   document.title = "Y Sesiwn";
-  main.lang = state.lang;
   const count = state.groupList.length;  // one entry per tune, whatever its number of versions
   main.replaceChildren(
     el("h1", {}, tr("Croeso! Welcome to Y Sesiwn", "Croeso i'r Sesiwn!")),
@@ -732,15 +765,15 @@ function renderHome(main) {
 // Every tune, narrowed down by type and key. The choice is kept in the address
 // (?page=browse&type=Jig&key=D%20major), so "the jigs in D" can be shared.
 function renderBrowse(main) {
-  document.title = "Browse · Y Sesiwn";
+  document.title = tr("Browse · Y Sesiwn", "Pori · Y Sesiwn");
   const { types } = state.data;
   const tunes = state.groupList;
   const colour = Object.fromEntries(types.map((t) => [t.name, t.colour]));
 
   const list = el("ul", { class: "tune-list" });
   const caption = el("p", { class: "caption" });
-  const pills = el("div", { class: "pills", role: "group", "aria-label": "Tune type" });
-  const keyPills = el("div", { class: "pills keys", role: "group", "aria-label": "Key" });
+  const pills = el("div", { class: "pills", role: "group", "aria-label": tr("Tune type", "Math o alaw") });
+  const keyPills = el("div", { class: "pills keys", role: "group", "aria-label": tr("Key", "Cywair") });
   // The key a tune is filed under: its first version's, spelled out ("E Dorian").
   const keyOf = (t) => (t.versions[0].key ? `${t.versions[0].key.root} ${t.versions[0].key.modeName}` : null);
   const keyCounts = new Map();
@@ -766,31 +799,34 @@ function renderBrowse(main) {
       pill.disabled = n === 0 && pill.dataset.key !== key;
     }
     const listed = tunes.filter((t) => (!type || t.type === name) && (!key || keyOf(t) === key));
-    caption.textContent = type || key
-      ? `${listed.length} ${listed.length === 1 && type ? type.name.toLowerCase() : type ? type.english : listed.length === 1 ? "tune" : "tunes"}${key ? ` in ${key}` : ""}`
-      : `All ${tunes.length} tunes`;
+    caption.textContent = state.lang === "cy"
+      ? (type || key ? `${listed.length} ${type ? CY_TYPE[name] : "alaw"}${key ? ` yn ${keyLabel(key)}` : ""}` : `Y ${tunes.length} alaw i gyd`)
+      : type || key
+        ? `${listed.length} ${listed.length === 1 && type ? type.name.toLowerCase() : type ? type.english : listed.length === 1 ? "tune" : "tunes"}${key ? ` in ${key}` : ""}`
+        : `All ${tunes.length} tunes`;
     list.replaceChildren(...listed.map((t) =>
       el("li", { style: `--c: ${colour[t.type]}` },
-        el("span", { class: "swatch", title: t.type }),
+        el("span", { class: "swatch", title: typeName(t.type) }),
         el("a", { href: tuneUrl(t.slug), "data-route": true }, t.title))));
   };
   for (const type of types) {
     pills.append(el("button", {
       type: "button", "data-type": type.name, style: `--c: ${type.colour}`,
       onclick: () => show(chosenType === type.name ? null : type.name, chosenKey),
-    }, el("span", { class: "swatch" }), `${type.name} · ${type.count}`));
+    }, el("span", { class: "swatch" }), `${typeName(type.name)} · ${type.count}`));
   }
   for (const [key, count] of [...keyCounts].sort((a, b) => b[1] - a[1])) {
     keyPills.append(el("button", {
       type: "button", "data-key": key, onclick: () => show(chosenType, chosenKey === key ? null : key),
-    }, `${key} · `, el("span", {}, String(count))));
+    }, `${keyLabel(key)} ·\u00a0`, el("span", {}, String(count))));  // no-break: flex drops a plain trailing space
   }
 
   main.replaceChildren(
-    el("h1", {}, "Browse by type and key"),
-    el("p", { class: "lead" }, "Pick a type of tune, a key, or both: the jigs in D, say, or everything in G."),
-    el("p", { class: "pills-label" }, "Type"), pills,
-    el("p", { class: "pills-label" }, "Key"), keyPills, caption, list,
+    el("h1", {}, tr("Browse by type and key", "Pori yn ôl math a chywair")),
+    el("p", { class: "lead" }, tr("Pick a type of tune, a key, or both: the jigs in D, say, or everything in G.",
+      "Dewiswch fath o alaw, cywair, neu'r ddau: y jigiau yn D, dyweder, neu bopeth yn G.")),
+    el("p", { class: "pills-label" }, tr("Type", "Math")), pills,
+    el("p", { class: "pills-label" }, tr("Key", "Cywair")), keyPills, caption, list,
   );
   show(chosenType, chosenKey);
 }
@@ -875,6 +911,16 @@ function setTempo(abc, beat, bpm) {
   return /^Q:/m.test(abc) ? abc.replace(/^Q:.*$/m, tempo) : abc.replace(/^K:/m, `${tempo}\nK:`);
 }
 
+// abcjs names each score "Sheet Music for "<title>"" (its <title> and aria-label), in English.
+function nameScore(paper) {
+  const score = paper.querySelector("svg");
+  if (state.lang !== "cy" || !score) return;
+  const welsh = (text) => text.replace(/^Sheet Music for /, "Sgôr ").replace(/^Sheet Music$/, "Sgôr");
+  const title = score.querySelector("title");
+  if (title) title.textContent = welsh(title.textContent);
+  if (score.hasAttribute("aria-label")) score.setAttribute("aria-label", welsh(score.getAttribute("aria-label")));
+}
+
 class Cursor {  // highlights the notes as they play, and keeps playback inside a looped part
   constructor(loop = null) { this.loop = loop; }
   onEvent(event) {
@@ -939,8 +985,8 @@ function partLoop(controller, part, tune, settings, onSpeed) {
 // Tablature under the stave. Mandolin and fiddle share their tuning (GDAE; the numbers
 // are frets, or semitones above the open string).
 const TABS = {
-  mandolin: { instrument: "mandolin", label: "Mandolin / fiddle (%T)" },
-  guitar: { instrument: "guitar", label: "Guitar (%T)" },
+  mandolin: { instrument: "mandolin", label: () => tr("Mandolin / fiddle (%T)", "Mandolin / ffidil (%T)") },
+  guitar: { instrument: "guitar", label: () => tr("Guitar (%T)", "Gitâr (%T)") },
 };
 
 // The click: a woodblock on every felt beat (the one the tempo slider counts), high on
@@ -974,14 +1020,15 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   }
   const tab = TABS[state.practice.tab];
   const visualObj = ABCJS.renderAbc(paper, accompaniment(abc, state.chords.play === "both"),
-    { responsive: "resize", add_classes: true, paddingtop: 0, ...(tab ? { tablature: [tab] } : {}) })[0];
+    { responsive: "resize", add_classes: true, paddingtop: 0, ...(tab ? { tablature: [{ ...tab, label: tab.label() }] } : {}) })[0];
+  nameScore(paper);
   // Chords are always drawn (so playback has them), and hidden unless asked for.
   paper.classList.toggle("hide-chords", !state.chords.onScore);
   if (chart) {
     chart.replaceChildren(chordChart(visualObj));
     if (tune.key) {  // printed above the chart (print-only)
-      const { pitch, modeName } = tune.key;
-      chart.parentElement.querySelector(".print-key").textContent = `Key: ${NOTES[(pitch + transpose + 12) % 12]} ${modeName}`;
+      const { pitch } = tune.key;
+      chart.parentElement.querySelector(".print-key").textContent = `${tr("Key", "Cywair")}: ${NOTES[(pitch + transpose + 12) % 12]} ${modeName(tune.key.modeName)}`;
     }
   }
   const audioParams = { ...AUDIO_PARAMS, chordsOff: state.chords.play === "tune", voicesOff: state.chords.play === "chords",
@@ -992,7 +1039,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
 
   audio.replaceChildren();
   if (!ABCJS.synth.supportsAudio()) {
-    audio.textContent = "Audio is not supported in this browser.";
+    audio.textContent = tr("Audio is not supported in this browser.", "Dyw'r porwr hwn ddim yn gallu chwarae sain.");
     return;
   }
   const controller = new ABCJS.synth.SynthController();
@@ -1000,6 +1047,13 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   controller.load(audio, cursor, {
     displayLoop: true, displayRestart: true, displayPlay: true, displayProgress: true,
   });
+  if (state.lang === "cy") {  // load() doesn't pass abcjs's title options on, so set them here
+    for (const [button, title] of [["loop", "Chwarae unwaith neu drosodd a throsodd."], ["reset", "Yn ôl i'r dechrau."],
+      ["start", "Chwarae / oedi."], ["progress-background", "Symud i fan arall yn yr alaw."]]) {
+      audio.querySelector(`.abcjs-midi-${button}`)?.setAttribute("title", title);
+      audio.querySelector(`.abcjs-midi-${button}`)?.setAttribute("aria-label", title);
+    }
+  }
   controller.setTune(visualObj, false, audioParams);
   state.synth = controller;
   // setWarp (the speed-up) also updates abcjs's own tempo box, which isn't shown.
@@ -1141,31 +1195,35 @@ function chordChart(visualObj) {
   return el("div", { class: "chart", style: `--columns: ${columns}` }, rows);
 }
 
+// Where a tune's chords come from (its %%chords line), in Welsh.
+const CY_CHORD_SOURCES = { "From the Alawon Cymru score": "O sgôr Alawon Cymru" };
+
 function chordCard(tune, redraw) {
   if (tune.chords == null) return null;
   const showOnScore = el("label", { class: "switch" },
     el("input", { type: "checkbox", checked: state.chords.onScore,
-      onchange: (e) => { state.chords.onScore = e.target.checked; redraw(); } }), "Show on the sheet music");
+      onchange: (e) => { state.chords.onScore = e.target.checked; redraw(); } }), tr("Show on the sheet music", "Dangos ar y sgôr"));
   return el("section", { class: "card chords" },
-    el("h2", {}, "Suggested chords"),
+    el("h2", {}, tr("Suggested chords", "Cordiau awgrymedig")),
     el("p", { class: "print-key" }),
     el("div", { class: "chart-box" }),
     el("div", { class: "chord-controls" }, showOnScore),
     el("p", { class: "caption" },
-      tune.chords ? `${tune.chords}. ` : "",
-      "One way of accompanying it: use your ear, and your own."));
+      tune.chords ? `${tr(tune.chords, CY_CHORD_SOURCES[tune.chords] ?? tune.chords)}. ` : "",
+      tr("One way of accompanying it: use your ear, and your own.", "Un ffordd o gyfeilio iddi: defnyddiwch eich clust, a'ch syniadau eich hun.")));
 }
 
 // What the player plays, for a tune with chords: under the player, where it's used.
 function chordPlayback(tune, redraw) {
   if (tune.chords == null) return null;
-  const playback = el("div", { class: "segmented", role: "radiogroup", "aria-label": "Playback" },
-    [["tune", "Tune only"], ["both", "Tune and chords"], ["chords", "Chords only"]].map(([value, label]) =>
+  const playback = el("div", { class: "segmented", role: "radiogroup", "aria-label": tr("Playback", "Chwarae") },
+    [["tune", tr("Tune only", "Yr alaw yn unig")], ["both", tr("Tune and chords", "Alaw a chordiau")],
+      ["chords", tr("Chords only", "Cordiau yn unig")]].map(([value, label]) =>
       el("label", {},
         el("input", { type: "radio", name: "chord-playback", value, checked: state.chords.play === value,
           onchange: () => { state.chords.play = value; redraw(); } }),
         el("span", {}, label))));
-  return el("div", { class: "playback" }, el("span", { class: "label" }, "Play"), playback);
+  return el("div", { class: "playback" }, el("span", { class: "label" }, tr("Play", "Chwarae")), playback);
 }
 
 // Printing: the sheet music, in the key chosen on the page. A tune with chords
@@ -1182,14 +1240,15 @@ function printAs(mode, paper) {
 }
 
 function printButton(tune, paper) {
-  if (tune.chords == null) return el("button", { type: "button", onclick: () => printAs("music", paper) }, "Print");
+  if (tune.chords == null) return el("button", { type: "button", onclick: () => printAs("music", paper) }, tr("Print", "Argraffu"));
   const menu = el("div", { class: "print-menu", role: "menu", hidden: true },
-    [["music", "Sheet music"], ["with-chords", "Sheet music with chords"], ["chart", "Chord chart"]].map(([mode, label]) =>
+    [["music", tr("Sheet music", "Sgôr")], ["with-chords", tr("Sheet music with chords", "Sgôr gyda chordiau")],
+      ["chart", tr("Chord chart", "Siart cordiau")]].map(([mode, label]) =>
       el("button", { type: "button", role: "menuitem", onclick: () => { menu.hidden = true; printAs(mode, paper); } }, label)));
   const toggle = el("button", { type: "button", "aria-haspopup": "menu", "aria-expanded": "false", onclick: () => {
     menu.hidden = !menu.hidden;
     toggle.setAttribute("aria-expanded", String(!menu.hidden));
-  } }, "Print ▾");
+  } }, tr("Print ▾", "Argraffu ▾"));
   // Clicking anywhere else closes it (and once the page has gone, stop listening).
   const close = (e) => {
     if (!wrap.isConnected) document.removeEventListener("pointerdown", close);
@@ -1200,6 +1259,11 @@ function printButton(tune, paper) {
   return wrap;
 }
 
+// The Details box's labels (from build_site.py's HEADER_LABELS), in Welsh.
+const CY_DETAILS = { "Tune type": "Math o alaw", Key: "Cywair", "Time signature": "Amseriad",
+  "Composer / arranger": "Cyfansoddwr / trefnydd", Area: "Ardal", Origin: "Tarddiad", Book: "Llyfr",
+  Discography: "Disgograffi", History: "Hanes", Notes: "Nodiadau" };
+
 function renderTune(main, group, tune) {
   document.title = `${group.title} · Y Sesiwn`;
   if (!state.settings.has(tune.slug)) state.settings.set(tune.slug, { transpose: 0, bpm: tune.bpm, loop: -1, speedUp: false });
@@ -1209,7 +1273,10 @@ function renderTune(main, group, tune) {
   const audio = el("div", { class: "audio" });
   const chords = chordCard(tune, () => redraw());
   const speedNote = el("span", { class: "caption speed-note", "aria-live": "polite" });
-  const onSpeed = (warp) => { speedNote.textContent = `now ${Math.round((settings.bpm * warp) / 100)} bpm`; };
+  const onSpeed = (warp) => {
+    const bpm = Math.round((settings.bpm * warp) / 100);
+    speedNote.textContent = tr(`now ${bpm} bpm`, `nawr ${bpm} curiad y funud`);
+  };
   let drawn = { parts: [] };
   const redraw = () => {
     speedNote.textContent = "";
@@ -1218,19 +1285,23 @@ function renderTune(main, group, tune) {
 
   const controls = el("div", { class: "controls" });
   if (tune.key) {
-    const { pitch, root, modeName } = tune.key;
+    const { pitch, root } = tune.key;
+    const mode = modeName(tune.key.modeName);
     const select = el("select", { id: "key-select", onchange: (e) => { settings.transpose = +e.target.value; redraw(); } });
     for (let shift = -5; shift <= 6; shift++) {  // semitones, nearest direction
-      const label = shift === 0 ? `${root} ${modeName} (original)` : `${NOTES[(pitch + shift + 12) % 12]} ${modeName}`;
+      const label = shift === 0 ? `${root} ${mode} ${tr("(original)", "(gwreiddiol)")}` : `${NOTES[(pitch + shift + 12) % 12]} ${mode}`;
       select.append(el("option", { value: shift, selected: shift === settings.transpose }, label));
     }
-    controls.append(el("div", { class: "control" }, el("label", { for: "key-select" }, "Key"), select));
+    controls.append(el("div", { class: "control" }, el("label", { for: "key-select" }, tr("Key", "Cywair")), select));
   }
   const tempoLabel = el("label", { for: "tempo" });
-  const showTempo = () => { tempoLabel.textContent = `Tempo: ${settings.bpm} bpm (${tune.beatName} beats)`; };
+  const showTempo = () => {
+    tempoLabel.textContent = tr(`Tempo: ${settings.bpm} bpm (${tune.beatName} beats)`,
+      `Tempo: ${settings.bpm} curiad y funud (curiad ${CY_BEATS[tune.beatName] ?? tune.beatName})`);
+  };
   showTempo();
   const practice = el("button", { type: "button", class: "practice-toggle", onclick: () => setPractice(!document.body.classList.contains("practice")) });
-  practice.textContent = document.body.classList.contains("practice") ? "Exit practice mode" : "Practice mode";
+  practice.textContent = practiceLabel(document.body.classList.contains("practice"));
   controls.append(el("div", { class: "control tempo" }, tempoLabel,
     el("input", {
       id: "tempo", type: "range", min: 30, max: 200, value: settings.bpm,
@@ -1239,18 +1310,20 @@ function renderTune(main, group, tune) {
     })), el("div", { class: "tune-actions" },
       printButton(tune, paper), practice));
 
-  const details = el("dl", {}, tune.details.map(([label, value]) => [el("dt", {}, label), el("dd", {}, value)]));
-  const gloss = tune.gloss.length
+  const details = el("dl", {}, tune.details.map(([label, value]) =>
+    [el("dt", {}, tr(label, CY_DETAILS[label] ?? label)), el("dd", {}, label === "Key" ? keyLabel(value) : value)]));
+  // What the Welsh credit words mean (trefniant = arranged by, …), for English readers.
+  const gloss = tune.gloss.length && state.lang !== "cy"
     ? el("p", { class: "caption" }, tune.gloss.flatMap(([word, meaning], i) =>
         [i ? " · " : "", el("em", {}, word), ` = ${meaning}`]))
     : null;
 
   const versions = group.versions.length > 1
-    ? el("nav", { class: "versions", "aria-label": "Versions of this tune" }, group.versions.map((v) =>
+    ? el("nav", { class: "versions", "aria-label": tr("Versions of this tune", "Fersiynau'r alaw hon") }, group.versions.map((v) =>
         el("a", {
           href: tuneUrl(group.slug, v.version), "data-route": true,
           class: v === tune ? "active" : null, "aria-current": v === tune ? "page" : null,
-        }, el("span", {}, `Version ${v.version}`), v.source ? el("small", {}, v.source) : null)))
+        }, el("span", {}, tr(`Version ${v.version}`, `Fersiwn ${v.version}`)), v.source ? el("small", {}, v.source) : null)))
     : null;
 
   // The practice row: loop a part (and speed up each time), count-in, click, tablature.
@@ -1258,39 +1331,41 @@ function renderTune(main, group, tune) {
   const toggle = (label, checked, onchange, cls) => el("label", { class: `switch${cls ? ` ${cls}` : ""}` },
     el("input", { type: "checkbox", checked, onchange: (e) => { onchange(e.target.checked); redraw(); } }), label);
   const tabSelect = el("select", { id: "tab-select", onchange: (e) => { state.practice.tab = e.target.value; redraw(); } },
-    [["none", "No tablature"], ["mandolin", "Mandolin / fiddle"], ["guitar", "Guitar"]].map(([value, label]) =>
+    [["none", tr("No tablature", "Dim tablatur")], ["mandolin", tr("Mandolin / fiddle", "Mandolin / ffidil")],
+      ["guitar", tr("Guitar", "Gitâr")]].map(([value, label]) =>
       el("option", { value, selected: state.practice.tab === value }, label)));
   const practiceRow = el("div", { class: "practice-row" },
-    el("div", { class: "control" }, el("label", { for: "loop-select" }, "Loop"), loopSelect),
-    toggle("Speed up each time", settings.speedUp, (on) => { settings.speedUp = on; }, "speed-up"),
+    el("div", { class: "control" }, el("label", { for: "loop-select" }, tr("Loop", "Ailadrodd")), loopSelect),
+    toggle(tr("Speed up each time", "Cyflymu bob tro"), settings.speedUp, (on) => { settings.speedUp = on; }, "speed-up"),
     speedNote,
-    toggle("Count-in", state.practice.countIn, (on) => { state.practice.countIn = on; }),
-    toggle("Click", state.practice.click, (on) => { state.practice.click = on; }),
-    el("div", { class: "control" }, el("label", { for: "tab-select" }, "Tablature"), tabSelect));
+    toggle(tr("Count-in", "Cyfrif i mewn"), state.practice.countIn, (on) => { state.practice.countIn = on; }),
+    toggle(tr("Click", "Clic"), state.practice.click, (on) => { state.practice.click = on; }),
+    el("div", { class: "control" }, el("label", { for: "tab-select" }, tr("Tablature", "Tablatur")), tabSelect));
   const fillLoops = () => {
-    loopSelect.replaceChildren(el("option", { value: -1 }, "The whole tune"),
-      ...drawn.parts.map((p, i) => el("option", { value: i, selected: settings.loop === i }, `Part ${p.label}`)));
+    loopSelect.replaceChildren(el("option", { value: -1 }, tr("The whole tune", "Yr alaw gyfan")),
+      ...drawn.parts.map((p, i) => el("option", { value: i, selected: settings.loop === i }, tr(`Part ${p.label}`, `Rhan ${p.label}`))));
     loopSelect.disabled = drawn.parts.length < 2;
     practiceRow.querySelector(".speed-up").hidden = settings.loop < 0;
   };
   loopSelect.addEventListener("change", fillLoops);
 
-  const report = el("a", { class: "report", href: reportUrl(group, tune) }, "Report a problem with this tune");
+  const report = el("a", { class: "report", href: reportUrl(group, tune) }, tr("Report a problem with this tune", "Rhoi gwybod am broblem gyda'r alaw hon"));
 
   main.replaceChildren(...[
     el("h1", {}, group.title),
-    group.titles.length > 1 ? el("p", { class: "caption aka" }, `Also known as: ${group.titles.slice(1).join(", ")}`) : null,
+    group.titles.length > 1 ? el("p", { class: "caption aka" }, `${tr("Also known as", "Enwau eraill")}: ${group.titles.slice(1).join(", ")}`) : null,
     versions,
     controls,
     practiceRow,
     el("div", { class: "tune-layout" },
       el("div", { class: "tune-main" }, el("div", { class: "score" }, audio, chordPlayback(tune, () => redraw()), paper), chords),
       el("div", { class: "tune-side" },
-        el("section", { class: "card" }, el("h2", {}, "Details"), details, gloss),
+        el("section", { class: "card" }, el("h2", {}, tr("Details", "Manylion")), details, gloss || null),
         placeCard(group),
-        el("details", { class: "abc" }, el("summary", {}, "ABC notation"), el("pre", { tabindex: 0 }, stripFields(tune.abc, "Z"))),
-        el("p", { class: "report-line" }, report, el("br"), el("span", { class: "caption" }, "(needs a free GitHub account), or ",
-          el("a", { href: `?page=contact&about=${tune.slug}`, "data-route": true }, "write to us"))))),
+        el("details", { class: "abc" }, el("summary", {}, tr("ABC notation", "Nodiant ABC")), el("pre", { tabindex: 0 }, stripFields(tune.abc, "Z"))),
+        el("p", { class: "report-line" }, report, el("br"), el("span", { class: "caption" },
+          tr("(needs a free GitHub account), or ", "(angen cyfrif GitHub am ddim), neu "),
+          el("a", { href: `?page=contact&about=${tune.slug}`, "data-route": true }, tr("write to us", "ysgrifennwch aton ni")))))),
   ].filter(Boolean));
   redraw();
   fillLoops();
@@ -1312,12 +1387,14 @@ function reportUrl(group, tune) {
   return `${state.data.repo}/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
 }
 
+const practiceLabel = (on) => (on ? tr("Exit practice mode", "Gadael y modd ymarfer") : tr("Practice mode", "Modd ymarfer"));
+
 // Practice mode: hide everything but the controls and the score, full screen if possible.
 function setPractice(on) {
   if (document.body.classList.contains("practice") === on) return;
   document.body.classList.toggle("practice", on);
   const button = document.querySelector(".practice-toggle");
-  if (button) button.textContent = on ? "Exit practice mode" : "Practice mode";
+  if (button) button.textContent = practiceLabel(on);
   if (on && document.fullscreenEnabled) document.documentElement.requestFullscreen().catch(() => {});
   if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {});
 }
@@ -1348,7 +1425,8 @@ function walesMap(current = null) {
     svg("circle", { cx: place.x, cy: place.y, r: 5, class: "target", "data-place": i }));
   return el("div", { class: "wales-map", style: `aspect-ratio: ${width} / ${height}` },
     svg("svg", { viewBox: `0 0 ${width} ${height}`, role: "img",
-      "aria-label": current ? `Map of Wales showing ${current.name}` : "Map of Wales with the places named in tune titles" },
+      "aria-label": current ? tr(`Map of Wales showing ${current.name}`, `Map o Gymru yn dangos ${current.name}`)
+        : tr("Map of Wales with the places named in tune titles", "Map o Gymru gyda'r lleoedd a enwir yn nheitlau alawon") },
       dots, targets));
 }
 
@@ -1358,11 +1436,11 @@ function placeCard(group) {
   return el("section", { class: "card place" },
     el("h2", {}, place.name),
     walesMap(place),
-    el("p", { class: "caption" }, el("a", { href: "?page=map", "data-route": true }, "All tunes on the map")));
+    el("p", { class: "caption" }, el("a", { href: "?page=map", "data-route": true }, tr("All tunes on the map", "Pob alaw ar y map"))));
 }
 
 function renderMap(main) {
-  document.title = "Tunes on the map · Y Sesiwn";
+  document.title = tr("Tunes on the map · Y Sesiwn", "Alawon ar y map · Y Sesiwn");
   const places = [...state.data.places].sort((a, b) => (normalize(a.name) < normalize(b.name) ? -1 : 1));
   const map = walesMap();
   const circles = [...map.querySelectorAll("circle:not(.target)")];
@@ -1408,11 +1486,13 @@ function renderMap(main) {
       el("strong", {}, place.name), " ",
       place.tunes.map((slug, i) => [i ? ", " : "", el("a", { href: tuneUrl(slug), "data-route": true }, state.groups.get(slug).title)]))));
   main.replaceChildren(
-    el("h1", {}, "Tunes on the map"),
-    el("p", { class: "lead" }, `${places.length} places in Wales and just over the border that tunes are named after.`),
+    el("h1", {}, tr("Tunes on the map", "Alawon ar y map")),
+    el("p", { class: "lead" }, tr(`${places.length} places in Wales and just over the border that tunes are named after.`,
+      `${places.length} lle yng Nghymru, a rhai dros y ffin, y mae alawon wedi'u henwi ar eu hôl.`)),
     el("div", { class: "map-layout" },
       el("figure", {}, map, el("figcaption", { class: "caption" },
-        "Outline: Office for National Statistics, Open Government Licence. Contains OS data © Crown copyright and database right.")),
+        tr("Outline: Office for National Statistics, Open Government Licence. Contains OS data © Crown copyright and database right.",
+          "Amlinell: Swyddfa Ystadegau Gwladol, Trwydded Llywodraeth Agored. Yn cynnwys data'r Arolwg Ordnans © Hawlfraint y Goron a hawl cronfa ddata."))),
       list));
 }
 
@@ -1437,6 +1517,9 @@ const isFirefox = () => /Firefox\//.test(navigator.userAgent);
 const isMacSafari = () => /Macintosh/.test(navigator.userAgent) && /Version\/[\d.]+ Safari\//.test(navigator.userAgent)
   && !/Chrome|Chromium|Edg\//.test(navigator.userAgent) && !isApple();
 
+// Browsers' own menus are rarely in Welsh, so their names stay in English.
+const ui = (text) => el("strong", { lang: "en" }, text);
+
 const SHARE_ICON = () => svg("svg", { viewBox: "0 0 24 24", class: "share-icon", "aria-label": "Share" },
   svg("path", { d: "M12 3v12M7.5 7.5 12 3l4.5 4.5M7 10.5H5.5v10h13v-10H17", fill: "none",
     stroke: "currentColor", "stroke-width": 1.8, "stroke-linecap": "round", "stroke-linejoin": "round" }));
@@ -1453,10 +1536,6 @@ function refreshOfflineCards() {
 
 function fillOfflineCard(card) {
   const full = card.classList.contains("full");
-  // Welsh on the home page only: the offline page itself is English for now.
-  const tr = (en, cy) => (state.lang === "cy" && !full ? cy : en);
-  // Browsers' own menus are rarely in Welsh, so their names stay in English.
-  const ui = (text) => el("strong", { lang: "en" }, text);
   const status = "serviceWorker" in navigator
     ? el("p", { class: "status" }, state.offlineReady
       ? tr("✓ Saved on this device: works without a signal", "✓ Wedi'i chadw ar y ddyfais hon: mae'n gweithio heb signal")
@@ -1517,8 +1596,36 @@ function fillOfflineCard(card) {
 }
 
 function renderOffline(main) {
-  document.title = "Use it offline · Y Sesiwn";
+  document.title = tr("Use it offline · Y Sesiwn", "Defnyddio all-lein · Y Sesiwn");
   const b = (text) => el("strong", {}, text);
+  if (state.lang === "cy") {
+    main.replaceChildren(
+      el("h1", {}, "Defnyddio'r Sesiwn all-lein"),
+      el("div", { class: "guide" },
+        offlineCard({ full: true }),
+        el("h2", {}, "Ar ffôn neu dabled"),
+        el("ul", {},
+          el("li", {}, b("iPhone neu iPad"), ": yn Safari (neu Chrome), ", ui("Share → Add to Home Screen"), "."),
+          el("li", {}, b("Android"), ": y botwm ", b("Gosod yr ap"), " uchod, neu ddewislen y porwr (⋮) → ",
+            ui("Install app"), " neu ", ui("Add to Home screen"), ".")),
+        el("h2", {}, "Ar gyfrifiadur"),
+        el("ul", {},
+          el("li", {}, b("Chrome neu Edge"), " (Windows, Mac, Linux): y botwm ", b("Gosod yr ap"),
+            " uchod, neu'r eicon gosod ym mhen draw'r bar cyfeiriad ar y dde."),
+          el("li", {}, b("Safari ar Mac"), ": ", ui("File → Add to Dock"), " (macOS Sonoma neu'n hwyrach)."),
+          el("li", {}, b("Firefox"), ": all e ddim gosod gwefannau fel apiau, ond mae'r Sesiwn yn dal i weithio all-lein yn y porwr unwaith y bydd wedi llwytho.")),
+        el("h2", {}, "Sut mae'n gweithio"),
+        el("p", {}, "Y tro cyntaf i chi agor y wefan, mae'n cadw copi ohoni'i hun yn dawel ar eich dyfais: pob alaw, ",
+          "synau'r piano ar gyfer chwarae, y map a'r tudalennau hyn, tua 3 MB i gyd. Wedi hynny mae'n gweithio heb ",
+          "gysylltiad, p'un a ydych chi'n ei gosod neu beidio."),
+        el("p", {}, "Mae ei gosod yn rhoi ei heicon ei hun iddi ac yn ei hagor heb far cyfeiriad y porwr: sgrin lawn ",
+          "ar ffôn (o'r sgrin gartref), yn ei ffenest ei hun ar gyfrifiadur (o'r Doc, y ddewislen Start neu'r bwrdd ",
+          "gwaith). Ar iPhone neu iPad mae'r ap wedi'i osod yn cadw ei gopi ei hun, ar wahân i un Safari, felly ",
+          "agorwch ef unwaith tra bod gennych signal."),
+        el("p", {}, "Pan fydd alawon yn cael eu hychwanegu neu eu cywiro, mae'r fersiwn newydd yn llwytho i lawr yn y ",
+          "cefndir y tro nesaf y byddwch chi ar-lein, ac fe'i gwelwch o'r tro nesaf y byddwch chi'n agor Y Sesiwn.")));
+    return;
+  }
   main.replaceChildren(
     el("h1", {}, "Use Y Sesiwn offline"),
     el("div", { class: "guide" },
@@ -1562,20 +1669,24 @@ function openMail(url) {  // its own function, so the tests can catch the email 
 
 // A form that opens the reader's email app with the message written out. Not everyone has
 // an email app set up, so afterwards it also offers the message and address to copy.
-function emailForm(fields, { subject, body, send = "Write the email" }) {
+function emailForm(fields, { subject, body, send = tr("Write the email", "Ysgrifennu'r e-bost") }) {
   const after = el("div", { class: "email-sent", role: "status" });
   const copyButton = (label, text) => el("button", { type: "button", onclick: async (e) => {
-    try { await navigator.clipboard.writeText(text()); e.target.textContent = "✓ Copied"; } catch { e.target.textContent = "Couldn't copy"; }
+    try { await navigator.clipboard.writeText(text()); e.target.textContent = tr("✓ Copied", "✓ Wedi copïo"); }
+    catch { e.target.textContent = tr("Couldn't copy", "Methu copïo"); }
   } }, label);
   const form = el("form", { class: "email-form", onsubmit: (e) => {
     e.preventDefault();
     const [to, s, b] = [mailAddress(), subject(), body()];
     openMail(`mailto:${to}?subject=${encodeURIComponent(s)}&body=${encodeURIComponent(b)}`);
     after.replaceChildren(
-      el("p", {}, el("strong", {}, "Your email app should open with the message ready: just press send."),
-        " Nothing opened, or the message is cut short? Copy it and send it from your email to ",
+      el("p", {}, el("strong", {}, tr("Your email app should open with the message ready: just press send.",
+        "Dylai eich ap e-bost agor gyda'r neges yn barod: dim ond pwyso anfon.")),
+        tr(" Nothing opened, or the message is cut short? Copy it and send it from your email to ",
+          " Dim byd wedi agor, neu mae'r neges wedi'i thorri'n fyr? Copïwch hi a'i hanfon o'ch e-bost i "),
         el("strong", { class: "address" }, to), "."),
-      el("div", { class: "copy-actions" }, copyButton("Copy the message", () => `${s}\n\n${b}`), copyButton("Copy the address", () => to)));
+      el("div", { class: "copy-actions" }, copyButton(tr("Copy the message", "Copïo'r neges"), () => `${s}\n\n${b}`),
+        copyButton(tr("Copy the address", "Copïo'r cyfeiriad"), () => to)));
   } }, fields, el("button", { type: "submit", class: "primary" }, send));
   return el("div", {}, form, after);
 }
@@ -1588,8 +1699,9 @@ function field(label, control, hint) {
 // On "How to add a tune": send the tune by email, no GitHub needed.
 function sendTuneForm() {
   const name = el("input", { type: "text", name: "name", required: true, autocomplete: "off" });
-  const type = el("select", { name: "type" }, el("option", { value: "" }, "Not sure"),
-    state.data.types.map((t) => el("option", { value: t.name }, `${t.name} (${t.english})`)), el("option", { value: "Other" }, "Other"));
+  const type = el("select", { name: "type" }, el("option", { value: "" }, tr("Not sure", "Ddim yn siŵr")),
+    state.data.types.filter((t) => t.name !== "Other").map((t) => el("option", { value: t.name }, tr(`${t.name} (${t.english})`, t.name))),
+    el("option", { value: "Other" }, typeName("Other")));
   const source = el("input", { type: "text", name: "source", required: true });
   const who = el("input", { type: "text", name: "who", autocomplete: "name" });
   const abc = el("textarea", { name: "abc", rows: 10, spellcheck: "false", class: "abc-input",
@@ -1606,62 +1718,75 @@ function sendTuneForm() {
     if (!text) return;
     const withHeader = /^X:/m.test(text) ? text : `X:1\n${text}`;
     const tune = ABCJS.renderAbc(preview, withHeader, { responsive: "resize", add_classes: true })[0];
+    nameScore(preview);
     const notes = tune.lines.flatMap((l) => l.staff?.[0]?.voices?.[0] ?? []).filter((e) => e.el_type === "note");
-    if (!/^K:/m.test(text)) problem.textContent = "The ABC needs a K: line (the key) just before the notes.";
-    else if (!notes.length) problem.textContent = "No notes found yet: they go on the lines after K:.";
-    else if (tune.warnings?.length) problem.textContent = `Something to check: ${tune.warnings[0].replace(/<[^>]+>/g, "")}`;
+    if (!/^K:/m.test(text)) {
+      problem.textContent = tr("The ABC needs a K: line (the key) just before the notes.", "Mae angen llinell K: (y cywair) ar yr ABC yn union cyn y nodau.");
+    } else if (!notes.length) {
+      problem.textContent = tr("No notes found yet: they go on the lines after K:.", "Dim nodau eto: maen nhw'n mynd ar y llinellau ar ôl K:.");
+    } else if (tune.warnings?.length) {  // abcjs's own messages are in English
+      problem.textContent = `${tr("Something to check", "Rhywbeth i'w wirio")}: ${tune.warnings[0].replace(/<[^>]+>/g, "")}`;
+    }
   }
+  // The email is in the sender's language too; either way the subject starts with "Y Sesiwn".
   const form = emailForm([
-    field("Tune name", name),
-    field("Type", type),
-    field("Where it comes from", source, "A book, a recording, or who taught you it."),
-    field("Your name (optional)", who, "To thank you on the tune's page, if you'd like."),
-    field("The tune in ABC notation (optional)", abc,
-      "No ABC? No problem: leave this empty and attach a photo of the sheet music or a recording to the email before you send it."),
+    field(tr("Tune name", "Enw'r alaw"), name),
+    field(tr("Type", "Math"), type),
+    field(tr("Where it comes from", "O ble mae'n dod"), source, tr("A book, a recording, or who taught you it.", "Llyfr, recordiad, neu bwy a'i dysgodd i chi.")),
+    field(tr("Your name (optional)", "Eich enw (dewisol)"), who, tr("To thank you on the tune's page, if you'd like.", "I ddiolch i chi ar dudalen yr alaw, os hoffech chi.")),
+    field(tr("The tune in ABC notation (optional)", "Yr alaw mewn nodiant ABC (dewisol)"), abc,
+      tr("No ABC? No problem: leave this empty and attach a photo of the sheet music or a recording to the email before you send it.",
+        "Dim ABC? Dim problem: gadewch hwn yn wag ac atodwch lun o'r sgôr neu recordiad i'r e-bost cyn ei anfon.")),
     preview, problem,
-    el("label", { class: "check" }, permission, " It's a traditional tune, or I have permission to share it."),
+    el("label", { class: "check" }, permission, tr(" It's a traditional tune, or I have permission to share it.",
+      " Mae'n alaw draddodiadol, neu mae gen i ganiatâd i'w rhannu.")),
   ], {
-    subject: () => `Y Sesiwn tune: ${name.value.trim()}`,
+    subject: () => tr(`Y Sesiwn tune: ${name.value.trim()}`, `Y Sesiwn, alaw: ${name.value.trim()}`),
     body: () => [
-      `Tune: ${name.value.trim()}`,
-      `Type: ${type.value || "not sure"}`,
-      `Where it comes from: ${source.value.trim()}`,
-      `From: ${who.value.trim() || "(no name given)"}`,
-      "Traditional, or shared with permission: yes",
+      `${tr("Tune", "Alaw")}: ${name.value.trim()}`,
+      `${tr("Type", "Math")}: ${type.value || tr("not sure", "ddim yn siŵr")}`,
+      `${tr("Where it comes from", "O ble mae'n dod")}: ${source.value.trim()}`,
+      `${tr("From", "Gan")}: ${who.value.trim() || tr("(no name given)", "(dim enw)")}`,
+      tr("Traditional, or shared with permission: yes", "Traddodiadol, neu wedi'i rhannu gyda chaniatâd: ydy"),
       "",
-      abc.value.trim() ? `ABC:\n${abc.value.trim()}` : "No ABC: I've attached a photo or recording.",
+      abc.value.trim() ? `ABC:\n${abc.value.trim()}` : tr("No ABC: I've attached a photo or recording.", "Dim ABC: rwyf wedi atodi llun neu recordiad."),
       "",
     ].join("\n"),
   });
   return el("section", { class: "card send-tune" },
-    el("h2", {}, "Send us a tune"),
-    el("p", {}, "The easiest way: fill this in and it opens an email to Y Sesiwn, ready to send. ",
-      "We'll check the tune and add it to the site."),
+    el("h2", {}, tr("Send us a tune", "Anfonwch alaw aton ni")),
+    el("p", {}, tr("The easiest way: fill this in and it opens an email to Y Sesiwn, ready to send. "
+      + "We'll check the tune and add it to the site.",
+      "Y ffordd hawsaf: llenwch hwn ac mae'n agor e-bost i'r Sesiwn, yn barod i'w anfon. "
+      + "Byddwn ni'n gwirio'r alaw ac yn ei hychwanegu at y wefan.")),
     form);
 }
 
 // ?page=contact, and ?page=contact&about=<version's folder> from a tune's "write to us" link.
 function renderContact(main) {
-  document.title = "Contact · Y Sesiwn";
+  document.title = tr("Contact · Y Sesiwn", "Cysylltu · Y Sesiwn");
   const tune = state.bySlug.get(new URLSearchParams(location.search).get("about"));
   const group = tune && state.groups.get(tune.group);
-  const about = tune ? `${group.title}${group.versions.length > 1 ? ` (version ${tune.version})` : ""}` : "";
-  const subject = el("input", { type: "text", name: "subject", value: about ? `About ${about}` : null });
+  const about = tune ? `${group.title}${group.versions.length > 1 ? tr(` (version ${tune.version})`, ` (fersiwn ${tune.version})`) : ""}` : "";
+  const subject = el("input", { type: "text", name: "subject", value: about ? tr(`About ${about}`, `Am ${about}`) : null });
   const message = el("textarea", { name: "message", rows: 8, required: true });
   const page = tune ? `https://ysesiwn.cymru/${tuneUrl(group.slug, tune.version)}` : null;
   main.replaceChildren(
-    el("h1", {}, "Contact"),
+    el("h1", {}, tr("Contact", "Cysylltu")),
     el("div", { class: "guide" },
-      el("p", { class: "lead" }, "A question, an idea, a tune you're looking for, a mistake you've spotted, or just hello: ",
-        "write it here and it opens an email to Y Sesiwn."),
-      tune ? el("p", {}, "About ", el("a", { href: tuneUrl(group.slug, tune.version), "data-route": true }, about),
-        ": the tune's link goes in the message.") : null,
-      emailForm([field("Subject (optional)", subject), field("Your message", message)], {
-        subject: () => `Y Sesiwn: ${subject.value.trim() || "a message"}`,
-        body: () => [message.value.trim(), page ? `\n\nTune: ${page}` : "", "\n"].join(""),
+      el("p", { class: "lead" }, tr("A question, an idea, a tune you're looking for, a mistake you've spotted, or just hello: "
+        + "write it here and it opens an email to Y Sesiwn.",
+        "Cwestiwn, syniad, alaw rydych chi'n chwilio amdani, camgymeriad rydych chi wedi sylwi arno, neu dim ond helo: "
+        + "ysgrifennwch yma ac mae'n agor e-bost i'r Sesiwn.")),
+      tune ? el("p", {}, tr("About ", "Am "), el("a", { href: tuneUrl(group.slug, tune.version), "data-route": true }, about),
+        tr(": the tune's link goes in the message.", ": mae dolen yr alaw yn mynd yn y neges.")) : null,
+      emailForm([field(tr("Subject (optional)", "Pwnc (dewisol)"), subject), field(tr("Your message", "Eich neges"), message)], {
+        subject: () => `Y Sesiwn: ${subject.value.trim() || tr("a message", "neges")}`,
+        body: () => [message.value.trim(), page ? `\n\n${tr("Tune", "Alaw")}: ${page}` : "", "\n"].join(""),
       }),
-      el("p", { class: "caption" }, "Want to send a tune? ",
-        el("a", { href: "?page=add", "data-route": true }, "Use the tune form"), ", which shows the sheet music as you type.")));
+      el("p", { class: "caption" }, tr("Want to send a tune? ", "Eisiau anfon alaw? "),
+        el("a", { href: "?page=add", "data-route": true }, tr("Use the tune form", "Defnyddiwch y ffurflen alawon")),
+        tr(", which shows the sheet music as you type.", ", sy'n dangos y sgôr wrth i chi deipio."))));
 }
 
 // ---- Markdown pages: the guides (sections of CONTRIBUTING.md) and About -------------
@@ -1680,23 +1805,26 @@ function markdownSections(text) {
 }
 
 async function renderGuide(main, key) {
-  const { file, heading, className } = PAGES[key];
+  const { className } = PAGES[key];
+  const { file, heading } = state.lang === "cy" ? PAGES[key].cy : PAGES[key];
   document.title = `${heading} · Y Sesiwn`;
-  main.replaceChildren(el("p", { class: "loading" }, "Loading…"));
+  main.replaceChildren(el("p", { class: "loading" }, tr("Loading…", "Yn llwytho…")));
   if (!state.docs.has(file)) state.docs.set(file, await (await fetch(file)).text());
   const text = state.docs.get(file);
   const section = markdownSections(text).find((s) => s.startsWith(`# ${heading}\n`)) ?? "";
   const html = marked.parse(section.replaceAll("(#how-to-add-a-tune)", "(?page=add)"));
   const guide = el("article", { class: `guide ${className ?? ""}` });
   guide.innerHTML = html;  // our own markdown, from this repo
+  // CONTRIBUTING.md points GitHub readers to this form; here, it's right above.
+  if (key === "add") guide.querySelector('a[href="https://ysesiwn.cymru/?page=add"]')?.closest("p").remove();
+  // Links to the site itself (written in full for GitHub readers) stay on this copy of it.
+  guide.querySelectorAll('a[href^="https://ysesiwn.cymru/?"]').forEach((a) => a.setAttribute("href", a.getAttribute("href").slice("https://ysesiwn.cymru/".length)));
   guide.querySelectorAll('a[href^="?"]').forEach((a) => a.setAttribute("data-route", ""));
   // Code examples scroll sideways on a phone; focusable, so the keyboard can scroll them too.
   guide.querySelectorAll("pre").forEach((pre) => pre.setAttribute("tabindex", "0"));
   if (key === "add") {  // the easy way first; the GitHub steps follow
-    // CONTRIBUTING.md points GitHub readers to this form; here, it's right above.
-    guide.querySelector('a[href="https://ysesiwn.cymru/?page=add"]')?.closest("p").remove();
     guide.querySelector("h1").after(sendTuneForm(),
-      el("h2", {}, "Or add it yourself on GitHub"));
+      el("h2", {}, tr("Or add it yourself on GitHub", "Neu ei hychwanegu eich hun ar GitHub")));
   }
   // Only show it if we're still on this page (the fetch may finish after leaving).
   if (new URLSearchParams(location.search).get("page") === key) main.replaceChildren(guide);
@@ -1720,7 +1848,7 @@ function attachSearch(input, list, { showAllOnFocus = true } = {}) {
           role: "option", id: `${input.id}-option-${i}`, "aria-selected": i === active,
           onmousedown: (e) => { e.preventDefault(); open(tune); },
         }, tune.title))
-      : [el("li", { class: "empty" }, "No tunes match that name.")]));
+      : [el("li", { class: "empty" }, tr("No tunes match that name.", "Does dim alaw â'r enw hwnnw."))]));
     list.hidden = false;
     input.setAttribute("aria-expanded", "true");
   };
@@ -1785,5 +1913,5 @@ if ("serviceWorker" in navigator) {
 }
 
 start().catch((error) => {
-  document.getElementById("main").replaceChildren(el("p", {}, `Couldn't load the tunes: ${error}`));
+  document.getElementById("main").replaceChildren(el("p", {}, `${tr("Couldn't load the tunes", "Methu llwytho'r alawon")}: ${error}`));
 });

@@ -215,6 +215,12 @@ relative URLs, so the site also works under a sub-path such as
   area…). The raw ABC, including its source, is in an expander.
 - **Pages:** *How to add a tune* and *How to submit corrections* (the two
   `# ` sections of `CONTRIBUTING.md`), and *About* (`site/about.md`).
+- **Welsh or English:** a switch in the sidebar (remembered; Welsh by default
+  for a browser set to Welsh). The site's own text is written both ways in
+  `site/app.js` (`tr("English", "Cymraeg")`) and `site/index.html` (`data-cy`);
+  the Welsh pages are `site/about.cy.md` and `site/guides.cy.md`, so **a change
+  to `about.md` or `CONTRIBUTING.md` needs the same change there**. Tune names,
+  sources and the tunes' own notes stay as written.
 - **Look:** a *carthen* (Welsh tapestry blanket) band across the top and
   bottom (`site/carthen.svg`) and under section headings, Welsh slate, and
   Welsh red for accents. Works in dark mode and on phones (search pinned to
@@ -229,6 +235,7 @@ relative URLs, so the site also works under a sub-path such as
 | `build_site.py` | Builds `_site/` (git-ignored): copies `site/`, `static/`, `CONTRIBUTING.md`, and writes `tunes.json`: every `tune.abc` plus what the page needs about it (type, key, default tempo and beat, Details rows, credit glosses, melody for the note search, version grouping), worked out once in Python. Tune types, colourways and default tempos are set at the top. |
 | `site/index.html`, `site/style.css`, `site/app.js` | The page. `app.js` does searching (a port of the original Python matching, including `difflib`'s similarity ratio), browsing, routing (`?tune=…&v=…`, `?page=add\|fix\|about`), sheet music and playback with abcjs, and renders the Markdown pages with marked. |
 | `site/about.md`, `site/carthen.svg` | The About page; the tapestry band. |
+| `site/about.cy.md`, `site/guides.cy.md` | The Welsh About page, and the Welsh *How to add a tune* and *How to submit corrections* (keep in step with `about.md` and `CONTRIBUTING.md`). |
 | `places.json`, `site/wales.svg` | The places named in tune titles, for the map; the outline of Wales (made once from the ONS local authority boundaries via [UK-GeoJSON](https://github.com/martinjc/UK-GeoJSON), merged and simplified; its projection is in a comment in the file and in `MAP` in `build_site.py`). The outline is used as a CSS mask, so it takes the page's colours. |
 | `site/sw.js`, `site/manifest.webmanifest`, `site/icon-*.png` | Offline use and the home-screen app (see Features). The icons are made from `design/app-icon.html`. |
 | `site/og-image.png`, `site/apple-touch-icon.png` | The link-preview card (1200×630, used by the `og:`/`twitter:` tags in `index.html`) and the home-screen icon. Made from `design/og-card.html` and `design/apple-touch-icon.html`: open one in a browser at that size and screenshot it to regenerate. |

@@ -1,6 +1,6 @@
 "use strict";
 // Y Sesiwn: everything runs in the browser from tunes.json (see build_site.py).
-// Pages: ./ (home), ?tune=<folder> (a tune), ?page=add / ?page=fix (guides).
+// Pages: ./ (home), ?tune=<folder> (a tune), ?page=add / ?page=fix (guides), ?page=contact, …
 
 const NOTES = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
 const AUDIO_PARAMS = {
@@ -681,10 +681,11 @@ function render() {
   const offline = page === "offline";
   const notes = page === "notes";
   const browse = page === "browse";
+  const contact = page === "contact";
   const main = document.getElementById("main");
   if (!tune) setPractice(false);
   main.style.animation = "none"; void main.offsetWidth; main.style.animation = "";  // replay fade-in
-  const home = !tune && !guide && !map && !offline && !notes && !browse;
+  const home = !tune && !guide && !map && !offline && !notes && !browse && !contact;
   document.getElementById("home-button").disabled = home;
   main.dataset.page = home ? "home" : "other";
   main.lang = home ? state.lang : "en";  // only the home page is translated so far
@@ -695,6 +696,7 @@ function render() {
   else if (offline) drawn = renderOffline(main);
   else if (notes) drawn = renderNotesPage(main);
   else if (browse) drawn = renderBrowse(main);
+  else if (contact) drawn = renderContact(main);
   else drawn = renderHome(main);
   Promise.resolve(drawn).then(() => showLangNote(main));
 }
@@ -1287,7 +1289,8 @@ function renderTune(main, group, tune) {
         el("section", { class: "card" }, el("h2", {}, "Details"), details, gloss),
         placeCard(group),
         el("details", { class: "abc" }, el("summary", {}, "ABC notation"), el("pre", { tabindex: 0 }, stripFields(tune.abc, "Z"))),
-        el("p", { class: "report-line" }, report, el("br"), el("span", { class: "caption" }, "(needs a free GitHub account)")))),
+        el("p", { class: "report-line" }, report, el("br"), el("span", { class: "caption" }, "(needs a free GitHub account), or ",
+          el("a", { href: `?page=contact&about=${tune.slug}`, "data-route": true }, "write to us"))))),
   ].filter(Boolean));
   redraw();
   fillLoops();
@@ -1543,6 +1546,124 @@ function renderOffline(main) {
         "the next time you're online, and you'll see it from the next time you open Y Sesiwn.")));
 }
 
+// ---- Writing to Y Sesiwn: sending a tune, the contact page ------------------------------
+
+// The address is only put together when someone sends a message, so it never appears in
+// the page, the HTML or the repository for address-collecting bots to find.
+const MAILBOX = ["helo", "ysesiwn", "cymru"];
+function mailAddress() {
+  const [user, ...domain] = MAILBOX;
+  return `${user}@${domain.join(".")}`;
+}
+
+function openMail(url) {  // its own function, so the tests can catch the email instead
+  location.href = url;
+}
+
+// A form that opens the reader's email app with the message written out. Not everyone has
+// an email app set up, so afterwards it also offers the message and address to copy.
+function emailForm(fields, { subject, body, send = "Write the email" }) {
+  const after = el("div", { class: "email-sent", role: "status" });
+  const copyButton = (label, text) => el("button", { type: "button", onclick: async (e) => {
+    try { await navigator.clipboard.writeText(text()); e.target.textContent = "✓ Copied"; } catch { e.target.textContent = "Couldn't copy"; }
+  } }, label);
+  const form = el("form", { class: "email-form", onsubmit: (e) => {
+    e.preventDefault();
+    const [to, s, b] = [mailAddress(), subject(), body()];
+    openMail(`mailto:${to}?subject=${encodeURIComponent(s)}&body=${encodeURIComponent(b)}`);
+    after.replaceChildren(
+      el("p", {}, el("strong", {}, "Your email app should open with the message ready: just press send."),
+        " Nothing opened, or the message is cut short? Copy it and send it from your email to ",
+        el("strong", { class: "address" }, to), "."),
+      el("div", { class: "copy-actions" }, copyButton("Copy the message", () => `${s}\n\n${b}`), copyButton("Copy the address", () => to)));
+  } }, fields, el("button", { type: "submit", class: "primary" }, send));
+  return el("div", {}, form, after);
+}
+
+function field(label, control, hint) {
+  return el("label", { class: "field" }, el("span", { class: "field-label" }, label), control,
+    hint ? el("span", { class: "caption" }, hint) : null);
+}
+
+// On "How to add a tune": send the tune by email, no GitHub needed.
+function sendTuneForm() {
+  const name = el("input", { type: "text", name: "name", required: true, autocomplete: "off" });
+  const type = el("select", { name: "type" }, el("option", { value: "" }, "Not sure"),
+    state.data.types.map((t) => el("option", { value: t.name }, `${t.name} (${t.english})`)), el("option", { value: "Other" }, "Other"));
+  const source = el("input", { type: "text", name: "source", required: true });
+  const who = el("input", { type: "text", name: "who", autocomplete: "name" });
+  const abc = el("textarea", { name: "abc", rows: 10, spellcheck: "false", class: "abc-input",
+    placeholder: "X:1\nT:Llancesau Trefaldwyn\nR:jig\nM:6/8\nL:1/8\nK:D\nAG |: F2 F GFG | AFD DFA | …" });
+  const permission = el("input", { type: "checkbox", name: "permission", required: true });
+  const preview = el("div", { class: "score abc-preview", hidden: true });
+  const problem = el("p", { class: "caption abc-problem" });
+  let timer;
+  abc.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(drawPreview, 300); });
+  function drawPreview() {
+    const text = abc.value.trim();
+    preview.hidden = !text;
+    problem.textContent = "";
+    if (!text) return;
+    const withHeader = /^X:/m.test(text) ? text : `X:1\n${text}`;
+    const tune = ABCJS.renderAbc(preview, withHeader, { responsive: "resize", add_classes: true })[0];
+    const notes = tune.lines.flatMap((l) => l.staff?.[0]?.voices?.[0] ?? []).filter((e) => e.el_type === "note");
+    if (!/^K:/m.test(text)) problem.textContent = "The ABC needs a K: line (the key) just before the notes.";
+    else if (!notes.length) problem.textContent = "No notes found yet: they go on the lines after K:.";
+    else if (tune.warnings?.length) problem.textContent = `Something to check: ${tune.warnings[0].replace(/<[^>]+>/g, "")}`;
+  }
+  const form = emailForm([
+    field("Tune name", name),
+    field("Type", type),
+    field("Where it comes from", source, "A book, a recording, or who taught you it."),
+    field("Your name (optional)", who, "To thank you on the tune's page, if you'd like."),
+    field("The tune in ABC notation (optional)", abc,
+      "No ABC? No problem: leave this empty and attach a photo of the sheet music or a recording to the email before you send it."),
+    preview, problem,
+    el("label", { class: "check" }, permission, " It's a traditional tune, or I have permission to share it."),
+  ], {
+    subject: () => `Y Sesiwn tune: ${name.value.trim()}`,
+    body: () => [
+      `Tune: ${name.value.trim()}`,
+      `Type: ${type.value || "not sure"}`,
+      `Where it comes from: ${source.value.trim()}`,
+      `From: ${who.value.trim() || "(no name given)"}`,
+      "Traditional, or shared with permission: yes",
+      "",
+      abc.value.trim() ? `ABC:\n${abc.value.trim()}` : "No ABC: I've attached a photo or recording.",
+      "",
+    ].join("\n"),
+  });
+  return el("section", { class: "card send-tune" },
+    el("h2", {}, "Send us a tune"),
+    el("p", {}, "The easiest way: fill this in and it opens an email to Y Sesiwn, ready to send. ",
+      "We'll check the tune and add it to the site."),
+    form);
+}
+
+// ?page=contact, and ?page=contact&about=<version's folder> from a tune's "write to us" link.
+function renderContact(main) {
+  document.title = "Contact · Y Sesiwn";
+  const tune = state.bySlug.get(new URLSearchParams(location.search).get("about"));
+  const group = tune && state.groups.get(tune.group);
+  const about = tune ? `${group.title}${group.versions.length > 1 ? ` (version ${tune.version})` : ""}` : "";
+  const subject = el("input", { type: "text", name: "subject", value: about ? `About ${about}` : null });
+  const message = el("textarea", { name: "message", rows: 8, required: true });
+  const page = tune ? `https://ysesiwn.cymru/${tuneUrl(group.slug, tune.version)}` : null;
+  main.replaceChildren(
+    el("h1", {}, "Contact"),
+    el("div", { class: "guide" },
+      el("p", { class: "lead" }, "A question, an idea, a tune you're looking for, a mistake you've spotted, or just hello: ",
+        "write it here and it opens an email to Y Sesiwn."),
+      tune ? el("p", {}, "About ", el("a", { href: tuneUrl(group.slug, tune.version), "data-route": true }, about),
+        ": the tune's link goes in the message.") : null,
+      emailForm([field("Subject (optional)", subject), field("Your message", message)], {
+        subject: () => `Y Sesiwn: ${subject.value.trim() || "a message"}`,
+        body: () => [message.value.trim(), page ? `\n\nTune: ${page}` : "", "\n"].join(""),
+      }),
+      el("p", { class: "caption" }, "Want to send a tune? ",
+        el("a", { href: "?page=add", "data-route": true }, "Use the tune form"), ", which shows the sheet music as you type.")));
+}
+
 // ---- Markdown pages: the guides (sections of CONTRIBUTING.md) and About -------------
 
 function markdownSections(text) {
@@ -1571,6 +1692,12 @@ async function renderGuide(main, key) {
   guide.querySelectorAll('a[href^="?"]').forEach((a) => a.setAttribute("data-route", ""));
   // Code examples scroll sideways on a phone; focusable, so the keyboard can scroll them too.
   guide.querySelectorAll("pre").forEach((pre) => pre.setAttribute("tabindex", "0"));
+  if (key === "add") {  // the easy way first; the GitHub steps follow
+    // CONTRIBUTING.md points GitHub readers to this form; here, it's right above.
+    guide.querySelector('a[href="https://ysesiwn.cymru/?page=add"]')?.closest("p").remove();
+    guide.querySelector("h1").after(sendTuneForm(),
+      el("h2", {}, "Or add it yourself on GitHub"));
+  }
   // Only show it if we're still on this page (the fetch may finish after leaving).
   if (new URLSearchParams(location.search).get("page") === key) main.replaceChildren(guide);
 }

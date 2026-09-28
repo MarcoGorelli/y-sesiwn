@@ -485,3 +485,25 @@ body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 
 @page { margin: 15mm; }
 
 @media (prefers-reduced-motion: reduce) { main { animation: none; } }
+
+/* Forms that write an email: sending a tune (How to add a tune) and the contact page */
+.send-tune { margin: 1rem 0 2rem; }
+.send-tune h2 { margin-top: 0; }
+.email-form { display: grid; gap: 1rem; max-width: 40rem; }
+.email-form .field { display: grid; gap: .3rem; }
+.field-label { font-weight: 600; }
+.email-form input[type="text"], .email-form select, .email-form textarea {
+  font: inherit; color: inherit; background: var(--card-bg);
+  border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .65rem; width: 100%; box-sizing: border-box;
+}
+.email-form textarea { resize: vertical; }
+.email-form .abc-input { font: .9rem/1.45 ui-monospace, monospace; }
+.email-form :is(input, select, textarea):focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.email-form .check { display: flex; gap: .5rem; align-items: baseline; }
+.email-form .check input { accent-color: var(--accent); }
+.email-form button[type="submit"] { justify-self: start; }
+.abc-preview { overflow-x: auto; }
+.abc-problem:empty { display: none; }
+.email-sent:not(:empty) { margin-top: 1rem; padding: .75rem 1rem; border-left: 3px solid var(--accent); background: var(--sidebar-bg); border-radius: 0 var(--radius) var(--radius) 0; }
+.email-sent p { margin: 0 0 .6rem; }
+.copy-actions { display: flex; gap: .5rem; flex-wrap: wrap; }

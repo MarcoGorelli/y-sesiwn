@@ -7,6 +7,10 @@ music, playback and key changes are all made from that file. To add a tune,
 you write its ABC file and propose it with a *pull request*. Once it's
 accepted, the app updates by itself.
 
+Not on GitHub, or don't know ABC? Use the form on
+[the website's version of this page](https://ysesiwn.cymru/?page=add) instead:
+it sends the tune (or a photo or recording of it) to us by email.
+
 ## 1. Write the tune in ABC
 
 Here is a complete example:

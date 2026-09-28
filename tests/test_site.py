@@ -482,6 +482,107 @@ def test_report_link(page):
     assert "tunes/glandyfi-version-2/tune.abc" in query["body"][0]
 
 
+# ---- Sending a tune, the contact page ---------------------------------------------------
+
+# Split up here too, so the tests don't put the address in the repository either.
+ADDRESS = "@".join(["helo", ".".join(["ysesiwn", "cymru"])])
+
+CATCH_MAIL = "window.openMail = (url) => { window.sentMail = url; }"
+
+
+def sent_mail(page):
+    from urllib.parse import parse_qs, unquote, urlparse
+    url = page.evaluate("window.sentMail")
+    assert url.startswith("mailto:")
+    parts = urlparse(url)
+    query = parse_qs(parts.query)
+    return unquote(parts.path), query["subject"][0], query["body"][0]
+
+
+def test_send_a_tune(page):
+    page.goto_site("?page=add")
+    page.wait_for_selector(".send-tune form")
+    # The form first, then the GitHub way (without the note that sends GitHub readers here).
+    assert page.locator("main h2").first.inner_text() == "Send us a tune"
+    assert page.locator("main h2", has_text="Or add it yourself on GitHub").count() == 1
+    assert page.locator("main h2", has_text="1. Write the tune in ABC").count() == 1
+    assert "Not on GitHub" not in page.inner_text("main")
+    page.evaluate(CATCH_MAIL)
+    form = page.locator(".send-tune form")
+    form.locator("[name=name]").fill("Codi'r Hwyl")
+    form.locator("[name=type]").select_option("Jig")
+    form.locator("[name=source]").fill("Learnt at the Aberystwyth session")
+    abc = "X:1\nT:Codi'r Hwyl\nR:jig\nM:6/8\nL:1/8\nK:D\n|: DFA dAF | GBd gdB :|"
+    form.locator("[name=abc]").fill(abc)
+    page.wait_for_selector(".abc-preview .abcjs-note")
+    assert page.locator(".abc-problem").inner_text() == ""
+    # Nothing is sent until the permission box is ticked.
+    form.locator("button[type=submit]").click()
+    assert page.evaluate("window.sentMail") is None
+    form.locator("[name=permission]").check()
+    form.locator("button[type=submit]").click()
+    to, subject, body = sent_mail(page)
+    assert to == ADDRESS
+    assert subject == "Y Sesiwn tune: Codi'r Hwyl"
+    assert "Type: Jig" in body and "Where it comes from: Learnt at the Aberystwyth session" in body
+    assert f"ABC:\n{abc}" in body
+    # For anyone without an email app: the address and message to copy.
+    assert ADDRESS in page.inner_text(".email-sent")
+    assert page.locator(".email-sent button").all_inner_texts() == ["Copy the message", "Copy the address"]
+
+
+def test_send_a_tune_without_abc(page):
+    page.goto_site("?page=add")
+    page.wait_for_selector(".send-tune form")
+    page.evaluate(CATCH_MAIL)
+    form = page.locator(".send-tune form")
+    form.locator("[name=abc]").fill("T:Something\nABC def")
+    page.wait_for_function("document.querySelector('.abc-problem').textContent.includes('K:')")
+    form.locator("[name=abc]").fill("")
+    form.locator("[name=name]").fill("Y Deryn Du")
+    form.locator("[name=source]").fill("My grandmother")
+    form.locator("[name=permission]").check()
+    form.locator("button[type=submit]").click()
+    _, _, body = sent_mail(page)
+    assert "No ABC: I've attached a photo or recording." in body and "Type: not sure" in body
+
+
+def test_contact_page(page):
+    page.goto_site("?tune=glandyfi&v=2")
+    page.click(".report-line a:has-text('write to us')")
+    page.wait_for_selector(".email-form")
+    assert page.input_value("[name=subject]") == "About Glandyfi (version 2)"
+    page.evaluate(CATCH_MAIL)
+    page.fill("[name=message]", "Bar 3 of the B part sounds wrong to me.")
+    page.click(".email-form button[type=submit]")
+    to, subject, body = sent_mail(page)
+    assert to == ADDRESS and subject == "Y Sesiwn: About Glandyfi (version 2)"
+    assert body.startswith("Bar 3 of the B part") and "https://ysesiwn.cymru/?tune=glandyfi&v=2" in body
+    # From the sidebar: no tune, no subject needed.
+    page.click(".sidebar-links a[href='?page=contact']")
+    page.wait_for_selector(".email-form")
+    page.evaluate(CATCH_MAIL)
+    page.fill("[name=message]", "Diolch!")
+    page.click(".email-form button[type=submit]")
+    assert sent_mail(page)[1:] == ("Y Sesiwn: a message", "Diolch!\n")
+
+
+def test_address_is_hidden(page, site):
+    # Not in any file of the site or the repository, nor in a page until someone sends.
+    from conftest import ROOT
+    found = []
+    for path in ROOT.rglob("*"):
+        if ".git" in path.parts or not path.is_file() or path.stat().st_size > 5_000_000:
+            continue
+        if ADDRESS.encode() in path.read_bytes():
+            found.append(str(path.relative_to(ROOT)))
+    assert found == []
+    for path in ["", "?page=add", "?page=contact", "?page=about"]:
+        page.goto_site(path)
+        page.wait_for_selector("main h1")
+        assert ADDRESS not in page.content()
+
+
 def test_browse_by_key(page):
     page.goto_site("?page=browse")
     page.click(".pills.keys button[data-key='D major']")
@@ -516,7 +617,7 @@ def test_accessibility(browser, site, scheme, width):
     page = context.new_page()
     problems = []
     for path in ["", "?page=browse", "?tune=glandyfi", "?tune=nyth-y-gog", "?page=map", "?page=offline", "?page=about", "?page=add",
-                 "?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A", "cy:", "cy:?tune=glandyfi"]:
+                 "?page=contact", "?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A", "cy:", "cy:?tune=glandyfi"]:
         if path.startswith("cy:"):  # in Welsh: the home page, and a page with the not-in-Welsh-yet note
             page.evaluate("localStorage.setItem('lang', 'cy')")
         page.goto(site + path.removeprefix("cy:"))

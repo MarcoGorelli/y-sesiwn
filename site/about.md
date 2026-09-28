@@ -56,10 +56,15 @@ we'll put it right.
 
 ## Adding to the collection
 
-More tunes are always welcome, from any source you're free to share. See
-[How to add a tune](?page=add) and
-[How to submit corrections](?page=fix). Everything is
+More tunes are always welcome, from any source you're free to share: the
+form on [How to add a tune](?page=add) sends one to us by email, no GitHub
+needed. See also [How to submit corrections](?page=fix). Everything is
 [on GitHub](https://github.com/MarcoGorelli/y-sesiwn).
+
+## Get in touch
+
+Questions, ideas, a tune you're looking for, or just hello:
+[write to us](?page=contact).
 
 ## The patterns
 

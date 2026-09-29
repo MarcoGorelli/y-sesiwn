@@ -301,6 +301,99 @@ def test_practice_row_in_practice_mode_on_a_phone(browser, site):
     context.close()
 
 
+MAP_SCALE = "Number((document.querySelector('.map-canvas').style.transform.match(/scale\\(([\\d.]+)\\)/) || [0, 1])[1])"
+MAP_SHIFT = "document.querySelector('.map-canvas').style.transform.match(/translate\\(([^)]*)\\)/)[1]"
+DOT_SIZE = "document.querySelector('.wales-map circle:not(.target)').getBoundingClientRect().width"
+
+
+def test_map_zoom(page):
+    page.goto_site("?page=map")
+    page.wait_for_selector(".wales-map circle")
+    zoom_in, zoom_out, reset = (page.locator(".map-zoom button").nth(i) for i in range(3))
+    assert zoom_out.is_disabled() and reset.is_disabled()
+    size = page.evaluate(DOT_SIZE)
+    zoom_in.click()
+    zoom_in.click()
+    assert page.evaluate(MAP_SCALE) > 3
+    assert abs(page.evaluate(DOT_SIZE) - size) < 0.5  # dots keep their size on screen
+    # Dragging moves about, and a drag that ends on a dot doesn't open it.
+    before = page.evaluate(MAP_SHIFT)
+    box = page.locator(".map-view").bounding_box()
+    cx, cy = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+    page.mouse.move(cx, cy)
+    page.mouse.down()
+    page.mouse.move(cx + 60, cy + 40, steps=5)
+    page.mouse.up()
+    assert page.evaluate(MAP_SHIFT) != before
+    assert page.locator(".map-popup").is_hidden()
+    # Clicking a dot still opens its popup, next to the dot.
+    merthyr = page.evaluate("state.data.places.findIndex((p) => p.name === 'Merthyr Tudful')")
+    # Scrolling a dot into view once scrolled the zoomed map's own (clipped) view,
+    # which then threw every zoom off; the view can't be scrolled now.
+    page.locator(".target").nth(merthyr).scroll_into_view_if_needed()
+    reset.click()
+    assert page.evaluate(MAP_SCALE) == 1 and reset.is_disabled()
+    dot = page.locator(f".target[data-place='{merthyr}']").bounding_box()
+    page.mouse.move(dot["x"] + dot["width"] / 2, dot["y"] + dot["height"] / 2)
+    page.keyboard.down("Control")
+    page.mouse.wheel(0, -300)  # a trackpad pinch
+    page.keyboard.up("Control")
+    assert page.evaluate(MAP_SCALE) > 1
+    dot = page.locator(f".target[data-place='{merthyr}']").bounding_box()
+    page.mouse.click(dot["x"] + dot["width"] / 2, dot["y"] + dot["height"] / 2)
+    assert "Merthyr Tudful" in page.inner_text(".map-popup")
+    popup = page.locator(".map-popup").bounding_box()
+    assert abs(popup["x"] + popup["width"] / 2 - (dot["x"] + dot["width"] / 2)) < popup["width"]
+    # A plain wheel scrolls the page, not the map.
+    reset.click()
+    page.mouse.wheel(0, 200)
+    assert page.evaluate(MAP_SCALE) == 1
+    # The keyboard: + zooms, the arrows move about, 0 shows all of Wales.
+    page.focus(".map-view")
+    page.keyboard.press("+")
+    assert page.evaluate(MAP_SCALE) > 1
+    before = page.evaluate(MAP_SHIFT)
+    page.keyboard.press("ArrowRight")
+    assert page.evaluate(MAP_SHIFT) != before
+    page.keyboard.press("0")
+    assert page.evaluate(MAP_SCALE) == 1
+
+
+def test_map_pinch_on_a_phone(browser, site):
+    # A real two-finger pinch, one-finger drag and double-tap (Chrome's touch emulation).
+    context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True,
+                                  service_workers="block")
+    page = context.new_page()
+    page.goto(site + "?page=map")
+    page.wait_for_selector(".wales-map circle")
+    cdp = context.new_cdp_session(page)
+    box = page.locator(".map-view").bounding_box()
+    cx, cy = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+    touch = lambda kind, points: cdp.send("Input.dispatchTouchEvent", {"type": kind, "touchPoints": points})
+    fingers = lambda gap: [{"x": cx - gap, "y": cy, "id": 0}, {"x": cx + gap, "y": cy, "id": 1}]
+    touch("touchStart", fingers(20))
+    for gap in range(25, 90, 5):
+        touch("touchMove", fingers(gap))
+    touch("touchEnd", [])
+    scale = page.evaluate(MAP_SCALE)
+    assert scale > 2
+    before = page.evaluate(MAP_SHIFT)
+    touch("touchStart", [{"x": cx, "y": cy, "id": 0}])
+    for d in range(5, 60, 5):
+        touch("touchMove", [{"x": cx + d, "y": cy + d, "id": 0}])
+    touch("touchEnd", [])
+    assert page.evaluate(MAP_SHIFT) != before and page.evaluate(MAP_SCALE) == scale
+    page.wait_for_timeout(600)  # after a swipe, Chrome takes the next tap as "stop scrolling", not a click
+    page.locator(".map-zoom button").nth(2).tap()  # all of Wales again
+    assert page.evaluate(MAP_SCALE) == 1
+    for _ in range(2):  # a double-tap zooms in
+        touch("touchStart", [{"x": cx, "y": cy, "id": 0}])
+        touch("touchEnd", [])
+        page.wait_for_timeout(80)
+    assert page.evaluate(MAP_SCALE) == 2
+    context.close()
+
+
 def test_map_on_a_phone(browser, site):
     # Tapping a dot opens its popup, which stays open after the finger lifts (issue #8);
     # tapping elsewhere closes it.

@@ -1470,11 +1470,130 @@ function walesMap(current = null) {
   // The full map gets bigger invisible targets over the small dots, for pointing and tapping.
   const targets = current ? [] : places.map((place, i) =>
     svg("circle", { cx: place.x, cy: place.y, r: 5, class: "target", "data-place": i }));
+  // The view clips; the canvas inside it (land and dots) is what zooming moves and scales.
   return el("div", { class: "wales-map", style: `aspect-ratio: ${width} / ${height}` },
-    svg("svg", { viewBox: `0 0 ${width} ${height}`, role: "img",
-      "aria-label": current ? tr(`Map of Wales showing ${current.name}`, `Map o Gymru yn dangos ${current.name}`)
-        : tr("Map of Wales with the places named in tune titles", "Map o Gymru gyda'r lleoedd a enwir yn nheitlau alawon") },
-      dots, targets));
+    el("div", { class: "map-view" }, el("div", { class: "map-canvas" },
+      svg("svg", { viewBox: `0 0 ${width} ${height}`, role: "img",
+        "aria-label": current ? tr(`Map of Wales showing ${current.name}`, `Map o Gymru yn dangos ${current.name}`)
+          : tr("Map of Wales with the places named in tune titles", "Map o Gymru gyda'r lleoedd a enwir yn nheitlau alawon") },
+        dots, targets))));
+}
+
+// Zooming the full map: the + and − buttons, double-click or double-tap, pinching (a
+// trackpad pinch is a Ctrl + wheel), and dragging to move about once zoomed in. A plain
+// wheel or a one-finger swipe still scrolls the page. The dots keep their size on screen
+// (--z in style.css), so crowded places come apart. onChange: after every zoom or move.
+function mapZoom(map, onChange) {
+  const view = map.querySelector(".map-view"), canvas = map.querySelector(".map-canvas");
+  const MAX = 8;
+  let scale = 1, x = 0, y = 0;
+  const button = (label, text, onclick) => el("button", { type: "button", "aria-label": label, title: label, onclick }, text);
+  const zoomIn = button(tr("Zoom in", "Chwyddo i mewn"), "+", () => zoomCentre(1.8));
+  const zoomOut = button(tr("Zoom out", "Chwyddo allan"), "−", () => zoomCentre(1 / 1.8));
+  const reset = button(tr("Show all of Wales", "Dangos Cymru gyfan"), "⤢", () => { scale = 1; apply(); });
+  map.append(el("div", { class: "map-zoom" }, zoomIn, zoomOut, reset));
+  const box = () => view.getBoundingClientRect();
+  const apply = () => {
+    const { width, height } = box();
+    scale = Math.min(MAX, Math.max(1, scale));
+    x = Math.min(0, Math.max(width - width * scale, x));  // no gaps at the edges
+    y = Math.min(0, Math.max(height - height * scale, y));
+    view.scrollLeft = view.scrollTop = 0;  // older browsers, where the clipped view could still be scrolled
+    canvas.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+    canvas.style.setProperty("--z", scale);
+    view.classList.toggle("zoomed", scale > 1);
+    zoomIn.disabled = scale >= MAX;
+    zoomOut.disabled = reset.disabled = scale <= 1;
+    onChange();
+  };
+  // Zoom by factor, keeping the point (px, py) of the view where it is.
+  const zoomAt = (factor, px, py) => {
+    const next = Math.min(MAX, Math.max(1, scale * factor));
+    x = px - (px - x) * (next / scale);
+    y = py - (py - y) * (next / scale);
+    scale = next;
+    apply();
+  };
+  const zoomCentre = (factor) => { const { width, height } = box(); zoomAt(factor, width / 2, height / 2); };
+  const at = (e) => { const b = box(); return [e.clientX - b.left, e.clientY - b.top]; };
+
+  view.addEventListener("wheel", (e) => {
+    if (!e.ctrlKey && !e.metaKey) return;  // a plain wheel scrolls the page
+    e.preventDefault();
+    zoomAt(Math.exp(-e.deltaY / 200), ...at(e));
+  }, { passive: false });
+  let lastPointer = "mouse";
+  view.addEventListener("dblclick", (e) => { if (lastPointer !== "touch") zoomAt(2, ...at(e)); });  // touch: the double-tap below
+
+  // Dragging (one pointer, when zoomed in) and pinching (two).
+  const pointers = new Map();
+  let moved = 0, pinch = null, lastTap = null;
+  const twoFingers = () => {
+    const [a, b] = [...pointers.values()];
+    const b0 = box();
+    return { dist: Math.hypot(a.x - b.x, a.y - b.y), mx: (a.x + b.x) / 2 - b0.left, my: (a.y + b.y) / 2 - b0.top };
+  };
+  view.addEventListener("pointerdown", (e) => {
+    lastPointer = e.pointerType;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 1) moved = 0;
+    if (pointers.size === 2) pinch = twoFingers();
+  });
+  view.addEventListener("pointermove", (e) => {
+    const last = pointers.get(e.pointerId);
+    if (!last) return;
+    const dx = e.clientX - last.x, dy = e.clientY - last.y;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 2 && pinch) {
+      const now = twoFingers();
+      x += now.mx - pinch.mx;
+      y += now.my - pinch.my;
+      zoomAt(now.dist / pinch.dist, now.mx, now.my);
+      pinch = now;
+      moved = Infinity;
+    } else if (pointers.size === 1 && scale > 1) {
+      moved += Math.abs(dx) + Math.abs(dy);
+      if (moved > 4) {
+        try { view.setPointerCapture(e.pointerId); } catch {}  // keep the drag if the pointer leaves the map
+        x += dx;
+        y += dy;
+        apply();
+      }
+    }
+  });
+  const up = (e) => {
+    if (!pointers.delete(e.pointerId)) return;
+    if (pointers.size < 2) pinch = null;
+    // A double-tap zooms in (touch screens don't all send dblclick).
+    if (e.type === "pointerup" && e.pointerType === "touch" && moved <= 4 && !pointers.size) {
+      const [px, py] = at(e);
+      if (lastTap && e.timeStamp - lastTap.time < 300 && Math.hypot(px - lastTap.x, py - lastTap.y) < 30) {
+        zoomAt(2, px, py);
+        lastTap = null;
+      } else {
+        lastTap = { time: e.timeStamp, x: px, y: py };
+      }
+    }
+  };
+  view.addEventListener("pointerup", up);
+  view.addEventListener("pointercancel", up);
+  // A drag or pinch isn't a click on a dot.
+  view.addEventListener("click", (e) => { if (moved > 4) e.stopPropagation(); }, true);
+
+  // The keyboard: + and − zoom, 0 shows all of Wales, the arrow keys move about.
+  view.tabIndex = 0;
+  view.setAttribute("aria-label", tr("Map: + and − to zoom, arrow keys to move", "Map: + a − i chwyddo, bysellau saeth i symud"));
+  view.addEventListener("keydown", (e) => {
+    const step = 40;
+    const keys = { "+": () => zoomCentre(1.8), "=": () => zoomCentre(1.8), "-": () => zoomCentre(1 / 1.8), "0": () => { scale = 1; apply(); },
+      ArrowLeft: () => { x += step; apply(); }, ArrowRight: () => { x -= step; apply(); },
+      ArrowUp: () => { y += step; apply(); }, ArrowDown: () => { y -= step; apply(); } };
+    if (!keys[e.key] || (e.key.startsWith("Arrow") && scale <= 1)) return;
+    e.preventDefault();
+    keys[e.key]();
+  });
+  new ResizeObserver(() => apply()).observe(view);
+  apply();
 }
 
 function placeCard(group) {
@@ -1499,6 +1618,16 @@ function renderMap(main) {
   // open while the pointer is on it, so its links can be clicked.
   const popup = el("div", { class: "map-popup", hidden: true });
   map.append(popup);
+  // Where a place's dot is drawn in the map now (it moves as the map zooms).
+  const placePopup = (place) => {
+    const b = map.getBoundingClientRect(), d = circles[state.data.places.indexOf(place)].getBoundingClientRect();
+    const x = d.left + d.width / 2 - b.left, y = d.top + d.height / 2 - b.top;
+    Object.assign(popup.style, { left: `${x}px`, top: `${y}px` });
+    // Above the dot, or below it near the top; kept inside the map at the sides.
+    popup.dataset.side = y < b.height * 0.3 ? "below" : "above";
+    popup.dataset.align = x < b.width * 0.3 ? "left" : x > b.width * 0.7 ? "right" : "centre";
+    popup.hidden = x < 0 || y < 0 || x > b.width || y > b.height;  // zoomed away from it
+  };
   let shown = null, hideTimer = null;
   const hide = () => { if (shown) light(shown, false); shown = null; popup.hidden = true; };
   const hideSoon = () => { clearTimeout(hideTimer); hideTimer = setTimeout(hide, 250); };
@@ -1508,19 +1637,14 @@ function renderMap(main) {
     hide();
     shown = place;
     light(place, true);
-    const [width, height] = state.data.mapSize;
-    const x = place.x / width, y = place.y / height;
     popup.replaceChildren(el("strong", {}, place.name), el("ul", {}, place.tunes.map((slug) =>
       el("li", {}, el("a", { href: tuneUrl(slug), "data-route": true }, state.groups.get(slug).title)))));
-    // Above the dot, or below it near the top; kept inside the map at the sides.
-    Object.assign(popup.style, { left: `${x * 100}%`, top: `${y * 100}%` });
-    popup.dataset.side = y < 0.3 ? "below" : "above";
-    popup.dataset.align = x < 0.3 ? "left" : x > 0.7 ? "right" : "centre";
-    popup.hidden = false;
+    placePopup(place);
   };
   const target = (event) => event.target.closest?.(".target");
   const place = (e) => state.data.places[target(e).dataset.place];
-  map.addEventListener("pointerover", (e) => { if (target(e) && e.pointerType !== "touch") show(place(e)); });
+  mapZoom(map, () => { if (shown) placePopup(shown); });
+  map.addEventListener("pointerover", (e) => { if (target(e) && e.pointerType !== "touch" && !e.buttons) show(place(e)); });
   // A touch "leaves" the dot as soon as the finger lifts: only a mouse closes it that way.
   map.addEventListener("pointerout", (e) => { if (target(e) && e.pointerType !== "touch") hideSoon(); });
   // Tapping (or clicking) a dot opens its popup, and it stays open until you tap elsewhere.

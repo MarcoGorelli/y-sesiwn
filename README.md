@@ -204,8 +204,10 @@ relative URLs, so the site also works under a sub-path such as
   `body[data-print]` for the print styles and puts things back on
   `afterprint`.
 - **Map:** tunes named after a place have a small map of Wales on their page,
-  and *Tunes on the map* (`?page=map`) shows every place with its tunes. The
-  places and their tunes are listed by hand in `places.json` (name, latitude,
+  and *Tunes on the map* (`?page=map`) shows every place with its tunes. It
+  zooms (buttons, double-click or double-tap, pinch, Ctrl + wheel, keyboard)
+  and pans by dragging; the dots keep their size on screen, so crowded places
+  come apart (`mapZoom()` in `app.js`). The places and their tunes are listed by hand in `places.json` (name, latitude,
   longitude, tune folders); `build_site.py` works out each dot's position on
   `site/wales.svg` and stops with an error if a folder doesn't exist.
 - **Offline and home-screen app:** `site/sw.js` (a service worker) saves a

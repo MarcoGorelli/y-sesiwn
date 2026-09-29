@@ -220,6 +220,17 @@ def test_search_by_name(page, query, expected):
         assert "Frân" in first
 
 
+def test_tunes_sharing_a_name(page):
+    # Different tunes with the same name are separate tunes, told apart by their source;
+    # searching the name finds them all.
+    page.goto_site()
+    page.fill("#hero-search", "Morfa Rhuddlan")
+    found = page.locator("#hero-suggestions li").all_inner_texts()
+    assert {"Morfa Rhuddlan", "Morfa Rhuddlan (Mary Richards)", "Morfa Rhuddlan (Robin Huw Bowen)"} <= set(found)
+    versions = page.evaluate("state.groups.get('morfa-rhuddlan').versions.map((v) => v.source)")
+    assert versions == ["Alawon Cymru", "51 Welsh Airs"]
+
+
 @pytest.mark.parametrize("notes, group, how", [
     ("G B D C B G A", "glandyfi", "starts like this"),                # without its lead-in
     ("D G B D C B G A", "glandyfi", "starts like this"),              # with it

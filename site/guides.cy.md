@@ -79,8 +79,6 @@ chysylltnod yn lle unrhyw beth nad yw'n llythyren nac yn rhif.
 
 ## 4. Agor pull request
 
-### Yn y porwr (heb osod dim)
-
 1. Mewngofnodwch i GitHub ac agorwch
    [ystorfa'r Sesiwn](https://github.com/MarcoGorelli/y-sesiwn).
 2. Cliciwch **Add file → Create new file**. Bydd GitHub yn cynnig gwneud eich
@@ -91,29 +89,7 @@ chysylltnod yn lle unrhyw beth nad yw'n llythyren nac yn rhif.
 5. Cliciwch **Commit changes…**, yna **Propose changes**, yna
    **Create pull request**. Dywedwch yn y disgrifiad o ble daw'r alaw.
 
-### Gyda git
-
-```bash
-git clone https://github.com/<your-username>/y-sesiwn.git   # after forking
-cd y-sesiwn
-git switch -c add-codi-r-hwyl
-mkdir tunes/codi-r-hwyl
-# write tunes/codi-r-hwyl/tune.abc
-git add tunes/codi-r-hwyl/tune.abc
-git commit -m "Add Codi'r Hwyl"
-git push -u origin add-codi-r-hwyl
-```
-
-Yna agorwch y pull request o'ch fork ar GitHub.
-
-I'w gweld yn yr ap cyn ei chynnig, rhedwch Y Sesiwn ar eich cyfrifiadur:
-
-```bash
-python build_site.py
-python -m http.server -d _site 8000
-```
-
-ac agorwch http://localhost:8000.
+(Yn defnyddio git? Gweler [y README](https://github.com/MarcoGorelli/y-sesiwn#adding-a-tune-with-git), yn Saesneg.)
 
 ## Beth sy'n digwydd nesaf
 

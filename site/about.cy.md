@@ -5,6 +5,10 @@ sydd eisiau eu dysgu, eu chwarae neu eu rhannu. Mae gan bob alaw ei sgôr,
 gellir ei chwarae ar unrhyw dempo a'i newid i unrhyw gywair, ac mae ganddi ei
 dolen ei hun y gallwch ei hanfon at ffrind cyn sesiwn.
 
+Mae'n brosiect addysgol, anfasnachol, i unrhyw un sydd â diddordeb yng
+ngherddoriaeth a diwylliant traddodiadol Cymru: chwaraewyr, dysgwyr, athrawon,
+a'r rhai chwilfrydig. Does dim yn cael ei werthu yma, a does dim hysbysebion.
+
 ## Mewn sesiwn
 
 Unwaith y byddwch wedi agor y wefan, mae'n cadw copi o bob alaw, felly mae'n

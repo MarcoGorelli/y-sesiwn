@@ -80,8 +80,6 @@ that isn't a letter or number turned into a hyphen.
 
 ## 4. Open a pull request
 
-### In the browser (no installing anything)
-
 1. Sign in to GitHub and open the
    [Y Sesiwn repository](https://github.com/MarcoGorelli/y-sesiwn).
 2. Click **Add file → Create new file**. GitHub will offer to make your own
@@ -92,29 +90,7 @@ that isn't a letter or number turned into a hyphen.
 5. Click **Commit changes…**, then **Propose changes**, then
    **Create pull request**. Say in the description where the tune comes from.
 
-### With git
-
-```bash
-git clone https://github.com/<your-username>/y-sesiwn.git   # after forking
-cd y-sesiwn
-git switch -c add-codi-r-hwyl
-mkdir tunes/codi-r-hwyl
-# write tunes/codi-r-hwyl/tune.abc
-git add tunes/codi-r-hwyl/tune.abc
-git commit -m "Add Codi'r Hwyl"
-git push -u origin add-codi-r-hwyl
-```
-
-Then open the pull request from your fork on GitHub.
-
-To see it in the app before proposing it, run Y Sesiwn locally:
-
-```bash
-python build_site.py
-python -m http.server -d _site 8000
-```
-
-and open http://localhost:8000.
+(Using git instead? See [the README](https://github.com/MarcoGorelli/y-sesiwn#adding-a-tune-with-git).)
 
 ## What happens next
 

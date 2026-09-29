@@ -5,6 +5,10 @@ wants to learn them, play them or share them. Every tune has its sheet music,
 can be played back at any tempo and changed to any key, and has its own link
 you can send to a friend before a session.
 
+It's an educational, non-commercial project, for anyone interested in Welsh
+traditional music and culture: players, learners, teachers, and the simply
+curious. Nothing here is sold, and there are no adverts.
+
 ## At a session
 
 Once you've opened the site, it keeps a copy of every tune, so it works

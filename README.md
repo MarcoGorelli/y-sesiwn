@@ -29,6 +29,22 @@ python -m http.server -d _site 8000     # then open http://localhost:8000
 Opening `_site/index.html` directly won't work: browsers block `file://`
 fetches of `tunes.json`. Rebuild after editing a tune or anything in `site/`.
 
+## Adding a tune with git
+
+```bash
+git clone https://github.com/<your-username>/y-sesiwn.git   # after forking
+cd y-sesiwn
+git switch -c add-codi-r-hwyl
+mkdir tunes/codi-r-hwyl
+# write tunes/codi-r-hwyl/tune.abc
+git add tunes/codi-r-hwyl/tune.abc
+git commit -m "Add Codi'r Hwyl"
+git push -u origin add-codi-r-hwyl
+```
+
+Then open the pull request from your fork on GitHub. To see it in the app first,
+run Y Sesiwn locally as above.
+
 ## Tests
 
 ```bash

@@ -264,7 +264,41 @@ def test_map(page):
     page.hover(f".target[data-place='{caernarfon}']", force=True)
     assert "Castell Caernarfon" in page.locator(".map-popup").inner_text()
     page.goto_site("?tune=machynlleth")
-    assert page.locator(".card.place h2").inner_text() == "Machynlleth"
+    assert page.locator(".card.place h2").inner_text() == "On the map"  # not "Machynlleth" twice
+    page.goto_site("alaw/llancesau-trefaldwyn/")
+    assert page.locator(".card.place h2").inner_text() == "Trefaldwyn"
+
+
+def test_phone_menu(browser, site):
+    # On a phone the sidebar's links fold away behind Menu, and the music starts on the
+    # first screen; loop, count-in, click and tablature are in practice mode.
+    context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True,
+                                  service_workers="block")
+    page = context.new_page()
+    page.goto(site + "alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert not page.locator(".sidebar-links").is_visible()
+    assert page.get_attribute("#menu-button", "aria-expanded") == "false"
+    assert page.evaluate("document.querySelector('.score .abcjs-staff').getBoundingClientRect().top") < 844
+    assert not page.locator(".practice-row").is_visible()
+    page.click("#menu-button")
+    assert page.locator(".sidebar-links").is_visible()
+    assert page.get_attribute("#menu-button", "aria-expanded") == "true"
+    page.click(".sidebar-links a[href='?page=map']")  # opening a page closes the menu
+    page.wait_for_selector(".wales-map circle")
+    assert not page.locator(".sidebar-links").is_visible()
+    context.close()
+
+
+def test_practice_row_in_practice_mode_on_a_phone(browser, site):
+    context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True,
+                                  service_workers="block")
+    page = context.new_page()
+    page.goto(site + "alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.click(".practice-toggle")
+    assert page.locator("#loop-select").is_visible() and page.locator("#tab-select").is_visible()
+    context.close()
 
 
 def test_map_on_a_phone(browser, site):
@@ -303,8 +337,10 @@ def test_fits_a_phone(browser, site, path, lang):
 def test_home_page(page):
     page.goto_site()
     features = page.locator(".features li").all_inner_texts()
-    assert len(features) >= 8 and any("Accompaniment" in f for f in features)
+    assert len(features) == 7 and any("Accompaniment" in f for f in features)
     assert page.locator(".offline-card").is_visible()
+    # One search box on the home page: its own big one, not the sidebar's too.
+    assert page.locator("#hero-search").is_visible() and not page.locator("#search-input").is_visible()
     # Browsing every tune has its own page; the home page links to it.
     assert page.locator(".tune-list").count() == 0
     page.click("a.button-link:has-text('Browse all')")
@@ -337,9 +373,9 @@ def test_welsh_home_page(page):
     assert page.inner_text("h1") == "Croeso i'r Sesiwn!"
     assert page.evaluate("document.documentElement.lang") == "cy"
     assert page.get_attribute(".lang-switch [data-lang=cy]", "aria-pressed") == "true"
-    assert page.inner_text("#home-button") == "Yn ôl i'r hafan"
+    assert page.inner_text("#surprise-sidebar") == "Alaw ar hap"
     assert page.get_attribute("#search-input", "placeholder") == "Chwilio am alaw…"
-    assert page.locator(".features li").count() == 12
+    assert page.locator(".features li").count() == 7
     # Nothing left in English: no sentence of the English page shows up in the Welsh one.
     welsh = page.evaluate(VISIBLE_TEXT)
     fragments = {f.strip() for f in re.split(r"[.:;?!()\n]", english) if len(f.strip()) >= 12}
@@ -352,10 +388,10 @@ def test_welsh_home_page(page):
     page.wait_for_selector(".tune-list li")
     assert page.get_attribute("#main", "lang") == "cy"
     assert page.inner_text("main h1") == "Pori yn ôl math a chywair"
-    page.click("#home-button")
+    page.click(".brand")
     page.click(".lang-switch [data-lang=en]")
     assert page.inner_text("h1") == "Croeso! Welcome to Y Sesiwn"
-    assert page.inner_text("#home-button") == "Back to home"
+    assert page.inner_text("#surprise-sidebar") == "Surprise me"
     assert page.evaluate(VISIBLE_TEXT) == english
 
 
@@ -599,14 +635,23 @@ def test_tablature(page, tab, first):
 # ---- Report a problem, browse by key -------------------------------------------------
 
 def test_report_link(page):
-    from urllib.parse import parse_qs, urlparse
-    page.goto_site("?tune=glandyfi&v=2")
-    href = page.get_attribute("a.report", "href")
-    assert href.startswith("https://github.com/MarcoGorelli/y-sesiwn/issues/new?")
-    query = parse_qs(urlparse(href).query)
-    assert query["title"] == ["Problem with Glandyfi (version 2)"]
-    assert "https://ysesiwn.cymru/alaw/glandyfi/?v=2" in query["body"][0]
-    assert "tunes/glandyfi-version-2/tune.abc" in query["body"][0]
+    # One way to report a problem: the contact form, with the tune (and version) filled in.
+    page.goto_site("alaw/glandyfi/?v=2")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.locator(".report-line a").count() == 1
+    page.click("a.report")
+    page.wait_for_selector(".email-form")
+    assert page.input_value("[name=subject]") == "About Glandyfi (version 2)"
+
+
+def test_tune_details(page):
+    # The key and the arranger are on the key menu and the score, so not repeated in
+    # Details; the source stays, as its address.
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    labels = page.locator(".tune-side .card dt").all_inner_texts()
+    assert "Key" not in labels and "Composer / arranger" not in labels
+    assert page.inner_text(".tune-side .card dd a") == "http://alawoncymru.com/alawon/Tunes/SetyDwr/SetYDwr.html"
 
 
 # ---- Sending a tune, the contact page ---------------------------------------------------
@@ -676,7 +721,7 @@ def test_send_a_tune_without_abc(page):
 
 def test_contact_page(page):
     page.goto_site("?tune=glandyfi&v=2")
-    page.click(".report-line a:has-text('write to us')")
+    page.click("a.report")
     page.wait_for_selector(".email-form")
     assert page.input_value("[name=subject]") == "About Glandyfi (version 2)"
     page.evaluate(CATCH_MAIL)

@@ -686,6 +686,13 @@ function navigate(url) {
   window.scrollTo(0, 0);
 }
 
+// Phones: the sidebar's links fold away behind the Menu button (style.css); opening a
+// page closes it again.
+function setMenu(open) {
+  document.querySelector(".sidebar").classList.toggle("menu-open", open);
+  document.getElementById("menu-button").setAttribute("aria-expanded", String(open));
+}
+
 function openRandomTune() {
   const current = addressTune();
   const choices = state.groupList.filter((g) => g.slug !== current);
@@ -739,7 +746,8 @@ function render() {
   if (!tune) setPractice(false);
   main.style.animation = "none"; void main.offsetWidth; main.style.animation = "";  // replay fade-in
   const home = !tune && !guide && !map && !offline && !notes && !browse && !contact;
-  document.getElementById("home-button").disabled = home;
+  document.body.dataset.page = home ? "home" : "other";  // the home page has its own search box
+  setMenu(false);
   main.lang = state.lang;
   if (tune) renderTune(main, group, tune);
   else if (guide) renderGuide(main, guide);
@@ -866,33 +874,24 @@ function features() {
   // What the site does, in one list: each item's first words say it, the rest how.
   const link = (href, text) => el("a", { href, "data-route": href.startsWith("?") ? true : null }, text);
   const withChords = state.groupList.filter((g) => g.versions.some((v) => v.chords != null)).length;
+  // The name search, the browse button and the offline card are right above and below.
   const items = state.lang === "cy" ? [
-    [["Canfod alaw wrth ei henw"], ": maddeuir gwallau teipio, acenion a sillafiadau eraill."],
     [[link("?page=notes", "Canfod alaw o'i nodau")], ": chwaraewch yr ychydig nodau cyntaf ar eich offeryn i'r meicroffon, tapiwch nhw ar y bysellfwrdd neu teipiwch nhw, mewn unrhyw gywair."],
-    [["Sgôr"], " i bob alaw, gyda gwahanol fersiynau alaw ochr yn ochr."],
-    [["Unrhyw gywair"], ": trawsgyweiriwch alaw i siwtio'ch offeryn, eich llais neu'r sesiwn."],
-    [["Gwrandewch arni"], " ar unrhyw dempo, gyda'r nodau'n goleuo wrth iddyn nhw gael eu chwarae."],
+    [["Unrhyw gywair, unrhyw dempo"], ": trawsgyweiriwch alaw i siwtio'ch offeryn, eich llais neu'r sesiwn, a gwrandewch arni gyda'r nodau'n goleuo wrth iddyn nhw gael eu chwarae."],
     [["Ymarfer"], ": chwaraewch un rhan o alaw drosodd a throsodd gan gyflymu ychydig bob tro, gyda chyfrif i mewn a chlic os mynnwch, a ", ["thablatur"], " ar gyfer mandolin, ffidil neu gitâr."],
     [["Cyfeiliant"], `: cordiau awgrymedig fel siart ar gyfer gitâr, piano neu delyn, i'w chwarae gyda'r alaw neu hebddi (${withChords} o alawon hyd yma, a mwy i ddod).`],
     [["Modd ymarfer"], " sy'n llenwi'r sgrin â'r gerddoriaeth, ar gyfer llechen ar stand gerddoriaeth; neu ", ["argraffwch"], " hi."],
     [[link("?page=map", "Alawon ar y map")], ": y lleoedd yng Nghymru y mae alawon wedi'u henwi ar eu hôl."],
-    [[link("?page=offline", "Gweithio all-lein")], ": gosodwch hi ar eich ffôn ac ewch â phob alaw i'r dafarn."],
-    [[link("?page=browse", "Pori")], " yn ôl math a chywair: y jigiau yn D, dyweder, neu bopeth yn G."],
-    [["Rhydd ac agored"], ": ", link("?page=add", "ychwanegwch alaw"), " neu ", link("?page=fix", "awgrymwch gywiriad"),
+    [["Rhydd ac agored"], ": ", link("?page=add", "ychwanegwch alaw"), " neu ", link("?page=contact", "awgrymwch gywiriad"),
       "; mae popeth ", link(state.data.repo, "ar GitHub"), "."],
   ] : [
-    [["Find a tune by name"], ": typos, accents and other spellings are forgiven."],
     [[link("?page=notes", "Find a tune by its notes")], ": play the first few notes on your instrument to the microphone, tap them on the keyboard or type them, in any key."],
-    [["Sheet music"], " for every tune, with the versions of a tune side by side."],
-    [["Any key"], ": transpose a tune to suit your instrument, your voice or the session."],
-    [["Play it back"], " at any tempo, with the notes lit up as they play."],
+    [["Any key, any tempo"], ": transpose a tune to suit your instrument, your voice or the session, and play it back with the notes lit up as they play."],
     [["Practise"], ": loop one part of a tune and speed up a little each time round, with a count-in and a click if you like, and ", ["tablature"], " for mandolin, fiddle or guitar."],
     [["Accompaniment"], `: suggested chords as a chart for guitar, piano or harp, played with or without the tune (${withChords} tunes so far, and growing).`],
     [["Practice mode"], " fills the screen with the music, for a tablet on a music stand; or ", ["print"], " it."],
     [[link("?page=map", "Tunes on the map")], ": the places in Wales that tunes are named after."],
-    [[link("?page=offline", "Works offline")], ": install it on your phone and take every tune to the pub."],
-    [[link("?page=browse", "Browse")], " by type and key: the jigs in D, say, or everything in G."],
-    [["Free and open"], ": ", link("?page=add", "add a tune"), " or ", link("?page=fix", "suggest a correction"),
+    [["Free and open"], ": ", link("?page=add", "add a tune"), " or ", link("?page=contact", "suggest a correction"),
       "; everything is ", link(state.data.repo, "on GitHub"), "."],
   ];
   // [["words"]] is the bold lead-in (possibly a link); plain strings and links follow it.
@@ -1333,7 +1332,8 @@ function renderTune(main, group, tune) {
     })), el("div", { class: "tune-actions" },
       printButton(tune, paper), qrButton(group, tune), practice));
 
-  const details = el("dl", {}, tune.details.map(([label, value]) =>
+  const shownElsewhere = new Set(["Key", "Composer / arranger"]);  // the key menu; the score's credit
+  const details = el("dl", {}, tune.details.filter(([label]) => !shownElsewhere.has(label)).map(([label, value]) =>
     [el("dt", {}, tr(label, CY_DETAILS[label] ?? label)), el("dd", {}, detailValue(label, value))]));
   // What the Welsh credit words mean (trefniant = arranged by, …), for English readers.
   const gloss = tune.gloss.length && state.lang !== "cy"
@@ -1372,7 +1372,8 @@ function renderTune(main, group, tune) {
   };
   loopSelect.addEventListener("change", fillLoops);
 
-  const report = el("a", { class: "report", href: reportUrl(group, tune) }, tr("Report a problem with this tune", "Rhoi gwybod am broblem gyda'r alaw hon"));
+  const report = el("a", { class: "report", href: `?page=contact&about=${tune.slug}`, "data-route": true },
+    tr("Report a problem with this tune", "Rhoi gwybod am broblem gyda'r alaw hon"));
 
   main.replaceChildren(...[
     el("h1", {}, group.title),
@@ -1386,9 +1387,7 @@ function renderTune(main, group, tune) {
         el("section", { class: "card" }, el("h2", {}, tr("Details", "Manylion")), details, gloss || null),
         placeCard(group),
         el("details", { class: "abc" }, el("summary", {}, tr("ABC notation", "Nodiant ABC")), el("pre", { tabindex: 0 }, stripFields(tune.abc, "Z"))),
-        el("p", { class: "report-line" }, report, el("br"), el("span", { class: "caption" },
-          tr("(needs a free GitHub account), or ", "(angen cyfrif GitHub am ddim), neu "),
-          el("a", { href: `?page=contact&about=${tune.slug}`, "data-route": true }, tr("write to us", "ysgrifennwch aton ni")))))),
+        el("p", { class: "report-line" }, report))),
   ].filter(Boolean));
   redraw();
   fillLoops();
@@ -1433,22 +1432,6 @@ function qrButton(group, tune) {
     document.body.append(dialog);
     dialog.showModal();
   } }, tr("QR code", "Cod QR"));
-}
-
-// A new GitHub issue about this tune, with its name, page and file filled in.
-function reportUrl(group, tune) {
-  const page = `https://ysesiwn.cymru/${tuneUrl(group.slug, tune.version)}`;
-  const body = [
-    `**Tune:** ${group.title}${group.versions.length > 1 ? ` (version ${tune.version})` : ""}`,
-    `**Page:** ${page}`,
-    `**File:** \`tunes/${tune.slug}/tune.abc\``,
-    "",
-    "**What's wrong?** (for example: a wrong note in bar 5 of part B, a missing repeat, the title)",
-    "",
-    "",
-  ].join("\n");
-  const title = `Problem with ${group.title}${group.versions.length > 1 ? ` (version ${tune.version})` : ""}`;
-  return `${state.data.repo}/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
 }
 
 const practiceLabel = (on) => (on ? tr("Exit practice mode", "Gadael y modd ymarfer") : tr("Practice mode", "Modd ymarfer"));
@@ -1497,8 +1480,9 @@ function walesMap(current = null) {
 function placeCard(group) {
   const place = state.data.places.find((p) => p.tunes.includes(group.slug));
   if (!place) return null;
+  const sameName = normalize(place.name) === normalize(group.title);
   return el("section", { class: "card place" },
-    el("h2", {}, place.name),
+    el("h2", {}, sameName ? tr("On the map", "Ar y map") : place.name),
     walesMap(place),
     el("p", { class: "caption" }, el("a", { href: "?page=map", "data-route": true }, tr("All tunes on the map", "Pob alaw ar y map"))));
 }
@@ -1826,7 +1810,7 @@ function sendTuneForm() {
     form);
 }
 
-// ?page=contact, and ?page=contact&about=<version's folder> from a tune's "write to us" link.
+// ?page=contact, and ?page=contact&about=<version's folder> from a tune's "Report a problem" link.
 function renderContact(main) {
   document.title = tr("Contact · Y Sesiwn", "Cysylltu · Y Sesiwn");
   const tune = state.bySlug.get(new URLSearchParams(location.search).get("about"));
@@ -1993,8 +1977,9 @@ function buildGroups() {
 async function start() {
   state.data = await (await fetch("tunes.json")).json();
   buildGroups();
-  document.getElementById("home-button").addEventListener("click", () => navigate("./"));
   document.getElementById("surprise-sidebar").addEventListener("click", openRandomTune);
+  document.getElementById("menu-button").addEventListener("click", () =>
+    setMenu(!document.querySelector(".sidebar").classList.contains("menu-open")));
   for (const button of document.querySelectorAll(".lang-switch button")) {
     button.addEventListener("click", () => setLang(button.dataset.lang));
   }

@@ -95,6 +95,14 @@ def test_built_site(site):
     assert not [f for f in files if f.startswith("alaw/")]
 
 
+def test_set_codes(site):
+    # Every tune has its own five-character code for set links, which stays the same.
+    index = json.loads((b.OUT / "tunes.json").read_text(encoding="utf-8"))
+    codes = [t["id"] for t in index["tunes"]]
+    assert len(set(codes)) == len(codes) and all(re.fullmatch(r"[0-9a-z]{5}", c) for c in codes)
+    assert b.short_id("llancesau-trefaldwyn") == "bne0o"  # a set link made today still works later
+
+
 def test_tune_pages(site):
     # A real page per tune (alaw/<folder>/), for link previews and search engines.
     out = b.OUT

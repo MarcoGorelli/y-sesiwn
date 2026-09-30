@@ -414,8 +414,22 @@ def places(groups: set[str]) -> list[dict]:
     return result
 
 
+def short_id(slug: str) -> str:
+    """A tune's code in set links (?page=set&s=…): five letters and digits from its
+    folder name, so it doesn't change when other tunes are added."""
+    n = int(hashlib.sha1(slug.encode()).hexdigest(), 16) % 36 ** 5
+    digits = "0123456789abcdefghijklmnopqrstuvwxyz"
+    return "".join(digits[n // 36 ** i % 36] for i in reversed(range(5)))
+
+
 def main() -> None:
     tunes = [tune_record(p) for p in sorted((ROOT / "tunes").glob("*/tune.abc"))]
+    ids: dict[str, str] = {}
+    for tune in tunes:
+        tune["id"] = short_id(tune["slug"])
+        if tune["id"] in ids:  # very unlikely (1 in about 60 million per pair); rename a folder if it happens
+            raise SystemExit(f"{tune['slug']} and {ids[tune['id']]} have the same set code {tune['id']}")
+        ids[tune["id"]] = tune["slug"]
     first_versions = [t for t in tunes if t["version"] == 1]
     counts = {t: sum(tune["type"] == t for tune in first_versions) for t in TYPE_ORDER}
     index = {

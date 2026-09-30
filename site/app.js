@@ -26,6 +26,7 @@ const PAGES = {
 const state = {
   data: null,
   bySlug: new Map(),    // every tune file ("version"), by folder name
+  byId: new Map(),      // and by its short code (set links)
   groups: new Map(),    // one page per tune: its versions, by the first version's folder
   groupList: [],        // groups sorted by title
   settings: new Map(),  // per tune: { transpose, bpm }, kept while the page is open
@@ -742,10 +743,12 @@ function render() {
   const notes = page === "notes";
   const browse = page === "browse";
   const contact = page === "contact";
+  const setPage = page === "set";
+  const setsPage = page === "sets";
   const main = document.getElementById("main");
   if (!tune) setPractice(false);
   main.style.animation = "none"; void main.offsetWidth; main.style.animation = "";  // replay fade-in
-  const home = !tune && !guide && !map && !offline && !notes && !browse && !contact;
+  const home = !tune && !guide && !map && !offline && !notes && !browse && !contact && !setPage && !setsPage;
   document.body.dataset.page = home ? "home" : "other";  // the home page has its own search box
   setMenu(false);
   main.lang = state.lang;
@@ -756,6 +759,8 @@ function render() {
   else if (notes) renderNotesPage(main);
   else if (browse) renderBrowse(main);
   else if (contact) renderContact(main);
+  else if (setPage) renderSet(main);
+  else if (setsPage) renderSets(main);
   else renderHome(main);
   countView();
 }
@@ -881,6 +886,7 @@ function features() {
     [["Ymarfer"], ": chwaraewch un rhan o alaw drosodd a throsodd gan gyflymu ychydig bob tro, gyda chyfrif i mewn a chlic os mynnwch, a ", ["thablatur"], " ar gyfer mandolin, ffidil neu gitâr."],
     [["Cyfeiliant"], `: cordiau awgrymedig fel siart ar gyfer gitâr, piano neu delyn, i'w chwarae gyda'r alaw neu hebddi (${withChords} o alawon hyd yma, a mwy i ddod).`],
     [["Modd ymarfer"], " sy'n llenwi'r sgrin â'r gerddoriaeth, ar gyfer llechen ar stand gerddoriaeth; neu ", ["argraffwch"], " hi."],
+    [[link("?page=sets", "Setiau")], ": casglwch alawon i'w chwarae gyda'i gilydd, yn y cyweiriau a fynnwch, a'u rhannu fel dolen neu god QR."],
     [[link("?page=map", "Alawon ar y map")], ": y lleoedd yng Nghymru y mae alawon wedi'u henwi ar eu hôl."],
     [["Rhydd ac agored"], ": ", link("?page=add", "ychwanegwch alaw"), " neu ", link("?page=contact", "awgrymwch gywiriad"),
       "; mae popeth ", link(state.data.repo, "ar GitHub"), "."],
@@ -890,6 +896,7 @@ function features() {
     [["Practise"], ": loop one part of a tune and speed up a little each time round, with a count-in and a click if you like, and ", ["tablature"], " for mandolin, fiddle or guitar."],
     [["Accompaniment"], `: suggested chords as a chart for guitar, piano or harp, played with or without the tune (${withChords} tunes so far, and growing).`],
     [["Practice mode"], " fills the screen with the music, for a tablet on a music stand; or ", ["print"], " it."],
+    [[link("?page=sets", "Sets")], ": gather tunes to play together, in the keys you want, and share them as a link or a QR code."],
     [[link("?page=map", "Tunes on the map")], ": the places in Wales that tunes are named after."],
     [["Free and open"], ": ", link("?page=add", "add a tune"), " or ", link("?page=contact", "suggest a correction"),
       "; everything is ", link(state.data.repo, "on GitHub"), "."],
@@ -1330,7 +1337,7 @@ function renderTune(main, group, tune) {
       oninput: (e) => { settings.bpm = +e.target.value; showTempo(); },
       onchange: redraw,
     })), el("div", { class: "tune-actions" },
-      printButton(tune, paper), qrButton(group, tune), practice));
+      printButton(tune, paper), qrButton(group, tune), addToSetButton(tune, settings), practice));
 
   const shownElsewhere = new Set(["Key", "Composer / arranger"]);  // the key menu; the score's credit
   const details = el("dl", {}, tune.details.filter(([label]) => !shownElsewhere.has(label)).map(([label, value]) =>
@@ -1405,7 +1412,8 @@ function loadQr() {
 
 // The QR code as an SVG: one square per dark module, drawn as a single path.
 function qrSvg(text) {
-  const qr = window.qrcode(0, "M");
+  // Less error correction for a long link (a big set), so its squares stay big enough to scan.
+  const qr = window.qrcode(0, text.length > 300 ? "L" : "M");
   qr.addData(text);
   qr.make();
   const n = qr.getModuleCount(), margin = 4;
@@ -1416,22 +1424,26 @@ function qrSvg(text) {
     svg("rect", { width: "100%", height: "100%", fill: "#fff" }), svg("path", { d, fill: "#000" }));
 }
 
+async function showQr(title, link, caption) {
+  await loadQr();
+  const dialog = el("dialog", { class: "qr-dialog", "aria-labelledby": "qr-title" },
+    el("h2", { id: "qr-title" }, title),
+    qrSvg(link),
+    el("p", { class: "caption" }, caption),
+    el("p", { class: "caption qr-link" }, link.length > 120 ? `${link.slice(0, 60)}…` : link),
+    el("form", { method: "dialog" }, el("button", { class: "primary" }, tr("Close", "Cau"))));
+  dialog.addEventListener("close", () => dialog.remove());
+  // A click on the backdrop (outside the box) closes it too.
+  dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
+  document.body.append(dialog);
+  dialog.showModal();
+}
+
 function qrButton(group, tune) {
-  return el("button", { type: "button", class: "qr-button", onclick: async () => {
-    const link = `https://ysesiwn.cymru/${tuneUrl(group.slug, tune.version)}`;
-    await loadQr();
-    const dialog = el("dialog", { class: "qr-dialog", "aria-labelledby": "qr-title" },
-      el("h2", { id: "qr-title" }, group.title),
-      qrSvg(link),
-      el("p", { class: "caption" }, tr("Scan with a phone's camera to open this tune.", "Sganiwch gyda chamera ffôn i agor yr alaw hon.")),
-      el("p", { class: "caption qr-link" }, link),
-      el("form", { method: "dialog" }, el("button", { class: "primary" }, tr("Close", "Cau"))));
-    dialog.addEventListener("close", () => dialog.remove());
-    // A click on the backdrop (outside the box) closes it too.
-    dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
-    document.body.append(dialog);
-    dialog.showModal();
-  } }, tr("QR code", "Cod QR"));
+  return el("button", { type: "button", class: "qr-button", onclick: () =>
+    showQr(group.title, `https://ysesiwn.cymru/${tuneUrl(group.slug, tune.version)}`,
+      tr("Scan with a phone's camera to open this tune.", "Sganiwch gyda chamera ffôn i agor yr alaw hon.")),
+  }, tr("QR code", "Cod QR"));
 }
 
 const practiceLabel = (on) => (on ? tr("Exit practice mode", "Gadael y modd ymarfer") : tr("Practice mode", "Modd ymarfer"));
@@ -1825,6 +1837,228 @@ function renderOffline(main) {
         "the next time you're online, and you'll see it from the next time you open Y Sesiwn.")));
 }
 
+// ---- Sets: tunes to play together, kept in the link --------------------------------------
+// A set lives in its address: ?page=set&s=<code>.<code>~2.<code>&name=… where each code
+// is a tune's (build_site.py's short_id: five characters, so a 100-tune set is a link of
+// about 600 characters and a QR code that still scans) and ~2 moves it up two semitones.
+// Your own sets are also kept in this browser (localStorage), with &my=<id> in their
+// address; nothing is sent anywhere, and a shared link is the set itself.
+
+const encodeSet = (items) => items.map(({ tune, key }) => tune.id + (key ? `~${key}` : "")).join(".");
+
+function decodeSet(text) {
+  const items = [];
+  let missing = 0;
+  for (const part of (text ?? "").split(".").filter(Boolean)) {
+    const [id, key] = part.split("~");
+    const tune = state.byId.get(id);
+    if (tune) items.push({ tune, key: Math.max(-5, Math.min(6, Number(key) || 0)) });
+    else missing++;
+  }
+  return { items, missing };
+}
+
+function setUrl(items, name, my = null) {
+  const params = new URLSearchParams({ page: "set", s: encodeSet(items) });
+  if (name) params.set("name", name);
+  if (my) params.set("my", my);
+  return `?${params}`.replaceAll("%7E", "~");
+}
+
+function loadSets() {
+  try { return JSON.parse(localStorage.getItem("sets")) ?? []; } catch { return []; }
+}
+function saveSets(sets) {
+  try { localStorage.setItem("sets", JSON.stringify(sets)); } catch {}
+}
+function currentSetId() {
+  try { return localStorage.getItem("currentSet"); } catch { return null; }
+}
+function setCurrentSet(id) {
+  try { localStorage.setItem("currentSet", id); } catch {}
+}
+const newSetId = () => Math.random().toString(36).slice(2, 8);
+const defaultSetName = () => tr("My set", "Fy set");
+const tuneCount = (n) => tr(`${n} tune${n === 1 ? "" : "s"}`, `${n} alaw`);
+
+// The tune page's button: adds this version, in the key chosen, to the set you're building.
+function addToSetButton(tune, settings) {
+  const status = el("span", { class: "caption add-status", "aria-live": "polite" });
+  const button = el("button", { type: "button", class: "add-to-set", onclick: () => {
+    const sets = loadSets();
+    let set = sets.find((x) => x.id === currentSetId());
+    if (!set) {
+      set = { id: newSetId(), name: defaultSetName(), s: "" };
+      sets.push(set);
+      setCurrentSet(set.id);
+    }
+    const { items } = decodeSet(set.s);
+    items.push({ tune, key: settings.transpose });
+    set.s = encodeSet(items);
+    set.updated = Date.now();
+    saveSets(sets);
+    status.replaceChildren(tr(`Added to ${set.name} (${tuneCount(items.length)}) · `, `Wedi'i hychwanegu at ${set.name} (${tuneCount(items.length)}) · `),
+      el("a", { href: setUrl(items, set.name, set.id), "data-route": true }, tr("see the set", "gweld y set")));
+  } }, tr("Add to set", "Ychwanegu at set"));
+  return el("span", { class: "add-to-set-wrap" }, button, status);
+}
+
+// ?page=sets: the sets kept in this browser.
+function renderSets(main) {
+  document.title = tr("My sets · Y Sesiwn", "Fy setiau · Y Sesiwn");
+  const draw = () => {
+    const sets = loadSets().sort((a, b) => (b.updated ?? 0) - (a.updated ?? 0));
+    const list = sets.length
+      ? el("ul", { class: "set-list-mine" }, sets.map((set) => {
+          const { items } = decodeSet(set.s);
+          return el("li", {},
+            el("a", { href: setUrl(items, set.name, set.id), "data-route": true, onclick: () => setCurrentSet(set.id) }, set.name),
+            el("span", { class: "caption" }, ` · ${tuneCount(items.length)}${set.id === currentSetId() ? tr(" · adding to this one", " · yn ychwanegu at hon") : ""}`),
+            el("button", { type: "button", class: "link-button", onclick: () => {
+              if (!confirm(tr(`Delete “${set.name}”?`, `Dileu “${set.name}”?`))) return;
+              saveSets(loadSets().filter((x) => x.id !== set.id));
+              draw();
+            } }, tr("Delete", "Dileu")));
+        }))
+      : el("p", {}, tr("No sets yet. Open a tune and press Add to set, or start one here.",
+        "Dim setiau eto. Agorwch alaw a phwyso Ychwanegu at set, neu dechreuwch un yma."));
+    main.replaceChildren(
+      el("h1", {}, tr("My sets", "Fy setiau")),
+      el("p", { class: "lead" }, tr("Tunes to play together, in order and in the keys you choose: for a session, a workshop "
+        + "or your practice. They're kept on this device; share one with its link or QR code.",
+        "Alawon i'w chwarae gyda'i gilydd, yn eu trefn ac yn y cyweiriau a ddewiswch: ar gyfer sesiwn, gweithdy "
+        + "neu eich ymarfer. Maen nhw'n cael eu cadw ar y ddyfais hon; rhannwch un gyda'i dolen neu ei god QR.")),
+      el("p", { class: "sets-own" }, tr("Y Sesiwn doesn't come with ready-made sets, on purpose: finding which tunes sit well "
+        + "together is part of the fun, so experiment and make your own.",
+        "Does dim setiau parod ar Y Sesiwn, a hynny'n fwriadol: mae darganfod pa alawon sy'n mynd yn dda gyda'i gilydd "
+        + "yn rhan o'r hwyl, felly arbrofwch a gwnewch rai eich hun.")),
+      list,
+      el("p", {}, el("button", { type: "button", class: "primary", onclick: () => {
+        const sets = loadSets();
+        const set = { id: newSetId(), name: defaultSetName(), s: "", updated: Date.now() };
+        saveSets([...sets, set]);
+        setCurrentSet(set.id);
+        navigate(setUrl([], set.name, set.id));
+      } }, tr("New set", "Set newydd"))));
+  };
+  draw();
+}
+
+// A tune's music for a set: in its key, without chords; drawn when it's about to be seen.
+function setScore(tune, key) {
+  const paper = el("div", { class: "set-paper hide-chords" });
+  paper.draw = () => {
+    if (paper.drawn) return;
+    paper.drawn = true;
+    // The numbered heading above says which tune it is, so no title (T:) on the music.
+    let abc = setTempo(stripFields(tune.abc, "SZBNAHT"), tune.beat, tune.bpm);
+    if (key) abc = ABCJS.strTranspose(abc, ABCJS.renderAbc("*", abc), key);
+    ABCJS.renderAbc(paper, abc, { responsive: "resize", add_classes: true, paddingtop: 0 });
+    nameScore(paper);
+  };
+  return paper;
+}
+
+function keyOptions(tune, key) {
+  if (!tune.key) return [el("option", { value: 0, selected: true }, "—")];
+  const { pitch, root } = tune.key;
+  const mode = modeName(tune.key.modeName);
+  return Array.from({ length: 12 }, (_, i) => i - 5).map((shift) => el("option", { value: shift, selected: shift === key },
+    shift === 0 ? `${root} ${mode} ${tr("(original)", "(gwreiddiol)")}` : `${NOTES[(pitch + shift + 12) % 12]} ${mode}`));
+}
+
+// ?page=set: a set, from its link. Editing it changes the link (and, for your own
+// sets, what's kept in this browser).
+function renderSet(main) {
+  const params = new URLSearchParams(location.search);
+  const my = params.get("my");
+  const mine = my && loadSets().find((x) => x.id === my);
+  let { items, missing } = decodeSet(params.get("s"));
+  let name = params.get("name") || (mine ? mine.name : tr("A set", "Set"));
+  document.title = `${name} · Y Sesiwn`;
+  const shareLink = () => `https://ysesiwn.cymru/${setUrl(items, name)}`;
+  const save = () => {
+    history.replaceState(null, "", setUrl(items, name, mine ? my : null));
+    document.title = `${name} · Y Sesiwn`;
+    if (!mine) return;
+    const sets = loadSets();
+    const set = sets.find((x) => x.id === my);
+    if (set) Object.assign(set, { name, s: encodeSet(items), updated: Date.now() });
+    saveSets(sets);
+  };
+
+  const list = el("ol", { class: "set-list" });
+  const music = el("div", { class: "set-music" });
+  const observer = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { e.target.draw(); observer.unobserve(e.target); }
+  }, { rootMargin: "800px" });
+  const draw = () => {
+    const move = (i, by) => { const [item] = items.splice(i, 1); items.splice(i + by, 0, item); save(); draw(); };
+    list.replaceChildren(...items.map((item, i) => {
+      const group = state.groups.get(item.tune.group);
+      const several = group.versions.length > 1;
+      const keySelect = el("select", { "aria-label": tr(`Key for ${item.tune.base}`, `Cywair ${item.tune.base}`),
+        onchange: (e) => { item.key = +e.target.value; save(); draw(); } }, keyOptions(item.tune, item.key));
+      return el("li", {},
+        el("a", { href: tuneUrl(item.tune.group, item.tune.version), "data-route": true }, item.tune.base),
+        several ? el("span", { class: "caption" }, tr(` (version ${item.tune.version})`, ` (fersiwn ${item.tune.version})`)) : null,
+        el("span", { class: "set-item-controls" }, keySelect,
+          el("button", { type: "button", "aria-label": tr("Move up", "Symud i fyny"), disabled: i === 0, onclick: () => move(i, -1) }, "↑"),
+          el("button", { type: "button", "aria-label": tr("Move down", "Symud i lawr"), disabled: i === items.length - 1, onclick: () => move(i, 1) }, "↓"),
+          el("button", { type: "button", "aria-label": tr(`Remove ${item.tune.base}`, `Tynnu ${item.tune.base}`),
+            onclick: () => { items.splice(i, 1); save(); draw(); } }, "✕")));
+    }));
+    observer.disconnect();
+    music.replaceChildren(...items.map((item, i) => {
+      const paper = setScore(item.tune, item.key);
+      observer.observe(paper);
+      return el("section", { class: "set-tune" }, el("h2", {}, `${i + 1}. ${item.tune.base}`), paper);
+    }));
+    count.textContent = tuneCount(items.length);
+  };
+  const count = el("span", { class: "caption" });
+  const title = mine
+    ? el("input", { type: "text", class: "set-name", value: name, "aria-label": tr("Name of the set", "Enw'r set"),
+        onchange: (e) => { name = e.target.value.trim() || defaultSetName(); save(); } })
+    : el("h1", {}, name);
+  const copy = el("button", { type: "button", onclick: async (e) => {
+    try { await navigator.clipboard.writeText(shareLink()); e.target.textContent = tr("✓ Link copied", "✓ Dolen wedi'i chopïo"); }
+    catch { prompt(tr("Copy this link:", "Copïwch y ddolen hon:"), shareLink()); }
+  } }, tr("Copy link", "Copïo'r ddolen"));
+  const printAll = () => { for (const paper of music.querySelectorAll(".set-paper")) paper.draw(); window.print(); };
+  // Printing with the browser's own menu: draw every score first. (Gone with the page.)
+  const beforePrint = () => {
+    if (!music.isConnected) { window.removeEventListener("beforeprint", beforePrint); return; }
+    for (const paper of music.querySelectorAll(".set-paper")) paper.draw();
+  };
+  window.addEventListener("beforeprint", beforePrint);
+  const saveButton = mine ? null : el("button", { type: "button", class: "primary", onclick: () => {
+    const set = { id: newSetId(), name, s: encodeSet(items), updated: Date.now() };
+    saveSets([...loadSets(), set]);
+    setCurrentSet(set.id);
+    navigate(setUrl(items, name, set.id));
+  } }, tr("Save to my sets", "Cadw yn fy setiau"));
+
+  main.replaceChildren(...[
+    title,
+    el("p", { class: "set-count" }, count, " · ", el("a", { href: "?page=sets", "data-route": true }, tr("My sets", "Fy setiau"))),
+    missing ? el("p", { class: "caption" }, tr(missing === 1 ? "1 tune in this set isn't on the site any more."
+      : `${missing} tunes in this set aren't on the site any more.`,
+      `Dyw ${tuneCount(missing)} yn y set hon ddim ar y wefan bellach.`)) : null,
+    el("div", { class: "set-actions" }, saveButton, copy,
+      el("button", { type: "button", onclick: () => showQr(name, shareLink(),
+        tr("Scan with a phone's camera to open this set.", "Sganiwch gyda chamera ffôn i agor y set hon.")) }, tr("QR code", "Cod QR")),
+      el("button", { type: "button", onclick: printAll }, tr("Print", "Argraffu")),
+      el("button", { type: "button", class: "practice-toggle", onclick: () => setPractice(!document.body.classList.contains("practice")) },
+        practiceLabel(document.body.classList.contains("practice")))),
+    items.length || missing ? list : el("p", {}, tr("No tunes yet: open a tune and press Add to set.",
+      "Dim alawon eto: agorwch alaw a phwyso Ychwanegu at set.")),
+    music,
+  ].filter(Boolean));
+  if (mine) setCurrentSet(my);
+  draw();
+}
+
 // ---- Writing to Y Sesiwn: sending a tune, the contact page ------------------------------
 
 // The address is only put together when someone sends a message, so it never appears in
@@ -2085,6 +2319,7 @@ function buildGroups() {
   // Versions of a tune ("Rheged", "Rheged (version 2)", …) share one page.
   for (const tune of state.data.tunes) {
     state.bySlug.set(tune.slug, tune);
+    state.byId.set(tune.id, tune);
     if (!state.groups.has(tune.group)) state.groups.set(tune.group, { slug: tune.group, title: tune.base, versions: [] });
     state.groups.get(tune.group).versions.push(tune);
   }

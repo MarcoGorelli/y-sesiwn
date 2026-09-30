@@ -430,7 +430,7 @@ def test_fits_a_phone(browser, site, path, lang):
 def test_home_page(page):
     page.goto_site()
     features = page.locator(".features li").all_inner_texts()
-    assert len(features) == 7 and any("Accompaniment" in f for f in features)
+    assert len(features) == 8 and any("Accompaniment" in f for f in features)
     assert page.locator(".offline-card").is_visible()
     # One search box on the home page: its own big one, not the sidebar's too.
     assert page.locator("#hero-search").is_visible() and not page.locator("#search-input").is_visible()
@@ -468,7 +468,7 @@ def test_welsh_home_page(page):
     assert page.get_attribute(".lang-switch [data-lang=cy]", "aria-pressed") == "true"
     assert page.inner_text("#surprise-sidebar") == "Alaw ar hap"
     assert page.get_attribute("#search-input", "placeholder") == "Chwilio am alaw…"
-    assert page.locator(".features li").count() == 7
+    assert page.locator(".features li").count() == 8
     # Nothing left in English: no sentence of the English page shows up in the Welsh one.
     welsh = page.evaluate(VISIBLE_TEXT)
     fragments = {f.strip() for f in re.split(r"[.:;?!()\n]", english) if len(f.strip()) >= 12}
@@ -500,6 +500,7 @@ ENGLISH_ON_PURPOSE = {"abcjs Quick Editor", "Add file → Create new file", "Com
     "?page=browse", "?page=browse&type=Jig&key=D%20major", "?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A",
     "?tune=glandyfi&v=2", "?tune=machynlleth", "?tune=llancesau-trefaldwyn", "?page=map", "?page=offline",
     "?page=about", "?page=add", "?page=fix", "?page=contact&about=glandyfi-version-2",
+    "?page=set&s=bne0o.6m42r~2&name=Nos%20Iau", "?page=sets",
 ])
 def test_every_page_in_welsh(page, path):
     # Switching to Welsh on a page redraws it, with no English left: no sentence of the
@@ -875,6 +876,84 @@ def test_qr_code(browser, site, scheme):
     context.close()
 
 
+# ---- Sets -------------------------------------------------------------------------------
+
+def test_set_from_tune_pages(page):
+    # "Add to set" on a tune adds it, in the key chosen; the set page arranges them, and
+    # every change is in its address (and kept in this browser).
+    for path, key in [("alaw/llancesau-trefaldwyn/", None), ("alaw/glandyfi/?v=2", "2"), ("alaw/nyth-y-gog/", None)]:
+        page.goto_site(path)
+        page.wait_for_selector(".score .abcjs-staff")
+        if key:
+            page.select_option("#key-select", key)
+        page.click(".add-to-set")
+    assert "(3 tunes)" in page.inner_text(".add-status")
+    page.click(".add-status a")
+    page.wait_for_selector(".set-list li")
+    assert page.locator(".set-list li > a").all_inner_texts() == ["Llancesau Trefaldwyn", "Glandyfi", "Nyth y Gog"]
+    assert "s=bne0o.6m42r~2." in page.url and "&my=" in page.url
+    assert page.locator(".set-list li").nth(1).locator("select").input_value() == "2"
+    page.locator(".set-list li").nth(1).locator("button[aria-label='Move up']").click()
+    page.locator(".set-list li").nth(2).locator("button[aria-label^='Remove']").click()
+    page.fill(".set-name", "Nos Iau")
+    page.press(".set-name", "Tab")
+    assert page.locator(".set-list li > a").all_inner_texts() == ["Glandyfi", "Llancesau Trefaldwyn"]
+    assert "s=6m42r~2.bne0o&name=Nos+Iau" in page.url
+    kept = page.evaluate("JSON.parse(localStorage.getItem('sets'))")
+    assert [(x["name"], x["s"]) for x in kept] == [("Nos Iau", "6m42r~2.bne0o")]
+    page.locator(".set-paper").first.scroll_into_view_if_needed()
+    page.wait_for_selector(".set-paper svg")
+    # My sets lists it; it can be deleted there.
+    page.click(".sidebar-links a[href='?page=sets']")
+    assert page.locator(".set-list-mine li a").all_inner_texts() == ["Nos Iau"]
+    assert "doesn't come with ready-made sets" in page.inner_text(".sets-own")  # make your own
+    page.on("dialog", lambda d: d.accept())
+    page.click(".set-list-mine button:text-is('Delete')")
+    assert page.locator(".set-list-mine").count() == 0
+
+
+def test_shared_set(browser, site):
+    # A set's link, opened on someone else's phone: the same tunes, in the same keys, to save.
+    context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True,
+                                  service_workers="block")
+    page = context.new_page()
+    page.goto(site + "?page=set&s=6m42r~2.bne0o.zzzzz&name=Nos%20Iau")
+    page.wait_for_selector(".set-list li")
+    assert page.inner_text("main h1") == "Nos Iau"
+    assert page.locator(".set-list li > a").all_inner_texts() == ["Glandyfi", "Llancesau Trefaldwyn"]
+    assert "1 tune in this set isn't on the site any more" in page.inner_text("main")  # an unknown code
+    assert page.locator(".set-list li select").first.input_value() == "2"
+    page.click("text=Save to my sets")
+    page.wait_for_selector(".set-name")
+    assert "&my=" in page.url
+    assert page.evaluate("JSON.parse(localStorage.getItem('sets'))[0].s") == "6m42r~2.bne0o"
+    context.close()
+
+
+def test_big_set(page, site):
+    # 100 tunes: a link of about 700 characters, a QR code that scans, and music drawn
+    # only as it comes into view.
+    import io
+    import zxingcpp
+    from PIL import Image
+    page.goto_site()
+    codes = page.evaluate("state.data.tunes.slice(0, 100).map((t, i) => t.id + (i % 3 ? '' : '~2')).join('.')")
+    page.goto_site(f"?page=set&s={codes}&name=Big")
+    page.wait_for_selector(".set-list li")
+    assert page.locator(".set-list li").count() == 100
+    assert page.locator(".set-paper svg").count() == 0
+    page.locator(".set-paper").first.scroll_into_view_if_needed()
+    page.wait_for_selector(".set-paper svg")
+    assert 0 < page.locator(".set-paper svg").count() < 30
+    page.evaluate("window.scrollTo(0, 0)")
+    page.click(".set-actions button:text-is('QR code')")
+    page.wait_for_selector("dialog svg.qr")
+    link = f"https://ysesiwn.cymru/?page=set&s={codes}&name=Big"
+    assert len(link) < 800
+    image = Image.open(io.BytesIO(page.locator("dialog svg.qr").screenshot()))
+    assert [r.text for r in zxingcpp.read_barcodes(image)] == [link]
+
+
 # ---- Visit counts --------------------------------------------------------------------------
 
 def test_visit_counts(page):
@@ -949,7 +1028,7 @@ def test_accessibility(browser, site, scheme, width):
     page = context.new_page()
     problems = []
     for path in ["", "?page=browse", "?tune=glandyfi", "?tune=nyth-y-gog", "?page=map", "?page=offline", "?page=about", "?page=add",
-                 "?page=contact", "?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A", "cy:", "cy:?tune=glandyfi"]:
+                 "?page=contact", "?page=set&s=bne0o.6m42r~2&name=Nos%20Iau", "?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A", "cy:", "cy:?tune=glandyfi"]:
         if path.startswith("cy:"):  # in Welsh: the home page, and a page with the not-in-Welsh-yet note
             page.evaluate("localStorage.setItem('lang', 'cy')")
         page.goto(site + path.removeprefix("cy:"))

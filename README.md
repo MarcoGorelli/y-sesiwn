@@ -203,6 +203,18 @@ relative URLs, so the site also works under a sub-path such as
   *Chord chart* (title, key and chart only, big). `printAs()` sets
   `body[data-print]` for the print styles and puts things back on
   `afterprint`.
+- **Sets:** "Add to set" on a tune page, *My sets* (`?page=sets`), and a set
+  page (`?page=set&s=…&name=…`) to reorder, change keys, copy its link, show
+  its QR code, print it or view it full screen. There's no database: a set is
+  its address, a list of the tunes' five-character codes (`short_id()` in
+  `build_site.py`, from the folder name, so they don't change; the build stops
+  if two ever match), each with `~N` if it's moved N semitones. A 100-tune set
+  is a link of about 700 characters. Your own sets are also kept in the
+  browser (localStorage), with `&my=` in their address. Scores are drawn as
+  they come into view.
+  There are deliberately **no ready-made sets** (the My sets page says so):
+  finding tunes that sit well together is part of the fun, so people are
+  encouraged to make their own.
 - **Map:** tunes named after a place have a small map of Wales on their page,
   and *Tunes on the map* (`?page=map`) shows every place with its tunes. It
   zooms (buttons, double-click or double-tap, pinch, Ctrl + wheel, keyboard)

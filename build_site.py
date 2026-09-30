@@ -398,6 +398,15 @@ def tune_record(path: Path) -> dict:
 MAP = {"lon0": -5.669900, "lat0": 53.435690, "k": 0.610145, "scale": 100}
 
 
+def pronunciations(groups: set[str]) -> dict[str, str]:
+    """pronunciation.json: how to say each Welsh tune name, by the tune's folder name."""
+    say = json.loads((ROOT / "pronunciation.json").read_text(encoding="utf-8"))["say"]
+    unknown = set(say) - groups
+    if unknown:
+        raise SystemExit(f"pronunciation.json: no tune called {', '.join(sorted(unknown))}")
+    return say
+
+
 def places(groups: set[str]) -> list[dict]:
     """places.json, with each place's position on site/wales.svg."""
     result = []
@@ -441,6 +450,7 @@ def main() -> None:
         ],
         "tunes": tunes,
         "places": places({t["group"] for t in tunes}),
+        "say": pronunciations({t["group"] for t in tunes}),
         "mapSize": [float(n) for n in re.search(
             r'viewBox="0 0 ([\d.]+) ([\d.]+)"', (ROOT / "site" / "wales.svg").read_text()).groups()],
     }

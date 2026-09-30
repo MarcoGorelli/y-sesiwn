@@ -580,3 +580,21 @@ body.practice .set-list, body.practice .set-count, body.practice .set-actions > 
   .set-tune { break-inside: avoid; }
   .set-paper { border: none; background: none; padding: 0; }
 }
+
+/* Home page: the last few tunes opened on this device */
+.recent { margin: -.25rem 0 1.5rem; font-size: .95rem; }
+.recent-label { color: var(--muted); }
+.print-menu .menu-sep { border-top: 1px solid var(--border); }
+.whistle-key { flex-basis: 100%; }
+.whistle-key[hidden] { display: none; }
+.score .abcjs-lyric { fill: #262b31; }
+
+/* How to say a Welsh tune name (English only) */
+.say { margin: -.4rem 0 .9rem; color: var(--muted); font-size: .95rem; }
+.say-words { color: var(--text); font-weight: 600; letter-spacing: .01em; }
+.say-key { display: inline-block; font-size: .85rem; }
+.say-key summary { cursor: pointer; color: var(--link); text-decoration: underline; }
+.say-key[open] { display: block; max-width: 40rem; }
+.say-key p { margin: .3rem 0 0; }
+@media print { .say { display: none; } }
+body.practice .say { display: none; }

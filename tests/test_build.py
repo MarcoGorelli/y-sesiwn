@@ -95,6 +95,16 @@ def test_built_site(site):
     assert not [f for f in files if f.startswith("alaw/")]
 
 
+def test_pronunciations():
+    # Every entry is a tune, and it's a respelling (letters, hyphens, capitals for stress).
+    say = json.loads((b.ROOT / "pronunciation.json").read_text(encoding="utf-8"))["say"]
+    groups = {b.tune_record(p)["group"] for p in TUNES}
+    assert set(say) <= groups and len(say) > 500
+    assert say["llancesau-trefaldwyn"] == "hlan-KEH-sai treh-VAL-dooin"
+    assert "tom-jones" not in say  # English names have none
+    assert all(re.fullmatch(r"[\w ,'-]+", v) for v in say.values())
+
+
 def test_set_codes(site):
     # Every tune has its own five-character code for set links, which stays the same.
     index = json.loads((b.OUT / "tunes.json").read_text(encoding="utf-8"))

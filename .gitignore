@@ -16,3 +16,7 @@ tunes/**/*.mid
 # Tests
 .pytest_cache/
 __pycache__/
+
+# Local
+compile.sh
+

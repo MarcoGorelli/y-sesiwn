@@ -770,7 +770,7 @@ function render() {
 function renderHome(main) {
   document.title = "Y Sesiwn";
   const count = state.groupList.length;  // one entry per tune, whatever its number of versions
-  main.replaceChildren(
+  main.replaceChildren(...[
     el("h1", {}, tr("Croeso! Welcome to Y Sesiwn", "Croeso i'r Sesiwn!")),
     el("p", { class: "lead" }, ...tr(
       ["Y Sesiwn is a ", el("strong", {}, "completely free and open-source"),
@@ -784,10 +784,29 @@ function renderHome(main) {
       el("button", { type: "button", class: "primary", onclick: openRandomTune }, tr("Surprise me", "Alaw ar hap")),
       el("a", { href: "?page=browse", "data-route": true, class: "button-link" },
         tr(`Browse all ${count} tunes`, `Pori'r ${count} alaw`))),
+    recentTunes(),  // nothing yet on a first visit
     notesInvite(),
     features(),
     offlineCard(),
-  );
+  ].filter(Boolean));
+}
+
+// The last few tunes opened on this device (localStorage), for the home page: at a
+// session you often go back to the same ones.
+const RECENT = 5;
+function recentList() {
+  try { return JSON.parse(localStorage.getItem("recent")) ?? []; } catch { return []; }
+}
+function rememberTune(group, tune) {
+  const list = recentList().filter((r) => r.group !== group.slug);
+  list.unshift({ group: group.slug, version: tune.version });
+  try { localStorage.setItem("recent", JSON.stringify(list.slice(0, RECENT))); } catch {}
+}
+function recentTunes() {
+  const tunes = recentList().filter((r) => state.groups.has(r.group));  // a tune may have been removed
+  if (!tunes.length) return null;
+  return el("p", { class: "recent" }, el("span", { class: "recent-label" }, tr("Recently opened:", "Agorwyd yn ddiweddar:")), " ",
+    tunes.map((r, i) => [i ? " · " : "", el("a", { href: tuneUrl(r.group, r.version), "data-route": true }, state.groups.get(r.group).title)]));
 }
 
 // ---- Browse page -------------------------------------------------------------------
@@ -1005,6 +1024,66 @@ function partLoop(controller, part, tune, settings, onSpeed) {
   };
 }
 
+// Whistle fingerings under the stave: the six holes of a tin whistle, top to bottom,
+// for each note, and + for the second octave. They're written as six (and a seventh, +)
+// lines of lyrics (w:), so abcjs lines them up under the notes, and they follow the key
+// menu, since they're worked out from the notes as drawn. low: the whistle's lowest
+// note (MIDI), all six holes covered.
+const WHISTLES = {
+  "whistle-D": { name: "D", low: 62 }, "whistle-C": { name: "C", low: 60 },
+  "whistle-G": { name: "G", low: 67 }, "whistle-Bb": { name: "B♭", low: 70 },
+};
+// Holes for each semitone above the low note, in the first octave (● covered, ○ open,
+// ◐ half-covered); the second octave is the same, blown harder.
+const FINGERINGS = ["●●●●●●", "●●●●●◐", "●●●●●○", "●●●●◐○", "●●●●○○", "●●●○○○",
+  "●●◐○○○", "●●○○○○", "●◐○○○○", "●○○○○○", "○●●○○○", "○○○○○○"];
+
+function whistleFingering(midi, whistle) {
+  const n = midi - whistle.low;
+  if (n < 0 || n > 23) return null;  // not on this whistle
+  return { holes: FINGERINGS[n % 12], high: n >= 12 };
+}
+
+function withFingerings(abc, whistle) {
+  const lines = abc.split("\n").filter((line) => !/^w:/.test(line));  // a tune's own lyrics would clash
+  abc = lines.join("\n");
+  const tune = ABCJS.renderAbc("*", abc)[0];
+  tune.setUpAudio();  // gives each note its MIDI pitch (midiPitches), key signature and accidentals included
+  // Which line of the ABC each note is on, from where it starts in the text.
+  const lineStarts = [];
+  let at = 0;
+  for (const line of lines) { lineStarts.push(at); at += line.length + 1; }
+  const lineOf = (char) => { let i = 0; while (i + 1 < lineStarts.length && lineStarts[i + 1] <= char) i++; return i; };
+  const perLine = new Map();
+  for (const staffLine of tune.lines) {
+    for (const note of staffLine.staff?.[0]?.voices?.[0] ?? []) {
+      if (note.el_type !== "note" || note.rest) continue;
+      const i = lineOf(note.startChar);
+      if (!perLine.has(i)) perLine.set(i, []);
+      // A tied note's continuation has no pitch of its own (it's one sound), but it does
+      // take a lyric's place: leave that place empty so the rest stay under their notes.
+      perLine.get(i).push(note.midiPitches?.length
+        ? whistleFingering(Math.max(...note.midiPitches.map((m) => m.pitch)), whistle) : "tied");
+    }
+  }
+  const out = ["%%vocalfont Helvetica 9"];
+  lines.forEach((line, i) => {
+    out.push(line);
+    const notes = perLine.get(i);
+    if (!notes) return;
+    const cell = (f, row) => (f === "tied" ? "*" : f ? f.holes[row] : row === 0 ? "?" : "*");
+    for (let row = 0; row < 6; row++) out.push(`w:${notes.map((f) => cell(f, row)).join(" ")}`);
+    if (notes.some((f) => f?.high)) out.push(`w:${notes.map((f) => (f?.high ? "+" : "*")).join(" ")}`);
+  });
+  return out.join("\n");
+}
+
+// Swing: playback plays each pair of quavers long-short (SWING% of the pair for the
+// first), as hornpipes are played. abcjs's player does it (its swing option), for
+// time signatures counted in crotchets only (2/4, 3/4, 4/4, C); not the MIDI file.
+const SWING = 62;
+const canSwing = (tune) => /^M:\s*(C(?!\|)|[234]\/4)\s*$/m.test(tune.abc);
+
 // Tablature under the stave. Mandolin and fiddle share their tuning (GDAE; the numbers
 // are frets, or semitones above the open string).
 const TABS = {
@@ -1042,6 +1121,8 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
     abc = ABCJS.strTranspose(abc, ABCJS.renderAbc("*", abc), transpose);
   }
   const tab = TABS[state.practice.tab];
+  const whistle = WHISTLES[state.practice.tab];
+  if (whistle) abc = withFingerings(abc, whistle);
   const visualObj = ABCJS.renderAbc(paper, accompaniment(abc, state.chords.play === "both"),
     { responsive: "resize", add_classes: true, paddingtop: 0, ...(tab ? { tablature: [{ ...tab, label: tab.label() }] } : {}) })[0];
   nameScore(paper);
@@ -1055,6 +1136,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
     }
   }
   const audioParams = { ...AUDIO_PARAMS, chordsOff: state.chords.play === "tune", voicesOff: state.chords.play === "chords",
+    ...(state.settings.get(tune.slug).swing ? { swing: SWING } : {}),
     ...clickParams(visualObj, tune) };
   const settings = state.settings.get(tune.slug);
   const parts = tuneParts(visualObj);
@@ -1262,16 +1344,48 @@ function printAs(mode, paper) {
   window.print();
 }
 
-function printButton(tune, paper) {
-  if (tune.chords == null) return el("button", { type: "button", onclick: () => printAs("music", paper) }, tr("Print", "Argraffu"));
+// A file for the reader to keep: made in the page, nothing is fetched.
+function download(name, type, data) {
+  const url = URL.createObjectURL(new Blob([data], { type }));
+  const a = el("a", { href: url, download: name });
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// Print (the sheet music; with chords or just the chart, for a tune that has them) or
+// save the tune as an ABC or MIDI file, in the key (and for MIDI the tempo and Play
+// choice) set on the page.
+function printButton(tune, paper, settings) {
+  const transposed = (abc) => (settings.transpose ? ABCJS.strTranspose(abc, ABCJS.renderAbc("*", abc), settings.transpose) : abc);
+  const fileName = (ext) => {
+    const key = settings.transpose && tune.key ? `-in-${NOTES[(tune.key.pitch + settings.transpose + 12) % 12].replace("#", "sharp")}` : "";
+    return `${tune.slug}${key}.${ext}`;
+  };
+  const saveAbc = () => download(fileName("abc"), "text/vnd.abc", transposed(tune.abc));
+  const saveMidi = () => {
+    const abc = transposed(setTempo(stripFields(tune.abc, "SZBNAH"), tune.beat, settings.bpm));
+    const [bytes] = ABCJS.synth.getMidiFile(accompaniment(abc, state.chords.play === "both"), {
+      midiOutputType: "binary", ...AUDIO_PARAMS,
+      chordsOff: tune.chords == null || state.chords.play === "tune", voicesOff: tune.chords != null && state.chords.play === "chords" });
+    download(fileName("mid"), "audio/midi", bytes);
+  };
+  const items = [["music", tr("Print the sheet music", "Argraffu'r sgôr")]];
+  if (tune.chords != null) {
+    items.push(["with-chords", tr("Print with chords", "Argraffu gyda chordiau")], ["chart", tr("Print the chord chart", "Argraffu'r siart cordiau")]);
+  }
   const menu = el("div", { class: "print-menu", role: "menu", hidden: true },
-    [["music", tr("Sheet music", "Sgôr")], ["with-chords", tr("Sheet music with chords", "Sgôr gyda chordiau")],
-      ["chart", tr("Chord chart", "Siart cordiau")]].map(([mode, label]) =>
-      el("button", { type: "button", role: "menuitem", onclick: () => { menu.hidden = true; printAs(mode, paper); } }, label)));
+    items.map(([mode, label]) =>
+      el("button", { type: "button", role: "menuitem", onclick: () => { menu.hidden = true; printAs(mode, paper); } }, label)),
+    el("button", { type: "button", role: "menuitem", class: "menu-sep", onclick: () => { menu.hidden = true; saveAbc(); } },
+      tr("Save as ABC", "Cadw fel ABC")),
+    el("button", { type: "button", role: "menuitem", onclick: () => { menu.hidden = true; saveMidi(); } },
+      tr("Save as MIDI", "Cadw fel MIDI")));
   const toggle = el("button", { type: "button", "aria-haspopup": "menu", "aria-expanded": "false", onclick: () => {
     menu.hidden = !menu.hidden;
     toggle.setAttribute("aria-expanded", String(!menu.hidden));
-  } }, tr("Print ▾", "Argraffu ▾"));
+  } }, tr("Print / save ▾", "Argraffu / cadw ▾"));
   // Clicking anywhere else closes it (and once the page has gone, stop listening).
   const close = (e) => {
     if (!wrap.isConnected) document.removeEventListener("pointerdown", close);
@@ -1295,7 +1409,11 @@ function detailValue(label, value) {
 
 function renderTune(main, group, tune) {
   document.title = `${group.title} · Y Sesiwn`;
-  if (!state.settings.has(tune.slug)) state.settings.set(tune.slug, { transpose: 0, bpm: tune.bpm, loop: -1, speedUp: false });
+  rememberTune(group, tune);
+  if (!state.settings.has(tune.slug)) {
+    state.settings.set(tune.slug, { transpose: 0, bpm: tune.bpm, loop: -1, speedUp: false,
+      swing: canSwing(tune) && tune.type === "Pibddawns" });  // hornpipes are played swung
+  }
   const settings = state.settings.get(tune.slug);
 
   const paper = el("div");
@@ -1331,13 +1449,18 @@ function renderTune(main, group, tune) {
   showTempo();
   const practice = el("button", { type: "button", class: "practice-toggle", onclick: () => setPractice(!document.body.classList.contains("practice")) });
   practice.textContent = practiceLabel(document.body.classList.contains("practice"));
-  controls.append(el("div", { class: "control tempo" }, tempoLabel,
+  controls.append(...[el("div", { class: "control tempo" }, tempoLabel,
     el("input", {
       id: "tempo", type: "range", min: 30, max: 200, value: settings.bpm,
       oninput: (e) => { settings.bpm = +e.target.value; showTempo(); },
       onchange: redraw,
-    })), el("div", { class: "tune-actions" },
-      printButton(tune, paper), qrButton(group, tune), addToSetButton(tune, settings), practice));
+    })),
+    canSwing(tune) ? el("label", { class: "switch swing", title: tr("Play the quavers long-short, as hornpipes are played",
+      "Chwarae'r cwafers yn hir-byr, fel y chwaraeir pibddawnsiau") },
+      el("input", { type: "checkbox", checked: settings.swing, onchange: (e) => { settings.swing = e.target.checked; redraw(); } }),
+      tr("Swing", "Swing")) : null,
+    el("div", { class: "tune-actions" },
+      printButton(tune, paper, settings), qrButton(group, tune), addToSetButton(tune, settings), practice)].filter(Boolean));  // no swing switch: nothing (not the text "null")
 
   const shownElsewhere = new Set(["Key", "Composer / arranger"]);  // the key menu; the score's credit
   const details = el("dl", {}, tune.details.filter(([label]) => !shownElsewhere.has(label)).map(([label, value]) =>
@@ -1360,9 +1483,17 @@ function renderTune(main, group, tune) {
   const loopSelect = el("select", { id: "loop-select", onchange: (e) => { settings.loop = +e.target.value; redraw(); } });
   const toggle = (label, checked, onchange, cls) => el("label", { class: `switch${cls ? ` ${cls}` : ""}` },
     el("input", { type: "checkbox", checked, onchange: (e) => { onchange(e.target.checked); redraw(); } }), label);
-  const tabSelect = el("select", { id: "tab-select", onchange: (e) => { state.practice.tab = e.target.value; redraw(); } },
+  const whistleKey = el("span", { class: "caption whistle-key", hidden: !WHISTLES[state.practice.tab] },
+    tr("● covered · ○ open · ◐ half-covered · + blow harder · ? not on this whistle",
+      "● ar gau · ○ ar agor · ◐ hanner ar gau · + chwythu'n galetach · ? ddim ar y chwisl hon"));
+  const tabSelect = el("select", { id: "tab-select", onchange: (e) => {
+    state.practice.tab = e.target.value;
+    whistleKey.hidden = !WHISTLES[state.practice.tab];
+    redraw();
+  } },
     [["none", tr("No tablature", "Dim tablatur")], ["mandolin", tr("Mandolin / fiddle", "Mandolin / ffidil")],
-      ["guitar", tr("Guitar", "Gitâr")]].map(([value, label]) =>
+      ["guitar", tr("Guitar", "Gitâr")],
+      ...Object.entries(WHISTLES).map(([value, w]) => [value, tr(`Whistle in ${w.name}`, `Chwisl ${w.name}`)])].map(([value, label]) =>
       el("option", { value, selected: state.practice.tab === value }, label)));
   const practiceRow = el("div", { class: "practice-row" },
     el("div", { class: "control" }, el("label", { for: "loop-select" }, tr("Loop", "Ailadrodd")), loopSelect),
@@ -1370,7 +1501,8 @@ function renderTune(main, group, tune) {
     speedNote,
     toggle(tr("Count-in", "Cyfrif i mewn"), state.practice.countIn, (on) => { state.practice.countIn = on; }),
     toggle(tr("Click", "Clic"), state.practice.click, (on) => { state.practice.click = on; }),
-    el("div", { class: "control" }, el("label", { for: "tab-select" }, tr("Tablature", "Tablatur")), tabSelect));
+    el("div", { class: "control" }, el("label", { for: "tab-select" }, tr("Tablature", "Tablatur")), tabSelect),
+    whistleKey);
   const fillLoops = () => {
     loopSelect.replaceChildren(el("option", { value: -1 }, tr("The whole tune", "Yr alaw gyfan")),
       ...drawn.parts.map((p, i) => el("option", { value: i, selected: settings.loop === i }, tr(`Part ${p.label}`, `Rhan ${p.label}`))));
@@ -1384,6 +1516,7 @@ function renderTune(main, group, tune) {
 
   main.replaceChildren(...[
     el("h1", {}, group.title),
+    sayIt(group),
     group.titles.length > 1 ? el("p", { class: "caption aka" }, `${tr("Also known as", "Enwau eraill")}: ${group.titles.slice(1).join(", ")}`) : null,
     versions,
     controls,
@@ -1447,6 +1580,17 @@ function qrButton(group, tune) {
 }
 
 const practiceLabel = (on) => (on ? tr("Exit practice mode", "Gadael y modd ymarfer") : tr("Practice mode", "Modd ymarfer"));
+
+// How to say a Welsh tune name (pronunciation.json), for English readers.
+function sayIt(group) {
+  const say = state.data.say[group.slug];
+  if (!say || state.lang === "cy") return null;
+  return el("p", { class: "say" }, "Say it: ", el("span", { class: "say-words" }, say), " ",
+    el("details", { class: "say-key" }, el("summary", {}, "How to read this"),
+      el("p", {}, "Capitals: the stressed syllable. kh: ch in loch. dh: th in this. hl: Welsh ll (tongue as for l, ",
+        "and breathe out). ai: as in eye. ay: as in day. ow: as in cow. oo: as in food. uh: the a in about. ",
+        "r is rolled. A rough guide for English speakers.")));
+}
 
 // Practice mode: hide everything but the controls and the score, full screen if possible.
 function setPractice(on) {
@@ -2210,6 +2354,15 @@ function markdownSections(text) {
   return sections.map((lines) => lines.join("\n"));
 }
 
+// The Markdown reader (static/marked, 40 KB) is only needed for these pages, so it's
+// loaded the first time one is opened.
+let markedLibrary = null;
+function loadMarked() {
+  markedLibrary ??= new Promise((resolve, reject) => document.head.append(
+    el("script", { src: "static/marked/marked.min.js", onload: resolve, onerror: reject })));
+  return markedLibrary;
+}
+
 async function renderGuide(main, key) {
   const { className } = PAGES[key];
   const { file, heading } = state.lang === "cy" ? PAGES[key].cy : PAGES[key];
@@ -2218,6 +2371,7 @@ async function renderGuide(main, key) {
   if (!state.docs.has(file)) state.docs.set(file, await (await fetch(file)).text());
   const text = state.docs.get(file);
   const section = markdownSections(text).find((s) => s.startsWith(`# ${heading}\n`)) ?? "";
+  await loadMarked();
   const html = marked.parse(section.replaceAll("(#how-to-add-a-tune)", "(?page=add)"));
   const guide = el("article", { class: `guide ${className ?? ""}` });
   guide.innerHTML = html;  // our own markdown, from this repo

@@ -89,6 +89,30 @@ def test_details(page):
     assert "Transcribed by Brian Martin" not in page.locator(".card dl").inner_text()
 
 
+def test_recently_opened(page):
+    # The home page lists the last five tunes opened here, most recent first.
+    page.goto_site()
+    assert page.locator(".recent").count() == 0  # none yet
+    for slug in ["glandyfi", "machynlleth", "nyth-y-gog", "llancesau-trefaldwyn", "cawl-cennin", "sawdl-y-fuwch", "machynlleth"]:
+        page.goto_site(f"alaw/{slug}/")
+        page.wait_for_selector(".score .abcjs-staff")
+    page.click(".brand")
+    assert page.locator(".recent a").all_inner_texts() == [
+        "Machynlleth", "Sawdl y Fuwch", "Cawl Cennin", "Llancesau Trefaldwyn", "Nyth y Gog"]
+
+
+def test_markdown_reader_only_for_its_pages(page):
+    # The Markdown reader is only loaded for About and the guides.
+    requests = []
+    page.on("request", lambda r: requests.append(r.url))
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert not [u for u in requests if "marked" in u]
+    page.click(".sidebar-links a[href='?page=about']")
+    page.wait_for_selector("main h1:text-is('About Y Sesiwn')")
+    assert [u for u in requests if "marked" in u]
+
+
 def test_history_in_details_not_on_the_score(page):
     # A long H: (history) would run off the edge of the score; it's in Details instead.
     page.goto_site("alaw/gorhoffedd-gwyr-harlech/")
@@ -161,16 +185,16 @@ def test_chord_chart_same_endings(page, slug, first_rows):
 
 
 @pytest.mark.parametrize("mode, score, chords_on_score, chart", [
-    ("Sheet music", True, False, False),
-    ("Sheet music with chords", True, True, False),
-    ("Chord chart", False, False, True),
+    ("Print the sheet music", True, False, False),
+    ("Print with chords", True, True, False),
+    ("Print the chord chart", False, False, True),
 ])
 def test_print(page, mode, score, chords_on_score, chart):
     page.goto_site("?tune=glandyfi")
     page.wait_for_selector(".chart .bar")
     page.evaluate("window.print = () => {}")  # the real print dialog can't be driven
     page.select_option("#key-select", "2")  # prints in the key chosen on the page
-    page.click("text=Print ▾")
+    page.click("text=Print / save ▾")
     page.click(f".print-menu >> text='{mode}'")
     page.emulate_media(media="print")
     assert page.locator(".score").is_visible() == score
@@ -189,12 +213,127 @@ def test_print(page, mode, score, chords_on_score, chart):
 
 def test_print_menu(page):
     page.goto_site("?tune=glandyfi")
-    page.click("text=Print ▾")
+    page.click("text=Print / save ▾")
     assert page.locator(".print-menu").is_visible()
     page.mouse.click(5, 900)  # clicking elsewhere closes it
     assert not page.locator(".print-menu").is_visible()
-    page.goto_site("?tune=cawl-cennin")  # no chords: a plain Print button
-    assert page.locator(".tune-actions button").first.inner_text() == "Print"
+    page.goto_site("?tune=cawl-cennin")  # no chords: no chord printing, but still saving
+    page.click("text=Print / save ▾")
+    assert page.locator(".print-menu button").all_inner_texts() == ["Print the sheet music", "Save as ABC", "Save as MIDI"]
+
+
+SPY_SWING = """() => {
+  window.swings = [];
+  const Player = ABCJS.synth.SynthController;
+  ABCJS.synth.SynthController = function () {
+    const player = new Player(), setTune = player.setTune;
+    player.setTune = (tune, userAction, params) => { window.swings.push(params.swing ?? null); return setTune.call(player, tune, userAction, params); };
+    return player;
+  };
+}"""
+
+
+def test_swing(page):
+    # Hornpipes are played swung, with a switch; a polka in 2/4 can be; a jig in 6/8 can't.
+    page.goto_site()
+    page.evaluate(SPY_SWING)
+    page.evaluate("navigate('alaw/pibddawns-abertawe/')")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.locator(".swing input").is_checked()
+    page.uncheck(".swing input")
+    assert page.evaluate("window.swings") == [62, None]
+    page.evaluate("navigate('alaw/abaty-waltham/')")  # a polka in 2/4: can swing, but doesn't to start with
+    page.wait_for_selector(".score .abcjs-staff")
+    assert not page.locator(".swing input").is_checked()
+    page.evaluate("navigate('alaw/cawl-cennin/')")  # a jig in 6/8
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.locator(".swing").count() == 0
+
+
+def test_whistle_fingerings(page):
+    page.goto_site()
+    f = lambda midi, whistle="whistle-D": page.evaluate(
+        "([m, w]) => { const r = whistleFingering(m, WHISTLES[w]); return r && [r.holes, r.high]; }", [midi, whistle])
+    assert f(62) == ["●●●●●●", False]   # D: all covered
+    assert f(66) == ["●●●●○○", False]   # F sharp
+    assert f(73) == ["○○○○○○", False]   # C sharp: all open
+    assert f(74) == ["●●●●●●", True]    # D, second octave: blow harder
+    assert f(72) == ["○●●○○○", False]   # C natural, cross-fingered
+    assert f(61) is None and f(86) is None  # below and above a D whistle
+    assert f(60, "whistle-C") == ["●●●●●●", False]
+    # Lined up under their notes, a tied note's continuation included; rests take none.
+    rows = page.evaluate("""() => { const v = ABCJS.renderAbc('*', withFingerings('X:1\\nM:6/8\\nL:1/8\\nK:D\\nD3- D2 E | F2 z G z A|', WHISTLES['whistle-D']))[0];
+      return v.lines[0].staff[0].voices[0].filter((e) => e.el_type === 'note' && !e.rest).map((n) => (n.lyric || []).map((l) => l.syllable).join('')); }""")
+    assert rows == ["●●●●●●", "", "●●●●●○", "●●●●○○", "●●●○○○", "●●○○○○"]
+
+
+def test_whistle_on_a_tune(page):
+    page.goto_site("alaw/llancesau-trefaldwyn/")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.locator(".whistle-key").is_hidden()
+    page.select_option("#tab-select", "whistle-D")
+    page.wait_for_selector(".score .abcjs-lyric")
+    assert page.locator(".whistle-key").is_visible()
+    lyrics = lambda: "".join(page.locator(".score .abcjs-lyric").all_text_contents())
+    in_d = lyrics()
+    assert "?" not in in_d and "+" in in_d  # all on a D whistle, some in the second octave
+    page.select_option("#key-select", "-5")  # down to A: its lowest notes are below the whistle
+    page.wait_for_function("(before) => [...document.querySelectorAll('.score .abcjs-lyric')].map((e) => e.textContent).join('') !== before", arg=in_d)
+    assert "?" in lyrics()
+    page.select_option("#tab-select", "none")
+    page.wait_for_function("!document.querySelector('.score .abcjs-lyric')")
+    assert page.locator(".whistle-key").is_hidden()
+
+
+@pytest.mark.parametrize("path", ["alaw/llancesau-trefaldwyn/", "alaw/pibddawns-abertawe/", "alaw/tom-jones/", "",
+                                  "?page=sets", "?page=set&s=bne0o", "?page=map", "?page=notes&q=D%20E%20F"])
+def test_no_stray_null(page, path):
+    # A missing optional part must leave nothing behind, not the word "null" or "undefined".
+    page.goto_site(path)
+    page.wait_for_function("document.querySelector('#main h1') && !document.querySelector('#main .loading')")
+    page.wait_for_timeout(300)
+    text = page.inner_text("main")
+    assert "null" not in text and "undefined" not in text
+
+
+def test_say_it(page):
+    # How to say a Welsh tune name, for English readers; not for English names, nor in Welsh.
+    page.goto_site("alaw/machynlleth/")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.inner_text(".say-words") == "ma-KHUHN-hleth"
+    page.click(".say-key summary")
+    assert "ch in loch" in page.inner_text(".say-key")
+    page.goto_site("alaw/tom-jones/")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.locator(".say").count() == 0
+    page.goto_site("alaw/machynlleth/")
+    page.click(".lang-switch [data-lang=cy]")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.locator(".say").count() == 0
+
+
+def test_save_abc_and_midi(page):
+    # The tune as a file, in the key chosen on the page; the MIDI plays what the Play
+    # choice says (the tune, or the tune and its chords).
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.select_option("#key-select", "2")  # G major -> A major
+    page.click("text=Print / save ▾")
+    with page.expect_download() as info:
+        page.click(".print-menu >> text='Save as ABC'")
+    abc = open(info.value.path(), encoding="utf-8").read()
+    assert info.value.suggested_filename == "glandyfi-in-A.abc"
+    assert "\nK:A" in abc and "T:Glandyfi" in abc
+    sizes = {}
+    for play in ["Tune only", "Tune and chords"]:
+        page.click(f".playback label:has-text('{play}')")
+        page.click("text=Print / save ▾")
+        with page.expect_download() as info:
+            page.click(".print-menu >> text='Save as MIDI'")
+        data = open(info.value.path(), "rb").read()
+        assert data[:4] == b"MThd" and info.value.suggested_filename == "glandyfi-in-A.mid"
+        sizes[play] = len(data)
+    assert sizes["Tune and chords"] > sizes["Tune only"]
 
 
 def test_no_chord_box_without_chords(page):
@@ -1045,7 +1184,7 @@ def test_accessibility(browser, site, scheme, width):
 def test_tablature_choices(page):
     page.goto_site("?tune=glandyfi")
     options = page.eval_on_selector_all("#tab-select option", "os => os.map((o) => o.value)")
-    assert options == ["none", "mandolin", "guitar"]
+    assert options == ["none", "mandolin", "guitar", "whistle-D", "whistle-C", "whistle-G", "whistle-Bb"]
 
 
 # ---- The notes page ---------------------------------------------------------------

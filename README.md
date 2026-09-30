@@ -203,6 +203,20 @@ relative URLs, so the site also works under a sub-path such as
   *Chord chart* (title, key and chart only, big). `printAs()` sets
   `body[data-print]` for the print styles and puts things back on
   `afterprint`.
+- **Whistle fingerings:** the Tablature menu also offers a tin whistle in D, C,
+  G or B♭: six holes under each note (● covered, ○ open, ◐ half), + for the
+  second octave, ? for a note the whistle doesn't have. They're written as
+  lines of lyrics (`w:`), so abcjs lines them up; worked out from the notes as
+  drawn (`withFingerings()` in `app.js`), so they follow the key menu.
+- **Swing:** hornpipes play swung by default (a switch by the tempo), using
+  abcjs's `swing` option; only for tunes in 2/4, 3/4 or 4/4.
+- **Save:** the Print menu (*Print / save*) also saves the tune as ABC or MIDI,
+  in the key chosen (and for MIDI the tempo and Play choice).
+- **Recently opened:** the home page lists the last five tunes opened on this
+  device (localStorage).
+- **Say it:** a rough guide to saying each Welsh tune name, for English readers
+  (`pronunciation.json`; not shown in Welsh). Made by rules and checked by
+  hand: a Welsh speaker's corrections are welcome.
 - **Sets:** "Add to set" on a tune page, *My sets* (`?page=sets`), and a set
   page (`?page=set&s=…&name=…`) to reorder, change keys, copy its link, show
   its QR code, print it or view it full screen. There's no database: a set is
@@ -272,6 +286,7 @@ relative URLs, so the site also works under a sub-path such as
 | `site/index.html`, `site/style.css`, `site/app.js` | The page. `app.js` does searching (a port of the original Python matching, including `difflib`'s similarity ratio), browsing, routing (`alaw/<folder>/?v=…`, `?page=add\|fix\|about`, all relative to `<base href>`), sheet music and playback with abcjs, and renders the Markdown pages with marked. |
 | `site/about.md`, `site/carthen.svg` | The About page; the tapestry band. |
 | `site/about.cy.md`, `site/guides.cy.md` | The Welsh About page, and the Welsh *How to add a tune* and *How to submit corrections* (keep in step with `about.md` and `CONTRIBUTING.md`). |
+| `pronunciation.json` | How to say each Welsh tune name, by folder name (the build stops if a folder doesn't exist). |
 | `places.json`, `site/wales.svg` | The places named in tune titles, for the map; the outline of Wales (made once from the ONS local authority boundaries via [UK-GeoJSON](https://github.com/martinjc/UK-GeoJSON), merged and simplified; its projection is in a comment in the file and in `MAP` in `build_site.py`). The outline is used as a CSS mask, so it takes the page's colours. |
 | `site/sw.js`, `site/manifest.webmanifest`, `site/icon-*.png` | Offline use and the home-screen app (see Features). The icons are made from `design/app-icon.html`. |
 | `site/og-image.png`, `site/apple-touch-icon.png` | The link-preview card (1200×630, used by the `og:`/`twitter:` tags in `index.html`) and the home-screen icon. Made from `design/og-card.html` and `design/apple-touch-icon.html`: open one in a browser at that size and screenshot it to regenerate. |

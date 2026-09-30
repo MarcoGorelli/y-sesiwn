@@ -296,6 +296,17 @@ def test_no_stray_null(page, path):
     assert "null" not in text and "undefined" not in text
 
 
+def test_source_as_text_or_link(page):
+    # A source that's a web address is a link; a description (a recording) is text.
+    page.goto_site("alaw/unwaith-eto/")
+    page.wait_for_selector(".score .abcjs-staff")
+    source = page.locator(".tune-side .card dd").filter(has_text="recording of Rowan Kodratoff")
+    assert source.count() == 1 and source.locator("a").count() == 0
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.inner_text(".tune-side .card dd a").startswith("http://alawoncymru.com/")
+
+
 def test_say_it(page):
     # How to say a Welsh tune name, for English readers; not for English names, nor in Welsh.
     page.goto_site("alaw/machynlleth/")
@@ -1097,6 +1108,26 @@ def test_shared_set(browser, site, link):
     assert "&my=" in page.url
     assert page.evaluate("JSON.parse(localStorage.getItem('sets'))[0].c") == "3V~h5A"
     assert "?set=3V~h5A&n=Nos%20Iau" in page.url  # an older link is shown in the new form
+    context.close()
+
+
+def test_copy_set_as_a_list(browser, site):
+    # "Copy as a list": the name, a bullet for each tune (version and key), and the link.
+    context = browser.new_context(service_workers="block", permissions=["clipboard-read", "clipboard-write"])
+    page = context.new_page()
+    page.goto(site + "?set=3V~h5A&n=Nos%20Iau")
+    page.wait_for_selector(".set-list li")
+    page.click("text=Copy as a list")
+    assert page.evaluate("navigator.clipboard.readText()") == (
+        "Nos Iau\n"
+        "• Glandyfi (version 2): A major\n"
+        "• Llancesau Trefaldwyn (version 1): D major\n"
+        "https://ysesiwn.cymru/?set=3V~h5A&n=Nos%20Iau")
+    assert page.inner_text(".set-actions") .count("✓ List copied") == 1
+    page.click(".lang-switch [data-lang=cy]")
+    page.wait_for_selector(".set-list li")
+    page.click("text=Copïo fel rhestr")
+    assert "• Glandyfi (fersiwn 2): A fwyaf" in page.evaluate("navigator.clipboard.readText()")
     context.close()
 
 

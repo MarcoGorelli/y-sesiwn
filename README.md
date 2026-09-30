@@ -293,6 +293,7 @@ relative URLs, so the site also works under a sub-path such as
 | `site/index.html`, `site/style.css`, `site/app.js` | The page. `app.js` does searching (a port of the original Python matching, including `difflib`'s similarity ratio), browsing, routing (`alaw/<folder>/?v=…`, `?page=add\|fix\|about`, all relative to `<base href>`), sheet music and playback with abcjs, and renders the Markdown pages with marked. |
 | `site/about.md`, `site/carthen.svg` | The About page; the tapestry band. |
 | `site/about.cy.md`, `site/guides.cy.md` | The Welsh About page, and the Welsh *How to add a tune* and *How to submit corrections* (keep in step with `about.md` and `CONTRIBUTING.md`). |
+| `.github/pull_request_template.md` | The checklist a new pull request starts with: credit and permission, checked in the abcjs editor, new tunes numbered in `tune_numbers.json`. |
 | `tune_numbers.json` | Each tune's number in set links. Only ever add to it (`python build_site.py --number-tunes`); never change a number or delete a line. |
 | `pronunciation.json` | How to say each Welsh tune name, by folder name (the build stops if a folder doesn't exist). |
 | `places.json`, `site/wales.svg` | The places named in tune titles, for the map; the outline of Wales (made once from the ONS local authority boundaries via [UK-GeoJSON](https://github.com/martinjc/UK-GeoJSON), merged and simplified; its projection is in a comment in the file and in `MAP` in `build_site.py`). The outline is used as a CSS mask, so it takes the page's colours. |

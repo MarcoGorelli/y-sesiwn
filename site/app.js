@@ -1404,7 +1404,8 @@ const CY_DETAILS = { "Tune type": "Math o alaw", Key: "Cywair", "Time signature"
 
 function detailValue(label, value) {
   if (label === "Key") return keyLabel(value);
-  if (label === "Source") return el("a", { href: value, target: "_blank", rel: "noopener" }, value);
+  // A source that's a web address is a link; others (a recording, a book) are just text.
+  if (label === "Source" && /^https?:\/\//.test(value)) return el("a", { href: value, target: "_blank", rel: "noopener" }, value);
   return value;
 }
 
@@ -2220,6 +2221,18 @@ function renderSet(main) {
     try { await navigator.clipboard.writeText(shareLink()); e.target.textContent = tr("✓ Link copied", "✓ Dolen wedi'i chopïo"); }
     catch { prompt(tr("Copy this link:", "Copïwch y ddolen hon:"), shareLink()); }
   } }, tr("Copy link", "Copïo'r ddolen"));
+  // The set as text to paste into a message or notes: its name, a bullet for each tune
+  // (version and key), and the link.
+  const asList = () => [name, ...items.map(({ tune, key }) => {
+    const group = state.groups.get(tune.group);
+    const version = group.versions.length > 1 ? tr(` (version ${tune.version})`, ` (fersiwn ${tune.version})`) : "";
+    const keyName = tune.key ? `: ${NOTES[(tune.key.pitch + key + 12) % 12]} ${modeName(tune.key.modeName)}` : "";
+    return `• ${tune.base}${version}${keyName}`;
+  }), shareLink()].join("\n");
+  const copyList = el("button", { type: "button", onclick: async (e) => {
+    try { await navigator.clipboard.writeText(asList()); e.target.textContent = tr("✓ List copied", "✓ Rhestr wedi'i chopïo"); }
+    catch { prompt(tr("Copy this list:", "Copïwch y rhestr hon:"), asList()); }
+  } }, tr("Copy as a list", "Copïo fel rhestr"));
   const printAll = () => { for (const paper of music.querySelectorAll(".set-paper")) paper.draw(); window.print(); };
   // Printing with the browser's own menu: draw every score first. (Gone with the page.)
   const beforePrint = () => {
@@ -2240,7 +2253,7 @@ function renderSet(main) {
     missing ? el("p", { class: "caption" }, tr(missing === 1 ? "1 tune in this set isn't on the site any more."
       : `${missing} tunes in this set aren't on the site any more.`,
       `Dyw ${tuneCount(missing)} yn y set hon ddim ar y wefan bellach.`)) : null,
-    el("div", { class: "set-actions" }, saveButton, copy,
+    el("div", { class: "set-actions" }, saveButton, copy, copyList,
       el("button", { type: "button", onclick: () => showQr(name, shareLink(),
         tr("Scan with a phone's camera to open this set.", "Sganiwch gyda chamera ffôn i agor y set hon.")) }, tr("QR code", "Cod QR")),
       el("button", { type: "button", onclick: printAll }, tr("Print", "Argraffu")),

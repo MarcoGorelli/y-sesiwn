@@ -158,6 +158,14 @@ def test_tune_numbers():
                              "Only add new tunes (python build_site.py --number-tunes); keep removed ones.")
 
 
+def test_pull_request_template():
+    # The pull request template's tick box for new tunes names the real file and command.
+    template = (b.ROOT / ".github" / "pull_request_template.md").read_text(encoding="utf-8")
+    assert "- [ ] New tunes: I ran `python build_site.py --number-tunes`" in template
+    assert "tune_numbers.json" in template and b.NUMBERS.name == "tune_numbers.json"
+    assert "--number-tunes" in (b.ROOT / "build_site.py").read_text(encoding="utf-8")
+
+
 def test_set_codes_for_new_tunes():
     # A tune added without a number yet still has a code: a little longer, never clashing.
     numbers = b.load_numbers()

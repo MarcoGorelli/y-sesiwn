@@ -560,7 +560,8 @@ def tune_pages(tunes: list[dict]) -> None:
             data["musicalKey"] = key
         ld = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
         details = "".join(f"<dt>{esc(label)}</dt><dd>"
-                          + (f'<a href="{esc(value)}">{esc(value)}</a>' if label == "Source" else esc(value))
+                          + (f'<a href="{esc(value)}">{esc(value)}</a>' if label == "Source" and value.startswith(("http://", "https://"))
+                             else esc(value))
                           + "</dd>" for label, value in first["details"])
         page = template
         page = swap(page, '<base href="./">', '<base href="../../">')

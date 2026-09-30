@@ -29,22 +29,43 @@ self.addEventListener("activate", (event) => {
   })());
 });
 
+// The app itself (its pages, code, styles and tune list) comes from the network when
+// it answers within FRESH_WAIT ms, so a new version is used at once (an older copy
+// might not know a newer kind of link: a set's, say). Offline or on a very slow
+// connection, it's the saved copy. "no-cache" asks the server whether the file has
+// changed, past the browser's own short-term cache (GitHub Pages: 10 minutes).
+// Everything else (the piano notes, the map, the libraries) is used from the copy.
+const FRESH_WAIT = 2000;
+const FRESH = new Set(["", "index.html", "app.js", "style.css", "tunes.json"]);
+
+async function freshOrSaved(url, saved) {
+  try {
+    const answer = await Promise.race([
+      fetch(url, { cache: "no-cache" }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("slow")), FRESH_WAIT)),
+    ]);
+    if (answer.ok) return answer;
+  } catch {}
+  return (await saved()) ?? fetch(url);
+}
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
-  if (request.method !== "GET" || new URL(request.url).origin !== location.origin) return;
+  const url = new URL(request.url);
+  if (request.method !== "GET" || url.origin !== location.origin) return;
+  const path = url.pathname.slice(new URL(self.registration.scope).pathname.length);
   if (request.mode !== "navigate") {
-    event.respondWith((async () => (await caches.match(request)) ?? fetch(request))());
+    const saved = () => caches.match(request);
+    event.respondWith(FRESH.has(path) ? freshOrSaved(request.url, saved) : (async () => (await saved()) ?? fetch(request))());
     return;
   }
-  // Every page (?page=…, a tune's alaw/<folder>/) is the app, index.html. A tune's page
-  // is folders down from it, so its copy points <base href> back up (../../).
-  const path = new URL(request.url).pathname.slice(new URL(self.registration.scope).pathname.length);
+  // Every page (?set=…, a tune's alaw/<folder>/) is the app, index.html. A tune's page
+  // is folders down from it, so the saved copy points <base href> back up (../../).
   const up = "../".repeat(path.split("/").length - 1);
-  event.respondWith((async () => {
+  event.respondWith(freshOrSaved(request.url, async () => {
     const app = await caches.match("./", { ignoreSearch: true });
-    if (!app) return fetch(request);
-    if (!up) return app;
+    if (!app || !up) return app;
     const html = (await app.text()).replace('<base href="./">', `<base href="${up}">`);
     return new Response(html, { headers: app.headers });
-  })());
+  }));
 });

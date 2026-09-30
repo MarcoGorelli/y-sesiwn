@@ -1952,8 +1952,8 @@ function renderOffline(main) {
           "ar ffôn (o'r sgrin gartref), yn ei ffenest ei hun ar gyfrifiadur (o'r Doc, y ddewislen Start neu'r bwrdd ",
           "gwaith). Ar iPhone neu iPad mae'r ap wedi'i osod yn cadw ei gopi ei hun, ar wahân i un Safari, felly ",
           "agorwch ef unwaith tra bod gennych signal."),
-        el("p", {}, "Pan fydd alawon yn cael eu hychwanegu neu eu cywiro, mae'r fersiwn newydd yn llwytho i lawr yn y ",
-          "cefndir y tro nesaf y byddwch chi ar-lein, ac fe'i gwelwch o'r tro nesaf y byddwch chi'n agor Y Sesiwn.")));
+        el("p", {}, "Pan fydd alawon yn cael eu hychwanegu neu eu cywiro, fe'u gwelwch chi cyn gynted ag y byddwch chi ",
+          "ar-lein, ac mae'ch copi ar y ddyfais yn cael ei ddiweddaru yn y cefndir.")));
     return;
   }
   main.replaceChildren(
@@ -1979,8 +1979,8 @@ function renderOffline(main) {
         "full screen on a phone (from the home screen), in its own window on a computer (from the Dock, ",
         "Start menu or desktop). On an iPhone or iPad the installed app keeps its own copy, separate ",
         "from Safari's, so open it once while you have signal."),
-      el("p", {}, "When tunes are added or corrected, the new version downloads in the background ",
-        "the next time you're online, and you'll see it from the next time you open Y Sesiwn.")));
+      el("p", {}, "When tunes are added or corrected, you see them as soon as you're online, and the copy on your ",
+        "device is brought up to date in the background.")));
 }
 
 // ---- Sets: tunes to play together, kept in the link --------------------------------------

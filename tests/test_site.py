@@ -729,6 +729,31 @@ def test_works_offline(browser, site):
     context.close()
 
 
+def test_new_version_straight_away(browser, site):
+    # Someone who has used the site before opens a link after an update: online, they get
+    # the new version at once, not their saved copy (which may not know a new kind of
+    # link); offline, the saved copy.
+    from conftest import ROOT
+    app = ROOT / "_site" / "app.js"
+    original = app.read_text(encoding="utf-8")
+    context = browser.new_context()  # service worker allowed
+    page = context.new_page()
+    try:
+        page.goto(site)
+        page.wait_for_function("navigator.serviceWorker.controller !== null", timeout=30000)
+        app.write_text(original + "\nwindow.newVersion = true;\n", encoding="utf-8")  # a deploy
+        page.goto(site + "?set=5A3V~h&n=Nos%20Iau")
+        page.wait_for_selector(".set-list li")
+        assert page.evaluate("window.newVersion") is True
+        context.set_offline(True)
+        page.goto(site + "?set=5A3V~h&n=Nos%20Iau")
+        page.wait_for_selector(".set-list li")
+        assert page.evaluate("window.newVersion") is None  # offline: the saved copy
+    finally:
+        app.write_text(original, encoding="utf-8")
+        context.close()
+
+
 def test_tune_page_address(page, site):
     # Each tune has its own page, alaw/<folder>/, which opens straight into the app.
     failed = []

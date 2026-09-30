@@ -598,3 +598,5 @@ body.practice .set-list, body.practice .set-count, body.practice .set-actions > 
 .say-key p { margin: .3rem 0 0; }
 @media print { .say { display: none; } }
 body.practice .say { display: none; }
+.set-add { max-width: 34rem; margin: 0 0 .3rem; }
+.set-added { margin: 0 0 .8rem; min-height: 1.2em; }

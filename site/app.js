@@ -26,7 +26,8 @@ const PAGES = {
 const state = {
   data: null,
   bySlug: new Map(),    // every tune file ("version"), by folder name
-  byId: new Map(),      // and by its short code (set links)
+  byId: new Map(),      // and by its short_id (older set links)
+  byCode: new Map(),    // and by its code in set links (build_site.py's set_code)
   groups: new Map(),    // one page per tune: its versions, by the first version's folder
   groupList: [],        // groups sorted by title
   settings: new Map(),  // per tune: { transpose, bpm }, kept while the page is open
@@ -743,7 +744,7 @@ function render() {
   const notes = page === "notes";
   const browse = page === "browse";
   const contact = page === "contact";
-  const setPage = page === "set";
+  const setPage = page === "set" || params.has("set");
   const setsPage = page === "sets";
   const main = document.getElementById("main");
   if (!tune) setPractice(false);
@@ -1982,15 +1983,34 @@ function renderOffline(main) {
 }
 
 // ---- Sets: tunes to play together, kept in the link --------------------------------------
-// A set lives in its address: ?page=set&s=<code>.<code>~2.<code>&name=… where each code
-// is a tune's (build_site.py's short_id: five characters, so a 100-tune set is a link of
-// about 600 characters and a QR code that still scans) and ~2 moves it up two semitones.
+// A set lives in its address: ?set=5A3V~g0b&n=Nos%20Iau. Each tune is its code from
+// build_site.py: its number (tune_numbers.json, which never changes) in two characters
+// of base 62, or "-" and three past 3,844 tunes, or, for a tune without a number yet,
+// "." and its five-character short_id. "~" and a letter after one moves it (a -5 … l +6
+// semitones; f would be none). A 100-tune set is a link of about 300 characters. Older
+// links (?page=set&s=<short_id>.<short_id>~2&name=…) still open, in the new form.
 // Your own sets are also kept in this browser (localStorage), with &my=<id> in their
 // address; nothing is sent anywhere, and a shared link is the set itself.
 
-const encodeSet = (items) => items.map(({ tune, key }) => tune.id + (key ? `~${key}` : "")).join(".");
+const KEY_LETTERS = "abcdefghijkl";  // -5 … +6 semitones
+
+const encodeSet = (items) => items.map(({ tune, key }) => tune.code + (key ? `~${KEY_LETTERS[key + 5]}` : "")).join("");
 
 function decodeSet(text) {
+  const items = [];
+  let missing = 0;
+  const codes = state.byCode;
+  for (const m of (text ?? "").matchAll(/(\.[0-9a-z]{5}|-[0-9A-Za-z]{3}|[0-9A-Za-z]{2})(?:~([a-l]))?/g)) {
+    // A tune without a number when the link was made may have one now: its short_id still finds it.
+    const tune = codes.get(m[1]) ?? (m[1][0] === "." ? state.byId.get(m[1].slice(1)) : null);
+    if (tune) items.push({ tune, key: m[2] ? KEY_LETTERS.indexOf(m[2]) - 5 : 0 });
+    else missing++;
+  }
+  return { items, missing };
+}
+
+// The first form of set links, and of the sets kept in browsers: short_ids with dots.
+function decodeLegacy(text) {
   const items = [];
   let missing = 0;
   for (const part of (text ?? "").split(".").filter(Boolean)) {
@@ -2003,14 +2023,21 @@ function decodeSet(text) {
 }
 
 function setUrl(items, name, my = null) {
-  const params = new URLSearchParams({ page: "set", s: encodeSet(items) });
-  if (name) params.set("name", name);
-  if (my) params.set("my", my);
-  return `?${params}`.replaceAll("%7E", "~");
+  let url = `?set=${encodeSet(items)}`;
+  if (name) url += `&n=${encodeURIComponent(name)}`;
+  if (my) url += `&my=${my}`;
+  return url;
 }
 
 function loadSets() {
-  try { return JSON.parse(localStorage.getItem("sets")) ?? []; } catch { return []; }
+  let sets;
+  try { sets = JSON.parse(localStorage.getItem("sets")) ?? []; } catch { return []; }
+  let changed = false;
+  for (const set of sets) {  // kept in the first form: convert, once
+    if (set.c == null) { set.c = encodeSet(decodeLegacy(set.s).items); delete set.s; changed = true; }
+  }
+  if (changed) saveSets(sets);
+  return sets;
 }
 function saveSets(sets) {
   try { localStorage.setItem("sets", JSON.stringify(sets)); } catch {}
@@ -2032,13 +2059,13 @@ function addToSetButton(tune, settings) {
     const sets = loadSets();
     let set = sets.find((x) => x.id === currentSetId());
     if (!set) {
-      set = { id: newSetId(), name: defaultSetName(), s: "" };
+      set = { id: newSetId(), name: defaultSetName(), c: "" };
       sets.push(set);
       setCurrentSet(set.id);
     }
-    const { items } = decodeSet(set.s);
+    const { items } = decodeSet(set.c);
     items.push({ tune, key: settings.transpose });
-    set.s = encodeSet(items);
+    set.c = encodeSet(items);
     set.updated = Date.now();
     saveSets(sets);
     status.replaceChildren(tr(`Added to ${set.name} (${tuneCount(items.length)}) · `, `Wedi'i hychwanegu at ${set.name} (${tuneCount(items.length)}) · `),
@@ -2054,7 +2081,7 @@ function renderSets(main) {
     const sets = loadSets().sort((a, b) => (b.updated ?? 0) - (a.updated ?? 0));
     const list = sets.length
       ? el("ul", { class: "set-list-mine" }, sets.map((set) => {
-          const { items } = decodeSet(set.s);
+          const { items } = decodeSet(set.c);
           return el("li", {},
             el("a", { href: setUrl(items, set.name, set.id), "data-route": true, onclick: () => setCurrentSet(set.id) }, set.name),
             el("span", { class: "caption" }, ` · ${tuneCount(items.length)}${set.id === currentSetId() ? tr(" · adding to this one", " · yn ychwanegu at hon") : ""}`),
@@ -2079,7 +2106,7 @@ function renderSets(main) {
       list,
       el("p", {}, el("button", { type: "button", class: "primary", onclick: () => {
         const sets = loadSets();
-        const set = { id: newSetId(), name: defaultSetName(), s: "", updated: Date.now() };
+        const set = { id: newSetId(), name: defaultSetName(), c: "", updated: Date.now() };
         saveSets([...sets, set]);
         setCurrentSet(set.id);
         navigate(setUrl([], set.name, set.id));
@@ -2117,8 +2144,13 @@ function renderSet(main) {
   const params = new URLSearchParams(location.search);
   const my = params.get("my");
   const mine = my && loadSets().find((x) => x.id === my);
-  let { items, missing } = decodeSet(params.get("s"));
-  let name = params.get("name") || (mine ? mine.name : tr("A set", "Set"));
+  let { items, missing } = params.has("set") ? decodeSet(params.get("set")) : decodeLegacy(params.get("s"));
+  let name = params.get("n") || params.get("name") || (mine ? mine.name : tr("A set", "Set"));
+  // An older link (or a tune's longer code, from before it had a number): the address in
+  // its shortest form, unless that would drop tunes the site doesn't have (any more).
+  if (!params.has("set") || (!missing && params.get("set") !== encodeSet(items))) {
+    history.replaceState(null, "", setUrl(items, name, mine ? my : null));
+  }
   document.title = `${name} · Y Sesiwn`;
   const shareLink = () => `https://ysesiwn.cymru/${setUrl(items, name)}`;
   const save = () => {
@@ -2127,7 +2159,7 @@ function renderSet(main) {
     if (!mine) return;
     const sets = loadSets();
     const set = sets.find((x) => x.id === my);
-    if (set) Object.assign(set, { name, s: encodeSet(items), updated: Date.now() });
+    if (set) Object.assign(set, { name, c: encodeSet(items), updated: Date.now() });
     saveSets(sets);
   };
 
@@ -2159,8 +2191,27 @@ function renderSet(main) {
       return el("section", { class: "set-tune" }, el("h2", {}, `${i + 1}. ${item.tune.base}`), paper);
     }));
     count.textContent = tuneCount(items.length);
+    empty.hidden = items.length > 0;
   };
   const count = el("span", { class: "caption" });
+  const empty = el("p", { class: "caption" }, tr("No tunes yet: add some with the box above, or with Add to set on a tune's page.",
+    "Dim alawon eto: ychwanegwch rai gyda'r blwch uchod, neu gyda Ychwanegu at set ar dudalen alaw."));
+  // Adding tunes: type part of a name and press Enter (the arrow keys pick another
+  // match); the box empties and stays ready for the next one.
+  const added = el("p", { class: "caption set-added", "aria-live": "polite" });
+  const addInput = el("input", { id: "set-add", type: "search", autocomplete: "off", spellcheck: "false",
+    placeholder: tr("Add a tune: type its name, press Enter", "Ychwanegu alaw: teipiwch ei henw, pwyswch Enter"),
+    role: "combobox", "aria-expanded": "false", "aria-controls": "set-add-list", "aria-autocomplete": "list" });
+  const addList = el("ul", { id: "set-add-list", class: "suggestions", role: "listbox", hidden: true });
+  attachSearch(addInput, addList, { showAllOnFocus: false, onPick: (group) => {
+    items.push({ tune: group.versions[0], key: 0 });
+    save();
+    draw();
+    added.textContent = tr(`Added ${group.title}.`, `Wedi ychwanegu ${group.title}.`);
+  } });
+  const addBox = el("div", { class: "search set-add" },
+    el("label", { for: "set-add", class: "visually-hidden" }, tr("Add a tune to the set", "Ychwanegu alaw at y set")),
+    addInput, addList);
   const title = mine
     ? el("input", { type: "text", class: "set-name", value: name, "aria-label": tr("Name of the set", "Enw'r set"),
         onchange: (e) => { name = e.target.value.trim() || defaultSetName(); save(); } })
@@ -2177,7 +2228,7 @@ function renderSet(main) {
   };
   window.addEventListener("beforeprint", beforePrint);
   const saveButton = mine ? null : el("button", { type: "button", class: "primary", onclick: () => {
-    const set = { id: newSetId(), name, s: encodeSet(items), updated: Date.now() };
+    const set = { id: newSetId(), name, c: encodeSet(items), updated: Date.now() };
     saveSets([...loadSets(), set]);
     setCurrentSet(set.id);
     navigate(setUrl(items, name, set.id));
@@ -2195,8 +2246,7 @@ function renderSet(main) {
       el("button", { type: "button", onclick: printAll }, tr("Print", "Argraffu")),
       el("button", { type: "button", class: "practice-toggle", onclick: () => setPractice(!document.body.classList.contains("practice")) },
         practiceLabel(document.body.classList.contains("practice")))),
-    items.length || missing ? list : el("p", {}, tr("No tunes yet: open a tune and press Add to set.",
-      "Dim alawon eto: agorwch alaw a phwyso Ychwanegu at set.")),
+    addBox, added, empty, list,
     music,
   ].filter(Boolean));
   if (mine) setCurrentSet(my);
@@ -2392,12 +2442,20 @@ async function renderGuide(main, key) {
 
 // ---- Sidebar search box ---------------------------------------------------------------
 
-function attachSearch(input, list, { showAllOnFocus = true } = {}) {
+// onPick: what choosing a tune does (Enter, or a click); opening its page, unless the
+// box is for something else (adding to a set), in which case it stays ready for the next.
+function attachSearch(input, list, { showAllOnFocus = true, onPick = null } = {}) {
   let results = [];
   let active = 0;
 
   const close = () => { list.hidden = true; input.setAttribute("aria-expanded", "false"); };
-  const open = (group) => { input.value = ""; close(); input.blur(); navigate(tuneUrl(group.slug)); };
+  const open = (group) => {
+    input.value = "";
+    close();
+    if (onPick) { onPick(group); return; }
+    input.blur();
+    navigate(tuneUrl(group.slug));
+  };
   const show = () => {
     const query = input.value;
     if (!query.trim() && !showAllOnFocus) { results = []; close(); return; }
@@ -2443,6 +2501,7 @@ let uncounted = null;  // a view before the counter has loaded
 function viewPath() {
   const params = new URLSearchParams(location.search);
   const kept = new URLSearchParams([...params].filter(([name]) => COUNTED_PARAMS.includes(name)));
+  if (params.has("set")) kept.set("page", "set");  // a set, but not which tunes
   return `${location.pathname}${kept.size ? `?${kept}` : ""}`;
 }
 
@@ -2474,6 +2533,7 @@ function buildGroups() {
   for (const tune of state.data.tunes) {
     state.bySlug.set(tune.slug, tune);
     state.byId.set(tune.id, tune);
+    state.byCode.set(tune.code, tune);
     if (!state.groups.has(tune.group)) state.groups.set(tune.group, { slug: tune.group, title: tune.base, versions: [] });
     state.groups.get(tune.group).versions.push(tune);
   }

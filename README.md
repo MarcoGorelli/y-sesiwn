@@ -217,15 +217,22 @@ relative URLs, so the site also works under a sub-path such as
 - **Say it:** a rough guide to saying each Welsh tune name, for English readers
   (`pronunciation.json`; not shown in Welsh). Made by rules and checked by
   hand: a Welsh speaker's corrections are welcome.
-- **Sets:** "Add to set" on a tune page, *My sets* (`?page=sets`), and a set
-  page (`?page=set&s=…&name=…`) to reorder, change keys, copy its link, show
-  its QR code, print it or view it full screen. There's no database: a set is
-  its address, a list of the tunes' five-character codes (`short_id()` in
-  `build_site.py`, from the folder name, so they don't change; the build stops
-  if two ever match), each with `~N` if it's moved N semitones. A 100-tune set
-  is a link of about 700 characters. Your own sets are also kept in the
-  browser (localStorage), with `&my=` in their address. Scores are drawn as
-  they come into view.
+- **Sets:** "Add to set" on a tune page, an *Add a tune* search box on a set
+  (type, Enter), *My sets* (`?page=sets`), and a set page to reorder, change
+  keys, copy its link, show its QR code, print it or view it full screen.
+  There's no database: a set is its address, `?set=5A3V~h7o&n=Nos%20Iau`. Each
+  tune is its number from `tune_numbers.json` in two characters of base 62
+  (`set_code()` in `build_site.py`), `~` and a letter if it's transposed (a = 5
+  semitones down … l = 6 up). A 100-tune set is a link of about 300
+  characters. Numbers are only ever added (`python build_site.py
+  --number-tunes`, after merging new tunes; the deploy never numbers tunes
+  itself, so numbers can't shift between builds): a removed tune keeps its
+  line, so its number is never reused. `test_tune_numbers` checks this against
+  the last commit (and, on GitHub, a pull request against main). A tune without
+  a number yet uses `.` and its five-character `short_id()` instead, which
+  keeps working after it's numbered; the first form of set links (`?page=set&s=…`)
+  still opens. Your own sets are also kept in the browser (localStorage), with
+  `&my=` in their address. Scores are drawn as they come into view.
   There are deliberately **no ready-made sets** (the My sets page says so):
   finding tunes that sit well together is part of the fun, so people are
   encouraged to make their own.
@@ -286,6 +293,7 @@ relative URLs, so the site also works under a sub-path such as
 | `site/index.html`, `site/style.css`, `site/app.js` | The page. `app.js` does searching (a port of the original Python matching, including `difflib`'s similarity ratio), browsing, routing (`alaw/<folder>/?v=…`, `?page=add\|fix\|about`, all relative to `<base href>`), sheet music and playback with abcjs, and renders the Markdown pages with marked. |
 | `site/about.md`, `site/carthen.svg` | The About page; the tapestry band. |
 | `site/about.cy.md`, `site/guides.cy.md` | The Welsh About page, and the Welsh *How to add a tune* and *How to submit corrections* (keep in step with `about.md` and `CONTRIBUTING.md`). |
+| `tune_numbers.json` | Each tune's number in set links. Only ever add to it (`python build_site.py --number-tunes`); never change a number or delete a line. |
 | `pronunciation.json` | How to say each Welsh tune name, by folder name (the build stops if a folder doesn't exist). |
 | `places.json`, `site/wales.svg` | The places named in tune titles, for the map; the outline of Wales (made once from the ONS local authority boundaries via [UK-GeoJSON](https://github.com/martinjc/UK-GeoJSON), merged and simplified; its projection is in a comment in the file and in `MAP` in `build_site.py`). The outline is used as a CSS mask, so it takes the page's colours. |
 | `site/sw.js`, `site/manifest.webmanifest`, `site/icon-*.png` | Offline use and the home-screen app (see Features). The icons are made from `design/app-icon.html`. |

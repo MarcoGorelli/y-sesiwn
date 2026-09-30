@@ -431,10 +431,54 @@ def short_id(slug: str) -> str:
     return "".join(digits[n // 36 ** i % 36] for i in reversed(range(5)))
 
 
+BASE62 = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+NUMBERS = ROOT / "tune_numbers.json"
+
+
+def load_numbers() -> dict[str, int]:
+    """tune_numbers.json: each tune's number for set links, which never changes."""
+    if not NUMBERS.exists():
+        return {}
+    return json.loads(NUMBERS.read_text(encoding="utf-8"))["numbers"]
+
+
+def number_tunes() -> None:
+    """Give tunes without a number the next ones (python build_site.py --number-tunes).
+    Numbers are only ever added: a tune keeps its number, and a removed tune's number
+    stays in the file, so it's never given to another tune (old set links would open it)."""
+    numbers = load_numbers()
+    new = sorted(p.parent.name for p in (ROOT / "tunes").glob("*/tune.abc") if p.parent.name not in numbers)
+    start = max(numbers.values(), default=-1) + 1
+    numbers.update({slug: start + i for i, slug in enumerate(new)})
+    comment = ("Each tune's number in set links (?set=…), by folder name. Only ever add to it: never change "
+               "or reuse a number, and keep a removed tune's line, or old set links would open the wrong tune. "
+               "python build_site.py --number-tunes adds new tunes (a test checks the rest).")
+    lines = ",\n".join(f'    "{slug}": {n}' for slug, n in sorted(numbers.items(), key=lambda x: x[1]))
+    NUMBERS.write_text('{\n  "_comment": ' + json.dumps(comment, ensure_ascii=False) + ',\n  "numbers": {\n' + lines + "\n  }\n}\n",
+                       encoding="utf-8")
+    print(f"numbered {len(new)} new tune(s)" + (f": {', '.join(new)}" if new else ""))
+
+
+def set_code(slug: str, numbers: dict[str, int]) -> str:
+    """A tune's code in a set link: its number in two characters of base 62 (three,
+    after "-", past 3,844 tunes); without a number yet, "." and its five-character short_id."""
+    if slug not in numbers:
+        return "." + short_id(slug)
+    n = numbers[slug]
+    digits = lambda n, width: "".join(BASE62[n // 62 ** i % 62] for i in reversed(range(width)))
+    return digits(n, 2) if n < 62 ** 2 else "-" + digits(n, 3)
+
+
 def main() -> None:
     tunes = [tune_record(p) for p in sorted((ROOT / "tunes").glob("*/tune.abc"))]
+    numbers = load_numbers()
+    unnumbered = [t["slug"] for t in tunes if t["slug"] not in numbers]
+    if unnumbered:
+        print(f"note: {len(unnumbered)} tune(s) without a set number yet (their set links are a little longer); "
+              "run python build_site.py --number-tunes")
     ids: dict[str, str] = {}
     for tune in tunes:
+        tune["code"] = set_code(tune["slug"], numbers)
         tune["id"] = short_id(tune["slug"])
         if tune["id"] in ids:  # very unlikely (1 in about 60 million per pair); rename a folder if it happens
             raise SystemExit(f"{tune['slug']} and {ids[tune['id']]} have the same set code {tune['id']}")
@@ -572,4 +616,7 @@ def write_service_worker() -> None:
 
 
 if __name__ == "__main__":
+    import sys
+    if "--number-tunes" in sys.argv:
+        number_tunes()
     main()

@@ -1030,16 +1030,16 @@ def test_set_from_tune_pages(page):
     page.click(".add-status a")
     page.wait_for_selector(".set-list li")
     assert page.locator(".set-list li > a").all_inner_texts() == ["Llancesau Trefaldwyn", "Glandyfi", "Nyth y Gog"]
-    assert "s=bne0o.6m42r~2." in page.url and "&my=" in page.url
+    assert "?set=5A3V~h7o&n=My%20set&my=" in page.url  # Glandyfi (version 2) up two: ~h
     assert page.locator(".set-list li").nth(1).locator("select").input_value() == "2"
     page.locator(".set-list li").nth(1).locator("button[aria-label='Move up']").click()
     page.locator(".set-list li").nth(2).locator("button[aria-label^='Remove']").click()
     page.fill(".set-name", "Nos Iau")
     page.press(".set-name", "Tab")
     assert page.locator(".set-list li > a").all_inner_texts() == ["Glandyfi", "Llancesau Trefaldwyn"]
-    assert "s=6m42r~2.bne0o&name=Nos+Iau" in page.url
+    assert "?set=3V~h5A&n=Nos%20Iau" in page.url
     kept = page.evaluate("JSON.parse(localStorage.getItem('sets'))")
-    assert [(x["name"], x["s"]) for x in kept] == [("Nos Iau", "6m42r~2.bne0o")]
+    assert [(x["name"], x["c"]) for x in kept] == [("Nos Iau", "3V~h5A")]
     page.locator(".set-paper").first.scroll_into_view_if_needed()
     page.wait_for_selector(".set-paper svg")
     # My sets lists it; it can be deleted there.
@@ -1051,12 +1051,42 @@ def test_set_from_tune_pages(page):
     assert page.locator(".set-list-mine").count() == 0
 
 
-def test_shared_set(browser, site):
+def test_add_to_set_by_search(page):
+    # On a set's page: type part of a name, press Enter, and it's added; the box is ready
+    # for the next one straight away. Typos are forgiven, and the arrow keys pick another match.
+    page.goto_site("?page=sets")
+    page.click("text=New set")
+    page.wait_for_selector("#set-add")
+    assert page.locator("text=No tunes yet").is_visible()
+    page.fill("#set-add", "llancesau")
+    page.wait_for_selector("#set-add-list li")
+    page.press("#set-add", "Enter")
+    assert page.input_value("#set-add") == "" and page.evaluate("document.activeElement.id") == "set-add"
+    page.keyboard.type("machynleth")  # a typo
+    page.wait_for_selector("#set-add-list li")
+    page.keyboard.press("Enter")
+    page.keyboard.type("nyth y gog")
+    page.wait_for_selector("#set-add-list li")
+    second = page.locator("#set-add-list li").nth(1).inner_text()
+    page.keyboard.press("ArrowDown")
+    page.keyboard.press("Enter")
+    assert page.locator(".set-list li > a").all_inner_texts() == ["Llancesau Trefaldwyn", "Machynlleth", second]
+    assert page.inner_text(".set-added") == f"Added {second}."
+    assert not page.locator("text=No tunes yet").is_visible()
+    kept = page.evaluate("JSON.parse(localStorage.getItem('sets'))")
+    assert len(kept[0]["c"]) == 6  # three tunes, two characters each
+
+
+@pytest.mark.parametrize("link", [
+    "?set=3V~h5Azz&n=Nos%20Iau",                      # zz: a code no tune has
+    "?page=set&s=6m42r~2.bne0o.zzzzz&name=Nos%20Iau",  # the first form of set links still works
+])
+def test_shared_set(browser, site, link):
     # A set's link, opened on someone else's phone: the same tunes, in the same keys, to save.
     context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True,
                                   service_workers="block")
     page = context.new_page()
-    page.goto(site + "?page=set&s=6m42r~2.bne0o.zzzzz&name=Nos%20Iau")
+    page.goto(site + link)
     page.wait_for_selector(".set-list li")
     assert page.inner_text("main h1") == "Nos Iau"
     assert page.locator(".set-list li > a").all_inner_texts() == ["Glandyfi", "Llancesau Trefaldwyn"]
@@ -1065,19 +1095,36 @@ def test_shared_set(browser, site):
     page.click("text=Save to my sets")
     page.wait_for_selector(".set-name")
     assert "&my=" in page.url
-    assert page.evaluate("JSON.parse(localStorage.getItem('sets'))[0].s") == "6m42r~2.bne0o"
+    assert page.evaluate("JSON.parse(localStorage.getItem('sets'))[0].c") == "3V~h5A"
+    assert "?set=3V~h5A&n=Nos%20Iau" in page.url  # an older link is shown in the new form
     context.close()
 
 
+def test_set_codes_that_change(page):
+    # A tune without a number when its link was made (".<short_id>") still opens once it
+    # has one; sets kept in the browser in the first form are converted.
+    page.goto_site()
+    short_id = page.evaluate("state.bySlug.get('machynlleth').id")
+    page.goto_site(f"?set=.{short_id}~a5A&n=Old")
+    page.wait_for_selector(".set-list li")
+    assert page.locator(".set-list li > a").all_inner_texts() == ["Machynlleth", "Llancesau Trefaldwyn"]
+    assert page.locator(".set-list li select").first.input_value() == "-5"
+    assert "?set=5Z~a5A&n=Old" in page.url
+    page.evaluate("""localStorage.setItem('sets', JSON.stringify([{ id: 'old1', name: 'Old', s: '6m42r~2.bne0o' }]))""")
+    page.goto_site("?page=sets")
+    assert page.locator(".set-list-mine li a").all_inner_texts() == ["Old"]
+    assert page.evaluate("JSON.parse(localStorage.getItem('sets'))[0]") == {"id": "old1", "name": "Old", "c": "3V~h5A"}
+
+
 def test_big_set(page, site):
-    # 100 tunes: a link of about 700 characters, a QR code that scans, and music drawn
+    # 100 tunes: a link of about 300 characters, a QR code that scans, and music drawn
     # only as it comes into view.
     import io
     import zxingcpp
     from PIL import Image
     page.goto_site()
-    codes = page.evaluate("state.data.tunes.slice(0, 100).map((t, i) => t.id + (i % 3 ? '' : '~2')).join('.')")
-    page.goto_site(f"?page=set&s={codes}&name=Big")
+    codes = page.evaluate("state.data.tunes.slice(0, 100).map((t, i) => t.code + (i % 3 ? '' : '~h')).join('')")
+    page.goto_site(f"?set={codes}&n=Big")
     page.wait_for_selector(".set-list li")
     assert page.locator(".set-list li").count() == 100
     assert page.locator(".set-paper svg").count() == 0
@@ -1087,8 +1134,8 @@ def test_big_set(page, site):
     page.evaluate("window.scrollTo(0, 0)")
     page.click(".set-actions button:text-is('QR code')")
     page.wait_for_selector("dialog svg.qr")
-    link = f"https://ysesiwn.cymru/?page=set&s={codes}&name=Big"
-    assert len(link) < 800
+    link = f"https://ysesiwn.cymru/?set={codes}&n=Big"
+    assert len(link) < 320
     image = Image.open(io.BytesIO(page.locator("dialog svg.qr").screenshot()))
     assert [r.text for r in zxingcpp.read_barcodes(image)] == [link]
 

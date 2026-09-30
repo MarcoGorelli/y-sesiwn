@@ -113,6 +113,63 @@ def test_set_codes(site):
     assert b.short_id("llancesau-trefaldwyn") == "bne0o"  # a set link made today still works later
 
 
+def committed_numbers(revision):
+    """tune_numbers.json as it was at a git revision (None if there's no such file or git)."""
+    import subprocess
+    try:
+        text = subprocess.run(["git", "show", f"{revision}:tune_numbers.json"], cwd=b.ROOT, capture_output=True,
+                              text=True, check=True).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return json.loads(text)["numbers"]
+
+
+def number_problems(before, now):
+    """What would break set links made with the numbers before: a tune renumbered or
+    dropped, or a number given to another tune."""
+    problems = {slug: (n, now.get(slug)) for slug, n in before.items() if now.get(slug) != n}
+    taken = {n: slug for slug, n in before.items()}
+    problems.update({slug: ("reuses", n) for slug, n in now.items() if n in taken and taken[n] != slug})
+    return problems
+
+
+def test_number_check():
+    # The check itself: only adding tunes passes.
+    before = {"a": 0, "b": 1}
+    assert number_problems(before, {"a": 0, "b": 1, "c": 2}) == {}
+    assert number_problems(before, {"a": 0, "b": 2})              # renumbered
+    assert number_problems(before, {"a": 0})                      # a removed tune's line deleted
+    assert number_problems(before, {"a": 0, "b": 1, "c": 1})      # a number reused
+
+
+def test_tune_numbers():
+    # Set links name tunes by number, so a number must never change or go to another
+    # tune: numbers are only ever added (a removed tune keeps its line). Checked against
+    # the last commit and the one before (on GitHub, a pull request against main).
+    numbers = b.load_numbers()
+    assert len(set(numbers.values())) == len(numbers), "two tunes share a number"
+    assert all(isinstance(n, int) and n >= 0 for n in numbers.values())
+    for revision in ["HEAD", "HEAD^1"]:
+        before = committed_numbers(revision)
+        if before is None:
+            continue
+        changed = number_problems(before, numbers)
+        assert not changed, (f"tune_numbers.json changes numbers that set links use (was, now): {changed}. "
+                             "Only add new tunes (python build_site.py --number-tunes); keep removed ones.")
+
+
+def test_set_codes_for_new_tunes():
+    # A tune added without a number yet still has a code: a little longer, never clashing.
+    numbers = b.load_numbers()
+    assert b.set_code("llancesau-trefaldwyn", numbers) == "5A"
+    assert b.set_code("a-new-tune", numbers) == "." + b.short_id("a-new-tune")
+    assert b.set_code("x", {"x": 4000}) == "-12w"  # past 3,844 tunes: three characters after "-"
+    index = json.loads((b.OUT / "tunes.json").read_text(encoding="utf-8")) if b.OUT.exists() else None
+    if index:
+        codes = [t["code"] for t in index["tunes"]]
+        assert len(set(codes)) == len(codes)
+
+
 def test_tune_pages(site):
     # A real page per tune (alaw/<folder>/), for link previews and search engines.
     out = b.OUT

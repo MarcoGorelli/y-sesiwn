@@ -73,6 +73,9 @@ def browser_contexts(request, monkeypatch):
     opened, closed = [], []
 
     def traced(**kwargs):
+        # No fade-in as each page opens: while it plays, things are still moving, and a
+        # click's retries scroll the page (to a sticky bar's place at the bottom, say).
+        kwargs.setdefault("reduced_motion", "reduce")
         context = new_context(**kwargs)
         context.set_default_timeout(10000)  # nothing should take this long
         context.tracing.start(screenshots=True)  # (DOM snapshots would change what <base href> resolves to)

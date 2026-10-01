@@ -219,3 +219,12 @@ def test_repeats_follow_the_score(slug, end_repeats):
     abc = (b.ROOT / "tunes" / slug / "tune.abc").read_text(encoding="utf-8")
     body = re.sub(r'"[^"]*"', "", abc.split("\nK:", 1)[1].split("\n", 1)[1])
     assert len(re.findall(r":\||::", body)) == end_repeats
+
+
+def test_tunes_from_the_session(site):
+    # A setting from thesession.org: its version tab says so, and on the tune's own page
+    # the source's link part is a link and who added it is text.
+    assert b.version_label({"S": ["https://thesession.org/tunes/10046#setting30987 (added by ceri rhys matthews)"]}) == "The Session"
+    page = (b.OUT / "alaw" / "y-drochfa" / "index.html").read_text(encoding="utf-8")
+    assert ('<a href="https://thesession.org/tunes/17046#setting32566">https://thesession.org/tunes/17046#setting32566</a>'
+            " (added by Rowan Folk)") in page

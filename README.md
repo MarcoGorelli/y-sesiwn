@@ -371,6 +371,13 @@ already had (named `<our title> (version N)`, with their own titles, e.g.
 `B:` (the volume), `S:` (the archive URL), `N:Transcribed by Brian Martin` (his
 email address left out), and ABC2Win's `!` line breaks turned into real ones.
 
+**From [The Session](https://thesession.org/)**: a setting's own link is its
+source, with who posted it after it, `S:https://thesession.org/tunes/17046#setting32566 (added by Rowan Folk)`:
+the link part is a link, the rest text (a version's tab then says *The
+Session*). Chords from the setting have `%%chords From the setting on The Session`.
+The Session's `!` line breaks become real ones; its `M:` and `L:` are on the
+tune's `/abc` page (the JSON API leaves them out).
+
 **Versions share a page.** Titles ending ` (version N)` are grouped with the
 tune they're a version of (`build_site.py` adds `group`, `base`, `version` and a
 `source` label to each tune); the site shows one entry per tune in browsing,

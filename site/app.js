@@ -1360,7 +1360,8 @@ function chordChart(visualObj) {
 }
 
 // Where a tune's chords come from (its %%chords line), in Welsh.
-const CY_CHORD_SOURCES = { "From the Alawon Cymru score": "O sgôr Alawon Cymru" };
+const CY_CHORD_SOURCES = { "From the Alawon Cymru score": "O sgôr Alawon Cymru",
+  "From the setting on The Session": "O'r gosodiad ar The Session", "Supplied by Neil Browning": "Gan Neil Browning" };
 
 function chordCard(tune, redraw) {
   if (tune.chords == null) return null;
@@ -1463,8 +1464,10 @@ const CY_DETAILS = { "Tune type": "Math o alaw", Key: "Cywair", "Time signature"
 
 function detailValue(label, value) {
   if (label === "Key") return keyLabel(value);
-  // A source that's a web address is a link; others (a recording, a book) are just text.
-  if (label === "Source" && /^https?:\/\//.test(value)) return el("a", { href: value, target: "_blank", rel: "noopener" }, value);
+  // A source that's a web address is a link, and any words after it (who added the tune
+  // there) stay text; other sources (a recording, a book) are just text.
+  const url = label === "Source" && value.match(/^(https?:\/\/\S+)(.*)$/);
+  if (url) return [el("a", { href: url[1], target: "_blank", rel: "noopener" }, url[1]), url[2]];
   return value;
 }
 

@@ -332,6 +332,25 @@ def test_source_as_text_or_link(page):
     assert page.inner_text(".tune-side .card dd a").startswith("http://alawoncymru.com/")
 
 
+def test_tunes_from_the_session(page):
+    # Tunes from thesession.org: the setting's link as the source, then who added it there.
+    page.goto_site("alaw/y-drochfa/")
+    page.wait_for_selector(".score .abcjs-staff")
+    source = page.locator(".tune-side .card dd").filter(has_text="thesession.org")
+    assert source.inner_text() == "https://thesession.org/tunes/17046#setting32566 (added by Rowan Folk)"
+    assert source.locator("a").get_attribute("href") == "https://thesession.org/tunes/17046#setting32566"
+    assert "From the setting on The Session" in page.inner_text("main")  # where its chords come from
+    page.click(".lang-switch [data-lang=cy]")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert "O'r gosodiad ar The Session" in page.inner_text("main")
+    # A tune already on the site gets The Session's setting as another version, so named.
+    page.goto_site("alaw/deildy-aberteifi/?v=2")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert "The Session" in page.inner_text("nav.versions")
+    assert page.evaluate("search('basket of eggs')[0].slug") == "y-fasged-wyau"
+    assert page.evaluate("search('bois y cware')[0].slug") == "bois-y-chwarel"
+
+
 def test_say_it(page):
     # How to say a Welsh tune name, for English readers; not for English names, nor in Welsh.
     page.goto_site("alaw/machynlleth/")

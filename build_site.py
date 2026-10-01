@@ -83,7 +83,7 @@ HEADER_LABELS = {
     "B": "Book",
     "D": "Discography",
     "H": "History",
-    "S": "Source",  # a URL, shown as a link
+    "S": "Source",  # a URL, shown as a link (and any words after it as text: "(added by …)")
 }
 # The credits (C:) are in Welsh, as printed on the original scores.
 CREDIT_WORDS = {
@@ -337,6 +337,8 @@ def version_label(headers: dict[str, list[str]]) -> str:
     if headers.get("B"):
         return headers["B"][0]
     source = " ".join(headers.get("S", []))
+    if "thesession.org" in source:
+        return "The Session"
     return "Alawon Cymru" if "alawoncymru" in source else ""
 
 
@@ -561,7 +563,7 @@ def tune_pages(tunes: list[dict]) -> None:
             data["musicalKey"] = key
         ld = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
         details = "".join(f"<dt>{esc(label)}</dt><dd>"
-                          + (f'<a href="{esc(value)}">{esc(value)}</a>' if label == "Source" and value.startswith(("http://", "https://"))
+                          + (re.sub(r"^(https?://\S+)", lambda m: f'<a href="{m[1]}">{m[1]}</a>', esc(value)) if label == "Source"
                              else esc(value))
                           + "</dd>" for label, value in first["details"])
         page = template

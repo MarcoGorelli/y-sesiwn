@@ -34,6 +34,9 @@
   <script src="app.js" defer></script>
 </head>
 <body>
+  <!-- First Tab stop: past the search and the menu, to the page itself (app.js moves focus;
+       a plain #main would follow <base href> to the home page). -->
+  <a class="skip-link" href="#main" data-cy="Neidio i'r prif gynnwys">Skip to main content</a>
   <!-- Left column on wide screens; on phones .topbar sticks to the top of the page. -->
   <div class="nav">
     <header class="topbar">
@@ -69,7 +72,7 @@
       </nav>
     </aside>
   </div>
-  <main id="main"><p class="loading">Loading tunes…</p></main>
+  <main id="main" tabindex="-1"><p class="loading">Loading tunes…</p></main>
   <footer class="site-footer">
     <p>
       <strong>Y Sesiwn</strong> · <span data-cy="am ddim, anfasnachol a chod agored, ar gyfer dysgu cerddoriaeth draddodiadol Cymru">free, non-commercial and open source, for learning Welsh traditional music</span> ·

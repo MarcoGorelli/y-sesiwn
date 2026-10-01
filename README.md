@@ -50,7 +50,7 @@ run Y Sesiwn locally as above.
 ```bash
 pip install -r requirements-dev.txt        # pytest and Playwright
 python -m playwright install chromium      # the headless browser (once)
-python -m pytest                           # everything, about 30 seconds
+python -m pytest                           # everything, a few minutes
 python -m pytest -m "not browser"          # just the quick file and build checks
 ```
 

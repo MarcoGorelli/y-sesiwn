@@ -53,6 +53,12 @@ main h1::after, .guide h1::after {    /* short red underline under page titles *
 }
 h2 { font-size: 1.35rem; margin: 2rem 0 .75rem; }
 button, input, select { font: inherit; color: inherit; }
+.skip-link {  /* out of sight until it has keyboard focus */
+  position: absolute; top: .5rem; left: .5rem; z-index: 100; padding: .5rem .9rem; border-radius: 6px;
+  background: var(--accent); color: #fff; font-weight: 600; text-decoration: none; transform: translateY(-200%);
+}
+.skip-link:focus { transform: none; }
+main:focus { outline: none; }  /* focused only by the skip link, not something to press */
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 /* Left column: brand + search on top, then buttons and links */

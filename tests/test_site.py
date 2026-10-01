@@ -1303,6 +1303,42 @@ def test_browse_by_key(page):
 
 # ---- Accessibility -------------------------------------------------------------------
 
+def test_skip_link_and_tabbing_past_search(page):
+    # The first Tab stop skips past the search and the menu to the page itself; and Tab
+    # out of the search box goes on to the next control, not lost onto the page.
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.keyboard.press("Tab")
+    assert page.evaluate("document.activeElement.className") == "skip-link"
+    page.keyboard.press("Enter")
+    assert page.evaluate("document.activeElement.id") == "main"
+    assert page.url.endswith("/alaw/glandyfi/")  # not the home page (<base href> would send #main there)
+    page.focus("#search-input")
+    page.wait_for_selector("#suggestions:not([hidden])")
+    page.keyboard.press("Tab")
+    assert page.evaluate("document.activeElement.textContent") == "Cymraeg"
+
+
+def test_score_and_player_names(page):
+    # A screen reader hears the score's key (as transposed) and time, and the player's own
+    # names for its buttons, with the repeat button saying whether it's on.
+    page.goto_site("?tune=glandyfi")
+    page.wait_for_selector(".score .abcjs-staff")
+    label = lambda: page.get_attribute(".score svg[role=img]", "aria-label")
+    assert label() == 'Sheet Music for "Glandyfi": G major, 6/8 time'
+    page.select_option("#key-select", "2")
+    page.wait_for_function("document.querySelector('.score svg[role=img]').getAttribute('aria-label').includes('A major')")
+    repeat = page.locator(".abcjs-midi-loop")
+    assert repeat.get_attribute("aria-label") == "Repeat"
+    assert repeat.get_attribute("aria-pressed") == "false"
+    repeat.click()
+    assert repeat.get_attribute("aria-pressed") == "true"
+    assert page.get_attribute(".abcjs-midi-start", "aria-label") == "Play / pause"
+    page.click(".lang-switch [data-lang=cy]")
+    page.wait_for_function("document.querySelector('.abcjs-midi-loop').getAttribute('aria-label') === 'Ailadrodd'")
+    assert label().startswith('Sgôr "Glandyfi": A fwyaf')
+
+
 @pytest.mark.parametrize("scheme", ["light", "dark"])
 @pytest.mark.parametrize("width", [1300, 390])
 def test_accessibility(browser, site, scheme, width):
@@ -1595,3 +1631,19 @@ def test_tunes_load_alongside_the_scripts(page, site):
     page.goto_site("alaw/tros-y-garreg/")  # a tune's page, with its ../../ base
     page.wait_for_timeout(300)
     assert requests[1:] == [site + "tunes.json"]
+
+
+def test_tune_page_before_the_other_tunes(page, site):
+    # A tune's own page carries that tune, so its music is drawn without waiting for
+    # tunes.json; a link to anywhere else waits for the rest, then opens as usual.
+    held = []
+    page.route("**/tunes.json", lambda route: held.append(route))
+    page.goto(site + "alaw/tros-y-garreg/")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.evaluate("state.complete") is False
+    page.click("a[href='?page=browse']")
+    page.wait_for_timeout(200)
+    assert page.locator(".score .abcjs-staff").count() > 0  # still the tune, for now
+    held[0].continue_()
+    page.wait_for_selector(".pills")
+    assert page.evaluate("state.groupList.length") > 500

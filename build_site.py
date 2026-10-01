@@ -514,7 +514,7 @@ def main() -> None:
     (OUT / "tunes.json").write_text(
         json.dumps(index, ensure_ascii=False, separators=(",", ":")), encoding="utf-8"
     )
-    tune_pages(tunes)
+    tune_pages(tunes, index)
     write_service_worker()
     print(f"built {OUT.relative_to(ROOT)}/ with {len(tunes)} tunes")
 
@@ -524,11 +524,12 @@ def main() -> None:
 NOT_OFFLINE = {"sw.js", "og-image.png", "CNAME", "sitemap.xml", "robots.txt", "404.html"}
 
 
-def tune_pages(tunes: list[dict]) -> None:
+def tune_pages(tunes: list[dict], index: dict) -> None:
     """A real page for each tune, at alaw/<folder>/: the app (index.html) with the tune's
     name and description in its head, for link previews (WhatsApp, Facebook, …) and
-    search engines, which don't run the app. Visitors get the app as usual, which
-    reads the tune from the address. Also sitemap.xml and robots.txt."""
+    search engines, which don't run the app. It also carries tunes.json cut down to this
+    tune, so the app can draw it without waiting for every other tune (a shared link on
+    a phone, say). Also sitemap.xml and robots.txt."""
     template = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
     groups: dict[str, list[dict]] = {}
     for tune in tunes:
@@ -562,6 +563,8 @@ def tune_pages(tunes: list[dict]) -> None:
         if key:
             data["musicalKey"] = key
         ld = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
+        own = {**index, "tunes": versions, "say": {group: index["say"][group]} if group in index["say"] else {}}
+        own = json.dumps(own, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
         details = "".join(f"<dt>{esc(label)}</dt><dd>"
                           + (re.sub(r"^(https?://\S+)", lambda m: f'<a href="{m[1]}">{m[1]}</a>', esc(value)) if label == "Source"
                              else esc(value))
@@ -575,10 +578,11 @@ def tune_pages(tunes: list[dict]) -> None:
                     f'<meta property="og:title" content="{esc(name)} · Y Sesiwn">')
         page = swap(page, f'<meta property="og:url" content="{SITE_URL}">',
                     f'<meta property="og:url" content="{url}">\n  <link rel="canonical" href="{url}">\n'
-                    f'  <script type="application/ld+json">{ld}</script>')
+                    f'  <script type="application/ld+json">{ld}</script>\n'
+                    f'  <script type="application/json" id="tune-data">{own}</script>')
         # What shows before the app has loaded (and what search engines read).
-        page = swap(page, '<main id="main"><p class="loading">Loading tunes…</p></main>',
-                    f'<main id="main"><h1>{esc(name)}</h1>'
+        page = swap(page, '<main id="main" tabindex="-1"><p class="loading">Loading tunes…</p></main>',
+                    f'<main id="main" tabindex="-1"><h1>{esc(name)}</h1>'
                     + (f'<p class="caption">Also known as: {esc(", ".join(titles[1:]))}</p>' if len(titles) > 1 else "")
                     + f"<p>{esc(description)}</p><dl>{details}</dl>"
                     + f'<pre>{esc(first["abc"])}</pre><p class="loading">Loading the sheet music…</p></main>')

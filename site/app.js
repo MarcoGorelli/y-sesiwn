@@ -24,7 +24,9 @@ const PAGES = {
 };
 
 const state = {
-  data: null,
+  data: null,           // tunes.json (on a tune's own page, at first, only that tune: see start())
+  loaded: null,         // tunes.json, on its way
+  complete: false,      // whether data is all of it yet
   bySlug: new Map(),    // every tune file ("version"), by folder name
   byId: new Map(),      // and by its short_id (older set links)
   byCode: new Map(),    // and by its code in set links (build_site.py's set_code)
@@ -725,6 +727,8 @@ function render() {
   state.keyNote?.stop();
   const params = new URLSearchParams(location.search);
   const slug = addressTune();
+  // A tune's own page starts with only that tune (see start()): anything else waits for the rest.
+  if (!state.complete && !state.groups.has(slug) && !state.bySlug.has(slug)) { state.loaded.then(render); return; }
   let group = state.groups.get(slug);
   let version = Number(params.get("v")) || 1;
   const file = state.bySlug.get(slug);
@@ -1013,13 +1017,15 @@ function setTempo(abc, beat, bpm) {
 }
 
 // abcjs names each score "Sheet Music for "<title>"" (its <title> and aria-label), in English.
-function nameScore(paper) {
+// about (its key and time, say) is added on, for screen readers: the picture says nothing else.
+function nameScore(paper, about = "") {
   const score = paper.querySelector("svg");
-  if (state.lang !== "cy" || !score) return;
-  const welsh = (text) => text.replace(/^Sheet Music for /, "Sgôr ").replace(/^Sheet Music$/, "Sgôr");
+  if (!score) return;
+  const name = (text) => (state.lang === "cy"
+    ? text.replace(/^Sheet Music for /, "Sgôr ").replace(/^Sheet Music$/, "Sgôr") : text) + (about ? `: ${about}` : "");
   const title = score.querySelector("title");
-  if (title) title.textContent = welsh(title.textContent);
-  if (score.hasAttribute("aria-label")) score.setAttribute("aria-label", welsh(score.getAttribute("aria-label")));
+  if (title) title.textContent = name(title.textContent);
+  if (score.hasAttribute("aria-label")) score.setAttribute("aria-label", name(score.getAttribute("aria-label")));
 }
 
 class Cursor {  // highlights the notes as they play, and keeps playback inside a looped part
@@ -1184,7 +1190,11 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   if (whistle) abc = withFingerings(abc, whistle);
   const visualObj = ABCJS.renderAbc(paper, accompaniment(abc, state.chords.play === "both"),
     { responsive: "resize", add_classes: true, paddingtop: 0, ...(tab ? { tablature: [{ ...tab, label: tab.label() }] } : {}) })[0];
-  nameScore(paper);
+  const { num, den } = visualObj.getMeterFraction();
+  nameScore(paper, [
+    tune.key && `${NOTES[(tune.key.pitch + transpose + 12) % 12]} ${modeName(tune.key.modeName)}`,
+    num && tr(`${num}/${den} time`, `amser ${num}/${den}`),
+  ].filter(Boolean).join(", "));
   // Chords are always drawn (so playback has them), and hidden unless asked for.
   paper.classList.toggle("hide-chords", !state.chords.onScore);
   if (chart) {
@@ -1211,12 +1221,17 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   controller.load(audio, cursor, {
     displayLoop: true, displayRestart: true, displayPlay: true, displayProgress: true,
   });
-  if (state.lang === "cy") {  // load() doesn't pass abcjs's title options on, so set them here
-    for (const [button, title] of [["loop", "Chwarae unwaith neu drosodd a throsodd."], ["reset", "Yn ôl i'r dechrau."],
-      ["start", "Chwarae / oedi."], ["progress-background", "Symud i fan arall yn yr alaw."]]) {
-      audio.querySelector(`.abcjs-midi-${button}`)?.setAttribute("title", title);
-      audio.querySelector(`.abcjs-midi-${button}`)?.setAttribute("aria-label", title);
-    }
+  // load() doesn't pass abcjs's title options on, so set them here (its own say "Click to …").
+  for (const [button, title] of [["loop", tr("Repeat", "Ailadrodd")], ["reset", tr("Back to the start", "Yn ôl i'r dechrau")],
+    ["start", tr("Play / pause", "Chwarae / oedi")], ["progress-background", tr("Move to another point in the tune", "Symud i fan arall yn yr alaw")]]) {
+    audio.querySelector(`.abcjs-midi-${button}`)?.setAttribute("title", title);
+    audio.querySelector(`.abcjs-midi-${button}`)?.setAttribute("aria-label", title);
+  }
+  const repeat = audio.querySelector(".abcjs-midi-loop");
+  if (repeat && controller.control) {  // a toggle: say whether it's on
+    repeat.setAttribute("aria-pressed", "false");
+    const push = controller.control.pushLoop;
+    controller.control.pushLoop = (on) => { push(on); repeat.setAttribute("aria-pressed", String(!!on)); };
   }
   controller.setTune(visualObj, false, audioParams);
   state.synth = controller;
@@ -2608,6 +2623,9 @@ async function renderGuide(main, key) {
 function attachSearch(input, list, { showAllOnFocus = true, onPick = null } = {}) {
   let results = [];
   let active = 0;
+  // Chrome makes a scrolling list a Tab stop; this one hides when the box loses focus,
+  // which would drop focus onto the page. The arrow keys move through it instead.
+  list.tabIndex = -1;
 
   const close = () => { list.hidden = true; input.setAttribute("aria-expanded", "false"); };
   const open = (group) => {
@@ -2691,6 +2709,7 @@ const VERSION_SUFFIX = / \(version \d+\)$/;
 
 function buildGroups() {
   // Versions of a tune ("Rheged", "Rheged (version 2)", …) share one page.
+  for (const map of [state.bySlug, state.byId, state.byCode, state.groups]) map.clear();  // built twice on a tune's page
   for (const tune of state.data.tunes) {
     state.bySlug.set(tune.slug, tune);
     state.byId.set(tune.id, tune);
@@ -2709,7 +2728,18 @@ function buildGroups() {
 }
 
 async function start() {
-  state.data = await (await fetch("tunes.json")).json();
+  // A tune's own page (alaw/<folder>/) comes with that tune's data, so its sheet music
+  // can be drawn at once; every other tune (tunes.json, about 200 KB) follows.
+  const own = document.getElementById("tune-data");
+  state.loaded = fetch("tunes.json").then((answer) => answer.json());
+  if (own) {
+    state.data = JSON.parse(own.textContent);
+    buildGroups();
+    applyLang();
+    render();
+  }
+  state.data = await state.loaded;
+  state.complete = true;
   buildGroups();
   document.getElementById("surprise-sidebar").addEventListener("click", openRandomTune);
   document.getElementById("menu-button").addEventListener("click", () =>
@@ -2718,8 +2748,12 @@ async function start() {
     button.addEventListener("click", () => setLang(button.dataset.lang));
   }
   applyLang();
+  document.querySelector(".skip-link").addEventListener("click", (e) => {
+    e.preventDefault();
+    document.getElementById("main").focus();
+  });
   attachSearch(document.getElementById("search-input"), document.getElementById("suggestions"));
-  render();
+  if (!own) render();
 }
 // Offline use (sw.js): once the page has loaded, keep a copy of the whole site, so it
 // works in a pub with no signal and can be added to the home screen as an app.

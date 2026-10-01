@@ -1,7 +1,7 @@
 """Shared setup for the tests: build the site once, serve it, and open a browser.
 
     pip install -r requirements-dev.txt && python -m playwright install chromium
-    python -m pytest            # everything (about a minute)
+    python -m pytest            # everything (a few minutes)
     python -m pytest -m "not browser"   # just the quick build checks
 """
 import functools

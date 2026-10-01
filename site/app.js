@@ -730,12 +730,11 @@ function render() {
   const file = state.bySlug.get(slug);
   if (!group && file) [group, version] = [state.groups.get(file.group), file.version];  // a version's own folder
   // Older links (?tune=…) and a version's folder move to the tune's own address; an
-  // unknown tune goes to the home page.
+  // unknown tune (removed, renamed, mistyped) gets a page saying so.
   if (group && (params.has("tune") || !location.pathname.endsWith(`/alaw/${group.slug}/`))) {
     history.replaceState(null, "", tuneUrl(group.slug, version));
-  } else if (slug && !group) {
-    history.replaceState(null, "", "./");
   }
+  const lost = slug && !group;
   const tune = group ? group.versions.find((v) => v.version === version) ?? group.versions[0] : null;
   const page = params.get("page");
   const guide = PAGES[page] ? page : null;
@@ -749,11 +748,13 @@ function render() {
   const main = document.getElementById("main");
   if (!tune) setPractice(false);
   main.style.animation = "none"; void main.offsetWidth; main.style.animation = "";  // replay fade-in
-  const home = !tune && !guide && !map && !offline && !notes && !browse && !contact && !setPage && !setsPage;
+  const home = !tune && !lost && !guide && !map && !offline && !notes && !browse && !contact && !setPage && !setsPage;
   document.body.dataset.page = home ? "home" : "other";  // the home page has its own search box
   setMenu(false);
   main.lang = state.lang;
+  keepAwake(Boolean(tune || setPage));
   if (tune) renderTune(main, group, tune);
+  else if (lost) renderNotFound(main, slug);
   else if (guide) renderGuide(main, guide);
   else if (map) renderMap(main);
   else if (offline) renderOffline(main);
@@ -765,6 +766,38 @@ function render() {
   else renderHome(main);
   countView();
 }
+
+// A link to a tune the site doesn't have (any more): the tunes with the nearest names,
+// since it has most likely been renamed or merged into another tune's versions.
+function renderNotFound(main, slug) {
+  document.title = tr("Tune not found · Y Sesiwn", "Alaw heb ei chanfod · Y Sesiwn");
+  const words = slug.replace(/-version-\d+$/, "").replace(/-/g, " ");
+  const near = search(words).slice(0, 5);
+  main.replaceChildren(...[
+    el("h1", {}, tr("Tune not found", "Alaw heb ei chanfod")),
+    el("p", { class: "lead" }, tr(`There's no tune at this address (“${slug}”). It may have been renamed, or joined to another tune as one of its versions.`,
+      `Does dim alaw yn y cyfeiriad hwn (“${slug}”). Efallai iddi gael enw newydd, neu ei hychwanegu at alaw arall fel un o'i fersiynau.`)),
+    near.length ? el("p", {}, tr("Were you looking for:", "Oeddech chi'n chwilio am:")) : null,
+    near.length ? el("ul", { class: "not-found" }, near.map((g) => el("li", {}, el("a", { href: tuneUrl(g.slug), "data-route": true }, g.title)))) : null,
+    heroSearch(state.groupList.length),
+  ].filter(Boolean));
+}
+
+// Phones dim and lock after a minute or so, mid-tune. With music showing (a tune or a
+// set) the screen stays on while the page is in front; anywhere else it's let go.
+let wakeLock = null;
+async function keepAwake(on) {
+  state.awake = on;
+  if (!on) { wakeLock?.release().catch(() => {}); wakeLock = null; return; }
+  if (wakeLock || !navigator.wakeLock || document.visibilityState !== "visible") return;
+  try {
+    const lock = await navigator.wakeLock.request("screen");
+    if (!state.awake || wakeLock) { lock.release().catch(() => {}); return; }  // left the page meanwhile
+    wakeLock = lock;
+    lock.addEventListener("release", () => { if (wakeLock === lock) wakeLock = null; });
+  } catch {}  // not allowed (low battery, a frame): the screen dims as usual
+}
+document.addEventListener("visibilitychange", () => { if (state.awake) keepAwake(true); });  // let go when hidden
 
 // ---- Home page -----------------------------------------------------------------
 
@@ -796,7 +829,9 @@ function renderHome(main) {
 // session you often go back to the same ones.
 const RECENT = 5;
 function recentList() {
-  try { return JSON.parse(localStorage.getItem("recent")) ?? []; } catch { return []; }
+  let list;
+  try { list = JSON.parse(localStorage.getItem("recent")); } catch { return []; }
+  return Array.isArray(list) ? list.filter((r) => typeof r?.group === "string") : [];
 }
 function rememberTune(group, tune) {
   const list = recentList().filter((r) => r.group !== group.slug);
@@ -2056,7 +2091,11 @@ function setUrl(items, name, my = null) {
 
 function loadSets() {
   let sets;
-  try { sets = JSON.parse(localStorage.getItem("sets")) ?? []; } catch { return []; }
+  try { sets = JSON.parse(localStorage.getItem("sets")); } catch { return []; }
+  // Anything that isn't a set (edited by hand, an old bug) is left out, not let break the page.
+  if (!Array.isArray(sets)) return [];
+  sets = sets.filter((set) => typeof set?.id === "string" && (typeof set.c === "string" || typeof set.s === "string"));
+  for (const set of sets) if (typeof set.name !== "string" || !set.name) set.name = defaultSetName();
   let changed = false;
   for (const set of sets) {  // kept in the first form: convert, once
     if (set.c == null) { set.c = encodeSet(decodeLegacy(set.s).items); delete set.s; changed = true; }
@@ -2066,6 +2105,15 @@ function loadSets() {
 }
 function saveSets(sets) {
   try { localStorage.setItem("sets", JSON.stringify(sets)); } catch {}
+  keepStorage();
+}
+// Browsers may clear what a site keeps when space runs short (and Safari after a week
+// without a visit); asking to keep it helps where it's granted without a question.
+// Firefox would ask with a pop-up, so it isn't asked there: the links are the backup.
+function keepStorage() {
+  if (state.askedToKeep || /Firefox\//.test(navigator.userAgent)) return;
+  state.askedToKeep = true;
+  navigator.storage?.persist?.().catch(() => {});
 }
 function currentSetId() {
   try { return localStorage.getItem("currentSet"); } catch { return null; }
@@ -2118,7 +2166,7 @@ function renderSets(main) {
         }))
       : el("p", {}, tr("No sets yet. Open a tune and press Add to set, or start one here.",
         "Dim setiau eto. Agorwch alaw a phwyso Ychwanegu at set, neu dechreuwch un yma."));
-    main.replaceChildren(
+    main.replaceChildren(...[
       el("h1", {}, tr("My sets", "Fy setiau")),
       el("p", { class: "lead" }, tr("Tunes to play together, in order and in the keys you choose: for a session, a workshop "
         + "or your practice. They're kept on this device; share one with its link or QR code.",
@@ -2129,13 +2177,23 @@ function renderSets(main) {
         "Does dim setiau parod ar Y Sesiwn, a hynny'n fwriadol: mae darganfod pa alawon sy'n mynd yn dda gyda'i gilydd "
         + "yn rhan o'r hwyl, felly arbrofwch a gwnewch rai eich hun.")),
       list,
+      sets.length ? el("p", { class: "caption sets-backup" }, tr("Browsers sometimes clear what websites keep (Safari after a week "
+        + "without a visit), and the sets stay on this device. Keep a copy of their links somewhere safe: open one to have it back. ",
+        "Weithiau mae porwyr yn clirio'r hyn mae gwefannau'n ei gadw (Safari ar ôl wythnos heb ymweliad), ac mae'r setiau'n aros "
+        + "ar y ddyfais hon. Cadwch gopi o'u dolenni yn rhywle diogel: agorwch un i'w chael yn ôl. "),
+        el("button", { type: "button", class: "copy-all-sets", onclick: async (e) => {
+          const text = loadSets().map((set) => `${set.name}\nhttps://ysesiwn.cymru/${setUrl(decodeSet(set.c).items, set.name)}`).join("\n\n");
+          try { await navigator.clipboard.writeText(text); e.target.textContent = tr("✓ Links copied", "✓ Dolenni wedi'u copïo"); }
+          catch { prompt(tr("Copy these links:", "Copïwch y dolenni hyn:"), text); }
+        } }, tr("Copy all their links", "Copïo'u holl ddolenni"))) : null,
       el("p", {}, el("button", { type: "button", class: "primary", onclick: () => {
         const sets = loadSets();
         const set = { id: newSetId(), name: defaultSetName(), c: "", updated: Date.now() };
         saveSets([...sets, set]);
         setCurrentSet(set.id);
         navigate(setUrl([], set.name, set.id));
-      } }, tr("New set", "Set newydd"))));
+      } }, tr("New set", "Set newydd"))),
+    ].filter(Boolean));
   };
   draw();
 }
@@ -2217,7 +2275,64 @@ function renderSet(main) {
     }));
     count.textContent = tuneCount(items.length);
     empty.hidden = items.length > 0;
+    showPlace();
   };
+  // Playing through a set: jump to the next tune's music, or back, without scrolling.
+  const sections = () => [...music.children];
+  // Which tune is at the top of the screen (-1: still above the first). The last ones may
+  // be too short to scroll to the top: at the bottom of the page, the one jumped to.
+  let jumped = -1;
+  const below = () => {  // the top of the screen, under the bar that stays there on phones
+    const bar = document.querySelector(".topbar");
+    return (bar && getComputedStyle(bar).position === "sticky" ? bar.offsetHeight : 0) + 8;  // (stuck at the top: its height)
+  };
+  const place = () => {
+    const line = below() + 40;
+    const top = sections().filter((x) => x.getBoundingClientRect().top <= line).length - 1;
+    const bottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+    return bottom ? Math.max(top, Math.min(jumped, items.length - 1)) : top;
+  };
+  const goTo = (i) => {
+    const all = sections();
+    if (!all[i]) return;
+    for (const x of all.slice(0, i + 1)) x.querySelector(".set-paper").draw();  // so nothing above moves it later
+    jumped = i;
+    window.scrollTo({ top: window.scrollY + all[i].getBoundingClientRect().top - below() });
+    showPlace();
+  };
+  const turn = (by) => goTo(Math.min(Math.max(place() + by, 0), items.length - 1));
+  const where = el("span", { class: "set-nav-where", "aria-live": "polite" });
+  const prev = el("button", { type: "button", "aria-label": tr("Previous tune", "Yr alaw flaenorol"), onclick: () => turn(-1) }, "‹");
+  const next = el("button", { type: "button", "aria-label": tr("Next tune", "Yr alaw nesaf"), onclick: () => turn(1) }, "›");
+  const nav = el("nav", { class: "set-nav", "aria-label": tr("Tunes in the set", "Alawon y set") }, prev, where, next);
+  function showPlace() {
+    const i = place();
+    nav.hidden = items.length < 2;
+    prev.disabled = i <= 0;
+    next.disabled = i >= items.length - 1;
+    where.textContent = i < 0 ? tuneCount(items.length) : `${i + 1} / ${items.length} · ${items[i].tune.base}`;
+  }
+  // Left and right arrows (what most page-turner pedals send), and swipes across the music.
+  const onKey = (event) => {
+    if (!music.isConnected) { document.removeEventListener("keydown", onKey); window.removeEventListener("scroll", onScroll); return; }
+    if (event.ctrlKey || event.metaKey || event.altKey || event.target.closest("input, textarea, select, [contenteditable]")) return;
+    if (event.key === "ArrowRight" || event.key === "ArrowLeft") { event.preventDefault(); turn(event.key === "ArrowRight" ? 1 : -1); }
+  };
+  let ticking = false;
+  const onScroll = () => {
+    if (!music.isConnected) { window.removeEventListener("scroll", onScroll); return; }
+    if (!ticking) { ticking = true; requestAnimationFrame(() => { ticking = false; showPlace(); }); }
+  };
+  document.addEventListener("keydown", onKey);
+  window.addEventListener("scroll", onScroll, { passive: true });
+  let touch = null;
+  music.addEventListener("touchstart", (e) => { touch = e.touches.length === 1 ? [e.touches[0].clientX, e.touches[0].clientY] : null; }, { passive: true });
+  music.addEventListener("touchend", (e) => {
+    if (!touch) return;
+    const dx = e.changedTouches[0].clientX - touch[0], dy = e.changedTouches[0].clientY - touch[1];
+    touch = null;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > 2 * Math.abs(dy)) turn(dx < 0 ? 1 : -1);
+  });
   const count = el("span", { class: "caption" });
   const empty = el("p", { class: "caption" }, tr("No tunes yet: add some with the box above, or with Add to set on a tune's page.",
     "Dim alawon eto: ychwanegwch rai gyda'r blwch uchod, neu gyda Ychwanegu at set ar dudalen alaw."));
@@ -2284,7 +2399,7 @@ function renderSet(main) {
       el("button", { type: "button", class: "practice-toggle", onclick: () => setPractice(!document.body.classList.contains("practice")) },
         practiceLabel(document.body.classList.contains("practice")))),
     addBox, added, empty, list,
-    music,
+    music, nav,
   ].filter(Boolean));
   if (mine) setCurrentSet(my);
   draw();

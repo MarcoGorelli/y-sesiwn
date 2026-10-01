@@ -236,6 +236,21 @@ relative URLs, so the site also works under a sub-path such as
   There are deliberately **no ready-made sets** (the My sets page says so):
   finding tunes that sit well together is part of the fun, so people are
   encouraged to make their own.
+  Playing through a set: ‹ and › along the bottom of the screen, the left and
+  right arrow keys (what most page-turner pedals send) or a swipe across the
+  music jump to the previous or next tune. Browsers may clear what a site keeps
+  (Safari after a week without a visit), so *My sets* offers every set's link to
+  copy as a backup, and the app asks the browser to keep its storage
+  (`keepStorage()`; not in Firefox, which would ask with a pop-up). Whatever is
+  found in storage is checked first, so a damaged entry is skipped, not fatal.
+- **Screen stays on:** with a tune or a set showing, the app holds a screen wake
+  lock (`keepAwake()`), so a phone on a music stand doesn't dim mid-tune.
+- **Tune not found:** an old or mistyped tune address says so and lists the
+  tunes with the nearest names. Before the app is installed, GitHub Pages
+  answers such an address with `site/404.html`, which opens the app at
+  `?tune=<folder>`.
+- **Touch:** controls are at least 24px each way on a phone (WCAG 2.5.8),
+  most about 40px; `test_touch_targets` checks every page at 320px wide.
 - **Map:** tunes named after a place have a small map of Wales on their page,
   and *Tunes on the map* (`?page=map`) shows every place with its tunes. It
   zooms (buttons, double-click or double-tap, pinch, Ctrl + wheel, keyboard)

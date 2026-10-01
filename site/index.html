@@ -28,6 +28,8 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="static/abcjs/abcjs-audio.css">
   <link rel="stylesheet" href="style.css">
+  <!-- The tunes, fetched by app.js: start now, alongside the scripts, not after them. -->
+  <link rel="preload" href="tunes.json" as="fetch" crossorigin>
   <script src="static/abcjs/abcjs-basic-min.js" defer></script>
   <script src="app.js" defer></script>
 </head>

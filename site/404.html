@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Not found · Y Sesiwn</title>
+  <meta name="robots" content="noindex">
+  <!-- GitHub Pages shows this for an address with no file. A tune's address
+       (…/alaw/<folder>/) that has none, because the tune was renamed or removed, opens
+       the app at ?tune=<folder>, which says so and suggests the nearest names. -->
+  <script>
+    var m = location.pathname.match(/^(.*\/)alaw\/([^/]+)\/?$/);
+    if (m) location.replace(m[1] + "?tune=" + m[2]);
+  </script>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font: 1.1rem/1.5 system-ui, sans-serif; max-width: 36rem; margin: 3rem auto; padding: 0 1rem; background: Canvas; color: CanvasText; }
+  </style>
+</head>
+<body>
+  <h1>Page not found · Tudalen heb ei chanfod</h1>
+  <p>There's nothing at this address. · Does dim byd yn y cyfeiriad hwn.</p>
+  <p><a href="/">Y Sesiwn: Welsh folk tunes · alawon gwerin Cymru</a></p>
+</body>
+</html>

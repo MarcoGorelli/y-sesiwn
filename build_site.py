@@ -517,8 +517,9 @@ def main() -> None:
     print(f"built {OUT.relative_to(ROOT)}/ with {len(tunes)} tunes")
 
 
-# Not needed offline: link-preview images and the source of the service worker itself.
-NOT_OFFLINE = {"sw.js", "og-image.png", "CNAME", "sitemap.xml", "robots.txt"}
+# Not needed offline: link-preview images, the source of the service worker itself, and
+# GitHub Pages' "not found" page (offline, sw.js answers every address with the app).
+NOT_OFFLINE = {"sw.js", "og-image.png", "CNAME", "sitemap.xml", "robots.txt", "404.html"}
 
 
 def tune_pages(tunes: list[dict]) -> None:

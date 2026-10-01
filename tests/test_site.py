@@ -1406,3 +1406,150 @@ def test_chord_playback_next_to_the_player(page):
     page.goto_site("?tune=cawl-cennin")  # no chords, no choice
     page.wait_for_selector(".score .abcjs-inline-audio")
     assert page.locator(".score > .playback").count() == 0
+
+
+def test_damaged_storage_and_backing_up_sets(browser, site):
+    # What's kept in the browser may be anything (edited by hand, an old bug): pages still
+    # work, with whatever sets are usable. My sets offers every set's link to keep.
+    context = browser.new_context(service_workers="block", permissions=["clipboard-read", "clipboard-write"])
+    page = context.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(site)
+    page.evaluate("""() => {
+      localStorage.setItem('sets', JSON.stringify([1, null, {id: 5}, {id: 'ok', c: '5A', name: 7}, {id: 'old', s: ''}]));
+      localStorage.setItem('recent', '"not a list"'); }""")
+    page.goto(site + "?page=sets")
+    page.wait_for_selector(".set-list-mine li")
+    assert page.locator(".set-list-mine li").count() == 2
+    assert "My set\n· 1 tune" in page.inner_text(".set-list-mine")
+    page.click(".copy-all-sets")
+    copied = page.evaluate("navigator.clipboard.readText()")
+    assert "My set\nhttps://ysesiwn.cymru/?set=5A&n=My%20set" in copied
+    assert page.inner_text(".copy-all-sets") == "✓ Links copied"
+    page.evaluate("localStorage.setItem('sets', '{\"not\": \"a list\"}')")
+    page.goto(site + "?page=sets")
+    page.wait_for_selector("text=No sets yet")
+    assert page.locator(".copy-all-sets").count() == 0  # nothing to back up
+    page.goto(site)
+    page.wait_for_selector("#hero-search")
+    context.close()
+    assert not errors, errors
+
+
+def test_tune_not_found(page, site):
+    # A tune's old address (renamed, merged, mistyped) says so and offers the nearest names.
+    page.goto_site("?tune=tros-y-garreg-hen")
+    page.wait_for_selector(".not-found")
+    assert page.inner_text("h1") == "Tune not found"
+    assert "Tros y Garreg" in page.inner_text(".not-found")
+    page.click(".not-found a >> text=Tros y Garreg")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.url.endswith("/alaw/tros-y-garreg/")
+    # Before the app is installed, GitHub Pages answers the address with 404.html, which
+    # opens the app on that tune.
+    import build_site
+    not_found = (build_site.OUT / "404.html").read_text(encoding="utf-8")
+    page.route("**/alaw/no-such-tune/", lambda route: route.fulfill(status=404, body=not_found, content_type="text/html"))
+    page.goto(site + "alaw/no-such-tune/")
+    page.wait_for_selector(".not-found, main h1:text('Tune not found')")
+    assert page.url == site + "?tune=no-such-tune"
+    assert "no-such-tune" in page.inner_text("main")
+
+
+def test_touch_targets(browser, site):
+    # On a phone, every control is at least 24px each way (WCAG 2.5.8); links inside text don't count.
+    context = browser.new_context(viewport={"width": 320, "height": 640}, is_mobile=True, has_touch=True,
+                                  service_workers="block")
+    page = context.new_page()
+    small = {}
+    for path in ["", "alaw/tros-y-garreg/", "?set=3V~h5A&n=Nos%20Iau", "?page=sets", "?page=add", "?page=contact", "?page=browse"]:
+        page.goto(site + path)
+        page.wait_for_function("typeof state !== 'undefined' && state.data && document.querySelector('main').children.length")
+        page.wait_for_timeout(300)
+        found = page.evaluate("""() => [...document.querySelectorAll('button, a, select, input, summary')]
+          .filter((e) => e.offsetParent && !e.closest('.visually-hidden, .segmented'))
+          .filter((e) => !(e.tagName === 'A' && e.closest('p, li, dd, td, .caption')))
+          .filter((e) => { const r = e.getBoundingClientRect(); return r.width < 24 || r.height < 24; })
+          .map((e) => e.outerHTML.slice(0, 90))""")
+        if found:
+            small[path] = found
+    context.close()
+    assert not small, small
+
+
+WAKE_LOCK = """
+  window.wakeLog = [];
+  Object.defineProperty(navigator, 'wakeLock', { value: { request: async () => {
+    const lock = new EventTarget();
+    lock.release = async () => { wakeLog.push('release'); lock.dispatchEvent(new Event('release')); };
+    wakeLog.push('request');
+    return lock;
+  } } });
+"""
+
+
+def test_screen_stays_on_with_music(page, site):
+    # With a tune or a set showing, the phone's screen doesn't dim; elsewhere it may.
+    page.add_init_script(WAKE_LOCK)
+    page.goto_site("alaw/tros-y-garreg/")
+    page.wait_for_function("wakeLog.length === 1")
+    page.click("a[href='?page=map']")
+    page.wait_for_function("wakeLog.join() === 'request,release'")
+    page.goto_site("?set=3V~h5A&n=Nos%20Iau")
+    page.wait_for_function("wakeLog.join() === 'request'")
+    page.click(".set-list a >> nth=0")  # from a set to one of its tunes: kept on
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.evaluate("wakeLog.join()") == "request"
+
+
+def test_set_next_and_previous(browser, site):
+    # Playing through a set: the arrow keys (or a page-turner pedal), the buttons along
+    # the bottom, or a swipe move from one tune's music to the next.
+    context = browser.new_context(viewport={"width": 390, "height": 700}, is_mobile=True, has_touch=True,
+                                  service_workers="block")
+    page = context.new_page()
+    page.goto(site + "?set=3V~h5A5B&n=Nos%20Iau")
+    page.wait_for_selector(".set-nav")
+    # Each tune's top, below the bar along the top of a phone's screen.
+    tops = """() => [...document.querySelectorAll('.set-tune')].map((x) =>
+      Math.round(x.getBoundingClientRect().top - document.querySelector('.topbar').getBoundingClientRect().bottom))"""
+    where = lambda: page.inner_text(".set-nav-where")
+    assert where() == "3 tunes"
+    assert page.is_disabled(".set-nav button >> nth=0")
+    page.keyboard.press("ArrowRight")
+    page.wait_for_function("document.querySelector('.set-nav-where').textContent.startsWith('1 / 3')")
+    assert 0 <= page.evaluate(tops)[0] <= 10
+    page.click("[aria-label='Next tune']")
+    page.wait_for_function("document.querySelector('.set-nav-where').textContent.startsWith('2 / 3')")
+    assert where() == "2 / 3 · Llancesau Trefaldwyn"
+    assert 0 <= page.evaluate(tops)[1] <= 10
+    page.evaluate("""() => {  // a swipe to the left, across the music
+      const music = document.querySelector('.set-music');
+      const at = (x) => [new Touch({ identifier: 1, target: music, clientX: x, clientY: 300 })];
+      music.dispatchEvent(new TouchEvent('touchstart', { touches: at(300), changedTouches: at(300), bubbles: true }));
+      music.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: at(150), bubbles: true }));
+    }""")
+    page.wait_for_function("document.querySelector('.set-nav-where').textContent.startsWith('3 / 3')")
+    assert page.is_disabled("[aria-label='Next tune']")
+    page.keyboard.press("ArrowLeft")
+    page.wait_for_function("document.querySelector('.set-nav-where').textContent.startsWith('2 / 3')")
+    # Typing in a box (the set's name, adding a tune) keeps the arrow keys for the text.
+    page.focus("#set-add")  # (which scrolls up to it)
+    before = page.evaluate("scrollY")
+    page.keyboard.press("ArrowLeft")
+    page.wait_for_timeout(100)
+    assert page.evaluate("scrollY") == before
+    context.close()
+
+
+def test_tunes_load_alongside_the_scripts(page, site):
+    # index.html starts fetching tunes.json straight away, and the app uses that one copy.
+    requests = []
+    page.on("request", lambda r: requests.append(r.url) if r.url.endswith("tunes.json") else None)
+    page.goto_site()
+    page.wait_for_timeout(300)
+    assert len(requests) == 1
+    page.goto_site("alaw/tros-y-garreg/")  # a tune's page, with its ../../ base
+    page.wait_for_timeout(300)
+    assert requests[1:] == [site + "tunes.json"]

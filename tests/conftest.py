@@ -6,6 +6,7 @@
 """
 import functools
 import http.server
+import re
 import sys
 import threading
 from pathlib import Path
@@ -48,12 +49,60 @@ def browser(playwright_instance):
     browser.close()
 
 
+TRACES = ROOT / "test-results"
+
+
+@pytest.hookimpl(wrapper=True)
+def pytest_runtest_makereport(item, call):
+    report = yield
+    if report.when == "call":
+        item.call_failed = report.failed
+    return report
+
+
+@pytest.fixture(autouse=True)
+def browser_contexts(request, monkeypatch):
+    """Every browser context a test opens (the page fixture's, or its own): it fails
+    fast, is closed afterwards even if the test fails, and on a failure keeps a trace
+    in test-results/ (open it with `playwright show-trace`, or at trace.playwright.dev)."""
+    if "browser" not in request.fixturenames:
+        yield
+        return
+    browser = request.getfixturevalue("browser")
+    new_context = browser.new_context
+    opened, closed = [], []
+
+    def traced(**kwargs):
+        context = new_context(**kwargs)
+        context.set_default_timeout(10000)  # nothing should take this long
+        context.tracing.start(screenshots=True)  # (DOM snapshots would change what <base href> resolves to)
+        close = context.close
+
+        def close_with_trace(**kwargs):
+            if context in closed:
+                return
+            closed.append(context)
+            if getattr(request.node, "call_failed", False):
+                TRACES.mkdir(exist_ok=True)
+                name = re.sub(r"[^\w.-]+", "_", request.node.name)
+                context.tracing.stop(path=TRACES / f"{name}-{opened.index(context)}.zip")
+            close(**kwargs)
+
+        context.close = close_with_trace
+        opened.append(context)
+        return context
+
+    monkeypatch.setattr(browser, "new_context", traced)
+    yield
+    for context in opened:
+        context.close()  # (only if the test or page fixture hasn't already)
+
+
 @pytest.fixture
 def page(browser, site):
     """A fresh page (no service worker, so every test sees the latest build) that
     fails the test on any JavaScript error."""
     context = browser.new_context(viewport={"width": 1300, "height": 1000}, service_workers="block")
-    context.set_default_timeout(10000)  # fail fast: nothing should take this long
     page = context.new_page()
     errors = []
     page.on("pageerror", lambda e: errors.append(str(e)))

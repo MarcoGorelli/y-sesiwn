@@ -20,3 +20,6 @@ __pycache__/
 # Local
 compile.sh
 
+
+# Playwright traces of failed tests
+test-results/

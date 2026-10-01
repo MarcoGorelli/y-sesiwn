@@ -45,6 +45,14 @@ jobs:
       - if: steps.browser-cache.outputs.cache-hit == 'true'
         run: python -m playwright install-deps chromium
       - run: python -m pytest
+      # A failed browser test leaves a trace of what the page did: download it from the
+      # run's summary page and open it at trace.playwright.dev.
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: test-results/
+          if-no-files-found: ignore
 
   build:
     needs: test

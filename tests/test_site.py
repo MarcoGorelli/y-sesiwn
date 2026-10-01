@@ -1331,8 +1331,8 @@ def test_score_and_player_names(page):
     repeat = page.locator(".abcjs-midi-loop")
     assert repeat.get_attribute("aria-label") == "Repeat"
     assert repeat.get_attribute("aria-pressed") == "false"
-    repeat.click()
-    assert repeat.get_attribute("aria-pressed") == "true"
+    repeat.click()  # abcjs resumes the audio context first, so the toggle lands a moment later
+    page.wait_for_function("document.querySelector('.abcjs-midi-loop').getAttribute('aria-pressed') === 'true'")
     assert page.get_attribute(".abcjs-midi-start", "aria-label") == "Play / pause"
     page.click(".lang-switch [data-lang=cy]")
     page.wait_for_function("document.querySelector('.abcjs-midi-loop').getAttribute('aria-label') === 'Ailadrodd'")

@@ -131,6 +131,31 @@ def test_transposing(page):
     assert "F♯m" in page.locator(".chart").inner_text()  # Em -> F#m
 
 
+def drawn_range(page, abc_js):
+    # The lowest and highest MIDI pitch of a tune's notes, as abcjs reads them.
+    return page.evaluate("""(abc) => { const v = ABCJS.renderAbc('*', abc)[0]; v.setUpAudio();
+      const p = v.lines.flatMap((l) => l.staff?.[0]?.voices?.[0] ?? []).flatMap((e) => (e.midiPitches || []).map((m) => m.pitch));
+      return [Math.min(...p), Math.max(...p)]; }""", abc_js)
+
+
+def test_transposing_keeps_a_sensible_range(page):
+    # A key is reached up or down, whichever keeps the notes on the stave: Tros y Garreg
+    # (A below middle C up to D) goes up a fifth to A minor, not down a fourth.
+    page.goto_site("alaw/tros-y-garreg/")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.evaluate("semitones(state.bySlug.get('tros-y-garreg'), -5)") == 7
+    page.select_option("#key-select", "-5")
+    page.wait_for_function("document.querySelector('#key-select').value === '-5'")
+    assert page.evaluate("document.querySelector('#key-select').selectedOptions[0].textContent") == "A minor"
+    abc = page.evaluate("""() => { const t = state.bySlug.get('tros-y-garreg');
+      return ABCJS.strTranspose(t.abc, ABCJS.renderAbc('*', t.abc), semitones(t, -5)); }""")
+    low, high = drawn_range(page, abc)
+    assert 59 <= low and high <= 81  # E4 to A5, on the stave
+    # Where the shorter way already fits, it's still the shorter way.
+    assert page.evaluate("semitones(state.bySlug.get('glandyfi'), 2)") == 2
+    assert page.evaluate("semitones(state.bySlug.get('glandyfi'), 0)") == 0
+
+
 def test_chord_chart(page):
     page.goto_site("?tune=glandyfi")
     page.wait_for_selector(".chart .bar")

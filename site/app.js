@@ -944,6 +944,29 @@ function heroSearch(count) {
 
 // ---- Tune page -------------------------------------------------------------------
 
+// The key menu (and a set's keys) say which key, -5 … +6 semitones from the tune's own;
+// this says which octave. Of the two ways there, up or down, the one that keeps the
+// tune's notes best on the treble stave (B below middle C to the A above it), and if
+// both do, the shorter: so D minor to A minor goes up a fifth, not down a fourth, for a
+// tune that's already low. The tune's own key never moves.
+const STAVE = { low: 59, high: 81 };  // MIDI: B3 … A5
+
+function melodyRange(tune) {
+  if (!tune.range) {
+    const pitches = [...tune.melody].map((c) => c.charCodeAt(0) - 160);  // see melody_string()
+    tune.range = pitches.length ? [Math.min(...pitches), Math.max(...pitches)] : null;
+  }
+  return tune.range;
+}
+
+function semitones(tune, key) {
+  if (!key || !melodyRange(tune)) return key;
+  const [low, high] = melodyRange(tune);
+  const outside = (shift) => Math.max(0, STAVE.low - (low + shift)) + Math.max(0, high + shift - STAVE.high);
+  const other = key > 0 ? key - 12 : key + 12;
+  return outside(other) < outside(key) ? other : key;
+}
+
 function stripFields(abc, fields) {
   // Header fields to leave off the score (abcjs would print them); they stay in the ABC view.
   return abc.split("\n").filter((line) => !new RegExp(`^[${fields}]:`).test(line)).join("\n");
@@ -1119,7 +1142,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   let abc = setTempo(stripFields(tune.abc, "SZBNAH"), tune.beat, bpm).replace(/^(T:.*) \(version \d+\)$/m, "$1");
   if (transpose) {
     // strTranspose needs the whole array renderAbc returns, not its first tune.
-    abc = ABCJS.strTranspose(abc, ABCJS.renderAbc("*", abc), transpose);
+    abc = ABCJS.strTranspose(abc, ABCJS.renderAbc("*", abc), semitones(tune, transpose));
   }
   const tab = TABS[state.practice.tab];
   const whistle = WHISTLES[state.practice.tab];
@@ -1359,7 +1382,8 @@ function download(name, type, data) {
 // save the tune as an ABC or MIDI file, in the key (and for MIDI the tempo and Play
 // choice) set on the page.
 function printButton(tune, paper, settings) {
-  const transposed = (abc) => (settings.transpose ? ABCJS.strTranspose(abc, ABCJS.renderAbc("*", abc), settings.transpose) : abc);
+  const transposed = (abc) => (settings.transpose
+    ? ABCJS.strTranspose(abc, ABCJS.renderAbc("*", abc), semitones(tune, settings.transpose)) : abc);
   const fileName = (ext) => {
     const key = settings.transpose && tune.key ? `-in-${NOTES[(tune.key.pitch + settings.transpose + 12) % 12].replace("#", "sharp")}` : "";
     return `${tune.slug}${key}.${ext}`;
@@ -2124,7 +2148,7 @@ function setScore(tune, key) {
     paper.drawn = true;
     // The numbered heading above says which tune it is, so no title (T:) on the music.
     let abc = setTempo(stripFields(tune.abc, "SZBNAHT"), tune.beat, tune.bpm);
-    if (key) abc = ABCJS.strTranspose(abc, ABCJS.renderAbc("*", abc), key);
+    if (key) abc = ABCJS.strTranspose(abc, ABCJS.renderAbc("*", abc), semitones(tune, key));
     ABCJS.renderAbc(paper, abc, { responsive: "resize", add_classes: true, paddingtop: 0 });
     nameScore(paper);
   };

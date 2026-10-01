@@ -317,6 +317,10 @@ and `info.json`, and `.venv/`.
 - `ABCJS.strTranspose` needs the **whole array** returned by
   `renderAbc("*", abc)`, not its first element. Given one tune, it silently
   changes nothing.
+- The key menu picks a key, not an octave: `semitones()` in `app.js` turns it into
+  a shift up or down, whichever keeps the notes nearest the treble stave (B3 to
+  A5), so a low tune moved to a "lower" key goes up instead. Use it wherever a
+  tune is transposed.
 - The abcjs stylesheet is at the package root (`abcjs@6.4.4/abcjs-audio.css`),
   not in `dist/`. Without it the player shows "CSS required: load
   abcjs-audio.css".

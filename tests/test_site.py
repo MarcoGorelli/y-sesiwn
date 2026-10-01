@@ -1562,6 +1562,29 @@ def test_set_next_and_previous(browser, site):
     context.close()
 
 
+def test_set_next_before_the_rest_is_drawn(browser, site):
+    # On a slow phone, Next can come before the music below has been drawn. The tune
+    # jumped to still ends up at the top once it has: not pushed up past by the ones after.
+    # (A tall screen, so that without the rest the page is too short to scroll it there.)
+    context = browser.new_context(viewport={"width": 390, "height": 1000}, is_mobile=True, has_touch=True,
+                                  service_workers="block")
+    page = context.new_page()
+    # The lazy drawing never gets round to anything by itself; the test does it, later.
+    page.add_init_script("window.IntersectionObserver = class { observe() {} unobserve() {} disconnect() {} };")
+    page.goto(site + "?set=3V~h5A5B&n=Nos%20Iau")
+    page.wait_for_selector(".set-nav")
+    page.keyboard.press("ArrowRight")
+    page.click("[aria-label='Next tune']")
+    page.evaluate("for (const paper of document.querySelectorAll('.set-paper')) paper.draw()")
+    page.evaluate("dispatchEvent(new Event('scroll'))")
+    page.wait_for_timeout(100)
+    assert page.inner_text(".set-nav-where") == "2 / 3 · Llancesau Trefaldwyn"
+    top = page.evaluate("""() => Math.round(document.querySelectorAll('.set-tune')[1].getBoundingClientRect().top
+      - document.querySelector('.topbar').getBoundingClientRect().bottom)""")
+    assert 0 <= top <= 10
+    context.close()
+
+
 def test_tunes_load_alongside_the_scripts(page, site):
     # index.html starts fetching tunes.json straight away, and the app uses that one copy.
     requests = []

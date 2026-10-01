@@ -2299,6 +2299,12 @@ function renderSet(main) {
     const all = sections();
     if (!all[i]) return;
     for (const x of all.slice(0, i + 1)) x.querySelector(".set-paper").draw();  // so nothing above moves it later
+    // And enough below for the page to scroll it to the top: stopped short at the bottom,
+    // the music drawn there later would push it up and out of sight.
+    for (const x of all.slice(i + 1)) {
+      if (music.getBoundingClientRect().bottom - all[i].getBoundingClientRect().top >= window.innerHeight) break;
+      x.querySelector(".set-paper").draw();
+    }
     jumped = i;
     window.scrollTo({ top: window.scrollY + all[i].getBoundingClientRect().top - below() });
     showPlace();

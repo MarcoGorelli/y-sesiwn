@@ -236,6 +236,36 @@ def test_type_pages(site):
     assert sitemap.count("<loc>https://ysesiwn.cymru/math/") == len(index["types"])
 
 
+def test_sessions(site):
+    # sessions.json: checked by the build, written for the app, and a page of its own.
+    out = b.OUT
+    built = json.loads((out / "sessions.json").read_text(encoding="utf-8"))["sessions"]
+    assert built and len({s["id"] for s in built}) == len(built)
+    assert all(s["county"] == "Outside Wales" or ("x" in s and "y" in s) for s in built)
+    page = (out / "sesiynau" / "index.html").read_text(encoding="utf-8")
+    assert '<base href="../">' in page and "<title>Active sessions · Y Sesiwn</title>" in page
+    assert "2nd Friday of the month, from 21:00" in page and "Last confirmed" in page
+    assert "<loc>https://ysesiwn.cymru/sesiynau/</loc>" in (out / "sitemap.xml").read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("change, says", [
+    ({"day": "Tuesdays"}, "day should be one of"),
+    ({"county": "South Glamorgan"}, "county should be one of"),
+    ({"repeat": "monthly"}, "a monthly session needs nth"),
+    ({"start": "7pm"}, "24-hour time"),
+    ({"confirmed": "2/10/2026"}, "a date like"),
+    ({"venue": ""}, "no venue"),
+])
+def test_session_mistakes(tmp_path, monkeypatch, change, says):
+    # A mistake in sessions.json stops the build, saying what's wrong.
+    good = {"venue": "Y Llew Coch", "address": "Stryd y Bont", "town": "Llandeilo", "county": "Carmarthenshire",
+            "lat": 51.88, "lon": -3.99, "day": "Wednesday", "repeat": "weekly", "start": "20:00", "confirmed": "2026-10-02"}
+    (tmp_path / "sessions.json").write_text(json.dumps({"sessions": [{**good, **change}]}), encoding="utf-8")
+    monkeypatch.setattr(b, "ROOT", tmp_path)
+    with pytest.raises(SystemExit, match=says):
+        b.session_data()
+
+
 # Repeats checked against the score images (the recordings, which the ABC was made from,
 # often play a part once that the score repeats, or play the whole tune twice).
 @pytest.mark.parametrize("slug, end_repeats", [

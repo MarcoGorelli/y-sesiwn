@@ -24,6 +24,7 @@ REPO_URL = "https://github.com/MarcoGorelli/y-sesiwn"
 SITE_URL = "https://ysesiwn.cymru/"
 TUNE_DIR = "alaw"  # each tune's own page is alaw/<folder>/ (see tune_pages)
 TYPE_DIR = "math"  # and each type's, math/<type>/
+SESSIONS_DIR = "sesiynau"  # the sessions page (see session_data)
 
 PITCH = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
 MODE_NAMES = {
@@ -539,17 +540,18 @@ def type_slug(name: str) -> str:
 
 
 def app_page(template: str, *, title: str, description: str, url: str, head: str, main: str,
-             scripts: str = "") -> str:
-    """The app (index.html) two folders down, with its own title, description and
-    address in the head, for link previews and search engines (which don't run the
-    app), and what they should read in <main> until the app takes over."""
+             scripts: str = "", up: str = "../../") -> str:
+    """The app (index.html) in a folder (two down, unless up says otherwise), with its
+    own title, description and address in the head, for link previews and search
+    engines (which don't run the app), and what they should read in <main> until the
+    app takes over."""
     def swap(page: str, old: str, new: str) -> str:
         if page.count(old) != 1:
             raise SystemExit(f"site/index.html: expected one {old!r} (for the tune and type pages)")
         return page.replace(old, new)
 
     page = template
-    page = swap(page, '<base href="./">', '<base href="../../">')
+    page = swap(page, '<base href="./">', f'<base href="{up}">')
     page = swap(page, '<script src="app.js" defer></script>', scripts + '<script src="app.js" defer></script>')
     page = swap(page, "<title>Y Sesiwn</title>", f"<title>{esc(title)} · Y Sesiwn</title>")
     page = re.sub(r'(<meta (?:name|property)="(?:og:)?description" content=")[^"]*"',
@@ -641,6 +643,9 @@ def tune_pages(tunes: list[dict], index: dict) -> None:
                  + "".join(f'<li><a href="{TUNE_DIR}/{t["group"]}/">{esc(t["base"])}</a></li>' for t in listed)
                  + "</ul>"))
 
+    sessions_page(template, session_data())
+    urls.append(f"{SITE_URL}{SESSIONS_DIR}/")
+
     # The home page links to the type pages until the app takes over.
     home = OUT / "index.html"
     nav = "".join(f"<li>{type_link(name)}</li>" for name in types)
@@ -657,6 +662,80 @@ def tune_pages(tunes: list[dict], index: dict) -> None:
     (OUT / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {SITE_URL}sitemap.xml\n", encoding="utf-8")
 
 
+# Wales's principal areas, for a session's county: English and Welsh.
+COUNTIES = {
+    "Isle of Anglesey": "Ynys Môn", "Gwynedd": "Gwynedd", "Conwy": "Conwy", "Denbighshire": "Sir Ddinbych",
+    "Flintshire": "Sir y Fflint", "Wrexham": "Wrecsam", "Powys": "Powys", "Ceredigion": "Ceredigion",
+    "Pembrokeshire": "Sir Benfro", "Carmarthenshire": "Sir Gâr", "Swansea": "Abertawe",
+    "Neath Port Talbot": "Castell-nedd Port Talbot", "Bridgend": "Pen-y-bont ar Ogwr",
+    "Vale of Glamorgan": "Bro Morgannwg", "Rhondda Cynon Taf": "Rhondda Cynon Taf", "Merthyr Tydfil": "Merthyr Tudful",
+    "Caerphilly": "Caerffili", "Blaenau Gwent": "Blaenau Gwent", "Torfaen": "Tor-faen", "Monmouthshire": "Sir Fynwy",
+    "Newport": "Casnewydd", "Cardiff": "Caerdydd", "Outside Wales": "Y tu allan i Gymru",
+}
+DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+
+def session_data() -> list[dict]:
+    """sessions.json, checked, with each session's id (for links to it), the Welsh for
+    its town and county, and its position on site/wales.svg (none outside Wales)."""
+    sessions, ids = [], set()
+    for i, s in enumerate(json.loads((ROOT / "sessions.json").read_text(encoding="utf-8"))["sessions"]):
+        where = f"sessions.json, session {i + 1} ({s.get('venue', '?')})"
+        for field in ("venue", "address", "town", "county", "lat", "lon", "day", "repeat", "start", "confirmed"):
+            if s.get(field) in (None, ""):
+                raise SystemExit(f"{where}: no {field}")
+        problems = [
+            s["county"] not in COUNTIES and f"county should be one of {', '.join(COUNTIES)}",
+            s["day"] not in DAYS and f"day should be one of {', '.join(DAYS)}",
+            s["repeat"] not in ("weekly", "monthly") and 'repeat should be "weekly" or "monthly"',
+            s["repeat"] == "monthly" and s.get("nth") not in (1, 2, 3, 4, -1) and "a monthly session needs nth: 1-4, or -1 for the last",
+            *[s.get(t) and not re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", s[t]) and f'{t} should be a 24-hour time like "19:30"'
+              for t in ("start", "end")],
+            *[s.get(d) and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", s[d]) and f'{d} should be a date like "2026-10-02"'
+              for d in ("from", "until", "confirmed")],
+        ]
+        for problem in problems:
+            if problem:
+                raise SystemExit(f"{where}: {problem}")
+        sid = slugify(f"{s['venue']} {s['town']} {s['day']}")
+        if sid in ids:
+            raise SystemExit(f"{where}: two sessions at {s['venue']} on {s['day']}: give one a different venue name")
+        ids.add(sid)
+        x = round((s["lon"] - MAP["lon0"]) * MAP["k"] * MAP["scale"], 1)
+        y = round((MAP["lat0"] - s["lat"]) * MAP["scale"], 1)
+        sessions.append({**{k: v for k, v in s.items() if k not in ("lat", "lon")}, "id": sid,
+                         "town_cy": s.get("town_cy", s["town"]), "county_cy": COUNTIES[s["county"]],
+                         "lat": s["lat"], "lon": s["lon"],
+                         **({"x": x, "y": y} if s["county"] != "Outside Wales" else {})})
+    return sorted(sessions, key=lambda s: (normalize(s["town"]), DAYS.index(s["day"]), s["start"]))
+
+
+def describe_session(s: dict) -> str:
+    """'Every Tuesday, 19:00-21:00' or '2nd Friday of the month, from 21:00', for the static page."""
+    nth = {1: "1st", 2: "2nd", 3: "3rd", 4: "4th", -1: "Last"}
+    when = f"Every {s['day']}" if s["repeat"] == "weekly" else f"{nth[s['nth']]} {s['day']} of the month"
+    return f"{when}, " + (f"{s['start']}–{s['end']}" if s.get("end") else f"from {s['start']}")
+
+
+def sessions_page(template: str, sessions: list[dict]) -> None:
+    """sesiynau/: the sessions as plain HTML for search engines (the app draws its own),
+    and sessions.json for the app."""
+    (OUT / "sessions.json").write_text(json.dumps({"sessions": sessions}, ensure_ascii=False, separators=(",", ":")),
+                                       encoding="utf-8")
+    towns = sorted({s["town"] for s in sessions}, key=normalize)
+    description = ("Active folk sessions where the music is predominantly Welsh, in " + ", ".join(towns)
+                   + ": their days and times, on a map. Sesiynau cyfredol lle mae'r gerddoriaeth yn Gymreig gan fwyaf.")
+    body = "".join(
+        f"<h2>{esc(town)}</h2><ul>" + "".join(
+            f"<li><strong>{esc(s.get('name') or s['venue'])}</strong>: {esc(describe_session(s))}. "
+            f"{esc(s['venue'])}, {esc(s['address'])}. Last confirmed {esc(s['confirmed'])}.</li>"
+            for s in sessions if s["town"] == town) + "</ul>"
+        for town in towns)
+    write_page(OUT / SESSIONS_DIR, app_page(
+        template, title="Active sessions", description=description, url=f"{SITE_URL}{SESSIONS_DIR}/",
+        head="", up="../", main=f"<h1>Active sessions</h1><p>{esc(description)}</p>{body}"))
+
+
 def type_heading(kind: dict) -> str:
     """'Welsh jigs (Jig)': the English for search engines, and the site's own name for it."""
     return "Other Welsh tunes" if kind["name"] == "Other" else f"Welsh {kind['english']} ({kind['name']})"
@@ -671,9 +750,9 @@ def write_service_worker() -> None:
             h.update(f.relative_to(OUT).as_posix().encode() + f.read_bytes())
         return h.hexdigest()[:12]
 
-    # The tunes' and types' own pages aren't kept: offline, sw.js answers them with the app itself.
+    # The tunes', types' and sessions' own pages aren't kept: offline, sw.js answers them with the app itself.
     files = sorted(f for f in OUT.rglob("*") if f.is_file() and f.name not in NOT_OFFLINE
-                   and not f.is_relative_to(OUT / TUNE_DIR) and not f.is_relative_to(OUT / TYPE_DIR))
+                   and not any(f.is_relative_to(OUT / d) for d in (TUNE_DIR, TYPE_DIR, SESSIONS_DIR)))
     sounds = [f for f in files if f.is_relative_to(OUT / "static" / "soundfont")]
     site = [f for f in files if f not in sounds]
     urls = lambda fs: json.dumps([f.relative_to(OUT).as_posix() for f in fs])

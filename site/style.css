@@ -450,6 +450,25 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .map-layout figure { margin: 0; position: sticky; top: 1.5rem; }
 .map-layout figcaption { font-size: .75rem; margin-top: .5rem; }
 .place-list { list-style: none; padding: 0; margin: 0; }
+/* Sessions (sesiynau/): a town's sessions as cards beside the map */
+.sessions-layout { margin-top: 1rem; }
+.wales-map .off { display: none; }
+/* Towns' names beside their dots, keeping their size on screen as the map zooms */
+.wales-map .town-label { font-size: calc(7px / var(--z)); fill: var(--text); paint-order: stroke; stroke: var(--bg);
+  stroke-width: calc(2px / var(--z)); transform: translate(calc(4px / var(--z)), calc(2.4px / var(--z))); transform-box: view-box; }
+.session-list .town + .town { margin-top: 1.75rem; }
+.session-list h2 { margin: 0 0 .6rem; }
+.session-list h2:focus { outline: none; }
+.card.session { margin-bottom: .9rem; }
+.card.session h3 { margin: 0 0 .35rem; font-size: 1.1rem; }
+.card.session p { margin: .3rem 0; }
+.card.session .confirmed { margin-top: .6rem; }
+.session-report { margin-top: .4rem; font-size: .95rem; }
+.session-report summary { cursor: pointer; color: var(--link); text-decoration: underline; }
+.session-report fieldset { border: none; margin: .5rem 0; padding: 0; display: grid; gap: .3rem; }
+.add-session { margin-top: 2.5rem; max-width: 40rem; }
+/* Jumped to (from the introduction, or a town's dot): clear of the top bar pinned on phones */
+#add-session, .session-list h2 { scroll-margin-top: 5.5rem; }
 .place-list li { padding: .35rem .5rem; border-radius: 6px; }
 .place-list li:hover { background: var(--accent-soft); }
 .place-list strong { display: block; }
@@ -564,7 +583,7 @@ main { view-transition-name: page; }
 .email-form { display: grid; gap: 1rem; max-width: 40rem; }
 .email-form .field { display: grid; gap: .3rem; }
 .field-label { font-weight: 600; }
-.email-form input[type="text"], .email-form select, .email-form textarea {
+.email-form input[type="text"], .email-form input[type="url"], .email-form select, .email-form textarea {
   font: inherit; color: inherit; background: var(--card-bg);
   border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .65rem; width: 100%; box-sizing: border-box;
 }

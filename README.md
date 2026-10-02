@@ -264,6 +264,18 @@ relative URLs, so the site also works under a sub-path such as
   come apart (`mapZoom()` in `app.js`). The places and their tunes are listed by hand in `places.json` (name, latitude,
   longitude, tune folders); `build_site.py` works out each dot's position on
   `site/wales.svg` and stops with an error if a folder doesn't exist.
+- **Active sessions** (`sesiynau/`): folk sessions where the music played is
+  predominantly Welsh, by town, with a map (a dot per town), filters by day
+  and area, and each session's next date (weekly, or the nth or last weekday
+  of the month, within its season if it has one; `nextSession()` in
+  `app.js`). Each shows when it was last confirmed, and has a form to say
+  it's still on, has changed or has stopped; another sends a missing one.
+  Both open an email, like the tune form. The sessions are listed by hand in
+  `sessions.json` (its `_comment` says what each field is); `build_site.py`
+  checks them, stops with a clear error on a mistake, and writes
+  `sessions.json` for the app and a plain `sesiynau/` page for search
+  engines. When someone writes in about a session, check it and update its
+  `confirmed` date.
 - **Offline and home-screen app:** `site/sw.js` (a service worker) saves a
   copy of the whole site (about 1 MB) after the first visit, and
   `site/manifest.webmanifest` lets phones install it. The build
@@ -324,6 +336,7 @@ relative URLs, so the site also works under a sub-path such as
 | `.github/pull_request_template.md` | The checklist a new pull request starts with: credit and permission, checked in the abcjs editor, new tunes numbered in `tune_numbers.json`. |
 | `tune_numbers.json` | Each tune's number in set links. Only ever add to it (`python build_site.py --number-tunes`); never change a number or delete a line. |
 | `pronunciation.json` | How to say each Welsh tune name, by folder name (the build stops if a folder doesn't exist). |
+| `sessions.json` | The active sessions, for the sessions page (see above). |
 | `places.json`, `site/wales.svg` | The places named in tune titles, for the map; the outline of Wales (made once from the ONS local authority boundaries via [UK-GeoJSON](https://github.com/martinjc/UK-GeoJSON), merged and simplified; its projection is in a comment in the file and in `MAP` in `build_site.py`). The outline is used as a CSS mask, so it takes the page's colours. |
 | `site/sw.js`, `site/manifest.webmanifest`, `site/icon-*.png` | Offline use and the home-screen app (see Features). The icons are made from `design/app-icon.html`. |
 | `site/og-image.png`, `site/apple-touch-icon.png` | The link-preview card (1200×630, used by the `og:`/`twitter:` tags in `index.html`) and the home-screen icon. Made from `design/og-card.html` and `design/apple-touch-icon.html`: open one in a browser at that size and screenshot it to regenerate. |

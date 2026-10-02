@@ -671,7 +671,7 @@ def test_fits_a_phone(browser, site, path, lang):
 def test_home_page(page):
     page.goto_site()
     features = page.locator(".features li").all_inner_texts()
-    assert len(features) == 8 and any("Accompaniment" in f for f in features)
+    assert len(features) == 9 and any("Accompaniment" in f for f in features)
     assert page.locator(".offline-card").is_visible()
     # One Surprise me: the home page's own, not the sidebar's too.
     assert page.locator(".home-actions button:has-text('Surprise me')").is_visible() and not page.locator("#surprise-sidebar").is_visible()
@@ -711,7 +711,7 @@ def test_welsh_home_page(page):
     assert page.get_attribute(".lang-switch [data-lang=cy]", "aria-pressed") == "true"
     assert page.inner_text("#surprise-sidebar") == "Alaw ar hap"
     assert page.get_attribute("#search-input", "placeholder") == "Chwilio am alaw…"
-    assert page.locator(".features li").count() == 8
+    assert page.locator(".features li").count() == 9
     # Nothing left in English: no sentence of the English page shows up in the Welsh one.
     welsh = page.evaluate(VISIBLE_TEXT)
     fragments = {f.strip() for f in re.split(r"[.:;?!()\n]", english) if len(f.strip()) >= 12}
@@ -1050,6 +1050,87 @@ def sent_mail(page):
     parts = urlparse(url)
     query = parse_qs(parts.query)
     return unquote(parts.path), query["subject"][0], query["body"][0]
+
+
+# ---- Sessions ---------------------------------------------------------------------
+
+def test_session_dates(page):
+    # A session's next date: weekly, the nth or last weekday of the month, within its season.
+    page.goto_site()
+    next_date = """([session, today]) => { const d = nextSession({ from: null, until: null, ...session }, new Date(`${today}T12:00`));
+      return d && `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; }"""
+    when = lambda session, today="2026-10-02": page.evaluate(next_date, [session, today])
+    assert when({"day": "Monday", "repeat": "weekly"}) == "2026-10-5"
+    assert when({"day": "Friday", "repeat": "weekly"}) == "2026-10-2"  # today
+    assert when({"day": "Friday", "repeat": "monthly", "nth": 2}) == "2026-10-9"
+    assert when({"day": "Friday", "repeat": "monthly", "nth": 1}) == "2026-10-2"
+    assert when({"day": "Friday", "repeat": "monthly", "nth": -1}) == "2026-10-30"
+    assert when({"day": "Friday", "repeat": "monthly", "nth": 1}, "2026-10-03") == "2026-11-6"
+    assert when({"day": "Tuesday", "repeat": "weekly", "from": "2026-10-06", "until": "2026-12-29"}) == "2026-10-6"
+    assert when({"day": "Tuesday", "repeat": "weekly", "from": "2026-10-06", "until": "2026-12-29"}, "2026-12-30") is None
+    times = page.evaluate("""() => [sessionTime({ start: "19:00", end: "21:00" }), sessionTime({ start: "20:30", end: "23:00" }),
+      sessionTime({ start: "11:00", end: "13:00" }), sessionTime({ start: "21:00" })]""")
+    assert times == ["7–9pm", "8:30–11pm", "11am–1pm", "from 9pm"]
+    page.click(".lang-switch [data-lang=cy]")
+    assert page.evaluate("""() => [sessionDays({ day: "Friday", repeat: "monthly", nth: 2 }), sessionDays({ day: "Tuesday", repeat: "weekly" }),
+      sessionTime({ start: "21:00" })]""") == ["Ail ddydd Gwener y mis", "Bob dydd Mawrth", "o 9yh"]
+
+
+def test_sessions_page(page, site):
+    # Sessions by town, with a dot on the map for each town; filtering by day and area.
+    page.goto_site("sesiynau/")
+    page.wait_for_selector(".card.session")
+    import build_site as b
+    sessions = b.session_data()
+    assert page.locator(".card.session").count() == len(sessions)
+    assert page.locator(".session-list .town h2").first.inner_text() == "Cardiff"
+    assert "Last confirmed" in page.locator(".card.session").first.inner_text()
+    towns = {s["town"] for s in sessions}
+    assert page.locator(".wales-map circle:not(.target):not(.off)").count() == len(towns)
+    page.click(".pills [data-day='Friday']")
+    assert page.locator(".card.session").count() == sum(s["day"] == "Friday" for s in sessions)
+    assert page.locator(".wales-map circle:not(.target):not(.off)").count() == len({s["town"] for s in sessions if s["day"] == "Friday"})
+    page.click(".pills [data-day='Friday']")  # again: every day
+    page.click(".pills [data-county='Cardiff']")
+    assert page.locator(".card.session").count() == sum(s["county"] == "Cardiff" for s in sessions)
+    # Opened from the sidebar, it's the page's own address.
+    page.click(".brand")
+    page.click(".sidebar-links a[href='sesiynau/']")
+    page.wait_for_selector(".card.session")
+    assert page.url == site + "sesiynau/"
+
+
+def test_session_report(page):
+    # "Been lately?" writes an email saying which session, and whether it's still on.
+    page.goto_site("sesiynau/")
+    page.wait_for_selector(".card.session")
+    page.evaluate(CATCH_MAIL)
+    card = page.locator("#session-ty-tawe-swansea-friday")
+    card.locator("summary").click()
+    card.locator("input[value='stopped']").check()
+    card.locator("textarea").fill("Not on in September.")
+    card.locator("button[type=submit]").click()
+    _, subject, body = sent_mail(page)
+    assert subject == "Y Sesiwn: session, Tŷ Tawe, Swansea (stopped)"
+    assert "It has stopped." in body and "Not on in September." in body and "ty-tawe-swansea-friday" in body
+
+
+def test_add_a_session(page, site):
+    page.goto_site("sesiynau/")
+    page.wait_for_selector(".add-session form")
+    # The introduction links down to the form, staying on the page.
+    page.click(".lead a[href='#add-session']")
+    assert page.evaluate("document.activeElement.id") == "add-session" and page.url == site + "sesiynau/"
+    page.evaluate(CATCH_MAIL)
+    form = page.locator(".add-session form")
+    fields = form.locator("input")
+    fields.nth(0).fill("The Red Lion, Llandeilo")
+    fields.nth(1).fill("Every Wednesday")
+    fields.nth(2).fill("8-10pm")
+    form.locator("button[type=submit]").click()
+    _, subject, body = sent_mail(page)
+    assert subject == "Y Sesiwn: a session, The Red Lion, Llandeilo"
+    assert "Venue and town: The Red Lion, Llandeilo\nDay, and how often: Every Wednesday\nTime: 8-10pm" in body
 
 
 def test_send_a_tune(page):
@@ -1417,7 +1498,7 @@ def test_accessibility(browser, site, scheme, width):
     context = browser.new_context(service_workers="block", color_scheme=scheme, viewport={"width": width, "height": 900})
     page = context.new_page()
     problems = []
-    for path in ["", "?page=browse", "?tune=glandyfi", "?tune=nyth-y-gog", "?page=map", "?page=offline", "?page=about", "?page=add",
+    for path in ["", "?page=browse", "?tune=glandyfi", "?tune=nyth-y-gog", "?page=map", "sesiynau/", "?page=offline", "?page=about", "?page=add",
                  "?page=contact", "?page=set&s=bne0o.6m42r~2&name=Nos%20Iau", "?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A", "cy:", "cy:?tune=glandyfi"]:
         if path.startswith("cy:"):  # in Welsh: the home page, and a page with the not-in-Welsh-yet note
             page.evaluate("localStorage.setItem('lang', 'cy')")
@@ -1673,7 +1754,7 @@ def test_touch_targets(browser, site):
                                   service_workers="block")
     page = context.new_page()
     small = {}
-    for path in ["", "alaw/tros-y-garreg/", "?set=3V~h5A&n=Nos%20Iau", "?page=sets", "?page=add", "?page=contact", "?page=browse"]:
+    for path in ["", "alaw/tros-y-garreg/", "?set=3V~h5A&n=Nos%20Iau", "?page=sets", "?page=add", "?page=contact", "?page=browse", "sesiynau/"]:
         page.goto(site + path)
         page.wait_for_function("typeof state !== 'undefined' && state.data && document.querySelector('main').children.length")
         page.wait_for_timeout(300)

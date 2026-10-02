@@ -58,7 +58,7 @@ self.addEventListener("activate", (event) => {
 // Everything else (the piano notes, the map, the libraries) is used from the copy; a
 // piano note not kept yet is fetched, and kept.
 const FRESH_WAIT = 2000;
-const FRESH = new Set(["", "index.html", "app.js", "style.css", "tunes.json"]);
+const FRESH = new Set(["", "index.html", "app.js", "style.css", "tunes.json", "sessions.json"]);
 
 async function freshOrSaved(url, saved) {
   try {

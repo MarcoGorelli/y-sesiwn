@@ -1083,7 +1083,7 @@ def test_sessions_page(page, site):
     import build_site as b
     sessions = b.session_data()
     assert page.locator(".card.session").count() == len(sessions)
-    assert page.locator(".session-list .town h2").first.inner_text() == "Cardiff"
+    assert page.locator(".session-list .town h2").first.inner_text().startswith("Aberystwyth")  # towns A to Z
     assert "Last confirmed" in page.locator(".card.session").first.inner_text()
     towns = {s["town"] for s in sessions}
     assert page.locator(".wales-map circle:not(.target):not(.off)").count() == len(towns)

@@ -245,6 +245,7 @@ def test_sessions(site):
     page = (out / "sesiynau" / "index.html").read_text(encoding="utf-8")
     assert '<base href="../">' in page and "<title>Active sessions · Y Sesiwn</title>" in page
     assert "2nd Friday of the month, from 21:00" in page and "Last confirmed" in page
+    assert "<strong>Llantrisant Tune Club</strong> (tune club): Last Tuesday of the month, from 19:00" in page
     assert "<loc>https://ysesiwn.cymru/sesiynau/</loc>" in (out / "sitemap.xml").read_text(encoding="utf-8")
 
 
@@ -255,6 +256,7 @@ def test_sessions(site):
     ({"start": "7pm"}, "24-hour time"),
     ({"confirmed": "2/10/2026"}, "a date like"),
     ({"venue": ""}, "no venue"),
+    ({"kind": "workshop"}, "kind should be"),
 ])
 def test_session_mistakes(tmp_path, monkeypatch, change, says):
     # A mistake in sessions.json stops the build, saying what's wrong.

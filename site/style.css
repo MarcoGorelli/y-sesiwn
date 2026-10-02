@@ -455,12 +455,20 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .wales-map .off { display: none; }
 /* Towns' names beside their dots, keeping their size on screen as the map zooms */
 .wales-map .town-label { font-size: calc(7px / var(--z)); fill: var(--text); paint-order: stroke; stroke: var(--bg);
-  stroke-width: calc(2px / var(--z)); transform: translate(calc(4px / var(--z)), calc(2.4px / var(--z))); transform-box: view-box; }
+  stroke-width: calc(2px / var(--z)); transform-box: view-box; dominant-baseline: central; }
+/* Which side of its dot (placed in app.js so names don't run into each other) */
+.wales-map .town-label.right { transform: translateX(calc(4px / var(--z))); }
+.wales-map .town-label.left { transform: translateX(calc(-4px / var(--z))); text-anchor: end; }
+.wales-map .town-label.above { transform: translateY(calc(-7px / var(--z))); text-anchor: middle; }
+.wales-map .town-label.below { transform: translateY(calc(7px / var(--z))); text-anchor: middle; }
 .session-list .town + .town { margin-top: 1.75rem; }
 .session-list h2 { margin: 0 0 .6rem; }
 .session-list h2:focus { outline: none; }
 .card.session { margin-bottom: .9rem; }
 .card.session h3 { margin: 0 0 .35rem; font-size: 1.1rem; }
+/* "Tune club": a club where people learn tunes together, not a pub session */
+.card.session .badge { display: inline-block; margin-left: .5rem; padding: .05rem .5rem; border: 1px solid var(--border);
+  border-radius: 999px; font-size: .75rem; font-weight: 500; color: var(--muted); vertical-align: .15em; }
 .card.session p { margin: .3rem 0; }
 .card.session .confirmed { margin-top: .6rem; }
 .session-report { margin-top: .4rem; font-size: .95rem; }

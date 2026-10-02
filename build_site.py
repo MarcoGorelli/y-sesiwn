@@ -688,6 +688,7 @@ def session_data() -> list[dict]:
             s["county"] not in COUNTIES and f"county should be one of {', '.join(COUNTIES)}",
             s["day"] not in DAYS and f"day should be one of {', '.join(DAYS)}",
             s["repeat"] not in ("weekly", "monthly") and 'repeat should be "weekly" or "monthly"',
+            s.get("kind", "session") not in ("session", "tune club") and 'kind should be "tune club" (or left out, for a session)',
             s["repeat"] == "monthly" and s.get("nth") not in (1, 2, 3, 4, -1) and "a monthly session needs nth: 1-4, or -1 for the last",
             *[s.get(t) and not re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", s[t]) and f'{t} should be a 24-hour time like "19:30"'
               for t in ("start", "end")],
@@ -727,7 +728,7 @@ def sessions_page(template: str, sessions: list[dict]) -> None:
                    + ": their days and times, on a map. Sesiynau cyfredol sy'n canolbwyntio'n drwm ar gerddoriaeth Gymreig.")
     body = "".join(
         f"<h2>{esc(town)}</h2><ul>" + "".join(
-            f"<li><strong>{esc(s.get('name') or s['venue'])}</strong>: {esc(describe_session(s))}. "
+            f"<li><strong>{esc(s.get('name') or s['venue'])}</strong>{' (tune club)' if s.get('kind') == 'tune club' else ''}: {esc(describe_session(s))}. "
             f"{esc(s['venue'])}, {esc(s['address'])}. Last confirmed {esc(s['confirmed'])}.</li>"
             for s in sessions if s["town"] == town) + "</ul>"
         for town in towns)

@@ -2170,7 +2170,8 @@ function sessionCard(session) {
       : session.until ? tr(`Until ${dateLabel(dateOf(session.until), { day: "numeric", month: "long", year: "numeric" })}.`,
         `Tan ${dateLabel(dateOf(session.until), { day: "numeric", month: "long", year: "numeric" })}.`) : null;
   return el("article", { class: "card session", id: `session-${session.id}` },
-    el("h3", {}, session.name ?? session.venue),
+    el("h3", {}, session.name ?? session.venue,
+      session.kind === "tune club" ? el("span", { class: "badge" }, tr("Tune club", "Clwb alawon")) : null),
     el("p", { class: "when" }, el("strong", {}, `${sessionDays(session)}, ${sessionTime(session)}`),
       next ? [" · ", today ? tr("today", "heddiw") : tr(`next: ${dateLabel(next, { weekday: "long", day: "numeric", month: "long" })}`,
         `nesaf: ${dateLabel(next, { weekday: "long", day: "numeric", month: "long" })}`)] : null),
@@ -2232,8 +2233,19 @@ async function renderSessions(main) {
     tr("Map of Wales with the towns that have sessions", "Map o Gymru gyda'r trefi sydd â sesiynau"));
   const circles = [...map.querySelectorAll("circle:not(.target)")];
   const targets = [...map.querySelectorAll("circle.target")];
-  // Few dots, so each has its town's name beside it.
-  const labels = mapped.map((town) => svg("text", { x: town.x, y: town.y, class: "town-label", "aria-hidden": "true" }, tr(town.name, town.cy)));
+  // Few dots, so each has its town's name beside it: to the right, or where it doesn't
+  // run into another name or dot (sizes in map units, at the map's own size).
+  const placed = mapped.map((t) => ({ x0: t.x - 2.5, x1: t.x + 2.5, y0: t.y - 2.5, y1: t.y + 2.5 }));
+  const labels = mapped.map((town) => {
+    const name = tr(town.name, town.cy), w = name.length * 3.7 + 4, h = 8;
+    const sides = { right: [town.x + 3, town.x + 3 + w, town.y - h / 2, town.y + h / 2], left: [town.x - 3 - w, town.x - 3, town.y - h / 2, town.y + h / 2],
+      above: [town.x - w / 2, town.x + w / 2, town.y - 3 - h, town.y - 3], below: [town.x - w / 2, town.x + w / 2, town.y + 3, town.y + 3 + h] };
+    const clear = ([x0, x1, y0, y1]) => !placed.some((b) => x0 < b.x1 && x1 > b.x0 && y0 < b.y1 && y1 > b.y0);
+    const side = Object.keys(sides).find((k) => clear(sides[k])) ?? "right";
+    const [x0, x1, y0, y1] = sides[side];
+    placed.push({ x0, x1, y0, y1 });
+    return svg("text", { x: town.x, y: town.y, class: `town-label ${side}`, "aria-hidden": "true" }, name);
+  });
   map.querySelector("svg").prepend(...labels);
   const light = (town, on) => circles[mapped.indexOf(town)]?.classList.toggle("lit", on);
   mapZoom(map, () => {});
@@ -2297,10 +2309,10 @@ async function renderSessions(main) {
   } }, text);
   main.replaceChildren(
     el("h1", {}, tr("Active sessions", "Sesiynau cyfredol")),
-    el("p", { class: "lead" }, tr("Folk sessions where you can play Welsh tunes with others: come along with an instrument, or just to listen. "
+    el("p", { class: "lead" }, tr("Folk sessions and tune clubs where you can play Welsh tunes with others: come along with an instrument, or just to listen. "
       + "We only list sessions where there's a heavy focus on Welsh music. Each says when someone last confirmed it's running "
       + "as described; if you've been lately, let us know.",
-      "Sesiynau gwerin lle gallwch chi chwarae alawon Cymreig gydag eraill: dewch ag offeryn, neu dim ond i wrando. "
+      "Sesiynau gwerin a chlybiau alawon lle gallwch chi chwarae alawon Cymreig gydag eraill: dewch ag offeryn, neu dim ond i wrando. "
       + "Dim ond sesiynau sy'n canolbwyntio'n drwm ar gerddoriaeth Gymreig rydyn ni'n eu rhestru. Mae pob un yn dweud pryd y cadarnhaodd "
       + "rhywun ddiwethaf ei bod yn cael ei chynnal fel y disgrifir; os ydych chi wedi bod yn ddiweddar, rhowch wybod i ni."),
       " ", toForm(tr("Know a session we're missing? Tell us about it.", "Gwybod am sesiwn sydd ar goll? Rhowch wybod i ni amdani."))),

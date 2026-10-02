@@ -264,8 +264,8 @@ relative URLs, so the site also works under a sub-path such as
   come apart (`mapZoom()` in `app.js`). The places and their tunes are listed by hand in `places.json` (name, latitude,
   longitude, tune folders); `build_site.py` works out each dot's position on
   `site/wales.svg` and stops with an error if a folder doesn't exist.
-- **Active sessions** (`sesiynau/`): folk sessions with a heavy focus on
-  Welsh music, by town, with a map (a dot per town), filters by day
+- **Active sessions** (`sesiynau/`): folk sessions and tune clubs (labelled
+  as such) with a heavy focus on Welsh music, by town, with a map (a dot per town), filters by day
   and area, and each session's next date (weekly, or the nth or last weekday
   of the month, within its season if it has one; `nextSession()` in
   `app.js`). Each shows when it was last confirmed, and has a form to say

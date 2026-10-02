@@ -124,11 +124,12 @@ relative URLs, so the site also works under a sub-path such as
   was tested with synthesised fiddle, whistle and guitar recordings of real
   tunes, slow and at reel speed (~8 notes a second), fed to Chromium as a
   fake microphone. Nothing is recorded or sent anywhere. On iPhones the
-  audio session switches to `play-and-record` while listening. Each tune's melody is worked out at build time by
+  audio session switches to `play-and-record` while listening. Each tune's melody is worked out by
   `melody()` in `build_site.py` (a small ABC reader, checked note for note
-  against abcjs's playback for every tune) and stored in `tunes.json` as
-  `melody`: one character per note, `chr(MIDI pitch + 160)`, repeated notes
-  collapsed. The page compares the *steps* between notes, so the key doesn't
+  against abcjs's playback for every tune), with repeated notes collapsed. The
+  app has the same reader (`melodyOf()` in `app.js`), so the melodies aren't
+  shipped in `tunes.json` (a fifth of its size); a test checks the two agree
+  for every tune. The page compares the *steps* between notes, so the key doesn't
   matter. Played notes (and typed ones with an octave, like `G3`) use exact
   steps, leaps included; note names without an octave use the smaller way
   round. Lead-ins (pick-ups) are handled both ways round: the build works
@@ -154,10 +155,15 @@ relative URLs, so the site also works under a sub-path such as
   any root, up to half an octave either way, e.g. *E Dorian*), a **tempo**
   slider (defaults: jigs 112, reels 90, polcas 100, others 100 bpm, in the
   felt beat: dotted crotchets in 6/8, minims in 4/4), and **playback** with
-  the notes highlighted as they play.
+  the notes highlighted as they play (the space bar plays and pauses). On a
+  phone the music is laid out again in shorter lines at a readable size
+  (`scoreLayout()` in `app.js`), and **− / +** under it make it smaller or
+  bigger on any screen (kept on the device). Under the music: **Share** (the
+  device's own share sheet, where it has one), *Print / save*, *QR code* and
+  *Add to set*.
 - **Practice mode:** just the controls and a full-width score, full screen
   where supported.
-- **Practice row** (under the key and tempo): **Loop** one part of the tune
+- **Practice tools** (under the music; folded away on phones): **Loop** one part of the tune
   (parts start at a repeat sign or double bar line, as in the chord chart;
   `tuneParts()`), optionally **speeding up** 5% each time round up to the
   tune's usual tempo (`partLoop()`: whenever playback reaches a note outside
@@ -259,12 +265,14 @@ relative URLs, so the site also works under a sub-path such as
   longitude, tune folders); `build_site.py` works out each dot's position on
   `site/wales.svg` and stops with an error if a folder doesn't exist.
 - **Offline and home-screen app:** `site/sw.js` (a service worker) saves a
-  copy of the whole site (about 3 MB, piano notes included) after the first
-  visit, and `site/manifest.webmanifest` lets phones install it. The build
+  copy of the whole site (about 1 MB) after the first visit, and
+  `site/manifest.webmanifest` lets phones install it. The build
   fills in `sw.js`'s file lists and a version made from the files' contents,
   so each deploy is picked up in the background and used from the next visit.
-  The piano notes are cached separately, so a deploy doesn't download them
-  again. A **"Take it to the session"** card on the home page (and the *Use
+  The piano notes (2 MB) are cached separately, so a deploy doesn't download them
+  again: each is kept the first time it's played, and the app asks for all of
+  them on a computer and in the installed app (not on a phone's data, unless
+  the reader presses *Save them now* on the offline card). A **"Take it to the session"** card on the home page (and the *Use
   it offline* page, `?page=offline`) advertises it: on Chrome/Edge it's an
   **Install the app** button (from the `beforeinstallprompt` event), on
   iPhones and iPads the Share → Add to Home Screen steps (Apple has no install
@@ -294,8 +302,13 @@ relative URLs, so the site also works under a sub-path such as
 - **Every tune has its own page**, `alaw/sawdl-y-fuwch/`: `build_site.py`
   writes a real one per tune (the app, with the tune's name, description,
   details and ABC in it), so link previews (WhatsApp, Facebook, …) and search
-  engines, which don't run the app, see the tune; there's also a `sitemap.xml`
-  and `robots.txt`. Visitors get the app as usual, and the back button works.
+  engines, which don't run the app, see the tune; its description is in
+  English and Welsh. **Each type of tune has one too**, `math/pibddawns/`,
+  listing its tunes (the app opens it as *Browse* with that type chosen), and
+  the home page links to them, so search engines reach every tune by
+  following links. There's also a `sitemap.xml` and `robots.txt`. abcjs is
+  only loaded first on a tune's own page; elsewhere the app loads it when a
+  page needs music, or once the first page is shown. Visitors get the app as usual, and the back button works.
   Offline, the service worker answers a tune's page with the app (the tune
   pages aren't in the offline copy). A **QR code** button on each tune shows
   its link for someone else to scan.
@@ -304,7 +317,7 @@ relative URLs, so the site also works under a sub-path such as
 
 | Path | What it is |
 |---|---|
-| `build_site.py` | Builds `_site/` (git-ignored): copies `site/`, `static/`, `CONTRIBUTING.md`, and writes `tunes.json`: every `tune.abc` plus what the page needs about it (type, key, default tempo and beat, Details rows, credit glosses, melody for the note search, version grouping), worked out once in Python. Tune types, colourways and default tempos are set at the top. |
+| `build_site.py` | Builds `_site/` (git-ignored): copies `site/`, `static/`, `CONTRIBUTING.md`, and writes `tunes.json`: every `tune.abc` plus what the page needs about it (type, key, default tempo and beat, Details rows, credit glosses, where the melody starts after a lead-in, version grouping), worked out once in Python; and the tune and type pages (`alaw/`, `math/`). Tune types, colourways and default tempos are set at the top. |
 | `site/index.html`, `site/style.css`, `site/app.js` | The page. `app.js` does searching (a port of the original Python matching, including `difflib`'s similarity ratio), browsing, routing (`alaw/<folder>/?v=…`, `?page=add\|fix\|about`, all relative to `<base href>`), sheet music and playback with abcjs, and renders the Markdown pages with marked. |
 | `site/about.md`, `site/carthen.svg` | The About page; the tapestry band. |
 | `site/about.cy.md`, `site/guides.cy.md` | The Welsh About page, and the Welsh *How to add a tune* and *How to submit corrections* (keep in step with `about.md` and `CONTRIBUTING.md`). |

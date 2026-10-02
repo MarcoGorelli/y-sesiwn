@@ -41,6 +41,10 @@ const state = {
   chords: { onScore: false, play: "tune" },  // the chord box's settings, for every tune; play: tune, both or chords
   practice: { countIn: false, click: false, tab: "none", open: null },  // the practice tools, for every tune (open: folded or not)
   lang: savedLang(),    // "cy" or "en", for the whole site (tune names and the tunes' own notes stay as written)
+  musicSize: savedSize(),  // the music's size, an index into SIZES (1: as drawn)
+  offlineReady: false,  // the offline copy (sw.js) is saved
+  sounds: null,         // how many piano notes it keeps: { saved, total }
+  savingSounds: false,  // while it saves the rest, asked for on the offline card
 };
 
 // ---- Welsh or English --------------------------------------------------------------
@@ -51,6 +55,14 @@ function savedLang() {
     if (saved === "cy" || saved === "en") return saved;
   } catch {}
   return (navigator.languages ?? [navigator.language]).some((l) => /^cy\b/i.test(l)) ? "cy" : "en";
+}
+
+function savedSize() {
+  try {
+    const size = Number(localStorage.getItem("musicSize") ?? 1);
+    if (Number.isInteger(size) && size >= 0 && size <= 4) return size;
+  } catch {}
+  return 1;
 }
 
 // The text in the chosen language: tr("Browse", "Pori").
@@ -211,8 +223,56 @@ function exactSteps(midis) {
   return out;
 }
 
+// A tune's melody: the MIDI pitches of its notes in written order (the top note of a
+// chord), repeated notes collapsed. Worked out from its ABC on first use, exactly as
+// build_site.py's melody_string() does (tests/test_site.py checks every tune), rather
+// than shipped in tunes.json.
+const KEY_SHARPS = { C: 0, G: 1, D: 2, A: 3, E: 4, B: 5, "F#": 6, "C#": 7, F: -1, Bb: -2, Eb: -3, Ab: -4, Db: -5, Gb: -6, Cb: -7 };
+const MODE_SHARPS = { "": 0, maj: 0, ion: 0, lyd: 1, mix: -1, dor: -2, m: -3, min: -3, aeo: -3, phr: -4, loc: -5 };
+const ACCIDENTALS = { "^^": 2, "^": 1, "=": 0, "_": -1, "__": -2 };
+
+function keySignature(key) {  // "DMix" -> { F: 1 }: the sharp (+1) or flat (-1) on each letter
+  const m = key.trim().match(/^([A-G][#b]?)\s*([A-Za-z]*)/);
+  if (!m || !(m[1] in KEY_SHARPS)) return {};
+  const n = KEY_SHARPS[m[1]] + (MODE_SHARPS[m[2].slice(0, 3).toLowerCase()] ?? 0);
+  const letters = n > 0 ? "FCGDAEB" : "BEADGCF";
+  return Object.fromEntries([...letters.slice(0, Math.abs(n))].map((l) => [l, n > 0 ? 1 : -1]));
+}
+
+function musicLine(abc) {  // build_site.py's music(): the notes, from K: on, as one line
+  const lines = abc.split(/\r?\n/);
+  const start = lines.findIndex((line) => line.startsWith("K:"));
+  const body = (start < 0 ? [] : lines.slice(start))
+    .map((line) => (line.startsWith("K:") ? `[K:${line.slice(2).trim()}]` : /^(%|[A-Za-z]:)/.test(line) ? null : line))
+    .filter((line) => line != null).join(" ");
+  return body.replace(/\{[^}]*\}|"[^"]*"/g, " ").replace(/\[(?!K:)[A-Za-z]:[^\]]*\]/g, " ");
+}
+
+function melodyOf(tune) {
+  if (tune.melody) return tune.melody;
+  let signature = {};
+  const bar = new Map();  // accidentals written earlier in this bar
+  const pitch = (acc, letter, marks) => {
+    const octave = (letter === letter.toLowerCase() ? 1 : 0) + (marks.match(/'/g)?.length ?? 0) - (marks.match(/,/g)?.length ?? 0);
+    const name = letter.toUpperCase();
+    if (acc) bar.set(`${name}${octave}`, ACCIDENTALS[acc]);
+    const alter = bar.get(`${name}${octave}`) ?? signature[name] ?? 0;
+    return 60 + 12 * octave + LETTER_PITCH[name] + alter;
+  };
+  const notes = [];
+  const token = /\[K:([^\]]*)\]|\[([^\]|]*[A-Ga-g][^\]|]*)\]|(\^\^|\^|__|_|=)?([A-Ga-g])([,']*)|(\|)/g;
+  for (const m of musicLine(tune.abc).matchAll(token)) {
+    if (m[1] != null) { signature = keySignature(m[1]); bar.clear(); }
+    else if (m[6]) bar.clear();
+    else if (m[2] != null) notes.push(Math.max(...[...m[2].matchAll(/(\^\^|\^|__|_|=)?([A-Ga-g])([,']*)/g)].map((n) => pitch(n[1], n[2], n[3]))));
+    else notes.push(pitch(m[3], m[4], m[5]));
+  }
+  tune.melody = collapse(notes);
+  return tune.melody;
+}
+
 function tuneSteps(tune) {
-  const midis = [...tune.melody].map((c) => c.charCodeAt(0) - 160);  // see melody_string()
+  const midis = melodyOf(tune);
   tune.steps ??= {
     exact: exactSteps(collapse(midis)),
     folded: foldedSteps(collapse(midis.map((m) => m % 12))),
@@ -684,10 +744,23 @@ function addressTune() {
   return match ? decodeURIComponent(match[1]) : new URLSearchParams(location.search).get("tune");
 }
 
+// A type's own page, math/<slug>/ (build_site.py, for search engines): the browse
+// page with that type chosen.
+const typeSlug = (name) => normalize(name).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");  // build_site.py's slugify
+function addressType() {
+  const path = location.pathname.slice(new URL(document.baseURI).pathname.length);
+  const match = path.match(/^math\/([^/]+)\/?$/);
+  return match ? state.data.types.find((t) => typeSlug(t.name) === decodeURIComponent(match[1]))?.name ?? null : null;
+}
+
+// Moving to another page cross-fades the old one into the new (View Transitions, where
+// the browser has them), unless the reader's device asks for less motion.
 function navigate(url) {
   history.pushState(null, "", url);
-  render();
-  window.scrollTo(0, 0);
+  const change = () => { render(); window.scrollTo(0, 0); };
+  if (document.startViewTransition && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    document.startViewTransition(change);
+  } else change();
 }
 
 // Phones: the sidebar's links fold away behind the Menu button (style.css); opening a
@@ -721,6 +794,17 @@ document.addEventListener("keydown", (event) => {
   box.focus();
 });
 
+// Space plays or pauses the tune (hands on the instrument), unless a control has the
+// focus: then it's that control's.
+document.addEventListener("keydown", (event) => {
+  if (event.key !== " " || event.ctrlKey || event.metaKey || event.altKey) return;
+  if (event.target.closest("input, textarea, select, button, a, summary, [contenteditable], [role='button'], [tabindex]:not(#main)")) return;
+  const play = document.querySelector(".score .abcjs-midi-start");
+  if (!play) return;
+  event.preventDefault();
+  play.click();
+});
+
 function render() {
   stopPlayback();
   stopListening();
@@ -745,11 +829,18 @@ function render() {
   const map = page === "map";
   const offline = page === "offline";
   const notes = page === "notes";
-  const browse = page === "browse";
+  const browse = page === "browse" || addressType() !== null;
   const contact = page === "contact";
   const setPage = page === "set" || params.has("set");
   const setsPage = page === "sets";
   const main = document.getElementById("main");
+  // abcjs (the sheet music and playback, 140 KB) isn't needed for the home page, so it
+  // isn't loaded before it: a page with music waits for it (see loadAbcjs).
+  if ((tune || notes || setPage || page === "add") && !window.ABCJS) {
+    loadAbcjs().then(render, () => main.replaceChildren(el("p", {}, tr("Couldn't load the sheet music. Check your connection and reload the page.",
+      "Methu llwytho'r gerddoriaeth. Gwiriwch eich cysylltiad ac ail-lwytho'r dudalen."))));
+    return;
+  }
   if (!tune) setPractice(false);
   main.style.animation = "none"; void main.offsetWidth; main.style.animation = "";  // replay fade-in
   const home = !tune && !lost && !guide && !map && !offline && !notes && !browse && !contact && !setPage && !setsPage;
@@ -771,6 +862,22 @@ function render() {
   countView();
 }
 
+// abcjs: in a tune's own page from the start (build_site.py), otherwise fetched when a
+// page needs it, or once the first page is shown, so the next is quick.
+let abcjsLoading = null;
+function loadAbcjs() {
+  if (window.ABCJS) return Promise.resolve();
+  abcjsLoading ??= new Promise((resolve, reject) => {
+    document.head.append(el("script", { src: "static/abcjs/abcjs-basic-min.js", onload: resolve,
+      onerror: (e) => { abcjsLoading = null; reject(e); } }));
+  });
+  return abcjsLoading;
+}
+
+// A quiet picture for a page with nothing on it yet: the triple harp over a scrap of carthen.
+const emptyArt = () => el("div", { class: "empty-art", "aria-hidden": "true" },
+  el("img", { src: "static/harp.svg", alt: "", width: 64, height: 64 }));
+
 // A link to a tune the site doesn't have (any more): the tunes with the nearest names,
 // since it has most likely been renamed or merged into another tune's versions.
 function renderNotFound(main, slug) {
@@ -779,6 +886,7 @@ function renderNotFound(main, slug) {
   const near = search(words).slice(0, 5);
   main.replaceChildren(...[
     el("h1", {}, tr("Tune not found", "Alaw heb ei chanfod")),
+    emptyArt(),
     el("p", { class: "lead" }, tr(`There's no tune at this address (“${slug}”). It may have been renamed, or joined to another tune as one of its versions.`,
       `Does dim alaw yn y cyfeiriad hwn (“${slug}”). Efallai iddi gael enw newydd, neu ei hychwanegu at alaw arall fel un o'i fersiynau.`)),
     near.length ? el("p", {}, tr("Were you looking for:", "Oeddech chi'n chwilio am:")) : null,
@@ -870,14 +978,14 @@ function renderBrowse(main) {
   // Nothing selected (null) lists every tune; clicking the selected type or key again
   // clears it. A type and a key together list, say, the jigs in D major.
   const params = new URLSearchParams(location.search);
-  let chosenType = types.some((t) => t.name === params.get("type")) ? params.get("type") : null;
+  let chosenType = types.some((t) => t.name === params.get("type")) ? params.get("type") : addressType();
   let chosenKey = keyCounts.has(params.get("key")) ? params.get("key") : null;
-  const show = (name, key) => {
+  const show = (name, key, first = false) => {
     [chosenType, chosenKey] = [name, key];
     const url = new URLSearchParams({ page: "browse" });
     if (name) url.set("type", name);
     if (key) url.set("key", key);
-    history.replaceState(null, "", `?${url}`);
+    if (!first) history.replaceState(null, "", `?${url}`);  // a type's own page keeps its address at first
     const type = types.find((t) => t.name === name);
     for (const pill of pills.children) pill.setAttribute("aria-pressed", pill.dataset.type === name);
     for (const pill of keyPills.children) {
@@ -917,7 +1025,7 @@ function renderBrowse(main) {
     el("p", { class: "pills-label" }, tr("Type", "Math")), pills,
     el("p", { class: "pills-label" }, tr("Key", "Cywair")), keyPills, caption, list,
   );
-  show(chosenType, chosenKey);
+  show(chosenType, chosenKey, true);
 }
 
 // On the home page, the way into the notes page: "Play it to me" goes there and starts
@@ -995,7 +1103,7 @@ const STAVE = { low: 59, high: 81 };  // MIDI: B3 … A5
 
 function melodyRange(tune) {
   if (!tune.range) {
-    const pitches = [...tune.melody].map((c) => c.charCodeAt(0) - 160);  // see melody_string()
+    const pitches = melodyOf(tune);
     tune.range = pitches.length ? [Math.min(...pitches), Math.max(...pitches)] : null;
   }
   return tune.range;
@@ -1181,12 +1289,35 @@ function stopPlayback() {
 // On a narrow screen a tune's own lines (four bars or so, as in the books) shrink to fit
 // it, too small to read; there abcjs lays the music out again in shorter lines, at a
 // readable size. Wider screens keep the tune's own line breaks.
+// The reader can make the music bigger or smaller (musicSize): it's laid out again in
+// shorter or longer lines at that size.
 const READABLE = 0.75;  // the music's size on a phone (1 is abcjs's own)
+const SIZES = [0.8, 1, 1.25, 1.5, 2];  // the reader's choices, state.musicSize
 function scoreLayout(paper) {
   const width = paper.clientWidth;
-  if (!width || width / 740 >= 0.6) return {};  // 740: abcjs's own line length
-  return { staffwidth: Math.round(width / READABLE / 20) * 20,
-    wrap: { minSpacing: 1.8, maxSpacing: 2.7, preferredMeasuresPerLine: width < 400 ? 2 : 3 } };
+  const own = width / 740;  // the size of the tune's own lines (740: abcjs's line length)
+  const zoom = SIZES[state.musicSize];
+  if (!width || (own >= 0.6 && zoom === 1)) return {};
+  const staffwidth = Math.round(width / ((own >= 0.6 ? own : READABLE) * zoom) / 20) * 20;
+  return { staffwidth, wrap: { minSpacing: 1.8, maxSpacing: 2.7, preferredMeasuresPerLine: Math.max(1, Math.round(staffwidth / 200)) } };
+}
+
+// − and + for the music's size: for reading at a distance (a tablet on a music stand)
+// or with poor sight. Kept on this device.
+function musicSize(redraw) {
+  const label = el("span", { class: "label", "aria-hidden": "true" }, tr("Size", "Maint"));
+  const button = (step, text, name) => el("button", { type: "button", "aria-label": name, onclick: () => {
+    state.musicSize = Math.max(0, Math.min(SIZES.length - 1, state.musicSize + step));
+    try { localStorage.setItem("musicSize", state.musicSize); } catch {}
+    smaller.disabled = state.musicSize === 0;
+    bigger.disabled = state.musicSize === SIZES.length - 1;
+    redraw();
+  } }, text);
+  const smaller = button(-1, "−", tr("Smaller music", "Cerddoriaeth lai"));
+  const bigger = button(1, "+", tr("Bigger music", "Cerddoriaeth fwy"));
+  smaller.disabled = state.musicSize === 0;
+  bigger.disabled = state.musicSize === SIZES.length - 1;
+  return el("div", { class: "music-size", role: "group", "aria-label": tr("Size of the music", "Maint y gerddoriaeth") }, label, smaller, bigger);
 }
 
 // Laying it out, abcjs measures the music in a 1px svg it leaves on the page, as an
@@ -1246,7 +1377,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   });
   // load() doesn't pass abcjs's title options on, so set them here (its own say "Click to …").
   for (const [button, title] of [["loop", tr("Repeat", "Ailadrodd")], ["reset", tr("Back to the start", "Yn ôl i'r dechrau")],
-    ["start", tr("Play / pause", "Chwarae / oedi")], ["progress-background", tr("Move to another point in the tune", "Symud i fan arall yn yr alaw")]]) {
+    ["start", tr("Play / pause (space bar)", "Chwarae / oedi (bylchwr)")], ["progress-background", tr("Move to another point in the tune", "Symud i fan arall yn yr alaw")]]) {
     audio.querySelector(`.abcjs-midi-${button}`)?.setAttribute("title", title);
     audio.querySelector(`.abcjs-midi-${button}`)?.setAttribute("aria-label", title);
   }
@@ -1564,7 +1695,8 @@ function renderTune(main, group, tune) {
     practice].filter(Boolean));  // no swing switch: nothing (not the text "null")
   // Under the music: printing, saving and sharing it.
   const actions = el("div", { class: "tune-actions" },
-    printButton(tune, paper, settings), qrButton(group, tune), addToSetButton(tune, settings));
+    shareButton(group.title, () => `https://ysesiwn.cymru/${tuneUrl(group.slug, tune.version)}`),
+    printButton(tune, paper, settings), qrButton(group, tune), addToSetButton(tune, settings), musicSize(redraw));
 
   const shownElsewhere = new Set(["Key", "Composer / arranger"]);  // the key menu; the score's credit
   const details = el("dl", {}, tune.details.filter(([label]) => !shownElsewhere.has(label)).map(([label, value]) =>
@@ -1687,6 +1819,14 @@ async function showQr(title, link, caption) {
   dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
   document.body.append(dialog);
   dialog.showModal();
+}
+
+// The device's own share sheet (WhatsApp, Messages, email, …), where it has one: most
+// phones, and some computers. Elsewhere there's Copy link and the QR code.
+function shareButton(title, link) {
+  if (!navigator.share) return null;
+  return el("button", { type: "button", class: "share", onclick: () => navigator.share({ title, url: link() }).catch(() => {}) },
+    tr("Share", "Rhannu"));
 }
 
 function qrButton(group, tune) {
@@ -1953,7 +2093,12 @@ window.addEventListener("beforeinstallprompt", (event) => {
   installPrompt = event;
   refreshOfflineCards();
 });
-window.addEventListener("appinstalled", () => { installPrompt = null; refreshOfflineCards(); });
+window.addEventListener("appinstalled", () => { installPrompt = null; askWorker("save-sounds"); refreshOfflineCards(); });
+
+// A message for the service worker (sw.js), once it's running.
+function askWorker(message) {
+  navigator.serviceWorker?.ready.then((registration) => registration.active?.postMessage(message));
+}
 
 const isInstalled = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
 const isApple = () => /iPhone|iPad|iPod/.test(navigator.userAgent)
@@ -1982,11 +2127,19 @@ function refreshOfflineCards() {
 
 function fillOfflineCard(card) {
   const full = card.classList.contains("full");
-  const status = "serviceWorker" in navigator
-    ? el("p", { class: "status" }, state.offlineReady
-      ? tr("✓ Saved on this device: works without a signal", "✓ Wedi'i chadw ar y ddyfais hon: mae'n gweithio heb signal")
-      : tr("Saving a copy for offline use…", "Wrthi'n cadw copi i'w ddefnyddio all-lein…"))
-    : null;
+  const { saved, total } = state.sounds ?? {};
+  const status = !("serviceWorker" in navigator) ? null
+    : !state.offlineReady ? el("p", { class: "status" }, tr("Saving a copy for offline use…", "Wrthi'n cadw copi i'w ddefnyddio all-lein…"))
+    : saved < total ? el("p", { class: "status" },
+      tr("✓ Every tune is saved on this device. To play them back with no signal, save the piano sounds too (2 MB): ",
+        "✓ Mae pob alaw wedi'i chadw ar y ddyfais hon. I'w chwarae heb signal, cadwch synau'r piano hefyd (2 MB): "),
+      state.savingSounds ? tr("saving…", "wrthi'n cadw…")
+        : el("button", { type: "button", class: "save-sounds", onclick: () => {
+          state.savingSounds = true;
+          askWorker("save-sounds");
+          refreshOfflineCards();
+        } }, tr("Save them now", "Eu cadw nawr")))
+    : el("p", { class: "status" }, tr("✓ Saved on this device: works without a signal", "✓ Wedi'i chadw ar y ddyfais hon: mae'n gweithio heb signal"));
   // Already opened as an app: nothing to advertise on the home page.
   card.hidden = isInstalled() && !full;
   let how;
@@ -2062,8 +2215,10 @@ function renderOffline(main) {
           el("li", {}, b("Firefox"), ": all e ddim gosod gwefannau fel apiau, ond mae'r Sesiwn yn dal i weithio all-lein yn y porwr unwaith y bydd wedi llwytho.")),
         el("h2", {}, "Sut mae'n gweithio"),
         el("p", {}, "Y tro cyntaf i chi agor y wefan, mae'n cadw copi ohoni'i hun yn dawel ar eich dyfais: pob alaw, ",
-          "synau'r piano ar gyfer chwarae, y map a'r tudalennau hyn, tua 3 MB i gyd. Wedi hynny mae'n gweithio heb ",
-          "gysylltiad, p'un a ydych chi'n ei gosod neu beidio."),
+          "y map a'r tudalennau hyn, tua 1 MB. Wedi hynny mae'n gweithio heb gysylltiad, p'un a ydych chi'n ei gosod neu beidio."),
+        el("p", {}, "Mae synau'r piano ar gyfer chwarae (2 MB arall) yn cael eu cadw i gyd ar gyfrifiadur ac yn yr ap wedi'i osod. ",
+          "Mewn porwr ar ffôn, i arbed eich data, dim ond y nodau rydych chi wedi'u chwarae sy'n cael eu cadw, nes i chi ",
+          "bwyso ", b("Eu cadw nawr"), " uchod."),
         el("p", {}, "Mae ei gosod yn rhoi ei heicon ei hun iddi ac yn ei hagor heb far cyfeiriad y porwr: sgrin lawn ",
           "ar ffôn (o'r sgrin gartref), yn ei ffenest ei hun ar gyfrifiadur (o'r Doc, y ddewislen Start neu'r bwrdd ",
           "gwaith). Ar iPhone neu iPad mae'r ap wedi'i osod yn cadw ei gopi ei hun, ar wahân i un Safari, felly ",
@@ -2089,8 +2244,11 @@ function renderOffline(main) {
         el("li", {}, b("Firefox"), ": it can't install websites as apps, but Y Sesiwn still works offline in the browser once it's loaded.")),
       el("h2", {}, "How it works"),
       el("p", {}, "The first time you open the site, it quietly saves a copy of itself on your ",
-        "device: every tune, the piano sounds for playback, the map and these pages, about 3 MB ",
-        "in all. After that it works without a connection, whether or not you install it."),
+        "device: every tune, the map and these pages, about 1 MB. After that it works without a ",
+        "connection, whether or not you install it."),
+      el("p", {}, "The piano sounds for playback (another 2 MB) are all saved on a computer and in the installed ",
+        "app. In a phone's browser, to spare your data, only the notes you've played are kept, until you press ",
+        b("Save them now"), " above."),
       el("p", {}, "Installing it gives it its own icon and opens it without the browser's address bar: ",
         "full screen on a phone (from the home screen), in its own window on a computer (from the Dock, ",
         "Start menu or desktop). On an iPhone or iPad the installed app keeps its own copy, separate ",
@@ -2221,8 +2379,8 @@ function renderSets(main) {
               draw();
             } }, tr("Delete", "Dileu")));
         }))
-      : el("p", {}, tr("No sets yet. Open a tune and press Add to set, or start one here.",
-        "Dim setiau eto. Agorwch alaw a phwyso Ychwanegu at set, neu dechreuwch un yma."));
+      : el("div", {}, emptyArt(), el("p", {}, tr("No sets yet. Open a tune and press Add to set, or start one here.",
+        "Dim setiau eto. Agorwch alaw a phwyso Ychwanegu at set, neu dechreuwch un yma.")));
     main.replaceChildren(...[
       el("h1", {}, tr("My sets", "Fy setiau")),
       el("p", { class: "lead" }, tr("Tunes to play together, in order and in the keys you choose: for a session, a workshop "
@@ -2398,8 +2556,9 @@ function renderSet(main) {
     if (Math.abs(dx) > 60 && Math.abs(dx) > 2 * Math.abs(dy)) turn(dx < 0 ? 1 : -1);
   });
   const count = el("span", { class: "caption" });
-  const empty = el("p", { class: "caption" }, tr("No tunes yet: add some with the box above, or with Add to set on a tune's page.",
-    "Dim alawon eto: ychwanegwch rai gyda'r blwch uchod, neu gyda Ychwanegu at set ar dudalen alaw."));
+  const empty = el("div", { class: "set-empty" }, emptyArt(), el("p", { class: "caption" },
+    tr("No tunes yet: add some with the box above, or with Add to set on a tune's page.",
+      "Dim alawon eto: ychwanegwch rai gyda'r blwch uchod, neu gyda Ychwanegu at set ar dudalen alaw.")));
   // Adding tunes: type part of a name and press Enter (the arrow keys pick another
   // match); the box empties and stays ready for the next one.
   const added = el("p", { class: "caption set-added", "aria-live": "polite" });
@@ -2456,12 +2615,15 @@ function renderSet(main) {
     missing ? el("p", { class: "caption" }, tr(missing === 1 ? "1 tune in this set isn't on the site any more."
       : `${missing} tunes in this set aren't on the site any more.`,
       `Dyw ${tuneCount(missing)} yn y set hon ddim ar y wefan bellach.`)) : null,
-    el("div", { class: "set-actions" }, saveButton, copy, copyList,
+    el("div", { class: "set-actions" }, saveButton, shareButton(name, shareLink), copy, copyList,
       el("button", { type: "button", onclick: () => showQr(name, shareLink(),
         tr("Scan with a phone's camera to open this set.", "Sganiwch gyda chamera ffôn i agor y set hon.")) }, tr("QR code", "Cod QR")),
       el("button", { type: "button", onclick: printAll }, tr("Print", "Argraffu")),
       el("button", { type: "button", class: "practice-toggle", onclick: () => setPractice(!document.body.classList.contains("practice")) },
-        practiceLabel(document.body.classList.contains("practice")))),
+        practiceLabel(document.body.classList.contains("practice"))),
+      musicSize(() => music.querySelectorAll(".set-paper").forEach((paper) => {
+        if (paper.drawn) { paper.drawn = false; paper.draw(); }
+      }))),
     addBox, added, empty, list,
     music, nav,
   ].filter(Boolean));
@@ -2751,6 +2913,8 @@ function buildGroups() {
   // Versions of a tune ("Rheged", "Rheged (version 2)", …) share one page.
   for (const map of [state.bySlug, state.byId, state.byCode, state.groups]) map.clear();  // built twice on a tune's page
   for (const tune of state.data.tunes) {
+    tune.title = tune.titles[0];  // left out of tunes.json, as is the melody (melodyOf)
+    tune.search = tune.titles.map(normalize);
     state.bySlug.set(tune.slug, tune);
     state.byId.set(tune.id, tune);
     state.byCode.set(tune.code, tune);
@@ -2769,7 +2933,7 @@ function buildGroups() {
 
 async function start() {
   // A tune's own page (alaw/<folder>/) comes with that tune's data, so its sheet music
-  // can be drawn at once; every other tune (tunes.json, about 200 KB) follows.
+  // can be drawn at once; every other tune (tunes.json, about 150 KB) follows.
   const own = document.getElementById("tune-data");
   state.loaded = fetch("tunes.json").then((answer) => answer.json());
   if (own) {
@@ -2794,13 +2958,24 @@ async function start() {
   });
   attachSearch(document.getElementById("search-input"), document.getElementById("suggestions"));
   if (!own) render();
+  (window.requestIdleCallback ?? setTimeout)(() => loadAbcjs().catch(() => {}));
 }
 // Offline use (sw.js): once the page has loaded, keep a copy of the whole site, so it
 // works in a pub with no signal and can be added to the home screen as an app.
+// The piano notes for playback (2 MB) are kept as they're played; all of them are saved
+// at once in the installed app or on a computer, not on a phone's data unless asked.
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+  navigator.serviceWorker.addEventListener("message", (event) => {
+    if (event.data?.sounds) { state.sounds = event.data.sounds; state.savingSounds = false; refreshOfflineCards(); }
+  });
   // The worker only becomes active once every file is saved.
-  navigator.serviceWorker.ready.then(() => { state.offlineReady = true; refreshOfflineCards(); });
+  navigator.serviceWorker.ready.then(() => {
+    state.offlineReady = true;
+    const allSounds = (isInstalled() || !isPhone()) && !navigator.connection?.saveData;
+    askWorker(allSounds ? "save-sounds" : "sounds?");
+    refreshOfflineCards();
+  });
 }
 
 start().catch((error) => {

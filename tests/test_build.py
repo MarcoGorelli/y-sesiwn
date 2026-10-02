@@ -199,7 +199,8 @@ def test_tune_pages(site):
     assert "<title>Llancesau Trefaldwyn · Y Sesiwn</title>" in page
     assert f'<meta property="og:url" content="{url}">' in page and f'<link rel="canonical" href="{url}">' in page
     assert '<meta property="og:title" content="Llancesau Trefaldwyn · Y Sesiwn">' in page
-    description = "Llancesau Trefaldwyn: a Welsh jig in D major. Sheet music, suggested chords and playback in any key, at any tempo (2 versions)."
+    description = ("Llancesau Trefaldwyn: a Welsh jig in D major. Sheet music, suggested chords and playback in any key, at any tempo (2 versions). "
+                   "Alaw werin o Gymru (jig yn D fwyaf): y sgôr, cordiau a chwarae mewn unrhyw gywair.")
     assert f'<meta name="description" content="{description}">' in page
     assert f'<meta property="og:description" content="{description}">' in page
     data = json.loads(re.search(r'<script type="application/ld\+json">(.*?)</script>', page).group(1))
@@ -213,6 +214,26 @@ def test_tune_pages(site):
     sitemap = (out / "sitemap.xml").read_text(encoding="utf-8")
     assert sitemap.count("<loc>https://ysesiwn.cymru/alaw/") == len(groups)
     assert "Sitemap: https://ysesiwn.cymru/sitemap.xml" in (out / "robots.txt").read_text(encoding="utf-8")
+    # Each tune's page links to its type's page.
+    assert '<a href="math/jig/">Welsh jigs (Jig)</a>' in (out / "alaw" / "llancesau-trefaldwyn" / "index.html").read_text(encoding="utf-8")
+
+
+def test_type_pages(site):
+    # A page per type (math/<type>/) listing its tunes, so search engines find every tune
+    # by following links; the home page links to them all.
+    out = b.OUT
+    index = json.loads((out / "tunes.json").read_text(encoding="utf-8"))
+    assert {p.name for p in (out / "math").iterdir()} == {b.type_slug(t["name"]) for t in index["types"]}
+    page = (out / "math" / "ril" / "index.html").read_text(encoding="utf-8")
+    assert "<title>Welsh reels (Rîl) · Y Sesiwn</title>" in page and '<base href="../../">' in page
+    assert '<link rel="canonical" href="https://ysesiwn.cymru/math/ril/">' in page
+    reels = {t["group"] for t in index["tunes"] if t["version"] == 1 and t["type"] == "Rîl"}
+    assert set(re.findall(r'<a href="alaw/([^/]+)/">', page)) == reels
+    assert "abcjs-basic-min.js" not in page  # no music on it
+    home = (out / "index.html").read_text(encoding="utf-8")
+    assert all(f'href="math/{b.type_slug(t["name"])}/"' in home for t in index["types"])
+    sitemap = (out / "sitemap.xml").read_text(encoding="utf-8")
+    assert sitemap.count("<loc>https://ysesiwn.cymru/math/") == len(index["types"])
 
 
 # Repeats checked against the score images (the recordings, which the ABC was made from,

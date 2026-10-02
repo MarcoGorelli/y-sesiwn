@@ -109,7 +109,9 @@ def page(browser, site):
     page = context.new_page()
     errors = []
     page.on("pageerror", lambda e: errors.append(str(e)))
-    page.goto_site = lambda path="": (page.goto(site + path), page.wait_for_function("typeof state !== 'undefined' && state.data"))[0]
+    # abcjs comes after the first page (app.js loads it when the browser is idle).
+    page.goto_site = lambda path="": (page.goto(site + path),
+                                      page.wait_for_function("typeof state !== 'undefined' && state.data && window.ABCJS"))[0]
     yield page
     context.close()
     assert not errors, f"JavaScript errors: {errors}"

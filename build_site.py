@@ -23,6 +23,7 @@ OUT = ROOT / "_site"
 REPO_URL = "https://github.com/MarcoGorelli/y-sesiwn"
 SITE_URL = "https://ysesiwn.cymru/"
 TUNE_DIR = "alaw"  # each tune's own page is alaw/<folder>/ (see tune_pages)
+TYPE_DIR = "math"  # and each type's, math/<type>/
 
 PITCH = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
 MODE_NAMES = {
@@ -225,7 +226,8 @@ def lead_index(abc: str) -> int:
 
 def melody_string(abc: str) -> str:
     """The melody for the note search, one character per note: chr(MIDI pitch + 160),
-    repeated notes collapsed. Compact in JSON, and needs no escaping."""
+    repeated notes collapsed. The app works it out itself (melodyOf in app.js); the
+    tests check the two agree for every tune."""
     out = []
     for p in melody(abc):
         c = chr(p + 160)
@@ -372,9 +374,7 @@ def tune_record(path: Path) -> dict:
         "base": base,
         "version": number,
         "source": version_label(headers),
-        "title": titles[0],
         "titles": titles,
-        "search": [normalize(t) for t in titles],
         "type": tune_type(headers),
         # modeName spells the mode out for the key menu: "EDor" -> "E Dorian".
         "key": {
@@ -386,9 +386,9 @@ def tune_record(path: Path) -> dict:
         "beatName": BEAT_NAMES.get(beat, str(beat)),
         "bpm": default_bpm(headers),
         "details": rows,
-        "melody": melody_string(abc),
-        # Where the melody string starts after the lead-in (its repeated notes are
-        # collapsed, so count the same way).
+        # Where the melody starts after the lead-in (its repeated notes are collapsed,
+        # so count the same way). The app works out the title, the search names and the
+        # melody (melody_string) itself, so they aren't in tunes.json.
         "lead": lead_index(abc),
         "gloss": gloss,
         "chords": chords_source(abc),
@@ -524,26 +524,67 @@ def main() -> None:
 NOT_OFFLINE = {"sw.js", "og-image.png", "CNAME", "sitemap.xml", "robots.txt", "404.html"}
 
 
+# Welsh for the tune pages' descriptions (app.js has the same: CY_TYPE, CY_MODES).
+CY_TYPE = {"Jig": "jig", "Polca": "polca", "Walts": "walts", "Rîl": "rîl", "Pibddawns": "pibddawns", "Ymdaith": "ymdaith",
+           "Dawns": "dawns", "Alaw": "alaw", "Cân": "cân", "Carol": "carol", "Other": "alaw"}
+CY_MODES = {"major": "fwyaf", "minor": "leiaf", "Dorian": "Doriaidd", "Phrygian": "Phrygaidd", "Lydian": "Lydaidd",
+            "Mixolydian": "Mixolydaidd", "Locrian": "Locriaidd"}
+
+esc = lambda text: html.escape(text, quote=True)
+
+
+def type_slug(name: str) -> str:
+    """A type's page, math/<slug>/: 'Rîl' -> 'ril' (app.js: typeSlug)."""
+    return slugify(name)
+
+
+def app_page(template: str, *, title: str, description: str, url: str, head: str, main: str,
+             scripts: str = "") -> str:
+    """The app (index.html) two folders down, with its own title, description and
+    address in the head, for link previews and search engines (which don't run the
+    app), and what they should read in <main> until the app takes over."""
+    def swap(page: str, old: str, new: str) -> str:
+        if page.count(old) != 1:
+            raise SystemExit(f"site/index.html: expected one {old!r} (for the tune and type pages)")
+        return page.replace(old, new)
+
+    page = template
+    page = swap(page, '<base href="./">', '<base href="../../">')
+    page = swap(page, '<script src="app.js" defer></script>', scripts + '<script src="app.js" defer></script>')
+    page = swap(page, "<title>Y Sesiwn</title>", f"<title>{esc(title)} · Y Sesiwn</title>")
+    page = re.sub(r'(<meta (?:name|property)="(?:og:)?description" content=")[^"]*"',
+                  lambda m: m.group(1) + esc(description) + '"', page)
+    page = swap(page, '<meta property="og:title" content="Y Sesiwn: Welsh folk tunes">',
+                f'<meta property="og:title" content="{esc(title)} · Y Sesiwn">')
+    page = swap(page, f'<meta property="og:url" content="{SITE_URL}">',
+                f'<meta property="og:url" content="{url}">\n  <link rel="canonical" href="{url}">' + head)
+    return swap(page, '<main id="main" tabindex="-1"><p class="loading">Loading tunes…</p></main>',
+                f'<main id="main" tabindex="-1">{main}</main>')
+
+
+def write_page(folder: Path, page: str) -> None:
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "index.html").write_text(page, encoding="utf-8")
+
+
 def tune_pages(tunes: list[dict], index: dict) -> None:
-    """A real page for each tune, at alaw/<folder>/: the app (index.html) with the tune's
-    name and description in its head, for link previews (WhatsApp, Facebook, …) and
-    search engines, which don't run the app. It also carries tunes.json cut down to this
+    """A real page for each tune, at alaw/<folder>/, and for each type of tune, at
+    math/<type>/ (see app_page). A tune's page also carries tunes.json cut down to this
     tune, so the app can draw it without waiting for every other tune (a shared link on
-    a phone, say). Also sitemap.xml and robots.txt."""
+    a phone, say); a type's lists its tunes, so search engines find every tune by
+    following links. Also sitemap.xml and robots.txt, and links to the type pages on
+    the home page, for search engines too."""
     template = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
     groups: dict[str, list[dict]] = {}
     for tune in tunes:
         groups.setdefault(tune["group"], []).append(tune)
+    for versions in groups.values():
+        versions.sort(key=lambda t: t["version"])
+    types = {t["name"]: t for t in index["types"]}
+    type_link = lambda name: f'<a href="{TYPE_DIR}/{type_slug(name)}/">{esc(type_heading(types[name]))}</a>'
 
-    def swap(page: str, old: str, new: str) -> str:
-        if page.count(old) != 1:
-            raise SystemExit(f"site/index.html: expected one {old!r} (for the tune pages)")
-        return page.replace(old, new)
-
-    esc = lambda text: html.escape(text, quote=True)
     urls = []
     for group, versions in groups.items():
-        versions.sort(key=lambda t: t["version"])
         first = versions[0]
         name = first["base"]
         url = f"{SITE_URL}{TUNE_DIR}/{group}/"
@@ -553,9 +594,12 @@ def tune_pages(tunes: list[dict], index: dict) -> None:
         key = f"{first['key']['root']} {first['key']['modeName']}" if first["key"] else None
         about = f"a{'n' if kind[0] in 'aeiou' else ''} Welsh {kind}" + (f" in {key}" if key else "")
         chords = any(v["chords"] is not None for v in versions)
+        cy_key = f" yn {first['key']['root']} {CY_MODES.get(first['key']['modeName'], first['key']['modeName'])}" if key else ""
         description = (f"{name}: {about}. Sheet music{', suggested chords' if chords else ''} "
                        f"and playback in any key, at any tempo"
-                       + (f" ({len(versions)} versions)" if len(versions) > 1 else "") + ".")
+                       + (f" ({len(versions)} versions)" if len(versions) > 1 else "") + ". "
+                       + f"Alaw werin o Gymru ({CY_TYPE[first['type']]}{cy_key}): y sgôr"
+                       + (", cordiau" if chords else "") + " a chwarae mewn unrhyw gywair.")
         data = {"@context": "https://schema.org", "@type": "MusicComposition", "name": name, "url": url,
                 "genre": "Welsh folk music"}
         if len(titles) > 1:
@@ -569,32 +613,53 @@ def tune_pages(tunes: list[dict], index: dict) -> None:
                           + (re.sub(r"^(https?://\S+)", lambda m: f'<a href="{m[1]}">{m[1]}</a>', esc(value)) if label == "Source"
                              else esc(value))
                           + "</dd>" for label, value in first["details"])
-        page = template
-        page = swap(page, '<base href="./">', '<base href="../../">')
-        page = swap(page, "<title>Y Sesiwn</title>", f"<title>{esc(name)} · Y Sesiwn</title>")
-        page = re.sub(r'(<meta (?:name|property)="(?:og:)?description" content=")[^"]*"',
-                      lambda m: m.group(1) + esc(description) + '"', page)
-        page = swap(page, '<meta property="og:title" content="Y Sesiwn: Welsh folk tunes">',
-                    f'<meta property="og:title" content="{esc(name)} · Y Sesiwn">')
-        page = swap(page, f'<meta property="og:url" content="{SITE_URL}">',
-                    f'<meta property="og:url" content="{url}">\n  <link rel="canonical" href="{url}">\n'
-                    f'  <script type="application/ld+json">{ld}</script>\n'
-                    f'  <script type="application/json" id="tune-data">{own}</script>')
-        # What shows before the app has loaded (and what search engines read).
-        page = swap(page, '<main id="main" tabindex="-1"><p class="loading">Loading tunes…</p></main>',
-                    f'<main id="main" tabindex="-1"><h1>{esc(name)}</h1>'
-                    + (f'<p class="caption">Also known as: {esc(", ".join(titles[1:]))}</p>' if len(titles) > 1 else "")
-                    + f"<p>{esc(description)}</p><dl>{details}</dl>"
-                    + f'<pre>{esc(first["abc"])}</pre><p class="loading">Loading the sheet music…</p></main>')
-        folder = OUT / TUNE_DIR / group
-        folder.mkdir(parents=True, exist_ok=True)
-        (folder / "index.html").write_text(page, encoding="utf-8")
+        write_page(OUT / TUNE_DIR / group, app_page(
+            template, title=name, description=description, url=url,
+            head=f'\n  <script type="application/ld+json">{ld}</script>\n'
+                 f'  <script type="application/json" id="tune-data">{own}</script>',
+            scripts='<script src="static/abcjs/abcjs-basic-min.js" defer></script>\n  ',
+            main=f"<h1>{esc(name)}</h1>"
+                 + (f'<p class="caption">Also known as: {esc(", ".join(titles[1:]))}</p>' if len(titles) > 1 else "")
+                 + f"<p>{esc(description)}</p><dl>{details}</dl>"
+                 + f'<pre>{esc(first["abc"])}</pre><p>{type_link(first["type"])}</p>'
+                 + '<p class="loading">Loading the sheet music…</p>'))
+
+    # A page for each type: its tunes, A to Z.
+    for name, kind in types.items():
+        listed = sorted((v[0] for v in groups.values() if v[0]["type"] == name), key=lambda t: normalize(t["base"]))
+        url = f"{SITE_URL}{TYPE_DIR}/{type_slug(name)}/"
+        urls.append(url)
+        heading = type_heading(kind)
+        cy_kind = "alaw arall" if name == "Other" else CY_TYPE[name]
+        some = ", ".join(t["base"] for t in listed[:4])
+        plural = "other Welsh tunes" if name == "Other" else f"Welsh {kind['english']}"
+        description = (f"{len(listed)} {plural}, each with its sheet music and playback in "
+                       f"any key: {some} and more. {len(listed)} {cy_kind} o Gymru, gyda'r sgôr a chwarae mewn unrhyw gywair.")
+        write_page(OUT / TYPE_DIR / type_slug(name), app_page(
+            template, title=heading, description=description, url=url, head="",
+            main=f"<h1>{esc(heading)}</h1><p>{esc(description)}</p><ul>"
+                 + "".join(f'<li><a href="{TUNE_DIR}/{t["group"]}/">{esc(t["base"])}</a></li>' for t in listed)
+                 + "</ul>"))
+
+    # The home page links to the type pages until the app takes over.
+    home = OUT / "index.html"
+    nav = "".join(f"<li>{type_link(name)}</li>" for name in types)
+    page = home.read_text(encoding="utf-8")
+    old = '<p class="loading">Loading tunes…</p>'
+    if page.count(old) != 1:
+        raise SystemExit(f"site/index.html: expected one {old!r}")
+    home.write_text(page.replace(old, old + f'<ul class="type-links">{nav}</ul>'), encoding="utf-8")
 
     pages = [SITE_URL] + [f"{SITE_URL}?page={p}" for p in ("browse", "notes", "map", "about", "add", "fix", "offline", "contact")]
     (OUT / "sitemap.xml").write_text(
         '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
         + "".join(f"  <url><loc>{esc(u)}</loc></url>\n" for u in pages + urls) + "</urlset>\n", encoding="utf-8")
     (OUT / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {SITE_URL}sitemap.xml\n", encoding="utf-8")
+
+
+def type_heading(kind: dict) -> str:
+    """'Welsh jigs (Jig)': the English for search engines, and the site's own name for it."""
+    return "Other Welsh tunes" if kind["name"] == "Other" else f"Welsh {kind['english']} ({kind['name']})"
 
 
 def write_service_worker() -> None:
@@ -606,9 +671,9 @@ def write_service_worker() -> None:
             h.update(f.relative_to(OUT).as_posix().encode() + f.read_bytes())
         return h.hexdigest()[:12]
 
-    # The tunes' own pages aren't kept: offline, sw.js answers them with the app itself.
+    # The tunes' and types' own pages aren't kept: offline, sw.js answers them with the app itself.
     files = sorted(f for f in OUT.rglob("*") if f.is_file() and f.name not in NOT_OFFLINE
-                   and not f.is_relative_to(OUT / TUNE_DIR))
+                   and not f.is_relative_to(OUT / TUNE_DIR) and not f.is_relative_to(OUT / TYPE_DIR))
     sounds = [f for f in files if f.is_relative_to(OUT / "static" / "soundfont")]
     site = [f for f in files if f not in sounds]
     urls = lambda fs: json.dumps([f.relative_to(OUT).as_posix() for f in fs])

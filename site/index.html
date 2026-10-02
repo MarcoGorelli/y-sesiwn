@@ -30,7 +30,8 @@
   <link rel="stylesheet" href="style.css">
   <!-- The tunes, fetched by app.js: start now, alongside the scripts, not after them. -->
   <link rel="preload" href="tunes.json" as="fetch" crossorigin>
-  <script src="static/abcjs/abcjs-basic-min.js" defer></script>
+  <!-- abcjs (the sheet music) is loaded by app.js when a page needs it; a tune's own
+       page (build_site.py) loads it here, so its music is drawn at once. -->
   <script src="app.js" defer></script>
 </head>
 <body>

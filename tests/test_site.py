@@ -822,6 +822,25 @@ def test_works_offline(browser, site):
     context.close()
 
 
+@pytest.mark.parametrize("phone", [False, True])
+def test_piano_sounds_offline(browser, site, phone):
+    # On a computer every piano note is saved for offline playback; on a phone's data,
+    # only when asked (the offline card's Save them now).
+    android = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Mobile Safari/537.36"
+    context = browser.new_context(**({"user_agent": android, "is_mobile": True, "has_touch": True,
+                                       "viewport": {"width": 390, "height": 844}} if phone else {}))
+    page = context.new_page()
+    page.goto(site + "?page=offline")
+    page.wait_for_function("state.sounds !== null", timeout=30000)
+    all_saved = "state.sounds.saved === state.sounds.total"
+    if phone:
+        assert not page.evaluate(all_saved)
+        page.click("button.save-sounds")
+    page.wait_for_function(all_saved, timeout=30000)
+    assert "✓ Saved on this device" in page.inner_text(".offline-card")
+    context.close()
+
+
 def test_new_version_straight_away(browser, site):
     # Someone who has used the site before opens a link after an update: online, they get
     # the new version at once, not their saved copy (which may not know a new kind of
@@ -1382,7 +1401,7 @@ def test_score_and_player_names(page):
     assert repeat.get_attribute("aria-pressed") == "false"
     repeat.click()  # abcjs resumes the audio context first, so the toggle lands a moment later
     page.wait_for_function("document.querySelector('.abcjs-midi-loop').getAttribute('aria-pressed') === 'true'")
-    assert page.get_attribute(".abcjs-midi-start", "aria-label") == "Play / pause"
+    assert page.get_attribute(".abcjs-midi-start", "aria-label") == "Play / pause (space bar)"
     page.click(".lang-switch [data-lang=cy]")
     page.wait_for_function("document.querySelector('.abcjs-midi-loop').getAttribute('aria-label') === 'Ailadrodd'")
     assert label().startswith('Sgôr "Glandyfi": A fwyaf')
@@ -1411,6 +1430,93 @@ def test_accessibility(browser, site, scheme, width):
     context.close()
     assert not problems, "\n".join(problems)
 
+
+
+def test_melody_and_search_names_as_built(page):
+    # tunes.json leaves out each tune's melody and search names: the app works them out
+    # from the ABC and titles, and should get what build_site.py would.
+    import build_site as b
+    page.goto_site()
+    page.wait_for_function("state.complete")
+    got = page.evaluate("""() => state.data.tunes.map((t) => [t.slug,
+      melodyOf(t).map((p) => String.fromCharCode(p + 160)).join(""), t.search])""")
+    wrong = []
+    for slug, melody, search in got:
+        abc = (b.ROOT / "tunes" / slug / "tune.abc").read_text(encoding="utf-8")
+        titles = b.parse_headers(abc).get("T") or [slug]
+        if melody != b.melody_string(abc) or search != [b.normalize(t) for t in titles]:
+            wrong.append(slug)
+    assert len(got) == len(list(b.ROOT.glob("tunes/*/tune.abc"))) and not wrong, wrong
+
+
+def test_type_page(page, site):
+    # A type's own page (math/<type>/) opens the browse page with that type chosen, at
+    # its own address; choosing another moves to the browse page's.
+    page.goto_site("math/pibddawns/")
+    page.wait_for_selector(".tune-list li")
+    assert page.get_attribute(".pills [data-type='Pibddawns']", "aria-pressed") == "true"
+    assert page.url == site + "math/pibddawns/"
+    page.click(".pills [data-type='Jig']")
+    assert page.url == site + "?page=browse&type=Jig"
+    page.click(".tune-list a >> nth=0")
+    page.wait_for_selector(".score .abcjs-staff")
+
+
+def test_home_page_before_abcjs(browser, site):
+    # The home page doesn't wait for abcjs (the sheet music), which follows it.
+    context = browser.new_context(service_workers="block")
+    page = context.new_page()
+    page.route("**/abcjs-basic-min.js", lambda route: None)  # never answers
+    page.goto(site)
+    page.wait_for_selector(".features")
+    assert page.evaluate("typeof ABCJS") == "undefined"
+    context.close()
+
+
+def test_music_size(page):
+    # + makes the music bigger (laid out in shorter lines), − smaller; kept on this device.
+    page.goto_site("alaw/a-honeyed-lip/")
+    page.wait_for_selector(".score .abcjs-staff")
+    staves = "document.querySelectorAll('.score .abcjs-staff').length"
+    assert page.evaluate(staves) == 3
+    page.click("[aria-label='Bigger music']")
+    page.click("[aria-label='Bigger music']")
+    assert page.evaluate(staves) > 3
+    page.reload()
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.evaluate(staves) > 3
+    for _ in range(4):
+        if page.is_enabled("[aria-label='Smaller music']"):
+            page.click("[aria-label='Smaller music']")
+    assert page.is_disabled("[aria-label='Smaller music']")
+    assert page.evaluate("JSON.parse(document.querySelector('.score [data-layout]').dataset.layout).staffwidth") > 740  # longer lines
+
+
+def test_space_bar_plays(page):
+    # Space plays or pauses, unless a control has the focus (then it's the control's).
+    page.goto_site("?tune=glandyfi")
+    page.wait_for_selector(".score .abcjs-midi-start")
+    page.evaluate("window.presses = 0; document.querySelector('.score .abcjs-midi-start').addEventListener('click', () => presses++)")
+    page.evaluate("document.activeElement.blur()")
+    page.keyboard.press(" ")
+    assert page.evaluate("presses") == 1
+    page.focus("#key-select")
+    page.keyboard.press(" ")
+    assert page.evaluate("presses") == 1
+
+
+def test_share_button(browser, site):
+    # Where the device has a share sheet, Share opens it with the tune's own address.
+    context = browser.new_context(service_workers="block")
+    page = context.new_page()
+    page.add_init_script("navigator.share = async (data) => { window.shared = data; }")
+    page.goto(site + "?tune=glandyfi")
+    page.click(".tune-actions .share")
+    assert page.evaluate("window.shared") == {"title": "Glandyfi", "url": "https://ysesiwn.cymru/alaw/glandyfi/"}
+    page.goto(site + "?set=3V~h5A&n=Nos%20Iau")
+    page.click(".set-actions .share")
+    assert page.evaluate("window.shared.title") == "Nos Iau" and "?set=3V~h5A" in page.evaluate("window.shared.url")
+    context.close()
 
 
 def test_tablature_choices(page):

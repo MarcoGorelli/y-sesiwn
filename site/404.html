@@ -14,12 +14,18 @@
   </script>
   <style>
     :root { color-scheme: light dark; }
-    body { font: 1.1rem/1.5 system-ui, sans-serif; max-width: 36rem; margin: 3rem auto; padding: 0 1rem; background: Canvas; color: CanvasText; }
+    html { background: Canvas url("/carthen.svg") repeat-x left top / auto 14px; }
+    body { font: 1.1rem/1.5 system-ui, sans-serif; max-width: 36rem; margin: 3rem auto; padding: 0 1rem; color: CanvasText; }
+    .art::after { content: ""; display: block; width: 6rem; height: 7px; margin-top: .5rem;
+      background: url("/carthen.svg") repeat-x left center / auto 7px; }
+    a { color: LinkText; }
   </style>
 </head>
 <body>
+  <div class="art" aria-hidden="true"><img src="/static/harp.svg" alt="" width="72" height="72"></div>
   <h1>Page not found · Tudalen heb ei chanfod</h1>
   <p>There's nothing at this address. · Does dim byd yn y cyfeiriad hwn.</p>
   <p><a href="/">Y Sesiwn: Welsh folk tunes · alawon gwerin Cymru</a></p>
+  <p><a href="/?page=browse">Browse every tune · Pori pob alaw</a></p>
 </body>
 </html>

@@ -13,11 +13,32 @@ self.addEventListener("install", (event) => {
     // cache: "reload" skips the browser's HTTP cache, which may still hold the old files.
     const fresh = (files) => files.map((f) => new Request(f, { cache: "reload" }));
     await (await caches.open(SITE)).addAll(fresh(SITE_FILES));
-    const sounds = await caches.open(SOUNDS);
-    const have = new Set((await sounds.keys()).map((r) => r.url));
-    await sounds.addAll(fresh(SOUND_FILES.filter((f) => !have.has(new URL(f, location).href))));
     await self.skipWaiting();
   })());
+});
+
+// The piano notes aren't all fetched at first (2 MB, on a phone's data): each is kept
+// the first time it's played (see "fetch"), and the app asks for the rest, "save-sounds",
+// where data is cheap or the site is installed, or when the reader asks. "sounds?" asks
+// how many are kept; either way the answer is { sounds: { saved, total } }.
+async function soundsMissing() {
+  const have = new Set((await (await caches.open(SOUNDS)).keys()).map((r) => r.url));
+  return SOUND_FILES.filter((f) => !have.has(new URL(f, location).href));
+}
+
+self.addEventListener("message", (event) => {
+  const answer = async () => {
+    const missing = await soundsMissing();
+    event.source?.postMessage({ sounds: { saved: SOUND_FILES.length - missing.length, total: SOUND_FILES.length } });
+  };
+  if (event.data === "sounds?") event.waitUntil(answer());
+  if (event.data === "save-sounds") {
+    event.waitUntil((async () => {
+      const missing = await soundsMissing();
+      await (await caches.open(SOUNDS)).addAll(missing.map((f) => new Request(f, { cache: "reload" }))).catch(() => {});
+      await answer();
+    })());
+  }
 });
 
 self.addEventListener("activate", (event) => {
@@ -34,7 +55,8 @@ self.addEventListener("activate", (event) => {
 // might not know a newer kind of link: a set's, say). Offline or on a very slow
 // connection, it's the saved copy. "no-cache" asks the server whether the file has
 // changed, past the browser's own short-term cache (GitHub Pages: 10 minutes).
-// Everything else (the piano notes, the map, the libraries) is used from the copy.
+// Everything else (the piano notes, the map, the libraries) is used from the copy; a
+// piano note not kept yet is fetched, and kept.
 const FRESH_WAIT = 2000;
 const FRESH = new Set(["", "index.html", "app.js", "style.css", "tunes.json"]);
 
@@ -56,6 +78,16 @@ self.addEventListener("fetch", (event) => {
   const path = url.pathname.slice(new URL(self.registration.scope).pathname.length);
   if (request.mode !== "navigate") {
     const saved = () => caches.match(request);
+    if (path.startsWith("static/soundfont/")) {
+      event.respondWith((async () => {
+        const kept = await saved();
+        if (kept) return kept;
+        const answer = await fetch(request);
+        if (answer.ok) await (await caches.open(SOUNDS)).put(request, answer.clone());
+        return answer;
+      })());
+      return;
+    }
     event.respondWith(FRESH.has(path) ? freshOrSaved(request.url, saved) : (async () => (await saved()) ?? fetch(request))());
     return;
   }

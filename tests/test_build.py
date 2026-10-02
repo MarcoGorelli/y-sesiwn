@@ -67,6 +67,15 @@ def test_types_and_tempos():
     assert b.tune_type(read("glandyfi")) and b.default_bpm(read("llancesau-trefaldwyn")) == 112  # a jig
 
 
+def test_no_empty_details():
+    # A blank header line (R: with nothing after it) isn't a row of the Details box.
+    read = lambda slug: b.parse_headers((b.ROOT / "tunes" / slug / "tune.abc").read_text(encoding="utf-8"))
+    assert "Tune type" not in [label for label, _ in b.details(read("a-honeyed-lip"))[0]]
+    for path in TUNES:
+        rows, _ = b.details(b.parse_headers(path.read_text(encoding="utf-8")))
+        assert all(value.strip() for _, value in rows), path.parent.name
+
+
 def test_places():
     groups = {b.tune_record(p)["group"] for p in TUNES}
     places = b.places(groups)  # stops with an error if a tune doesn't exist

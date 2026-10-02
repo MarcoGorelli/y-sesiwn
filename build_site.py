@@ -309,7 +309,7 @@ def details(headers: dict[str, list[str]]) -> tuple[list[list[str]], list[list[s
     """(label, value) rows for the Details box, and glosses for Welsh credit words."""
     rows, gloss = [], {}
     for field, label in HEADER_LABELS.items():
-        values = headers.get(field)
+        values = [v for v in headers.get(field, []) if v.strip()]  # an empty R: says nothing
         if not values:
             continue
         if field == "K":

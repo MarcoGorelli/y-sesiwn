@@ -27,7 +27,7 @@
     --link: #6fb1ff;
     --brand: #ee4a66;
     --land: #2f3740;
-    /* --paper stays cream: the sheet music reads best on paper colours */
+    --paper: #ddd6c6;         /* still paper for the sheet music, but not glaring at night */
   }
 }
 
@@ -84,6 +84,7 @@ main:focus { outline: none; }  /* focused only by the skip link, not something t
 .sidebar-actions { display: grid; gap: .5rem; }
 .menu-button { display: none; }  /* phones only */
 body[data-page="home"] .topbar .search { display: none; }  /* the home page has its own, bigger one */
+body[data-page="home"] #surprise-sidebar { display: none; }  /* and its own Surprise me */
 .lang-switch { display: flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; align-self: flex-start; font-size: .85rem; }
 .lang-switch button { border: 0; border-radius: 0; padding: .25rem .7rem; }
 .lang-switch button + button { border-left: 1px solid var(--border); }
@@ -158,6 +159,9 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .pills button[aria-pressed="true"] { border-color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); font-weight: 600; }
 
 /* "What you can do": the features, two columns on wide screens */
+details.features { margin: 2rem 0 .75rem; }
+details.features[open] > summary { margin-bottom: .75rem; }
+.features > summary .section-heading { margin: 0; }
 .features ul { columns: 2 22rem; column-gap: 2.5rem; margin: 0; padding-left: 1.2rem; max-width: 60rem; }
 .features li { break-inside: avoid; margin-bottom: .45rem; }
 .features li::marker { color: var(--accent); }
@@ -265,11 +269,20 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .control select { padding: .4rem .6rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); }
 .control.tempo { flex: 1 1 18rem; max-width: 32rem; }
 .control input[type="range"] { width: 100%; height: 2rem; accent-color: var(--accent); }
-.tune-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-left: auto; }
-/* The practice row: loop a part, speed up, count-in, click, tablature */
+.controls .practice-toggle { margin-left: auto; }
+.tune-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+/* Folding sections (details.fold): a red arrow that turns when open */
+.fold > summary { cursor: pointer; list-style: none; display: flex; align-items: baseline; gap: .5rem; }
+.fold > summary::-webkit-details-marker { display: none; }
+.fold > summary::before { content: "▸"; color: var(--accent); transition: transform .15s; }
+.fold[open] > summary::before { transform: rotate(90deg); }
+/* The practice tools under the music: loop a part, speed up, count-in, click, tablature */
+.practice-tools { margin-top: .75rem; border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .9rem; background: var(--card-bg); }
+.practice-tools > summary { padding: .2rem 0; }
+.practice-tools .caption { font-size: .85rem; }
 .practice-row {
   display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1.5rem;
-  margin: -.4rem 0 1.25rem; font-size: .9rem;
+  margin: .6rem 0 .3rem; font-size: .9rem;
 }
 .practice-row .control { display: flex; align-items: center; gap: .45rem; }
 .practice-row .control label { margin: 0; font-size: .9rem; }
@@ -390,7 +403,7 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .chord-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1.5rem; margin: 1rem 0 .6rem; font-size: .9rem; }
 .score > .playback { margin: .5rem 0 .8rem; font-size: .9rem;
   /* on the cream paper, so in its light-mode colours even in dark mode */
-  --text: #262b31; --muted: #5f6973; --card-bg: #ffffff; --border: #dcdfe3; color: var(--text); }
+  --text: #262b31; --muted: #505963; --card-bg: #ffffff; --border: #dcdfe3; color: var(--text); }  /* muted: 4.5:1 on either paper */
 .playback { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .5rem; min-width: 0; }
 .playback .label { color: var(--muted); }
 /* Three buttons in a row, one pressed: which parts playback plays */
@@ -468,14 +481,14 @@ body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 
   .sidebar.menu-open .menu-button::after { content: " ▴"; }
   .sidebar-links { display: none; flex: 1 0 100%; flex-wrap: wrap; gap: .35rem 1rem; padding-top: .5rem; font-size: .95rem; }
   .sidebar.menu-open .sidebar-links { display: flex; }
-  /* Practising on a phone: loop, count-in, click and tablature in practice mode. */
-  .practice-row { display: none; }
-  body.practice .practice-row { display: flex; }
+  /* Key and Practice mode, then tempo and swing: the music starts on the first screen. */
+  .controls { gap: .75rem 1.25rem; margin-bottom: 1rem; }
+  .controls > .tempo, .controls > .swing { order: 1; }
+  .control.tempo { flex: 1 1 12rem; }
   main { padding: 1.5rem 1rem 3rem; }
   .site-footer { padding: 22px 1rem 1.25rem; }
   .tune-layout, .map-layout { grid-template-columns: 1fr; }
   .map-layout figure { position: static; max-width: 22rem; margin: 0 auto; }
-  .tune-actions { margin-left: 0; }
 }
 /* Language, Surprise me and Menu on one row, even on a small phone */
 @media (max-width: 420px) {
@@ -488,12 +501,12 @@ body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 
   .lang-switch button { padding: .25rem .4rem; }
   .sidebar-actions { gap: .35rem; }
   .sidebar-actions button { padding: .3rem .5rem; font-size: .85rem; }
-  .tune-actions button { padding: .4rem .6rem; }  /* Print, QR code and Practice mode on one row */
+  .tune-actions button { padding: .4rem .6rem; }  /* Print, QR code and Add to set on one row */
 }
 /* Printing a tune: just the sheet music (in the key chosen on the page), full width. */
 @media print {
   body { display: block; padding: 0; background: none; color: #000; }
-  .nav, .site-footer, .controls, .practice-row, .versions, .aka, .tune-side, .audio, .score > .playback, .card.chords, main > h1 { display: none !important; }
+  .nav, .site-footer, .controls, .practice-tools, .tune-actions, .versions, .aka, .tune-side, .audio, .score > .playback, .card.chords, main > h1 { display: none !important; }
   main { padding: 0; max-width: none; animation: none; }
   .tune-layout { display: block; }
   .score { border: none; box-shadow: none; background: none; padding: 0; }

@@ -39,7 +39,7 @@ const state = {
   autoListen: false,    // start listening when the notes page opens (from the home page)
   docs: new Map(),      // markdown files, fetched on first use
   chords: { onScore: false, play: "tune" },  // the chord box's settings, for every tune; play: tune, both or chords
-  practice: { countIn: false, click: false, tab: "none" },  // the practice row, for every tune
+  practice: { countIn: false, click: false, tab: "none", open: null },  // the practice tools, for every tune (open: folded or not)
   lang: savedLang(),    // "cy" or "en", for the whole site (tune names and the tunes' own notes stay as written)
 };
 
@@ -962,9 +962,12 @@ function features() {
   ];
   // [["words"]] is the bold lead-in (possibly a link); plain strings and links follow it.
   const bold = (part) => Array.isArray(part) ? el("strong", {}, part) : part;
-  return el("section", { class: "features" },
-    el("h2", { class: "section-heading" }, tr("What you can do", "Beth allwch chi ei wneud")),
-    el("ul", {}, items.map((parts) => el("li", {}, parts.map(bold)))));
+  const heading = el("h2", { class: "section-heading" }, tr("What you can do", "Beth allwch chi ei wneud"));
+  const list = el("ul", {}, items.map((parts) => el("li", {}, parts.map(bold))));
+  // On a phone it's folded away, so the install card below isn't screens down the page.
+  return matchMedia("(max-width: 800px)").matches
+    ? el("details", { class: "features fold" }, el("summary", {}, heading), list)
+    : el("section", { class: "features" }, heading, list);
 }
 
 function heroSearch(count) {
@@ -1175,6 +1178,23 @@ function stopPlayback() {
   if (state.synth) { state.synth.destroy(); state.synth = null; }
 }
 
+// On a narrow screen a tune's own lines (four bars or so, as in the books) shrink to fit
+// it, too small to read; there abcjs lays the music out again in shorter lines, at a
+// readable size. Wider screens keep the tune's own line breaks.
+const READABLE = 0.75;  // the music's size on a phone (1 is abcjs's own)
+function scoreLayout(paper) {
+  const width = paper.clientWidth;
+  if (!width || width / 740 >= 0.6) return {};  // 740: abcjs's own line length
+  return { staffwidth: Math.round(width / READABLE / 20) * 20,
+    wrap: { minSpacing: 1.8, maxSpacing: 2.7, preferredMeasuresPerLine: width < 400 ? 2 : 3 } };
+}
+
+// Laying it out, abcjs measures the music in a 1px svg it leaves on the page, as an
+// image without a name: screen readers can skip it.
+function hideMeasuring() {
+  document.querySelectorAll("body > svg[role='img']").forEach((s) => s.setAttribute("aria-hidden", "true"));
+}
+
 function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   stopPlayback();
   const { transpose, bpm } = state.settings.get(tune.slug);
@@ -1188,8 +1208,11 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   const tab = TABS[state.practice.tab];
   const whistle = WHISTLES[state.practice.tab];
   if (whistle) abc = withFingerings(abc, whistle);
+  const layout = scoreLayout(paper);
+  paper.dataset.layout = JSON.stringify(layout);
   const visualObj = ABCJS.renderAbc(paper, accompaniment(abc, state.chords.play === "both"),
-    { responsive: "resize", add_classes: true, paddingtop: 0, ...(tab ? { tablature: [{ ...tab, label: tab.label() }] } : {}) })[0];
+    { responsive: "resize", add_classes: true, paddingtop: 0, ...layout, ...(tab ? { tablature: [{ ...tab, label: tab.label() }] } : {}) })[0];
+  hideMeasuring();
   const { num, den } = visualObj.getMeterFraction();
   nameScore(paper, [
     tune.key && `${NOTES[(tune.key.pitch + transpose + 12) % 12]} ${modeName(tune.key.modeName)}`,
@@ -1538,8 +1561,10 @@ function renderTune(main, group, tune) {
       "Chwarae'r cwafers yn hir-byr, fel y chwaraeir pibddawnsiau") },
       el("input", { type: "checkbox", checked: settings.swing, onchange: (e) => { settings.swing = e.target.checked; redraw(); } }),
       tr("Swing", "Swing")) : null,
-    el("div", { class: "tune-actions" },
-      printButton(tune, paper, settings), qrButton(group, tune), addToSetButton(tune, settings), practice)].filter(Boolean));  // no swing switch: nothing (not the text "null")
+    practice].filter(Boolean));  // no swing switch: nothing (not the text "null")
+  // Under the music: printing, saving and sharing it.
+  const actions = el("div", { class: "tune-actions" },
+    printButton(tune, paper, settings), qrButton(group, tune), addToSetButton(tune, settings));
 
   const shownElsewhere = new Set(["Key", "Composer / arranger"]);  // the key menu; the score's credit
   const details = el("dl", {}, tune.details.filter(([label]) => !shownElsewhere.has(label)).map(([label, value]) =>
@@ -1582,6 +1607,12 @@ function renderTune(main, group, tune) {
     toggle(tr("Click", "Clic"), state.practice.click, (on) => { state.practice.click = on; }),
     el("div", { class: "control" }, el("label", { for: "tab-select" }, tr("Tablature", "Tablatur")), tabSelect),
     whistleKey);
+  // Folded away on a phone (the music comes first), open on wider screens; then as left.
+  const practiceTools = el("details", { class: "practice-tools fold", open: state.practice.open ?? !matchMedia("(max-width: 800px)").matches,
+    ontoggle: (e) => { state.practice.open = e.target.open; } },
+    el("summary", {}, el("span", {}, tr("Practice tools", "Offer ymarfer"),
+      el("span", { class: "caption" }, tr(" · loop a part, count-in, click, tablature", " · ailadrodd rhan, cyfrif i mewn, clic, tablatur")))),
+    practiceRow);
   const fillLoops = () => {
     loopSelect.replaceChildren(el("option", { value: -1 }, tr("The whole tune", "Yr alaw gyfan")),
       ...drawn.parts.map((p, i) => el("option", { value: i, selected: settings.loop === i }, tr(`Part ${p.label}`, `Rhan ${p.label}`))));
@@ -1599,9 +1630,9 @@ function renderTune(main, group, tune) {
     group.titles.length > 1 ? el("p", { class: "caption aka" }, `${tr("Also known as", "Enwau eraill")}: ${group.titles.slice(1).join(", ")}`) : null,
     versions,
     controls,
-    practiceRow,
     el("div", { class: "tune-layout" },
-      el("div", { class: "tune-main" }, el("div", { class: "score" }, audio, chordPlayback(tune, () => redraw()), paper), chords),
+      el("div", { class: "tune-main" }, el("div", { class: "score" }, audio, chordPlayback(tune, () => redraw()), paper),
+        practiceTools, actions, chords),
       el("div", { class: "tune-side" },
         el("section", { class: "card" }, el("h2", {}, tr("Details", "Manylion")), details, gloss || null),
         placeCard(group),
@@ -1610,6 +1641,13 @@ function renderTune(main, group, tune) {
   ].filter(Boolean));
   redraw();
   fillLoops();
+  // A phone turned on its side, or a window made narrower: lay the music out again
+  // when its lines would change.
+  const resized = new ResizeObserver(() => {
+    if (!paper.isConnected) resized.disconnect();
+    else if (JSON.stringify(scoreLayout(paper)) !== paper.dataset.layout) redraw();
+  });
+  resized.observe(paper);
 }
 
 // ---- QR code: this tune's link, for someone across the table to scan ----------------------
@@ -1677,6 +1715,7 @@ function setPractice(on) {
   document.body.classList.toggle("practice", on);
   const button = document.querySelector(".practice-toggle");
   if (button) button.textContent = practiceLabel(on);
+  if (on) document.querySelector(".practice-tools")?.setAttribute("open", "");
   if (on && document.fullscreenEnabled) document.documentElement.requestFullscreen().catch(() => {});
   if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {});
 }
@@ -2225,7 +2264,8 @@ function setScore(tune, key) {
     // The numbered heading above says which tune it is, so no title (T:) on the music.
     let abc = setTempo(stripFields(tune.abc, "SZBNAHT"), tune.beat, tune.bpm);
     if (key) abc = ABCJS.strTranspose(abc, ABCJS.renderAbc("*", abc), semitones(tune, key));
-    ABCJS.renderAbc(paper, abc, { responsive: "resize", add_classes: true, paddingtop: 0 });
+    ABCJS.renderAbc(paper, abc, { responsive: "resize", add_classes: true, paddingtop: 0, ...scoreLayout(paper) });
+    hideMeasuring();
     nameScore(paper);
   };
   return paper;

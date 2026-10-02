@@ -465,7 +465,7 @@ def test_map(page):
 
 def test_phone_menu(browser, site):
     # On a phone the sidebar's links fold away behind Menu, and the music starts on the
-    # first screen; loop, count-in, click and tablature are in practice mode.
+    # first screen; loop, count-in, click and tablature are folded away under it.
     context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True,
                                   service_workers="block")
     page = context.new_page()
@@ -481,6 +481,53 @@ def test_phone_menu(browser, site):
     page.click(".sidebar-links a[href='?page=map']")  # opening a page closes the menu
     page.wait_for_selector(".wales-map circle")
     assert not page.locator(".sidebar-links").is_visible()
+    context.close()
+
+
+def test_music_readable_on_a_phone(browser, site):
+    # On a phone the music is laid out again in shorter lines, at a readable size, not
+    # the tune's own lines shrunk to fit; turned on its side, it's laid out again.
+    context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True,
+                                  service_workers="block")
+    page = context.new_page()
+    page.goto(site + "alaw/a-honeyed-lip/")
+    page.wait_for_selector(".score .abcjs-staff")
+    scale = "(() => { const s = document.querySelector('.score [data-layout] svg'); return s.getBoundingClientRect().width / s.viewBox.baseVal.width; })()"
+    assert page.evaluate(scale) > 0.65
+    assert page.locator(".score .abcjs-staff").count() > 3  # three lines in the tune's own layout
+    page.set_viewport_size({"width": 1300, "height": 800})
+    page.wait_for_function("document.querySelectorAll('.score .abcjs-staff').length === 3")
+    context.close()
+
+
+def test_practice_tools_folded_on_a_phone(browser, site, page):
+    page.goto_site("?tune=glandyfi")
+    assert page.locator("#loop-select").is_visible()  # open on a wide screen
+    context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True,
+                                  service_workers="block")
+    phone = context.new_page()
+    phone.goto(site + "alaw/glandyfi/")
+    phone.wait_for_selector(".score .abcjs-staff")
+    assert not phone.locator("#loop-select").is_visible()
+    phone.click(".practice-tools summary")
+    assert phone.locator("#loop-select").is_visible()
+    phone.click(".brand")
+    phone.go_back()
+    phone.wait_for_selector(".score .abcjs-staff")
+    assert phone.locator("#loop-select").is_visible()  # left open
+    context.close()
+
+
+def test_home_page_on_a_phone(browser, site):
+    # "What you can do" is folded away, so the install card isn't screens down the page.
+    context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True,
+                                  service_workers="block")
+    page = context.new_page()
+    page.goto(site)
+    page.wait_for_selector(".features")
+    assert not page.locator(".features li").first.is_visible()
+    page.click(".features summary")
+    assert page.locator(".features li").first.is_visible()
     context.close()
 
 
@@ -626,6 +673,8 @@ def test_home_page(page):
     features = page.locator(".features li").all_inner_texts()
     assert len(features) == 8 and any("Accompaniment" in f for f in features)
     assert page.locator(".offline-card").is_visible()
+    # One Surprise me: the home page's own, not the sidebar's too.
+    assert page.locator(".home-actions button:has-text('Surprise me')").is_visible() and not page.locator("#surprise-sidebar").is_visible()
     # One search box on the home page: its own big one, not the sidebar's too.
     assert page.locator("#hero-search").is_visible() and not page.locator("#search-input").is_visible()
     # Browsing every tune has its own page; the home page links to it.
@@ -927,10 +976,10 @@ def test_count_in_and_click(page):
       const [melody, , drums] = state.synth.visualObj.setUpAudio(p).tracks.map((t) => t.filter((e) => e.cmd === 'note'));
       return { melodyStarts: melody[0].start, drums: drums ? drums.length : 0 }; }"""
     assert page.evaluate(drum)["drums"] == 0
-    page.check("text=Count-in")
+    page.check(".practice-row label:has-text('Count-in')")
     count_in = page.evaluate(drum)
     assert count_in["melodyStarts"] > 0 and count_in["drums"] == 2  # one 6/8 bar: two dotted-crotchet clicks
-    page.check("text=Click")
+    page.check(".practice-row label:has-text('Click')")
     assert page.evaluate(drum)["drums"] > 50  # a click on every beat of the tune
 
 

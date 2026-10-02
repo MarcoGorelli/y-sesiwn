@@ -723,8 +723,8 @@ def sessions_page(template: str, sessions: list[dict]) -> None:
     (OUT / "sessions.json").write_text(json.dumps({"sessions": sessions}, ensure_ascii=False, separators=(",", ":")),
                                        encoding="utf-8")
     towns = sorted({s["town"] for s in sessions}, key=normalize)
-    description = ("Active folk sessions where the music is predominantly Welsh, in " + ", ".join(towns)
-                   + ": their days and times, on a map. Sesiynau cyfredol lle mae'r gerddoriaeth yn Gymreig gan fwyaf.")
+    description = ("Active folk sessions with a heavy focus on Welsh music, in " + ", ".join(towns)
+                   + ": their days and times, on a map. Sesiynau cyfredol sy'n canolbwyntio'n drwm ar gerddoriaeth Gymreig.")
     body = "".join(
         f"<h2>{esc(town)}</h2><ul>" + "".join(
             f"<li><strong>{esc(s.get('name') or s['venue'])}</strong>: {esc(describe_session(s))}. "

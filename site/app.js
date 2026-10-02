@@ -2298,10 +2298,10 @@ async function renderSessions(main) {
   main.replaceChildren(
     el("h1", {}, tr("Active sessions", "Sesiynau cyfredol")),
     el("p", { class: "lead" }, tr("Folk sessions where you can play Welsh tunes with others: come along with an instrument, or just to listen. "
-      + "We only list sessions where the music played is predominantly Welsh. Each says when someone last confirmed it's running "
+      + "We only list sessions where there's a heavy focus on Welsh music. Each says when someone last confirmed it's running "
       + "as described; if you've been lately, let us know.",
       "Sesiynau gwerin lle gallwch chi chwarae alawon Cymreig gydag eraill: dewch ag offeryn, neu dim ond i wrando. "
-      + "Dim ond sesiynau lle mae'r gerddoriaeth yn Gymreig gan fwyaf rydyn ni'n eu rhestru. Mae pob un yn dweud pryd y cadarnhaodd "
+      + "Dim ond sesiynau sy'n canolbwyntio'n drwm ar gerddoriaeth Gymreig rydyn ni'n eu rhestru. Mae pob un yn dweud pryd y cadarnhaodd "
       + "rhywun ddiwethaf ei bod yn cael ei chynnal fel y disgrifir; os ydych chi wedi bod yn ddiweddar, rhowch wybod i ni."),
       " ", toForm(tr("Know a session we're missing? Tell us about it.", "Gwybod am sesiwn sydd ar goll? Rhowch wybod i ni amdani."))),
     el("p", { class: "pills-label" }, tr("Day", "Dydd")), dayPills,
@@ -2314,8 +2314,8 @@ async function renderSessions(main) {
       list),
     el("section", { class: "add-session" },
       addHeading,
-      el("p", {}, tr("If you know a session where the music is predominantly Welsh, anywhere, tell us about it: this opens an email to Y Sesiwn, and we'll add it.",
-        "Os ydych chi'n gwybod am sesiwn lle mae'r gerddoriaeth yn Gymreig gan fwyaf, unrhyw le, rhowch wybod i ni: mae hyn yn agor e-bost i'r Sesiwn, a byddwn ni'n ei hychwanegu.")),
+      el("p", {}, tr("If you know a session with a heavy focus on Welsh music, anywhere, tell us about it: this opens an email to Y Sesiwn, and we'll add it.",
+        "Os ydych chi'n gwybod am sesiwn sy'n canolbwyntio'n drwm ar gerddoriaeth Gymreig, unrhyw le, rhowch wybod i ni: mae hyn yn agor e-bost i'r Sesiwn, a byddwn ni'n ei hychwanegu.")),
       addSessionForm()));
   show();
 }

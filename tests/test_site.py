@@ -942,6 +942,83 @@ def test_share_in_a_key(page, site):
     assert page.url == site + "alaw/glandyfi/?key=D"
 
 
+def test_keyboard_shortcuts(page):
+    # "?" lists the shortcuts; Esc closes the list; the footer's link opens it too.
+    page.goto_site()
+    page.keyboard.press("?")
+    assert page.locator("dialog.shortcuts").is_visible()
+    assert "Search for a tune by name" in page.inner_text("dialog.shortcuts")
+    page.keyboard.press("Escape")
+    assert page.locator("dialog.shortcuts").count() == 0
+    page.click("#shortcuts-button")
+    assert page.locator("dialog.shortcuts").is_visible()
+
+
+def test_focus_on_new_page(page):
+    # Moving to another page puts the focus on its heading, so screen readers say where you are.
+    page.goto_site()
+    page.click(".sidebar-links a[href='?page=browse']")
+    page.wait_for_function("document.activeElement?.matches('main h1')")
+    assert page.evaluate("document.activeElement.textContent") == "Browse by type and key"
+    page.go_back()
+    page.wait_for_function("document.activeElement?.matches('main h1')")
+
+
+def test_search_count_said(page):
+    # How many tunes the search finds, for screen readers.
+    page.goto_site("?page=browse")
+    page.fill("#search-input", "glandyfi")
+    page.wait_for_function("document.querySelector('.search [role=status]').textContent.startsWith('1 tune')")
+    page.fill("#search-input", "zzzqqq")
+    page.wait_for_function("document.querySelector('.search [role=status]').textContent === 'No tunes match that name.'")
+
+
+def test_tune_names_marked_welsh_or_english(page):
+    # Screen readers say each tune's name in its own language.
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.get_attribute("main h1", "lang") == "cy"
+    page.goto_site("?page=browse")
+    page.wait_for_selector(".tune-list li")
+    assert page.get_attribute(".tune-list a[href='alaw/gower-reel/'] span", "lang") == "en"
+    assert page.get_attribute(".tune-list a[href='alaw/glandyfi/'] span", "lang") == "cy"
+
+
+def test_usual_key_remembered(page, site):
+    # The key chosen for a tune is kept on the device and used next time (and said so);
+    # a shared link's key wins without replacing it.
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.select_option("#key-select", "2")
+    assert "your usual key" in page.inner_text("label[for=key-select]")
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.input_value("#key-select") == "2" and page.url == site + "alaw/glandyfi/?key=A"
+    page.goto_site("alaw/glandyfi/?key=C")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.input_value("#key-select") == "5" and "your usual key" not in page.inner_text("label[for=key-select]")
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.input_value("#key-select") == "2"
+    page.select_option("#key-select", "0")  # back to the written key: nothing kept
+    assert page.evaluate("localStorage.getItem('keys')") == "{}"
+
+
+def test_play_from_a_note(page):
+    # Tapping a note starts playback from there (and the notes aren't Tab stops).
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.locator(".score [data-layout] svg [tabindex]").count() == 0
+    page.evaluate("""() => { window.seeks = []; const s = state.synth.seek.bind(state.synth);
+      state.synth.seek = (t, u) => { seeks.push([t, u]); return s(t, u); }; }""")
+    note = page.locator(".score [data-layout] .abcjs-l1 .abcjs-note").first
+    box = note.bounding_box()
+    page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+    page.wait_for_function("window.seeks.length > 0")
+    (seconds, units), = page.evaluate("window.seeks")
+    assert units == "seconds" and seconds > 1  # the second line, not the start
+
+
 def test_tune_page_address(page, site):
     # Each tune has its own page, alaw/<folder>/, which opens straight into the app.
     failed = []
@@ -958,7 +1035,7 @@ def test_tune_page_address(page, site):
     page.click(".card.place a")
     page.wait_for_selector(".place-list a")
     assert page.url == site + "?page=map"
-    page.click(".place-list a:text-is('Machynlleth')")
+    page.click(".place-list a span:text-is('Machynlleth')")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.url == site + "alaw/machynlleth/"
     page.reload()  # a real page: reloading (or sharing the link) works

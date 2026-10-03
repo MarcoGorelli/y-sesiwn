@@ -249,6 +249,23 @@ def test_sessions(site):
     assert "<loc>https://ysesiwn.cymru/sesiynau/</loc>" in (out / "sitemap.xml").read_text(encoding="utf-8")
 
 
+def test_session_events():
+    # The sessions page tells search engines about each session as a repeating event.
+    from datetime import date
+    sessions = b.session_data()
+    ty_tawe = next(s for s in sessions if s["venue"] == "Tŷ Tawe")
+    assert b.next_session(ty_tawe, date(2026, 10, 2)) == date(2026, 10, 9)  # 2nd Friday
+    assert b.next_session({**ty_tawe, "nth": -1}, date(2026, 10, 2)) == date(2026, 10, 30)
+    assert b.next_session({**ty_tawe, "repeat": "weekly"}, date(2026, 10, 2)) == date(2026, 10, 2)
+    assert b.next_session({**ty_tawe, "until": "2026-10-01"}, date(2026, 10, 2)) is None
+    events = b.session_events(sessions, date(2026, 10, 2))
+    e = next(e for e in events if e["location"]["name"] == "Tŷ Tawe")
+    assert e["startDate"] == "2026-10-09T21:00" and e["eventSchedule"]["byMonthWeek"] == 2
+    assert e["eventSchedule"]["repeatFrequency"] == "P1M" and e["location"]["address"]["addressLocality"] == "Swansea"
+    page = (b.OUT / "sesiynau" / "index.html").read_text(encoding="utf-8")
+    assert '<script type="application/ld+json">' in page and '"@type": "Event"' in page
+
+
 @pytest.mark.parametrize("change, says", [
     ({"day": "Tuesdays"}, "day should be one of"),
     ({"county": "South Glamorgan"}, "county should be one of"),

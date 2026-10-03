@@ -162,7 +162,14 @@ relative URLs, so the site also works under a sub-path such as
   device's own share sheet, where it has one), *Print / save*, *QR code* and
   *Add to set*. The address carries the key chosen (`alaw/glandyfi/?key=A`,
   by name, in the tune's own mode), so a copied link, *Share* and the QR code
-  open the tune in that key.
+  open the tune in that key. The key chosen for a tune is kept on the device
+  (`localStorage`) and used next time ("your usual key on this device"), and
+  tapping a note in the music plays from there.
+- **Accessibility:** tune names are marked Welsh or English (`lang`, from
+  `pronunciation.json`) so screen readers say them in the right voice; moving to
+  another page puts the focus on its heading; the search says how many tunes it
+  found; selections stay visible in Windows high-contrast mode; `?` lists the
+  keyboard shortcuts (also in the footer, on a computer).
 - **Practice mode:** just the controls and a full-width score, full screen
   where supported.
 - **Practice tools** (under the music; folded away on phones): **Loop** one part of the tune

@@ -325,6 +325,8 @@ details.features[open] > summary { margin-bottom: .75rem; }
 .score .abcjs-inline-audio { background-color: var(--slate); border-radius: 6px; }
 .score .abcjs-inline-audio .abcjs-midi-progress-background { background-color: #2a323b; }
 .score .abcjs-note_playing { fill: var(--accent); }
+.score .abcjs-note { cursor: pointer; }  /* a tap plays from that note (playFrom in app.js) */
+.score .abcjs-note_selected { fill: currentColor; }  /* …without leaving it marked */
 /* Player: red progress knob, and play/loop in red while they're on. */
 .score .abcjs-inline-audio .abcjs-midi-progress-indicator { background-color: var(--accent); }
 .score .abcjs-inline-audio .abcjs-btn.abcjs-pushed { background-color: var(--accent); }
@@ -692,3 +694,33 @@ body.practice .say { display: none; }
 .set-nav-where { font-size: .9rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .not-found { font-size: 1.05rem; }
 @media print { .set-nav { display: none !important; } }
+/* A page's heading gets the focus when the page changes (focusHeading in app.js): no ring */
+main h1:focus { outline: none; }
+
+/* Windows high contrast (forced colours): the page's colours give way to the reader's,
+   so selections shown only by colour would vanish. Mark them with the system's own
+   highlight instead, and leave out the colour swatches (empty boxes otherwise). */
+@media (forced-colors: active) {
+  .lang-switch button[aria-pressed="true"], .pills button[aria-pressed="true"],
+  .segmented input:checked + span, .versions a.active, .versions a[aria-current="page"] {
+    forced-color-adjust: none; background: Highlight; color: HighlightText; border-color: Highlight;
+  }
+  .versions a.active small { color: HighlightText; }
+  .segmented input:focus-visible + span { outline: 2px solid CanvasText; }
+  .swatch { display: none; }
+  .score .abcjs-note_playing { fill: Highlight; }
+  .wales-map circle.here, .wales-map circle.lit { fill: Highlight; }
+}
+
+/* Keyboard shortcuts (showShortcuts in app.js): the footer's link only where there's
+   likely a keyboard */
+@media (hover: none) { .shortcuts-link { display: none; } }
+.site-footer .link-button { margin: 0; font-size: inherit; color: inherit; }
+dialog.shortcuts { max-width: 34rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); color: var(--text); padding: 1.25rem 1.5rem; }
+dialog.shortcuts::backdrop { background: #0006; }
+dialog.shortcuts h2 { margin-top: 0; }
+dialog.shortcuts table { border-collapse: collapse; margin: .5rem 0 1rem; }
+dialog.shortcuts th { text-align: left; white-space: nowrap; padding: .35rem 1rem .35rem 0; vertical-align: top; font-weight: 400; }
+dialog.shortcuts td { padding: .35rem 0; }
+dialog.shortcuts kbd { display: inline-block; min-width: 1.6em; padding: .05rem .4rem; border: 1px solid var(--border); border-bottom-width: 2px;
+  border-radius: 4px; font: 600 .85rem/1.4 ui-monospace, monospace; text-align: center; background: var(--bg); }

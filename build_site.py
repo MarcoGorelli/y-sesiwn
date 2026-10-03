@@ -718,6 +718,50 @@ def describe_session(s: dict) -> str:
     return f"{when}, " + (f"{s['start']}–{s['end']}" if s.get("end") else f"from {s['start']}")
 
 
+def next_session(s: dict, today: "date") -> "date | None":
+    """The session's next date from today (app.js: nextSession)."""
+    from datetime import date, timedelta
+    day = max(today, date.fromisoformat(s["from"])) if s.get("from") else today
+    until = date.fromisoformat(s["until"]) if s.get("until") else None
+    for _ in range(400):
+        if until and day > until:
+            return None
+        if day.weekday() == DAYS.index(s["day"]):
+            last = (day + timedelta(days=7)).month != day.month
+            if s["repeat"] == "weekly" or (s["nth"] == -1 and last) or (s["nth"] != -1 and (day.day - 1) // 7 + 1 == s["nth"]):
+                return day
+        day += timedelta(days=1)
+    return None
+
+
+def session_events(sessions: list[dict], today: "date") -> list[dict]:
+    """The sessions as schema.org events (for search engines): where, and when they
+    repeat, with the next date (as of the build) as startDate."""
+    events = []
+    for s in sessions:
+        nxt = next_session(s, today)
+        if not nxt:
+            continue
+        schedule = {"@type": "Schedule", "byDay": f"https://schema.org/{s['day']}", "startTime": s["start"],
+                    "scheduleTimezone": "Europe/London", "repeatFrequency": "P1W" if s["repeat"] == "weekly" else "P1M"}
+        if s.get("end"): schedule["endTime"] = s["end"]
+        if s["repeat"] == "monthly": schedule["byMonthWeek"] = s["nth"]
+        if s.get("from"): schedule["startDate"] = s["from"]
+        if s.get("until"): schedule["endDate"] = s["until"]
+        event = {"@type": "Event", "name": s.get("name") or f"Welsh folk session at {s['venue']}",
+                 "startDate": f"{nxt.isoformat()}T{s['start']}", "eventSchedule": schedule,
+                 "eventStatus": "https://schema.org/EventScheduled",
+                 "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+                 "location": {"@type": "Place", "name": s["venue"],
+                              "address": {"@type": "PostalAddress", "streetAddress": s["address"],
+                                          "addressLocality": s["town"], "addressRegion": s["county"], "addressCountry": "GB"},
+                              "geo": {"@type": "GeoCoordinates", "latitude": s["lat"], "longitude": s["lon"]}},
+                 "description": s.get("music") or "A session where Welsh folk tunes are played."}
+        if s.get("link"): event["url"] = s["link"]
+        events.append(event)
+    return events
+
+
 def sessions_page(template: str, sessions: list[dict]) -> None:
     """sesiynau/: the sessions as plain HTML for search engines (the app draws its own),
     and sessions.json for the app."""
@@ -732,9 +776,12 @@ def sessions_page(template: str, sessions: list[dict]) -> None:
             f"{esc(s['venue'])}, {esc(s['address'])}. Last confirmed {esc(s['confirmed'])}.</li>"
             for s in sessions if s["town"] == town) + "</ul>"
         for town in towns)
+    from datetime import date
+    ld = json.dumps({"@context": "https://schema.org", "@graph": session_events(sessions, date.today())},
+                    ensure_ascii=False).replace("</", "<\\/")
     write_page(OUT / SESSIONS_DIR, app_page(
         template, title="Active sessions", description=description, url=f"{SITE_URL}{SESSIONS_DIR}/",
-        head="", up="../", main=f"<h1>Active sessions</h1><p>{esc(description)}</p>{body}"))
+        head=f'\n  <script type="application/ld+json">{ld}</script>', up="../", main=f"<h1>Active sessions</h1><p>{esc(description)}</p>{body}"))
 
 
 def type_heading(kind: dict) -> str:

@@ -120,6 +120,25 @@
       "start": "19:00",
       "link": "https://www.llantrisant-cc.gov.wales/about-us/caerlan-hall/",
       "confirmed": "2026-10-02"
+    },
+    {
+      "name": "Sesiwn Werin",
+      "venue": "Cwrw",
+      "address": "32 King Street, Carmarthen SA31 1BS",
+      "town": "Carmarthen",
+      "town_cy": "Caerfyrddin",
+      "county": "Carmarthenshire",
+      "lat": 51.8566,
+      "lon": -4.3067,
+      "day": "Thursday",
+      "repeat": "monthly",
+      "nth": 2,
+      "start": "19:30",
+      "end": "22:00",
+      "music": "Welsh tunes, mainly from the Alawon Sesiwn books, and some songs. The date sometimes changes: check their Facebook page.",
+      "music_cy": "Alawon Cymreig, yn bennaf o lyfrau Alawon Sesiwn, ac ambell gân. Mae'r dyddiad yn newid weithiau: edrychwch ar eu tudalen Facebook.",
+      "link": "https://www.facebook.com/share/1AA7WKBk6L/",
+      "confirmed": "2026-10-03"
     }
   ]
 }

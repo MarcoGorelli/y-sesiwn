@@ -32,6 +32,7 @@
     {"name": "Dinefwr", "lat": 51.877, "lon": -4.019, "tunes": ["walts-dinefwr"]},
     {"name": "Dolgellau", "lat": 52.743, "lon": -3.886, "tunes": ["ymdaith-dolgellau"]},
     {"name": "Dowlais", "lat": 51.758, "lon": -3.345, "tunes": ["bachgen-bach-o-dowlais", "pibddawns-dowlais", "pibddawns-dowlais-fel-ril"]},
+    {"name": "Dyffryn Clydach", "lat": 51.683, "lon": -3.826, "tunes": ["dyffryn-clydach"]},
     {"name": "Eryri", "lat": 53.068, "lon": -4.076, "tunes": ["marchogion-eryri", "marchogion-yr-wyddfa", "moel-yr-wyddfa", "snowdon", "creigiau-r-eryri"]},
     {"name": "Glandyfi", "lat": 52.556, "lon": -3.95, "tunes": ["glandyfi"]},
     {"name": "Gŵyr", "lat": 51.59, "lon": -4.15, "tunes": ["ril-gwyr", "gower-reel"]},

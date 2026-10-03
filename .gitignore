@@ -23,3 +23,6 @@ compile.sh
 
 # Playwright traces of failed tests
 test-results/
+
+_todo_marco.md
+sian-philip/

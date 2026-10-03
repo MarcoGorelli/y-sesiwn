@@ -737,20 +737,29 @@ function tuneUrl(group, version = 1) {
   return `alaw/${encodeURIComponent(group)}/${version > 1 ? `?v=${version}` : ""}`;
 }
 
+// The page's address within the site (after <base href>), decoded. A link pasted with
+// something stuck to its end (a space or non-breaking space, a full stop or bracket from
+// the sentence around it: …/alaw/glandyfi/%C2%A0) still opens its page; render() then
+// puts the address right.
+const ADDRESS_JUNK = /[\s\u00a0\u200b.,;:!?'"’”)\]>]+$/u;
+function rawPath() {
+  const path = location.pathname.slice(new URL(document.baseURI).pathname.length);
+  try { return decodeURIComponent(path); } catch { return path; }
+}
+const sitePath = () => rawPath().replace(ADDRESS_JUNK, "");
+
 // The tune in the address: alaw/<folder>/, or an older link's ?tune=<folder>.
 function addressTune() {
-  const path = location.pathname.slice(new URL(document.baseURI).pathname.length);
-  const match = path.match(/^alaw\/([^/]+)\/?$/);
-  return match ? decodeURIComponent(match[1]) : new URLSearchParams(location.search).get("tune");
+  const match = sitePath().match(/^alaw\/([^/]+)\/?$/);
+  return match ? match[1] : new URLSearchParams(location.search).get("tune")?.replace(ADDRESS_JUNK, "") ?? null;
 }
 
 // A type's own page, math/<slug>/ (build_site.py, for search engines): the browse
 // page with that type chosen.
 const typeSlug = (name) => normalize(name).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");  // build_site.py's slugify
 function addressType() {
-  const path = location.pathname.slice(new URL(document.baseURI).pathname.length);
-  const match = path.match(/^math\/([^/]+)\/?$/);
-  return match ? state.data.types.find((t) => typeSlug(t.name) === decodeURIComponent(match[1]))?.name ?? null : null;
+  const match = sitePath().match(/^math\/([^/]+)\/?$/);
+  return match ? state.data.types.find((t) => typeSlug(t.name) === match[1])?.name ?? null : null;
 }
 
 // Moving to another page cross-fades the old one into the new (View Transitions, where
@@ -806,6 +815,8 @@ document.addEventListener("keydown", (event) => {
 });
 
 function render() {
+  // Something stuck to the end of the address (see sitePath): take it off.
+  if (rawPath() !== sitePath()) history.replaceState(null, "", (encodeURI(sitePath()) || "./") + location.search);
   stopPlayback();
   stopListening();
   state.keyNote?.stop();
@@ -833,7 +844,7 @@ function render() {
   const contact = page === "contact";
   const setPage = page === "set" || params.has("set");
   const setsPage = page === "sets";
-  const sessions = /^sesiynau\/?$/.test(location.pathname.slice(new URL(document.baseURI).pathname.length));
+  const sessions = /^sesiynau\/?$/.test(sitePath());
   const main = document.getElementById("main");
   // abcjs (the sheet music and playback, 140 KB) isn't needed for the home page, so it
   // isn't loaded before it: a page with music waits for it (see loadAbcjs).
@@ -2215,7 +2226,7 @@ async function renderSessions(main) {
       el("p", {}, tr("Couldn't load the sessions. Check your connection and try again.", "Methu llwytho'r sesiynau. Gwiriwch eich cysylltiad a rhoi cynnig arall arni.")));
     return;
   }
-  if (!/^sesiynau\/?$/.test(location.pathname.slice(new URL(document.baseURI).pathname.length))) return;  // left while loading
+  if (!/^sesiynau\/?$/.test(sitePath())) return;  // left while loading
 
   // One dot per town, where its sessions are; the list is in towns too.
   const towns = [];

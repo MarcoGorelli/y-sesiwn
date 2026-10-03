@@ -866,6 +866,33 @@ def test_new_version_straight_away(browser, site):
         context.close()
 
 
+@pytest.mark.parametrize("junk, opens, address", [
+    ("alaw/glandyfi/%C2%A0", "Glandyfi", "alaw/glandyfi/"),      # a non-breaking space, pasted with the link
+    ("alaw/glandyfi/%20", "Glandyfi", "alaw/glandyfi/"),
+    ("alaw/glandyfi.", "Glandyfi", "alaw/glandyfi/"),            # the full stop of the sentence it was in
+    ("alaw/glandyfi/)", "Glandyfi", "alaw/glandyfi/"),
+    ("sesiynau/%C2%A0", "Active sessions", "sesiynau/"),
+])
+def test_address_with_something_stuck_to_it(page, site, junk, opens, address):
+    # On a phone the offline copy opens the app at whatever address was pasted: it should
+    # find the page, and put the address right.
+    page.goto_site()
+    page.evaluate(f"history.pushState(null, '', '{junk}'); render()")
+    page.wait_for_function(f"document.querySelector('main h1')?.textContent === {opens!r}")
+    assert page.url == site + address
+
+
+def test_not_found_page_takes_junk_off(page, site):
+    # On a computer GitHub Pages shows 404.html for such an address: it goes on to the page.
+    from conftest import ROOT
+    body = (ROOT / "_site" / "404.html").read_text(encoding="utf-8")
+    page.route(site + "alaw/glandyfi/%C2%A0", lambda route: route.fulfill(status=404, body=body, content_type="text/html"))
+    page.goto(site + "alaw/glandyfi/%C2%A0")
+    page.wait_for_url(site + "alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.inner_text("main h1") == "Glandyfi"
+
+
 def test_tune_page_address(page, site):
     # Each tune has its own page, alaw/<folder>/, which opens straight into the app.
     failed = []

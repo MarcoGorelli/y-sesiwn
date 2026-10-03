@@ -7,10 +7,20 @@
   <meta name="robots" content="noindex">
   <!-- GitHub Pages shows this for an address with no file. A tune's address
        (…/alaw/<folder>/) that has none, because the tune was renamed or removed, opens
-       the app at ?tune=<folder>, which says so and suggests the nearest names. -->
+       the app at ?tune=<folder>, which says so and suggests the nearest names; an address
+       with something stuck to its end goes to the address without it. -->
   <script>
-    var m = location.pathname.match(/^(.*\/)alaw\/([^/]+)\/?$/);
-    if (m) location.replace(m[1] + "?tune=" + m[2]);
+    // A link pasted with something stuck to its end (a space or non-breaking space, a
+    // full stop or bracket: …/alaw/glandyfi/%C2%A0): go to the address without it.
+    var path = location.pathname, clean;
+    try { clean = decodeURIComponent(path); } catch (e) { clean = path; }
+    clean = clean.replace(/[\s\u00a0\u200b.,;:!?'"\u2019\u201d)\]>]+$/, "");
+    if (clean !== decodeURIComponentSafe(path)) location.replace(encodeURI(clean) + location.search);
+    else {
+      var m = path.match(/^(.*\/)alaw\/([^/]+)\/?$/);
+      if (m) location.replace(m[1] + "?tune=" + m[2]);
+    }
+    function decodeURIComponentSafe(p) { try { return decodeURIComponent(p); } catch (e) { return p; } }
   </script>
   <style>
     :root { color-scheme: light dark; }

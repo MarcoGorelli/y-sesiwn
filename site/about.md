@@ -79,7 +79,9 @@ Questions, ideas, a tune you're looking for, or just hello:
 
 Y Sesiwn counts visits with [GoatCounter](https://www.goatcounter.com), to
 see which pages and tunes are used: it sets no cookies and keeps nothing that
-identifies you. The notes you play or type to find a tune stay on your device.
+identifies you. When a search by name finds no tune, the words searched for are
+counted too, to see which tunes people look for that aren't here yet. The notes
+you play or type to find a tune stay on your device.
 
 ## The patterns
 

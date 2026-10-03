@@ -165,6 +165,10 @@ details.features[open] > summary { margin-bottom: .75rem; }
 .features ul { columns: 2 22rem; column-gap: 2.5rem; margin: 0; padding-left: 1.2rem; max-width: 60rem; }
 .features li { break-inside: avoid; margin-bottom: .45rem; }
 .features li::marker { color: var(--accent); }
+/* Sessions this week, on the home page */
+.this-week ul { list-style: none; padding: 0; margin: 0; }
+.this-week li { padding: .2rem 0; }
+.this-week p { margin: .5rem 0 0; }
 .features strong a { color: inherit; text-decoration-color: var(--accent); text-underline-offset: .15em; }
 .features strong a:hover { color: var(--accent); }
 
@@ -469,6 +473,7 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
   border-radius: 999px; font-size: .75rem; font-weight: 500; color: var(--muted); vertical-align: .15em; }
 .card.session p { margin: .3rem 0; }
 .card.session .confirmed { margin-top: .6rem; }
+.session-links .link-button { margin-left: 0; font-size: inherit; }
 .session-report { margin-top: .4rem; font-size: .95rem; }
 .session-report summary { cursor: pointer; color: var(--link); text-decoration: underline; }
 .session-report fieldset { border: none; margin: .5rem 0; padding: 0; display: grid; gap: .3rem; }

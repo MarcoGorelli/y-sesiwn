@@ -160,7 +160,9 @@ relative URLs, so the site also works under a sub-path such as
   (`scoreLayout()` in `app.js`), and **− / +** under it make it smaller or
   bigger on any screen (kept on the device). Under the music: **Share** (the
   device's own share sheet, where it has one), *Print / save*, *QR code* and
-  *Add to set*.
+  *Add to set*. The address carries the key chosen (`alaw/glandyfi/?key=A`,
+  by name, in the tune's own mode), so a copied link, *Share* and the QR code
+  open the tune in that key.
 - **Practice mode:** just the controls and a full-width score, full screen
   where supported.
 - **Practice tools** (under the music; folded away on phones): **Loop** one part of the tune
@@ -270,6 +272,8 @@ relative URLs, so the site also works under a sub-path such as
   of the month, within its season if it has one; `nextSession()` in
   `app.js`). Each shows when it was last confirmed, and has a form to say
   it's still on, has changed or has stopped; another sends a missing one.
+  *Add to calendar* downloads an `.ics` file that repeats as the session does
+  (in Welsh time), and the home page lists the sessions in the next seven days.
   Both open an email, like the tune form. The sessions are listed by hand in
   `sessions.json` (its `_comment` says what each field is); `build_site.py`
   checks them, stops with a clear error on a mistake, and writes

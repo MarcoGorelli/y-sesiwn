@@ -737,6 +737,24 @@ function tuneUrl(group, version = 1) {
   return `alaw/${encodeURIComponent(group)}/${version > 1 ? `?v=${version}` : ""}`;
 }
 
+// A tune's link with the key chosen on its page, so "the jig in A" can be shared:
+// alaw/glandyfi/?key=A (the key by name, in the tune's own mode).
+function tuneLink(group, tune, settings) {
+  const query = new URLSearchParams();
+  if (tune.version > 1) query.set("v", tune.version);
+  if (settings?.transpose && tune.key) query.set("key", NOTES[(tune.key.pitch + settings.transpose + 12) % 12]);
+  return `alaw/${encodeURIComponent(group.slug)}/${query.size ? `?${query}` : ""}`;
+}
+
+// ?key=A (or A#, Bb, Bs for B sharp…): the shift in semitones, nearest way (-5 … +6).
+function keyShift(tune, name) {
+  const m = /^([A-Ga-g])(#|s|b)?$/.exec(name ?? "");
+  if (!m || !tune.key) return null;
+  const pc = (LETTER_PITCH[m[1].toUpperCase()] + ({ "#": 1, s: 1, b: -1 }[m[2]] ?? 0) + 12) % 12;
+  const up = (pc - tune.key.pitch + 12) % 12;
+  return up > 6 ? up - 12 : up;
+}
+
 // The page's address within the site (after <base href>), decoded. A link pasted with
 // something stuck to its end (a space or non-breaking space, a full stop or bracket from
 // the sentence around it: …/alaw/glandyfi/%C2%A0) still opens its page; render() then
@@ -831,7 +849,8 @@ function render() {
   // Older links (?tune=…) and a version's folder move to the tune's own address; an
   // unknown tune (removed, renamed, mistyped) gets a page saying so.
   if (group && (params.has("tune") || !location.pathname.endsWith(`/alaw/${group.slug}/`))) {
-    history.replaceState(null, "", tuneUrl(group.slug, version));
+    const keep = new URLSearchParams([...params].filter(([name]) => name === "key"));
+    history.replaceState(null, "", tuneUrl(group.slug, version) + (keep.size ? `${version > 1 ? "&" : "?"}${keep}` : ""));
   }
   const lost = slug && !group;
   const tune = group ? group.versions.find((v) => v.version === version) ?? group.versions[0] : null;
@@ -945,6 +964,7 @@ function renderHome(main) {
         tr(`Browse all ${count} tunes`, `Pori'r ${count} alaw`))),
     recentTunes(),  // nothing yet on a first visit
     notesInvite(),
+    sessionsThisWeek(),
     features(),
     offlineCard(),
   ].filter(Boolean));
@@ -1135,6 +1155,23 @@ function semitones(tune, key) {
 function stripFields(abc, fields) {
   // Header fields to leave off the score (abcjs would print them); they stay in the ABC view.
   return abc.split("\n").filter((line) => !new RegExp(`^[${fields}]:`).test(line)).join("\n");
+}
+
+// A long credit (C:) on a narrow score would run into the rest of its line: there it's
+// split over two lines (abcjs prints each C: line on its own), before "o alaw" (from a
+// tune by) or the like, or else at the space nearest the middle.
+function shortCredits(abc, layout) {
+  if (!layout.staffwidth) return abc;
+  const fits = Math.round(layout.staffwidth / 9);  // characters of credit text across the score
+  return abc.replace(/^C:(.*)$/gm, (line, text) => {
+    text = text.trim();
+    if (text.length <= fits) return line;
+    const words = text.split(" ");
+    const cut = words.findIndex((w, i) => i > 0 && /^(o|gan|from|by|arr\.?)$/i.test(w));
+    const at = cut > 0 ? cut : words.reduce((best, _, i) =>
+      Math.abs(words.slice(0, i).join(" ").length - text.length / 2) < Math.abs(words.slice(0, best).join(" ").length - text.length / 2) ? i : best, 1);
+    return `C:${words.slice(0, at).join(" ")}\nC:${words.slice(at).join(" ")}`;
+  });
 }
 
 function setTempo(abc, beat, bpm) {
@@ -1344,9 +1381,9 @@ function hideMeasuring() {
 function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   stopPlayback();
   const { transpose, bpm } = state.settings.get(tune.slug);
-  // S:, Z:, B: (book), N: (notes), A: (area) and H: (history) are in the Details box,
-  // so leave them off the score; the version tabs say which version it is.
-  let abc = setTempo(stripFields(tune.abc, "SZBNAH"), tune.beat, bpm).replace(/^(T:.*) \(version \d+\)$/m, "$1");
+  // S:, Z:, B: (book), N: (notes), A: (area), H: (history) and R: (the tune type) are in
+  // the Details box, so leave them off the score; the version tabs say which version it is.
+  let abc = setTempo(stripFields(tune.abc, "SZBNAHR"), tune.beat, bpm).replace(/^(T:.*) \(version \d+\)$/m, "$1");
   if (transpose) {
     // strTranspose needs the whole array renderAbc returns, not its first tune.
     abc = ABCJS.strTranspose(abc, ABCJS.renderAbc("*", abc), semitones(tune, transpose));
@@ -1356,6 +1393,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   if (whistle) abc = withFingerings(abc, whistle);
   const layout = scoreLayout(paper);
   paper.dataset.layout = JSON.stringify(layout);
+  abc = shortCredits(abc, layout);
   const visualObj = ABCJS.renderAbc(paper, accompaniment(abc, state.chords.play === "both"),
     { responsive: "resize", add_classes: true, paddingtop: 0, ...layout, ...(tab ? { tablature: [{ ...tab, label: tab.label() }] } : {}) })[0];
   hideMeasuring();
@@ -1663,6 +1701,12 @@ function renderTune(main, group, tune) {
       swing: canSwing(tune) && tune.type === "Pibddawns" });  // hornpipes are played swung
   }
   const settings = state.settings.get(tune.slug);
+  // A shared link's key (?key=A)…
+  const shift = keyShift(tune, new URLSearchParams(location.search).get("key"));
+  if (shift !== null) settings.transpose = shift;
+  // …and the address follows the page's key, so it can be copied as it is.
+  const showInAddress = () => history.replaceState(null, "", tuneLink(group, tune, settings));
+  showInAddress();  // a key chosen earlier (this visit) shows in the address too
 
   const paper = el("div");
   const audio = el("div", { class: "audio" });
@@ -1682,7 +1726,7 @@ function renderTune(main, group, tune) {
   if (tune.key) {
     const { pitch, root } = tune.key;
     const mode = modeName(tune.key.modeName);
-    const select = el("select", { id: "key-select", onchange: (e) => { settings.transpose = +e.target.value; redraw(); } });
+    const select = el("select", { id: "key-select", onchange: (e) => { settings.transpose = +e.target.value; showInAddress(); redraw(); } });
     for (let shift = -5; shift <= 6; shift++) {  // semitones, nearest direction
       const label = shift === 0 ? `${root} ${mode} ${tr("(original)", "(gwreiddiol)")}` : `${NOTES[(pitch + shift + 12) % 12]} ${mode}`;
       select.append(el("option", { value: shift, selected: shift === settings.transpose }, label));
@@ -1710,8 +1754,8 @@ function renderTune(main, group, tune) {
     practice].filter(Boolean));  // no swing switch: nothing (not the text "null")
   // Under the music: printing, saving and sharing it.
   const actions = el("div", { class: "tune-actions" },
-    shareButton(group.title, () => `https://ysesiwn.cymru/${tuneUrl(group.slug, tune.version)}`),
-    printButton(tune, paper, settings), qrButton(group, tune), addToSetButton(tune, settings), musicSize(redraw));
+    shareButton(group.title, () => `https://ysesiwn.cymru/${tuneLink(group, tune, settings)}`),
+    printButton(tune, paper, settings), qrButton(group, tune, settings), addToSetButton(tune, settings), musicSize(redraw));
 
   const shownElsewhere = new Set(["Key", "Composer / arranger"]);  // the key menu; the score's credit
   const details = el("dl", {}, tune.details.filter(([label]) => !shownElsewhere.has(label)).map(([label, value]) =>
@@ -1844,9 +1888,9 @@ function shareButton(title, link) {
     tr("Share", "Rhannu"));
 }
 
-function qrButton(group, tune) {
+function qrButton(group, tune, settings) {
   return el("button", { type: "button", class: "qr-button", onclick: () =>
-    showQr(group.title, `https://ysesiwn.cymru/${tuneUrl(group.slug, tune.version)}`,
+    showQr(group.title, `https://ysesiwn.cymru/${tuneLink(group, tune, settings)}`,
       tr("Scan with a phone's camera to open this tune.", "Sganiwch gyda chamera ffôn i agor yr alaw hon.")),
   }, tr("QR code", "Cod QR"));
 }
@@ -2168,6 +2212,46 @@ function sessionReport(session, place) {
     }));
 }
 
+// A calendar file for a session (.ics): it repeats as the session does, in Welsh time
+// (with the clocks' changes), until its season ends if it has one.
+const ICS_DAYS = { Monday: "MO", Tuesday: "TU", Wednesday: "WE", Thursday: "TH", Friday: "FR", Saturday: "SA", Sunday: "SU" };
+const LONDON = ["BEGIN:VTIMEZONE", "TZID:Europe/London",
+  "BEGIN:DAYLIGHT", "TZOFFSETFROM:+0000", "TZOFFSETTO:+0100", "TZNAME:BST", "DTSTART:19700329T010000",
+  "RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU", "END:DAYLIGHT",
+  "BEGIN:STANDARD", "TZOFFSETFROM:+0100", "TZOFFSETTO:+0000", "TZNAME:GMT", "DTSTART:19701025T020000",
+  "RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU", "END:STANDARD", "END:VTIMEZONE"];
+function sessionCalendar(session, first) {
+  const text = (t) => t.replace(/[\\;,]/g, (c) => `\\${c}`).replace(/\n/g, "\\n");
+  const stamp = (date, time) => `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}T${time.replace(":", "")}00`;
+  const [h, m] = session.start.split(":").map(Number);
+  let end = session.end, endDay = first;
+  if (!end) end = `${String((h + 2) % 24).padStart(2, "0")}:${String(m).padStart(2, "0")}`;  // no end time: two hours
+  if (end <= session.start) endDay = new Date(first.getFullYear(), first.getMonth(), first.getDate() + 1);  // past midnight
+  const rule = session.repeat === "weekly" ? `FREQ=WEEKLY;BYDAY=${ICS_DAYS[session.day]}`
+    : `FREQ=MONTHLY;BYDAY=${session.nth}${ICS_DAYS[session.day]}`;
+  const until = session.until ? `;UNTIL=${session.until.replaceAll("-", "")}T235959Z` : "";
+  const page = "https://ysesiwn.cymru/sesiynau/";
+  const about = [session.music ? tr(session.music, session.music_cy ?? session.music) : null,
+    tr("Times change: check before you go.", "Mae amseroedd yn newid: gwiriwch cyn mynd."),
+    session.link, page].filter(Boolean).join("\n\n");
+  const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Y Sesiwn//Sessions//EN", "CALSCALE:GREGORIAN", ...LONDON,
+    "BEGIN:VEVENT", `UID:${session.id}@ysesiwn.cymru`, `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}Z`,
+    `DTSTART;TZID=Europe/London:${stamp(first, session.start)}`, `DTEND;TZID=Europe/London:${stamp(endDay, end)}`,
+    `RRULE:${rule}${until}`, `SUMMARY:${text(session.name ?? `${tr("Session", "Sesiwn")}: ${session.venue}`)}`,
+    `LOCATION:${text(`${session.venue}, ${session.address}`)}`, `DESCRIPTION:${text(about)}`, `URL:${session.link ?? page}`,
+    "END:VEVENT", "END:VCALENDAR"];
+  // Lines longer than 75 bytes are folded (a line break and a space), as the format asks.
+  const fold = (line) => {
+    const out = []; let cur = "";
+    for (const ch of line) {
+      if (new TextEncoder().encode(cur + ch).length > (out.length ? 74 : 75)) { out.push(cur); cur = ""; }
+      cur += ch;
+    }
+    return [...out, cur].join("\r\n ");
+  };
+  return lines.map(fold).join("\r\n") + "\r\n";
+}
+
 function sessionCard(session) {
   const next = nextSession(session);
   const today = new Date().toDateString() === next?.toDateString();
@@ -2190,7 +2274,10 @@ function sessionCard(session) {
       el("a", { href: map, target: "_blank", rel: "noopener" }, tr("Map", "Map"))),
     session.music ? el("p", {}, tr(session.music, session.music_cy ?? session.music)) : null,
     season ? el("p", { class: "caption" }, season) : null,
-    session.link ? el("p", {}, el("a", { href: session.link, target: "_blank", rel: "noopener" }, tr("More about it", "Rhagor amdani"))) : null,
+    el("p", { class: "session-links" },
+      session.link ? [el("a", { href: session.link, target: "_blank", rel: "noopener" }, tr("More about it", "Rhagor amdani")), " · "] : null,
+      next ? el("button", { type: "button", class: "link-button", onclick: () => download(`${session.id}.ics`, "text/calendar", sessionCalendar(session, next)) },
+        tr("Add to calendar", "Ychwanegu at y calendr")) : null),
     el("p", { class: "caption confirmed" }, tr(`Last confirmed ${dateLabel(dateOf(session.confirmed), { day: "numeric", month: "long", year: "numeric" })}.`,
       `Cadarnhawyd ddiwethaf ${dateLabel(dateOf(session.confirmed), { day: "numeric", month: "long", year: "numeric" })}.`)),
     sessionReport(session, place));
@@ -2217,11 +2304,45 @@ function addSessionForm() {
   });
 }
 
+function loadSessions() {
+  state.sessionData ??= fetch("sessions.json").then((answer) => answer.json()).catch((error) => { state.sessionData = null; throw error; });
+  return state.sessionData;
+}
+
+// On the home page: the sessions in the next seven days, soonest first. It's filled in
+// once sessions.json has come (the page doesn't wait for it), and stays hidden in a week
+// with none.
+const THIS_WEEK = 6;  // at most
+function sessionsThisWeek() {
+  const box = el("section", { class: "this-week", hidden: true });
+  loadSessions().then(({ sessions }) => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const soon = sessions.map((s) => ({ s, next: nextSession(s) }))
+      .filter(({ next }) => next && (next - today) / 864e5 < 7)
+      .sort((a, b) => a.next - b.next || (a.s.start < b.s.start ? -1 : 1)).slice(0, THIS_WEEK);
+    if (!soon.length || !box.isConnected) return;
+    const when = (next, start) => {
+      const days = Math.round((next - today) / 864e5);
+      if (days === 0) return start >= "17:00" ? tr("Tonight", "Heno") : tr("Today", "Heddiw");
+      if (days === 1) return tr("Tomorrow", "Yfory");
+      const name = dateLabel(next, { weekday: "long" });
+      return name[0].toUpperCase() + name.slice(1);
+    };
+    box.replaceChildren(
+      el("h2", { class: "section-heading" }, tr("Sessions this week", "Sesiynau'r wythnos hon")),
+      el("ul", {}, soon.map(({ s, next }) => el("li", {}, el("strong", {}, when(next, s.start)), " · ",
+        `${s.name ?? s.venue}, ${tr(s.town, s.town_cy)}, ${sessionTime(s)}`,
+        s.kind === "tune club" && !/tune club|clwb alawon/i.test(s.name ?? "") ? el("span", { class: "caption" }, ` (${tr("tune club", "clwb alawon")})`) : null))),
+      el("p", {}, el("a", { href: "sesiynau/", "data-route": true }, tr("All sessions, on a map", "Pob sesiwn, ar fap"))));
+    box.hidden = false;
+  }).catch(() => {});
+  return box;
+}
+
 async function renderSessions(main) {
   document.title = tr("Active sessions · Y Sesiwn", "Sesiynau cyfredol · Y Sesiwn");
-  state.sessionData ??= fetch("sessions.json").then((answer) => answer.json()).catch((error) => { state.sessionData = null; throw error; });
   let sessions;
-  try { ({ sessions } = await state.sessionData); } catch {
+  try { ({ sessions } = await loadSessions()); } catch {
     main.replaceChildren(el("h1", {}, tr("Active sessions", "Sesiynau cyfredol")),
       el("p", {}, tr("Couldn't load the sessions. Check your connection and try again.", "Methu llwytho'r sesiynau. Gwiriwch eich cysylltiad a rhoi cynnig arall arni.")));
     return;
@@ -2696,9 +2817,10 @@ function setScore(tune, key) {
     if (paper.drawn) return;
     paper.drawn = true;
     // The numbered heading above says which tune it is, so no title (T:) on the music.
-    let abc = setTempo(stripFields(tune.abc, "SZBNAHT"), tune.beat, tune.bpm);
+    let abc = setTempo(stripFields(tune.abc, "SZBNAHTR"), tune.beat, tune.bpm);
     if (key) abc = ABCJS.strTranspose(abc, ABCJS.renderAbc("*", abc), semitones(tune, key));
-    ABCJS.renderAbc(paper, abc, { responsive: "resize", add_classes: true, paddingtop: 0, ...scoreLayout(paper) });
+    const layout = scoreLayout(paper);
+    ABCJS.renderAbc(paper, shortCredits(abc, layout), { responsive: "resize", add_classes: true, paddingtop: 0, ...layout });
     hideMeasuring();
     nameScore(paper);
   };
@@ -3098,6 +3220,21 @@ async function renderGuide(main, key) {
 
 // onPick: what choosing a tune does (Enter, or a click); opening its page, unless the
 // box is for something else (adding to a set), in which case it stays ready for the next.
+// A name search that finds no tune is counted (the words only, once each per visit, after
+// a pause in the typing), so the tunes people look for and don't find can be added.
+// The privacy note on the About page says so.
+const MISSED = new Set();
+let missTimer = null;
+function noteMiss(query, found) {
+  clearTimeout(missTimer);
+  const words = normalize(query).slice(0, 40);
+  if (found || words.length < 3 || MISSED.has(words)) return;
+  missTimer = setTimeout(() => {
+    MISSED.add(words);
+    countEvent(`search-miss/${words.replace(/ /g, "-")}`, `No tune found: ${words}`);
+  }, 1500);
+}
+
 function attachSearch(input, list, { showAllOnFocus = true, onPick = null } = {}) {
   let results = [];
   let active = 0;
@@ -3117,6 +3254,7 @@ function attachSearch(input, list, { showAllOnFocus = true, onPick = null } = {}
     const query = input.value;
     if (!query.trim() && !showAllOnFocus) { results = []; close(); return; }
     results = query.trim() ? search(query).slice(0, 20) : state.groupList;
+    noteMiss(query, results.length);
     active = 0;
     list.replaceChildren(...(results.length
       ? results.map((tune, i) => el("li", {

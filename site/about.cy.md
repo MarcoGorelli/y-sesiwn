@@ -78,8 +78,10 @@ Cwestiynau, syniadau, alaw rydych chi'n chwilio amdani, neu dim ond helo:
 
 Mae'r Sesiwn yn cyfrif ymweliadau gyda [GoatCounter](https://www.goatcounter.com),
 i weld pa dudalennau ac alawon sy'n cael eu defnyddio: dyw e ddim yn gosod
-cwcis nac yn cadw dim sy'n dweud pwy ydych chi. Mae'r nodau rydych chi'n eu
-chwarae neu'n eu teipio i ganfod alaw yn aros ar eich dyfais.
+cwcis nac yn cadw dim sy'n dweud pwy ydych chi. Pan nad yw chwiliad am enw yn
+canfod alaw, mae'r geiriau a chwiliwyd yn cael eu cyfrif hefyd, i weld pa
+alawon mae pobl yn chwilio amdanyn nhw sydd ddim yma eto. Mae'r nodau rydych
+chi'n eu chwarae neu'n eu teipio i ganfod alaw yn aros ar eich dyfais.
 
 ## Y patrymau
 

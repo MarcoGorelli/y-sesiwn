@@ -6,6 +6,7 @@ import struct
 import wave
 
 import pytest
+from pathlib import Path
 
 pytestmark = pytest.mark.browser
 
@@ -500,6 +501,20 @@ def test_music_readable_on_a_phone(browser, site):
     context.close()
 
 
+def test_long_credit_on_a_phone(browser, site):
+    # A long credit (C:) is split over two lines on a narrow score, and the tune type (R:,
+    # shown under Details) isn't printed on the score to crowd it.
+    context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, service_workers="block")
+    page = context.new_page()
+    page.goto(site + "alaw/dyffryn-clydach/")
+    page.wait_for_selector(".score .abcjs-staff")
+    lines = page.evaluate("[...document.querySelectorAll('.score [data-layout] svg .abcjs-composer tspan')].map((t) => t.textContent)")
+    assert lines == ["Trefniant Meurig Williams", "o alaw Alyson a Ken Thomas"]
+    assert page.locator(".score [data-layout] svg .abcjs-rhythm").count() == 0
+    assert "ymdeithdon" not in page.inner_text(".score [data-layout]")
+    context.close()
+
+
 def test_practice_tools_folded_on_a_phone(browser, site, page):
     page.goto_site("?tune=glandyfi")
     assert page.locator("#loop-select").is_visible()  # open on a wide screen
@@ -516,6 +531,18 @@ def test_practice_tools_folded_on_a_phone(browser, site, page):
     phone.wait_for_selector(".score .abcjs-staff")
     assert phone.locator("#loop-select").is_visible()  # left open
     context.close()
+
+
+def test_sessions_this_week(page):
+    # The home page lists the sessions in the next seven days, soonest first (there are
+    # weekly ones, so the list is never empty), and links to the sessions page.
+    page.goto_site()
+    page.wait_for_selector(".this-week li")
+    expected = page.evaluate("""async () => { const { sessions } = await loadSessions(); const today = new Date(); today.setHours(0, 0, 0, 0);
+      return Math.min(THIS_WEEK, sessions.filter((s) => { const n = nextSession(s); return n && (n - today) / 864e5 < 7; }).length); }""")
+    assert page.locator(".this-week li").count() == expected > 0
+    page.click(".this-week a[href='sesiynau/']")
+    page.wait_for_selector(".card.session")
 
 
 def test_home_page_on_a_phone(browser, site):
@@ -893,6 +920,28 @@ def test_not_found_page_takes_junk_off(page, site):
     assert page.inner_text("main h1") == "Glandyfi"
 
 
+def test_share_in_a_key(page, site):
+    # ?key=A opens the tune in A; changing the key changes the address (and so the link
+    # that Share and the QR code give). The tempo isn't in the link.
+    page.goto_site("alaw/glandyfi/?key=A")  # Glandyfi is in G
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.input_value("#key-select") == "2"
+    page.select_option("#key-select", "-2")
+    assert page.url == site + "alaw/glandyfi/?key=F"
+    page.fill("#tempo", "150")
+    page.dispatch_event("#tempo", "change")
+    assert page.url == site + "alaw/glandyfi/?key=F"
+    page.select_option("#key-select", "0")
+    assert page.url == site + "alaw/glandyfi/"
+    page.goto_site("alaw/glandyfi/?v=2&key=Bb&bpm=120")  # a tempo in the address is ignored
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.input_value("#key-select") == "3" and page.input_value("#tempo") != "120"
+    assert page.url == site + "alaw/glandyfi/?v=2&key=Bb"
+    page.goto_site("?tune=glandyfi&key=D")  # an older link: moves to the tune's address, key kept
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.url == site + "alaw/glandyfi/?key=D"
+
+
 def test_tune_page_address(page, site):
     # Each tune has its own page, alaw/<folder>/, which opens straight into the app.
     failed = []
@@ -1133,6 +1182,24 @@ def test_sessions_page(page, site):
     page.click(".sidebar-links a[href='sesiynau/']")
     page.wait_for_selector(".card.session")
     assert page.url == site + "sesiynau/"
+
+
+def test_session_calendar(page):
+    # "Add to calendar": an .ics file that repeats as the session does, in Welsh time.
+    page.goto_site("sesiynau/")
+    page.wait_for_selector(".card.session")
+    with page.expect_download() as info:
+        page.click("#session-ty-tawe-swansea-friday .session-links button")
+    ics = Path(info.value.path()).read_bytes().decode("utf-8")  # as it is: CRLF line ends
+    assert info.value.suggested_filename == "ty-tawe-swansea-friday.ics"
+    unfolded = ics.replace("\r\n ", "")
+    assert "RRULE:FREQ=MONTHLY;BYDAY=2FR" in unfolded and "DTSTART;TZID=Europe/London:" in unfolded and "T210000" in unfolded
+    assert "TZID:Europe/London" in unfolded and "LOCATION:Tŷ Tawe\\, 9 Christina Street\\, Swansea SA1 4EW" in unfolded
+    assert all(len(line.encode()) <= 75 for line in ics.split("\r\n"))  # long lines folded
+    with page.expect_download() as info:
+        page.click("#session-chapter-cardiff-tuesday .session-links button")
+    unfolded = Path(info.value.path()).read_bytes().decode("utf-8").replace("\r\n ", "")
+    assert "RRULE:FREQ=WEEKLY;BYDAY=TU;UNTIL=20261229T235959Z" in unfolded
 
 
 def test_session_report(page):
@@ -1439,6 +1506,20 @@ def test_visit_counts(page):
                        {"path": "/?page=contact", "title": "Cysylltu · Y Sesiwn"}]
     page.goto_site("?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A")
     assert page.evaluate("window.counted") == [{"path": "/?page=notes", "title": "Canfod alaw o'i nodau · Y Sesiwn"}]
+
+
+def test_search_misses_counted(page):
+    # A name search that finds nothing is counted (its words, once, after a pause); one
+    # that finds tunes isn't.
+    page.add_init_script("window.goatcounter = { count: (view) => (window.counted ||= []).push(view) }")
+    page.goto_site("?page=browse")
+    page.fill("#search-input", "glandy")
+    page.fill("#search-input", "Zzyxq Wobble")
+    page.wait_for_timeout(2000)
+    page.fill("#search-input", "Zzyxq Wobble ")  # the same words again: not counted twice
+    page.wait_for_timeout(2000)
+    events = [v for v in page.evaluate("window.counted") if v.get("event")]
+    assert events == [{"path": "search-miss/zzyxq-wobble", "title": "No tune found: zzyxq wobble", "event": True}]
 
 
 def test_visit_counts_in_order(page):

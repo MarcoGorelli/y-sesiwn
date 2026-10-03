@@ -1090,7 +1090,15 @@ def test_sessions_page(page, site):
     page.click(".pills [data-day='Friday']")
     assert page.locator(".card.session").count() == sum(s["day"] == "Friday" for s in sessions)
     assert page.locator(".wales-map circle:not(.target):not(.off)").count() == len({s["town"] for s in sessions if s["day"] == "Friday"})
+    # Each town's name beside its dot, as page text (sharp at any zoom), none overlapping.
+    boxes = page.evaluate("""() => [...document.querySelectorAll('.town-label:not([hidden])')].map((l) => {
+      const r = l.getBoundingClientRect(); return [r.left, r.right, r.top, r.bottom]; })""")
+    assert len(boxes) == len({s["town"] for s in sessions if s["day"] == "Friday"})
     page.click(".pills [data-day='Friday']")  # again: every day
+    boxes = page.evaluate("""() => [...document.querySelectorAll('.town-label:not([hidden])')].map((l) => {
+      const r = l.getBoundingClientRect(); return [r.left, r.right, r.top, r.bottom]; })""")
+    assert len(boxes) == len(towns)
+    assert not [(a, b) for i, a in enumerate(boxes) for b in boxes[i + 1:] if a[0] < b[1] and a[1] > b[0] and a[2] < b[3] and a[3] > b[2]]
     page.click(".pills [data-county='Cardiff']")
     assert page.locator(".card.session").count() == sum(s["county"] == "Cardiff" for s in sessions)
     # Opened from the sidebar, it's the page's own address.

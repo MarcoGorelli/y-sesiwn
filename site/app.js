@@ -1917,7 +1917,7 @@ function mapZoom(map, onChange) {
     x = Math.min(0, Math.max(width - width * scale, x));  // no gaps at the edges
     y = Math.min(0, Math.max(height - height * scale, y));
     view.scrollLeft = view.scrollTop = 0;  // older browsers, where the clipped view could still be scrolled
-    canvas.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+    canvas.style.transform = scale > 1 ? `translate(${x}px, ${y}px) scale(${scale})` : "";  // none unless zoomed: crisper on phones
     canvas.style.setProperty("--z", scale);
     view.classList.toggle("zoomed", scale > 1);
     zoomIn.disabled = scale >= MAX;
@@ -2233,22 +2233,36 @@ async function renderSessions(main) {
     tr("Map of Wales with the towns that have sessions", "Map o Gymru gyda'r trefi sydd â sesiynau"));
   const circles = [...map.querySelectorAll("circle:not(.target)")];
   const targets = [...map.querySelectorAll("circle.target")];
-  // Few dots, so each has its town's name beside it: to the right, or where it doesn't
-  // run into another name or dot (sizes in map units, at the map's own size).
-  const placed = mapped.map((t) => ({ x0: t.x - 2.5, x1: t.x + 2.5, y0: t.y - 2.5, y1: t.y + 2.5 }));
-  const labels = mapped.map((town) => {
-    const name = tr(town.name, town.cy), w = name.length * 3.7 + 4, h = 8;
-    const sides = { right: [town.x + 3, town.x + 3 + w, town.y - h / 2, town.y + h / 2], left: [town.x - 3 - w, town.x - 3, town.y - h / 2, town.y + h / 2],
-      above: [town.x - w / 2, town.x + w / 2, town.y - 3 - h, town.y - 3], below: [town.x - w / 2, town.x + w / 2, town.y + 3, town.y + 3 + h] };
-    const clear = ([x0, x1, y0, y1]) => !placed.some((b) => x0 < b.x1 && x1 > b.x0 && y0 < b.y1 && y1 > b.y0);
-    const side = Object.keys(sides).find((k) => clear(sides[k])) ?? "right";
-    const [x0, x1, y0, y1] = sides[side];
-    placed.push({ x0, x1, y0, y1 });
-    return svg("text", { x: town.x, y: town.y, class: `town-label ${side}`, "aria-hidden": "true" }, name);
-  });
-  map.querySelector("svg").prepend(...labels);
+  // Few dots, so each has its town's name beside it. The names are page text over the
+  // map, not part of it, so they stay sharp however the map is zoomed (phones blur text
+  // inside a scaled layer); placeLabels puts each beside its dot, to the right, or on
+  // whichever side doesn't run into another name or dot.
+  const labels = mapped.map((town) => el("span", { class: "town-label" }, tr(town.name, town.cy)));
+  map.querySelector(".map-view").append(el("div", { class: "town-labels", "aria-hidden": "true" }, labels));
+  const placeLabels = () => {
+    const b = map.getBoundingClientRect();
+    if (!b.width) return;  // not on the page yet
+    const centres = circles.map((c) => {
+      const d = c.getBoundingClientRect();
+      return [d.left + d.width / 2 - b.left, d.top + d.height / 2 - b.top];
+    });
+    const taken = centres.filter((_, i) => !circles[i].classList.contains("off")).map(([x, y]) => [x - 5, x + 5, y - 5, y + 5]);
+    const clear = ([x0, x1, y0, y1]) => x0 >= 0 && x1 <= b.width && y0 >= 0 && y1 <= b.height
+      && !taken.some((t) => x0 < t[1] && x1 > t[0] && y0 < t[3] && y1 > t[2]);
+    labels.forEach((label, i) => {
+      const [x, y] = centres[i];
+      label.hidden = circles[i].classList.contains("off") || x < 0 || y < 0 || x > b.width || y > b.height;
+      if (label.hidden) return;
+      const w = label.offsetWidth, h = label.offsetHeight, gap = 6;
+      const sides = [[x + gap, y - h / 2], [x - gap - w, y - h / 2], [x - w / 2, y - gap - h], [x - w / 2, y + gap]]
+        .map(([left, top]) => [left, left + w, top, top + h]);
+      const [x0, x1, y0, y1] = sides.find(clear) ?? sides[0];
+      taken.push([x0, x1, y0, y1]);
+      Object.assign(label.style, { left: `${x0}px`, top: `${y0}px` });
+    });
+  };
   const light = (town, on) => circles[mapped.indexOf(town)]?.classList.toggle("lit", on);
-  mapZoom(map, () => {});
+  mapZoom(map, placeLabels);
   map.addEventListener("click", (e) => {
     const target = e.target.closest?.(".target");
     if (!target) return;
@@ -2281,8 +2295,9 @@ async function renderSessions(main) {
     caption.textContent = tr(`${shown.length} session${shown.length === 1 ? "" : "s"}`, `${shown.length} sesiwn`);
     mapped.forEach((town, i) => {
       const any = town.sessions.some((s) => fits(s));
-      for (const mark of [circles[i], targets[i], labels[i]]) mark.classList.toggle("off", !any);
+      for (const mark of [circles[i], targets[i]]) mark.classList.toggle("off", !any);
     });
+    placeLabels();
     list.replaceChildren(...towns.filter((t) => t.sessions.some((s) => fits(s))).map((town) =>
       el("section", { class: "town", onmouseenter: () => light(town, true), onmouseleave: () => light(town, false) },
         el("h2", { id: `town-${typeSlug(town.name)}`, tabindex: -1 }, tr(town.name, town.cy),
@@ -2329,7 +2344,7 @@ async function renderSessions(main) {
       el("p", {}, tr("If you know a session with a heavy focus on Welsh music, anywhere, tell us about it: this opens an email to Y Sesiwn, and we'll add it.",
         "Os ydych chi'n gwybod am sesiwn sy'n canolbwyntio'n drwm ar gerddoriaeth Gymreig, unrhyw le, rhowch wybod i ni: mae hyn yn agor e-bost i'r Sesiwn, a byddwn ni'n ei hychwanegu.")),
       addSessionForm()));
-  show();
+  show();  // now the map is on the page, its names can be placed
 }
 
 // ---- Installing the app ---------------------------------------------------------------

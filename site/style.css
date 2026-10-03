@@ -453,14 +453,12 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 /* Sessions (sesiynau/): a town's sessions as cards beside the map */
 .sessions-layout { margin-top: 1rem; }
 .wales-map .off { display: none; }
-/* Towns' names beside their dots, keeping their size on screen as the map zooms */
-.wales-map .town-label { font-size: calc(7px / var(--z)); fill: var(--text); paint-order: stroke; stroke: var(--bg);
-  stroke-width: calc(2px / var(--z)); transform-box: view-box; dominant-baseline: central; }
-/* Which side of its dot (placed in app.js so names don't run into each other) */
-.wales-map .town-label.right { transform: translateX(calc(4px / var(--z))); }
-.wales-map .town-label.left { transform: translateX(calc(-4px / var(--z))); text-anchor: end; }
-.wales-map .town-label.above { transform: translateY(calc(-7px / var(--z))); text-anchor: middle; }
-.wales-map .town-label.below { transform: translateY(calc(7px / var(--z))); text-anchor: middle; }
+/* Towns' names beside their dots: page text over the map (placed by app.js), so they're
+   sharp at any zoom */
+.town-labels { position: absolute; inset: 0; pointer-events: none; }
+.town-label { position: absolute; white-space: nowrap; font-size: .85rem; font-weight: 500; line-height: 1.2;
+  color: var(--text); }
+.town-label[hidden] { display: none; }
 .session-list .town + .town { margin-top: 1.75rem; }
 .session-list h2 { margin: 0 0 .6rem; }
 .session-list h2:focus { outline: none; }

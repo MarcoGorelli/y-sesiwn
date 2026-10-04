@@ -33,6 +33,14 @@
   <!-- abcjs (the sheet music) is loaded by app.js when a page needs it; a tune's own
        page (build_site.py) loads it here, so its music is drawn at once. -->
   <script src="app.js" defer></script>
+  <!-- The page as written (the .static parts build_site.py puts in <main>) is for search
+       engines and link previews, which don't run JavaScript: where it runs, the app shows
+       the page instead, so that copy is hidden (style.css), not flashed. Should the app not
+       have taken over after 8 s (app.js failed to load, say), it shows after all. -->
+  <script>
+    document.documentElement.classList.add("js");
+    setTimeout(function () { if (document.querySelector("#main .static")) document.documentElement.classList.remove("js"); }, 8000);
+  </script>
 </head>
 <body>
   <!-- First Tab stop: past the search and the menu, to the page itself (app.js moves focus;

@@ -308,6 +308,16 @@ def test_session_events():
     assert '<script type="application/ld+json">' in page and '"@type": "Event"' in page
 
 
+def test_static_copy_is_marked(site):
+    # What each page says for search engines is in <main>'s .static, which readers whose
+    # browser runs the app don't see (style.css); then the page's loading line.
+    pages = {"index.html": "Loading tunes…", "alaw/glandyfi/index.html": "Loading the sheet music…",
+             "math/jig/index.html": "Loading tunes…", "sesiynau/index.html": "Loading the sessions…"}
+    for path, loading in pages.items():
+        main = re.search(r'<main id="main" tabindex="-1">(.*)</main>', (b.OUT / path).read_text(encoding="utf-8"), re.S).group(1)
+        assert main.startswith('<div class="static">') and main.endswith(f'</div><p class="loading">{loading}</p>'), path
+
+
 def test_sessions_on_dates(tmp_path, monkeypatch, capsys):
     # A session on announced dates (repeat: "dates"): its next date, an event for each
     # date to come, the day of the next one (for the day filter), and no day of its own.

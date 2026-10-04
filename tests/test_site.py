@@ -2174,6 +2174,37 @@ def test_playback_carries_on_through_a_change(page):
     page.click(".abcjs-midi-start")  # pause
 
 
+def test_no_flash_of_the_static_page(browser, site):
+    # The page as written for search engines isn't shown where the app runs: while the tunes
+    # load there's nothing but (after a moment) "Loading tunes…". Without JavaScript it's
+    # all there; and if the app never comes, it shows after 8 s.
+    import time
+    context = browser.new_context(service_workers="block")
+    page = context.new_page()
+    page.route("**/tunes.json", lambda route: (time.sleep(1.5), route.continue_()))
+    page.goto(site, wait_until="commit")
+    page.wait_for_selector("#main .loading")
+    assert page.locator("#main .static").is_hidden()
+    page.wait_for_selector("#main .loading", state="visible")
+    page.wait_for_selector("#hero-search")
+    assert page.locator("#main .static").count() == 0
+    context.close()
+    context = browser.new_context(service_workers="block", java_script_enabled=False)
+    page = context.new_page()
+    page.goto(site + "math/jig/")
+    assert page.locator("#main .static h1").is_visible() and page.locator("#main .static li a").count() > 50
+    context.close()
+    context = browser.new_context(service_workers="block")
+    page = context.new_page()
+    page.clock.install()
+    page.route("**/app.js", lambda route: route.abort())
+    page.goto(site)
+    assert page.locator("#main .static").is_hidden()
+    page.clock.run_for(9000)
+    page.wait_for_selector("#main .static .type-links", state="visible")
+    context.close()
+
+
 def test_touch_targets(browser, site):
     # On a phone, every control is at least 24px each way (WCAG 2.5.8); links inside text don't count.
     context = browser.new_context(viewport={"width": 320, "height": 640}, is_mobile=True, has_touch=True,

@@ -556,11 +556,11 @@ def type_slug(name: str) -> str:
 
 
 def app_page(template: str, *, title: str, description: str, url: str, head: str, main: str,
-             scripts: str = "", up: str = "../../") -> str:
+             scripts: str = "", up: str = "../../", loading: str = "Loading…") -> str:
     """The app (index.html) in a folder (two down, unless up says otherwise), with its
     own title, description and address in the head, for link previews and search
-    engines (which don't run the app), and what they should read in <main> until the
-    app takes over."""
+    engines (which don't run the app), and what they should read in <main> (hidden from
+    readers whose browser runs the app, which shows loading until it takes over)."""
     def swap(page: str, old: str, new: str) -> str:
         if page.count(old) != 1:
             raise SystemExit(f"site/index.html: expected one {old!r} (for the tune and type pages)")
@@ -577,7 +577,7 @@ def app_page(template: str, *, title: str, description: str, url: str, head: str
     page = swap(page, f'<meta property="og:url" content="{SITE_URL}">',
                 f'<meta property="og:url" content="{url}">\n  <link rel="canonical" href="{url}">' + head)
     return swap(page, '<main id="main" tabindex="-1"><p class="loading">Loading tunes…</p></main>',
-                f'<main id="main" tabindex="-1">{main}</main>')
+                f'<main id="main" tabindex="-1"><div class="static">{main}</div><p class="loading">{esc(loading)}</p></main>')
 
 
 def write_page(folder: Path, page: str) -> None:
@@ -639,8 +639,8 @@ def tune_pages(tunes: list[dict], index: dict) -> None:
             main=f"<h1>{esc(name)}</h1>"
                  + (f'<p class="caption">Also known as: {esc(", ".join(titles[1:]))}</p>' if len(titles) > 1 else "")
                  + f"<p>{esc(description)}</p><dl>{details}</dl>"
-                 + f'<pre>{esc(first["abc"])}</pre><p>{type_link(first["type"])}</p>'
-                 + '<p class="loading">Loading the sheet music…</p>'))
+                 + f'<pre>{esc(first["abc"])}</pre><p>{type_link(first["type"])}</p>',
+            loading="Loading the sheet music…"))
 
     # A page for each type: its tunes, A to Z.
     for name, kind in types.items():
@@ -657,7 +657,7 @@ def tune_pages(tunes: list[dict], index: dict) -> None:
             template, title=heading, description=description, url=url, head="",
             main=f"<h1>{esc(heading)}</h1><p>{esc(description)}</p><ul>"
                  + "".join(f'<li><a href="{TUNE_DIR}/{t["group"]}/">{esc(t["base"])}</a></li>' for t in listed)
-                 + "</ul>"))
+                 + "</ul>", loading="Loading tunes…"))
 
     # A moved tune's old address sends people (and search engines) on to the new one;
     # the app does the same offline, from tunes.json's "moved".
@@ -682,7 +682,7 @@ def tune_pages(tunes: list[dict], index: dict) -> None:
     old = '<p class="loading">Loading tunes…</p>'
     if page.count(old) != 1:
         raise SystemExit(f"site/index.html: expected one {old!r}")
-    home.write_text(page.replace(old, old + f'<ul class="type-links">{nav}</ul>'), encoding="utf-8")
+    home.write_text(page.replace(old, f'<div class="static"><ul class="type-links">{nav}</ul></div>' + old), encoding="utf-8")
 
     pages = [SITE_URL] + [f"{SITE_URL}?page={p}" for p in ("browse", "notes", "map", "about", "add", "fix", "offline", "contact")]
     (OUT / "sitemap.xml").write_text(
@@ -850,7 +850,8 @@ def sessions_page(template: str, sessions: list[dict]) -> None:
                     ensure_ascii=False).replace("</", "<\\/")
     write_page(OUT / SESSIONS_DIR, app_page(
         template, title="Active sessions", description=description, url=f"{SITE_URL}{SESSIONS_DIR}/",
-        head=f'\n  <script type="application/ld+json">{ld}</script>', up="../", main=f"<h1>Active sessions</h1><p>{esc(description)}</p>{body}"))
+        head=f'\n  <script type="application/ld+json">{ld}</script>', up="../", main=f"<h1>Active sessions</h1><p>{esc(description)}</p>{body}",
+        loading="Loading the sessions…"))
 
 
 def type_heading(kind: dict) -> str:

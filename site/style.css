@@ -157,6 +157,11 @@ button.primary:hover { color: #fff; filter: brightness(1.1); }
 main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fade-in .2s ease-out; }
 @keyframes fade-in { from { opacity: 0; transform: translateY(4px); } }
 .loading, .caption { color: var(--muted); }
+/* The page as written, for search engines (see index.html): hidden where the app runs.
+   "Loading…" only shows if it takes a moment, so a quick load doesn't flash it. */
+.js .static { display: none; }
+.js main > .loading { animation: loading-shows .3s ease-in .6s both; }
+@keyframes loading-shows { from { opacity: 0; } }
 .caption { font-size: .9rem; }
 .lead { font-size: 1.1rem; max-width: 50rem; }
 

@@ -360,6 +360,11 @@ scheduled runs after 60 days without a commit).
   following links. There's also a `sitemap.xml` and `robots.txt`. abcjs is
   only loaded first on a tune's own page; elsewhere the app loads it when a
   page needs music, or once the first page is shown. Visitors get the app as usual, and the back button works.
+  That copy for search engines is in `<main>`'s `.static` part, which isn't
+  shown where JavaScript runs (an inline script in `index.html` adds `.js`),
+  so it doesn't flash up while the app loads: there's only the loading line,
+  and that only after 0.6 s. If the app hasn't taken over after 8 s (`app.js`
+  failed to load), the copy shows after all.
   Offline, the service worker answers a tune's page with the app (the tune
   pages aren't in the offline copy). A **QR code** button on each tune shows
   its link for someone else to scan.

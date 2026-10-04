@@ -552,9 +552,12 @@ def test_home_page_on_a_phone(browser, site):
     page = context.new_page()
     page.goto(site)
     page.wait_for_selector(".features")
-    assert not page.locator(".features li").first.is_visible()
-    page.click(".features summary")
-    assert page.locator(".features li").first.is_visible()
+    # Each feature's name shows (linking to its page where it has one); the descriptions fold away.
+    assert page.locator(".feature-names li").count() == 9 and page.locator(".feature-names li").first.is_visible()
+    assert page.locator(".feature-names a[href='sesiynau/']").count() == 1
+    assert not page.locator(".features-more li").first.is_visible()
+    page.click(".features-more summary")
+    assert page.locator(".features-more li").first.is_visible()
     context.close()
 
 

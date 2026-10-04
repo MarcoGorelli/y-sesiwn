@@ -1,0 +1,5 @@
+{
+  "_comment": "Tunes whose folder was renamed, or that became a version of another tune: old folder name -> new folder name. Old addresses, set links, and the keys and recent tunes kept on people's devices then find the tune. Only ever add to it (and keep the old folder's line in tune_numbers.json).",
+  "moved": {
+  }
+}

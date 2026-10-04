@@ -1,5 +1,6 @@
 """Quick checks of the tune files and build_site.py (no browser)."""
 import json
+import os
 import re
 from pathlib import Path
 
@@ -154,17 +155,57 @@ def test_number_check():
 def test_tune_numbers():
     # Set links name tunes by number, so a number must never change or go to another
     # tune: numbers are only ever added (a removed tune keeps its line). Checked against
-    # the last commit and the one before (on GitHub, a pull request against main).
+    # the last commit and the one before, and against NUMBERS_BASE when it's set: on
+    # GitHub, what main was before the push (several commits may come at once) or a pull
+    # request's base; before a push (.githooks/pre-push), the branch's upstream.
     numbers = b.load_numbers()
     assert len(set(numbers.values())) == len(numbers), "two tunes share a number"
     assert all(isinstance(n, int) and n >= 0 for n in numbers.values())
-    for revision in ["HEAD", "HEAD^1"]:
+    base = os.environ.get("NUMBERS_BASE", "").strip()
+    for revision in ["HEAD", "HEAD^1"] + ([base] if base and set(base) != {"0"} else []):
         before = committed_numbers(revision)
         if before is None:
             continue
         changed = number_problems(before, numbers)
         assert not changed, (f"tune_numbers.json changes numbers that set links use (was, now): {changed}. "
                              "Only add new tunes (python build_site.py --number-tunes); keep removed ones.")
+
+
+def test_moved_tunes(tmp_path, monkeypatch):
+    # moved.json: a renamed tune's old folder name, with the codes old set links use for it.
+    numbers = {"hen-enw": 7, "glandyfi": 3}
+    (tmp_path / "moved.json").write_text(json.dumps({"moved": {"hen-enw": "glandyfi"}}), encoding="utf-8")
+    monkeypatch.setattr(b, "ROOT", tmp_path)
+    assert b.moved_tunes({"glandyfi"}, numbers) == [
+        {"from": "hen-enw", "to": "glandyfi", "code": b.set_code("hen-enw", numbers), "id": b.short_id("hen-enw")}]
+    with pytest.raises(SystemExit, match="still a folder"):
+        b.moved_tunes({"glandyfi", "hen-enw"}, numbers)
+    with pytest.raises(SystemExit, match="no tunes/glandyfi"):
+        b.moved_tunes({"other"}, numbers)
+
+
+def test_moved_tune_pages(tmp_path, monkeypatch):
+    # The old address of a moved tune is a page sending people on to the new one.
+    monkeypatch.setattr(b, "moved_tunes", lambda slugs, numbers: [
+        {"from": "hen-enw", "to": "sawdl-y-fuwch-version-2", "code": "zz", "id": "zzzzz"}])
+    monkeypatch.setattr(b, "OUT", tmp_path / "_site")
+    b.main()
+    page = (b.OUT / "alaw" / "hen-enw" / "index.html").read_text(encoding="utf-8")
+    assert '<meta http-equiv="refresh" content="0; url=../sawdl-y-fuwch/?v=2">' in page
+    assert '<link rel="canonical" href="https://ysesiwn.cymru/alaw/sawdl-y-fuwch/?v=2">' in page
+
+
+def test_decorations_are_not_notes():
+    # !fermata! and the like aren't notes (its f, e and a once were, for the note search).
+    abc = "X:1\nT:t\nM:4/4\nL:1/8\nK:D\n!fermata!A4 !trill!B4|]\n"
+    assert b.melody(abc) == [69, 71]
+
+
+def test_playwright_matches_the_dev_container():
+    # The dev container's image comes with browsers for one Playwright version only.
+    image = re.search(r"playwright/python:v([\d.]+)", (b.ROOT / ".devcontainer" / "Dockerfile").read_text(encoding="utf-8"))
+    pinned = re.search(r"^playwright==([\d.]+)", (b.ROOT / "requirements-dev.txt").read_text(encoding="utf-8"), re.M)
+    assert image and pinned and image.group(1) == pinned.group(1)
 
 
 def test_pull_request_template():
@@ -192,7 +233,8 @@ def test_tune_pages(site):
     out = b.OUT
     index = json.loads((out / "tunes.json").read_text(encoding="utf-8"))
     groups = {t["group"] for t in index["tunes"]}
-    assert {p.name for p in (out / "alaw").iterdir()} == groups
+    moved = {m["from"] for m in index["moved"]}  # their old addresses send people on
+    assert {p.name for p in (out / "alaw").iterdir()} == groups | moved
     page = (out / "alaw" / "llancesau-trefaldwyn" / "index.html").read_text(encoding="utf-8")
     url = "https://ysesiwn.cymru/alaw/llancesau-trefaldwyn/"
     assert '<base href="../../">' in page

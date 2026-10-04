@@ -1,7 +1,10 @@
 # For the tests (tests/); the site itself needs nothing but Python.
 #   pip install -r requirements-dev.txt && python -m playwright install chromium
-pytest
-playwright
-axe-playwright-python  # the axe accessibility checker, bundled
-zxing-cpp  # reads the QR codes back
-pillow
+# Pinned, so a new release can't break the tests unannounced: upgrade on purpose. Keep
+# playwright the same version as the dev container's image (.devcontainer/Dockerfile),
+# whose browsers are made for it (tests/test_build.py checks).
+pytest==9.1.1
+playwright==1.63.0
+axe-playwright-python==0.1.8  # the axe accessibility checker, bundled
+zxing-cpp==3.1.1  # reads the QR codes back
+pillow==12.3.0

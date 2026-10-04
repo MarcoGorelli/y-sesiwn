@@ -57,17 +57,28 @@ self.addEventListener("activate", (event) => {
 // changed, past the browser's own short-term cache (GitHub Pages: 10 minutes).
 // Everything else (the piano notes, the map, the libraries) is used from the copy; a
 // piano note not kept yet is fetched, and kept.
+//
+// One page's files all come from the same deploy: a new app.js with an older saved page
+// (or the other way round) could break. So the page itself decides: a page that came
+// from the network gets its app files from the network too (the saved copy only if that
+// fails, or takes over PAGE_WAIT ms: a stalled connection), and a page answered from the
+// saved copy gets the saved app files. (A page's answer is remembered by its client id
+// while this worker runs; if it was stopped in between, each file is fresh or saved on
+// its own, as for the page.)
 const FRESH_WAIT = 2000;
+const PAGE_WAIT = 10000;
 const FRESH = new Set(["", "index.html", "app.js", "style.css", "tunes.json", "sessions.json"]);
+const pageFrom = new Map();  // client id -> "network" or "saved"
 
-async function freshOrSaved(url, saved) {
+async function freshOrSaved(url, saved, wait = FRESH_WAIT, from = () => {}) {
   try {
     const answer = await Promise.race([
       fetch(url, { cache: "no-cache" }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("slow")), FRESH_WAIT)),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("slow")), wait)),
     ]);
-    if (answer.ok) return answer;
+    if (answer.ok) { from("network"); return answer; }
   } catch {}
+  from("saved");
   return (await saved()) ?? fetch(url);
 }
 
@@ -88,16 +99,28 @@ self.addEventListener("fetch", (event) => {
       })());
       return;
     }
-    event.respondWith(FRESH.has(path) ? freshOrSaved(request.url, saved) : (async () => (await saved()) ?? fetch(request))());
+    const page = pageFrom.get(event.clientId);
+    event.respondWith(!FRESH.has(path) || page === "saved" ? (async () => (await saved()) ?? fetch(request))()
+      : freshOrSaved(request.url, saved, page === "network" ? PAGE_WAIT : FRESH_WAIT));
     return;
   }
   // Every page (?set=…, a tune's alaw/<folder>/) is the app, index.html. A tune's page
   // is folders down from it, so the saved copy points <base href> back up (../../).
   const up = "../".repeat(path.split("/").length - 1);
+  const client = event.resultingClientId;
+  const from = (how) => {
+    if (!client) return;
+    pageFrom.set(client, how);
+    // Forget pages that have gone (a long-running worker would otherwise keep them all).
+    self.clients.matchAll().then((open) => {
+      const ids = new Set(open.map((c) => c.id).concat(client));
+      for (const id of pageFrom.keys()) if (!ids.has(id)) pageFrom.delete(id);
+    });
+  };
   event.respondWith(freshOrSaved(request.url, async () => {
     const app = await caches.match("./", { ignoreSearch: true });
     if (!app || !up) return app;
     const html = (await app.text()).replace('<base href="./">', `<base href="${up}">`);
     return new Response(html, { headers: app.headers });
-  }));
+  }, FRESH_WAIT, from));
 });

@@ -2033,6 +2033,93 @@ def test_tune_not_found(page, site):
     assert "no-such-tune" in page.inner_text("main")
 
 
+def test_moved_tune(page, site):
+    # A tune renamed (moved.json): its old address, its old code in set links and the key
+    # kept for it on this device all find it under its new name. tunes.json is given a
+    # move here, from a made-up old name to Glandyfi.
+    import json
+
+    def with_move(route):
+        index = json.loads(route.fetch().text())
+        index["moved"] = [{"from": "hen-glandyfi", "to": "glandyfi", "code": "zz", "id": "zzzzz"}]
+        route.fulfill(json=index)
+
+    page.route("**/tunes.json", with_move)
+    page.goto(site)
+    page.evaluate("localStorage.setItem('keys', JSON.stringify({ 'hen-glandyfi': 2 }))")
+    page.goto_site("?tune=hen-glandyfi")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.url.endswith("/alaw/glandyfi/?key=A")  # Glandyfi is in G: 2 up, as kept for its old name
+    assert page.inner_text("h1") == "Glandyfi" and page.input_value("#key-select") == "2"
+    page.goto_site("?set=zz~h")
+    page.wait_for_selector(".set-list li")
+    assert page.inner_text(".set-list li a") == "Glandyfi" and page.input_value(".set-list select") == "2"
+
+
+def test_tune_page_without_tunes_json(page, site):
+    # A tune's page comes with its own data: if tunes.json can't be had (a bad connection),
+    # the tune stays on the page, and the sidebar works from the start.
+    page.route("**/tunes.json", lambda route: route.abort())
+    page.goto(site + "alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.wait_for_timeout(500)  # tunes.json has failed by now
+    assert page.inner_text("main h1") == "Glandyfi"
+    page.click(".lang-switch [data-lang=cy]")
+    page.wait_for_selector("main h2:text('Manylion')")
+    assert page.inner_text("main h1") == "Glandyfi"
+
+
+def test_tune_page_without_audio(browser, site):
+    # A browser without Web Audio shows the music and says it can't play it (no error).
+    context = browser.new_context(service_workers="block")
+    page = context.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.add_init_script("delete window.AudioContext; delete window.webkitAudioContext;")
+    page.goto(site + "alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert "Audio is not supported" in page.inner_text(".score .audio")
+    assert page.locator("#loop-select option").count() > 1
+    assert not errors, errors
+    context.close()
+
+
+def test_guides_run_nothing(page, site):
+    # The guides are Markdown anyone can suggest changes to: HTML in them that could run
+    # is taken out. A guide that can't be fetched says so.
+    def with_html(route):
+        text = route.fetch().text().replace(
+            "# How to submit corrections\n",
+            "# How to submit corrections\n\n<img src=x onerror=\"window.ran = 1\"> <script>window.ran = 2</script>\n"
+            "<a href=\"javascript:window.ran = 3\">here</a> <iframe src=\"about:blank\"></iframe>\n\n", 1)
+        route.fulfill(body=text, content_type="text/markdown")
+
+    page.route("**/CONTRIBUTING.md", with_html)
+    page.goto_site("?page=fix")
+    page.wait_for_selector("article.guide img")
+    page.click("article.guide a:text('here')")
+    page.wait_for_timeout(300)
+    assert page.evaluate("window.ran") is None
+    assert page.locator("article.guide [onerror], article.guide script, article.guide iframe").count() == 0
+    page.route("**/about.md", lambda route: route.abort())
+    page.goto_site("?page=about")
+    page.wait_for_selector("main p:has-text('load this page')")
+
+
+def test_playback_carries_on_through_a_change(page):
+    # Changing the tempo (or the key, or turning a phone) draws the music again: a tune
+    # that was playing carries on, from about where it was.
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.click(".abcjs-midi-start")
+    page.wait_for_function("state.synth.isStarted && state.synth.percent > 0.05", timeout=15000)
+    before = page.evaluate("state.synth.percent")
+    page.fill("#tempo", "150")
+    page.dispatch_event("#tempo", "change")
+    page.wait_for_function(f"state.synth.isStarted && state.synth.percent >= {before}", timeout=15000)
+    page.click(".abcjs-midi-start")  # pause
+
+
 def test_touch_targets(browser, site):
     # On a phone, every control is at least 24px each way (WCAG 2.5.8); links inside text don't count.
     context = browser.new_context(viewport={"width": 320, "height": 640}, is_mobile=True, has_touch=True,

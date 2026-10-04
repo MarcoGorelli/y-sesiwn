@@ -30,6 +30,7 @@ const state = {
   bySlug: new Map(),    // every tune file ("version"), by folder name
   byId: new Map(),      // and by its short_id (older set links)
   byCode: new Map(),    // and by its code in set links (build_site.py's set_code)
+  moved: new Map(),     // a renamed tune's old folder name -> its new one (moved.json)
   groups: new Map(),    // one page per tune: its versions, by the first version's folder
   groupList: [],        // groups sorted by title
   settings: new Map(),  // per tune: { transpose, bpm }, kept while the page is open
@@ -245,7 +246,7 @@ function musicLine(abc) {  // build_site.py's music(): the notes, from K: on, as
   const body = (start < 0 ? [] : lines.slice(start))
     .map((line) => (line.startsWith("K:") ? `[K:${line.slice(2).trim()}]` : /^(%|[A-Za-z]:)/.test(line) ? null : line))
     .filter((line) => line != null).join(" ");
-  return body.replace(/\{[^}]*\}|"[^"]*"/g, " ").replace(/\[(?!K:)[A-Za-z]:[^\]]*\]/g, " ");
+  return body.replace(/\{[^}]*\}|"[^"]*"|![^!\s]*!/g, " ").replace(/\[(?!K:)[A-Za-z]:[^\]]*\]/g, " ");
 }
 
 function melodyOf(tune) {
@@ -809,6 +810,9 @@ function addressTune() {
   return match ? match[1] : new URLSearchParams(location.search).get("tune")?.replace(ADDRESS_JUNK, "") ?? null;
 }
 
+// A tune renamed since (moved.json): its new folder name. Anything else as it is.
+const movedTo = (slug) => state.moved.get(slug) ?? slug;
+
 // A type's own page, math/<slug>/ (build_site.py, for search engines): the browse
 // page with that type chosen.
 const typeSlug = (name) => normalize(name).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");  // build_site.py's slugify
@@ -835,6 +839,7 @@ function setMenu(open) {
 }
 
 function openRandomTune() {
+  if (!state.complete) { state.loaded.then(openRandomTune, () => {}); return; }  // a tune's page, before the rest have come
   const current = addressTune();
   const choices = state.groupList.filter((g) => g.slug !== current);
   navigate(tuneUrl(choices[Math.floor(Math.random() * choices.length)].slug));
@@ -924,9 +929,14 @@ function render() {
   stopListening();
   state.keyNote?.stop();
   const params = new URLSearchParams(location.search);
-  const slug = addressTune();
+  const slug = movedTo(addressTune());
   // A tune's own page starts with only that tune (see start()): anything else waits for the rest.
-  if (!state.complete && !state.groups.has(slug) && !state.bySlug.has(slug)) { state.loaded.then(render); return; }
+  if (!state.complete && !state.groups.has(slug) && !state.bySlug.has(slug)) {
+    state.loaded.then(render, (error) => {
+      document.getElementById("main").replaceChildren(el("p", {}, `${tr("Couldn't load the tunes", "Methu llwytho'r alawon")}: ${error}`));
+    });
+    return;
+  }
   let group = state.groups.get(slug);
   let version = Number(params.get("v")) || 1;
   const file = state.bySlug.get(slug);
@@ -1074,7 +1084,10 @@ function rememberTune(group, tune) {
   try { localStorage.setItem("recent", JSON.stringify(list.slice(0, RECENT))); } catch {}
 }
 function recentTunes() {
-  const tunes = recentList().filter((r) => state.groups.has(r.group));  // a tune may have been removed
+  const tunes = recentList().map((r) => {  // a tune may have been renamed…
+    const moved = state.moved.has(r.group) && state.bySlug.get(movedTo(r.group));
+    return moved ? { group: moved.group, version: moved.version } : r;
+  }).filter((r) => state.groups.has(r.group));  // …or removed
   if (!tunes.length) return null;
   return el("p", { class: "recent" }, el("span", { class: "recent-label" }, tr("Recently opened:", "Agorwyd yn ddiweddar:")), " ",
     tunes.map((r, i) => [i ? " · " : "", el("a", { href: tuneUrl(r.group, r.version), "data-route": true }, tuneName(r.group, state.groups.get(r.group).title))]));
@@ -1525,7 +1538,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   audio.replaceChildren();
   if (!ABCJS.synth.supportsAudio()) {
     audio.textContent = tr("Audio is not supported in this browser.", "Dyw'r porwr hwn ddim yn gallu chwarae sain.");
-    return;
+    return { parts };
   }
   const controller = new ABCJS.synth.SynthController();
   const cursor = new Cursor();
@@ -1802,7 +1815,12 @@ function detailValue(label, value) {
 function savedKeys() {
   try {
     const keys = JSON.parse(localStorage.getItem("keys"));
-    return keys && typeof keys === "object" ? keys : {};
+    if (!keys || typeof keys !== "object") return {};
+    // A tune renamed since its key was kept: under its new name (saved so next time it changes).
+    const out = {};
+    for (const [slug, shift] of Object.entries(keys)) if (!state.moved.has(slug)) out[slug] = shift;
+    for (const [slug, shift] of Object.entries(keys)) if (state.moved.has(slug)) out[movedTo(slug)] ??= shift;
+    return out;
   } catch { return {}; }
 }
 function saveKey(slug, shift) {
@@ -1838,9 +1856,16 @@ function renderTune(main, group, tune) {
     speedNote.textContent = tr(`now ${bpm} bpm`, `nawr ${bpm} curiad y funud`);
   };
   let drawn = { parts: [] };
+  // Drawing it again (a new tempo or key, a phone turned on its side) makes a new player:
+  // if the tune was playing, it carries on from the same point in it.
   const redraw = () => {
     speedNote.textContent = "";
+    const playingAt = state.synth?.isStarted ? state.synth.percent ?? 0 : null;
     drawn = drawScore(tune, paper, audio, chords?.querySelector(".chart-box"), onSpeed);
+    const player = state.synth;
+    if (playingAt !== null && player) {
+      player.play().then(() => { if (state.synth === player && player.isStarted) player.seek(playingAt); }).catch(() => {});
+    }
   };
 
   const controls = el("div", { class: "controls" });
@@ -2256,7 +2281,12 @@ function renderMap(main) {
   popup.addEventListener("pointerenter", () => clearTimeout(hideTimer));
   popup.addEventListener("pointerleave", (e) => { if (e.pointerType !== "touch") hideSoon(); });
   // On a touchscreen, tapping elsewhere closes it.
-  main.addEventListener("pointerdown", (e) => { if (!target(e) && !popup.contains(e.target)) hide(); });
+  // (#main stays from page to page, so the listener goes once the map has.)
+  const tapElsewhere = (e) => {
+    if (!map.isConnected) main.removeEventListener("pointerdown", tapElsewhere);
+    else if (!target(e) && !popup.contains(e.target)) hide();
+  };
+  main.addEventListener("pointerdown", tapElsewhere);
   const list = el("ul", { class: "place-list" }, places.map((place) =>
     el("li", { onmouseenter: () => light(place, true), onmouseleave: () => light(place, false) },
       el("strong", {}, place.name), " ",
@@ -3263,7 +3293,7 @@ function sendTuneForm() {
 // ?page=contact, and ?page=contact&about=<version's folder> from a tune's "Report a problem" link.
 function renderContact(main) {
   document.title = tr("Contact · Y Sesiwn", "Cysylltu · Y Sesiwn");
-  const tune = state.bySlug.get(new URLSearchParams(location.search).get("about"));
+  const tune = state.bySlug.get(movedTo(new URLSearchParams(location.search).get("about")));
   const group = tune && state.groups.get(tune.group);
   const about = tune ? `${group.title}${group.versions.length > 1 ? tr(` (version ${tune.version})`, ` (fersiwn ${tune.version})`) : ""}` : "";
   const subject = el("input", { type: "text", name: "subject", value: about ? tr(`About ${about}`, `Am ${about}`) : null });
@@ -3302,6 +3332,24 @@ function markdownSections(text) {
   return sections.map((lines) => lines.join("\n"));
 }
 
+// The guides are Markdown from this repo, which anyone can suggest changes to: marked
+// passes HTML in it through, so anything that could run (scripts, on… handlers,
+// javascript: links, frames) is taken out before it goes on the page. A <template>'s
+// contents are inert: nothing in them loads or runs while they're cleaned.
+function cleanHtml(html) {
+  const template = document.createElement("template");
+  template.innerHTML = html;
+  template.content.querySelectorAll("script, style, iframe, frame, object, embed, form, base, link, meta").forEach((n) => n.remove());
+  for (const node of template.content.querySelectorAll("*")) {
+    for (const { name, value } of [...node.attributes]) {
+      if (/^on/i.test(name) || (/^(href|src|action|formaction|xlink:href)$/i.test(name) && /^\s*(javascript|data|vbscript):/i.test(value))) {
+        node.removeAttribute(name);
+      }
+    }
+  }
+  return template.content;
+}
+
 // The Markdown reader (static/marked, 40 KB) is only needed for these pages, so it's
 // loaded the first time one is opened.
 let markedLibrary = null;
@@ -3316,13 +3364,25 @@ async function renderGuide(main, key) {
   const { file, heading } = state.lang === "cy" ? PAGES[key].cy : PAGES[key];
   document.title = `${heading} · Y Sesiwn`;
   main.replaceChildren(el("p", { class: "loading" }, tr("Loading…", "Yn llwytho…")));
-  if (!state.docs.has(file)) state.docs.set(file, await (await fetch(file)).text());
-  const text = state.docs.get(file);
-  const section = markdownSections(text).find((s) => s.startsWith(`# ${heading}\n`)) ?? "";
-  await loadMarked();
-  const html = marked.parse(section.replaceAll("(#how-to-add-a-tune)", "(?page=add)"));
+  let html;
+  try {
+    if (!state.docs.has(file)) {
+      const answer = await fetch(file);
+      if (!answer.ok) throw new Error(`${file}: ${answer.status}`);
+      state.docs.set(file, await answer.text());
+    }
+    const section = markdownSections(state.docs.get(file)).find((s) => s.startsWith(`# ${heading}\n`)) ?? "";
+    await loadMarked();
+    html = marked.parse(section.replaceAll("(#how-to-add-a-tune)", "(?page=add)"));
+  } catch {
+    if (new URLSearchParams(location.search).get("page") === key) {
+      main.replaceChildren(el("h1", {}, heading), el("p", {}, tr("Couldn't load this page. Check your connection and try again.",
+        "Methu llwytho'r dudalen hon. Gwiriwch eich cysylltiad a rhoi cynnig arall arni.")));
+    }
+    return;
+  }
   const guide = el("article", { class: `guide ${className ?? ""}` });
-  guide.innerHTML = html;  // our own markdown, from this repo
+  guide.append(cleanHtml(html));  // our own markdown, from this repo: still, nothing in it runs
   // CONTRIBUTING.md points GitHub readers to this form; here, it's right above.
   if (key === "add") guide.querySelector('a[href="https://ysesiwn.cymru/?page=add"]')?.closest("p").remove();
   // Links to the site itself (written in full for GitHub readers) stay on this copy of it.
@@ -3350,7 +3410,7 @@ let missTimer = null;
 function noteMiss(query, found) {
   clearTimeout(missTimer);
   const words = normalize(query).slice(0, 40);
-  if (found || words.length < 3 || MISSED.has(words)) return;
+  if (found || !state.complete || words.length < 3 || MISSED.has(words)) return;
   missTimer = setTimeout(() => {
     MISSED.add(words);
     countEvent(`search-miss/${words.replace(/ /g, "-")}`, `No tune found: ${words}`);
@@ -3398,7 +3458,8 @@ function attachSearch(input, list, { showAllOnFocus = true, onPick = null } = {}
           role: "option", id: `${input.id}-option-${i}`, "aria-selected": i === active,
           onmousedown: (e) => { e.preventDefault(); open(tune); },
         }, tuneName(tune.slug, tune.title)))
-      : [el("li", { class: "empty" }, tr("No tunes match that name.", "Does dim alaw â'r enw hwnnw."))]));
+      : [el("li", { class: "empty" }, state.complete ? tr("No tunes match that name.", "Does dim alaw â'r enw hwnnw.")
+        : tr("Loading tunes…", "Yn llwytho'r alawon…"))]));
     list.hidden = false;
     input.setAttribute("aria-expanded", "true");
   };
@@ -3412,6 +3473,8 @@ function attachSearch(input, list, { showAllOnFocus = true, onPick = null } = {}
 
   input.addEventListener("input", show);
   input.addEventListener("focus", show);
+  // Typed before every tune had come (on a tune's page): search again once they have.
+  if (!state.complete) state.loaded?.then(() => { if (document.activeElement === input) show(); }, () => {});
   input.addEventListener("blur", close);
   input.addEventListener("keydown", (e) => {
     if (e.key === "ArrowDown") { e.preventDefault(); if (list.hidden) show(); else highlight(active + 1); }
@@ -3462,7 +3525,7 @@ const VERSION_SUFFIX = / \(version \d+\)$/;
 
 function buildGroups() {
   // Versions of a tune ("Rheged", "Rheged (version 2)", …) share one page.
-  for (const map of [state.bySlug, state.byId, state.byCode, state.groups]) map.clear();  // built twice on a tune's page
+  for (const map of [state.bySlug, state.byId, state.byCode, state.groups, state.moved]) map.clear();  // built twice on a tune's page
   for (const tune of state.data.tunes) {
     tune.title = tune.titles[0];  // left out of tunes.json, as is the melody (melodyOf)
     tune.search = tune.titles.map(normalize);
@@ -3480,22 +3543,26 @@ function buildGroups() {
     group.search = group.titles.map(normalize);
   }
   state.groupList = [...state.groups.values()].sort((a, b) => (a.search[0] < b.search[0] ? -1 : 1));
+  // A renamed tune: its old folder name, and its old codes in set links, find the new one.
+  for (const move of state.data.moved ?? []) {
+    state.moved.set(move.from, move.to);
+    const tune = state.bySlug.get(move.to);
+    if (!tune) continue;  // a tune's page, before the rest have come
+    if (!state.byCode.has(move.code)) state.byCode.set(move.code, tune);
+    if (!state.byId.has(move.id)) state.byId.set(move.id, tune);
+  }
 }
 
 async function start() {
   // A tune's own page (alaw/<folder>/) comes with that tune's data, so its sheet music
   // can be drawn at once; every other tune (tunes.json, about 150 KB) follows.
   const own = document.getElementById("tune-data");
-  state.loaded = fetch("tunes.json").then((answer) => answer.json());
-  if (own) {
-    state.data = JSON.parse(own.textContent);
-    buildGroups();
-    applyLang();
-    render();
-  }
-  state.data = await state.loaded;
-  state.complete = true;
-  buildGroups();
+  state.loaded = fetch("tunes.json").then((answer) => {
+    if (!answer.ok) throw new Error(`tunes.json: ${answer.status}`);
+    return answer.json();
+  });
+  // The sidebar works from the start: on a tune's page, before every other tune has come
+  // (its search finds more as they arrive).
   document.getElementById("surprise-sidebar").addEventListener("click", openRandomTune);
   document.getElementById("shortcuts-button").addEventListener("click", showShortcuts);
   document.getElementById("menu-button").addEventListener("click", () =>
@@ -3509,6 +3576,19 @@ async function start() {
     document.getElementById("main").focus();
   });
   attachSearch(document.getElementById("search-input"), document.getElementById("suggestions"));
+  if (own) {
+    state.data = JSON.parse(own.textContent);
+    buildGroups();
+    render();
+  }
+  try {
+    state.data = await state.loaded;
+  } catch (error) {
+    if (own) return;  // the tune is on the page already: keep it (other pages say so when opened)
+    throw error;
+  }
+  state.complete = true;
+  buildGroups();
   if (!own) render();
   (window.requestIdleCallback ?? setTimeout)(() => loadAbcjs().catch(() => {}));
 }

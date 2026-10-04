@@ -4,6 +4,9 @@
 # Skip it for one push:        git push --no-verify
 cd "$(git rev-parse --show-toplevel)" || exit 1
 echo "Running the tests before pushing (a few minutes)..."
+# tune_numbers.json is checked against what's already pushed (tests/test_build.py).
+NUMBERS_BASE="$(git rev-parse -q --verify '@{upstream}' 2>/dev/null || true)"
+export NUMBERS_BASE
 if [ -x .venv/bin/python ] && .venv/bin/python -c "import pytest, playwright" 2>/dev/null; then
   exec .venv/bin/python -m pytest -q
 elif command -v uv >/dev/null 2>&1; then

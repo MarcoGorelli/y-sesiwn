@@ -85,7 +85,9 @@ turn on the hook once per clone: `git config core.hooksPath .githooks`
 publishes `_site/` to GitHub Pages on every push to `main` (repo **Settings → Pages → Source: GitHub
 Actions**), served at the custom domain `ysesiwn.cymru`. Everything uses
 relative URLs, so the site also works under a sub-path such as
-`marcogorelli.github.io/y-sesiwn/`.
+`marcogorelli.github.io/y-sesiwn/`. It also runs every Monday morning, so the
+sessions' next dates in the search-engine data stay current (GitHub pauses
+scheduled runs after 60 days without a commit).
 
 ## Features
 
@@ -244,7 +246,9 @@ relative URLs, so the site also works under a sub-path such as
   --number-tunes`, after merging new tunes; the deploy never numbers tunes
   itself, so numbers can't shift between builds): a removed tune keeps its
   line, so its number is never reused. `test_tune_numbers` checks this against
-  the last commit (and, on GitHub, a pull request against main). A tune without
+  the last commit, and against `NUMBERS_BASE`: on GitHub, what `main` was
+  before the push (however many commits it brings) or a pull request's base;
+  in the pre-push hook, the branch's upstream. A tune without
   a number yet uses `.` and its five-character `short_id()` instead, which
   keeps working after it's numbered; the first form of set links (`?page=set&s=…`)
   still opens. Your own sets are also kept in the browser (localStorage), with
@@ -265,6 +269,14 @@ relative URLs, so the site also works under a sub-path such as
   tunes with the nearest names. Before the app is installed, GitHub Pages
   answers such an address with `site/404.html`, which opens the app at
   `?tune=<folder>`.
+- **Renaming a tune's folder** (or making a tune a version of another,
+  `<other>-version-N`): add `"old-folder": "new-folder"` to `moved.json`, and
+  keep the old folder's line in `tune_numbers.json`. Then its old address is a
+  page sending people on (`alaw/<old>/`, written by the build), and the app
+  finds it by its old name too: in old set links (by its old number), in
+  `?tune=`, and in the keys and recent tunes kept on people's devices. Without
+  that, old set links quietly lose the tune. The build stops if the old folder
+  still exists or the new one doesn't.
 - **Touch:** controls are at least 24px each way on a phone (WCAG 2.5.8),
   most about 40px; `test_touch_targets` checks every page at 320px wide.
 - **Map:** tunes named after a place have a small map of Wales on their page,
@@ -293,6 +305,10 @@ relative URLs, so the site also works under a sub-path such as
   `site/manifest.webmanifest` lets phones install it. The build
   fills in `sw.js`'s file lists and a version made from the files' contents,
   so each deploy is picked up in the background and used from the next visit.
+  The app's own files (`index.html`, `app.js`, `style.css`, `tunes.json`,
+  `sessions.json`) come from the network when it answers within 2 s, else
+  from the saved copy; a page's other app files then come from the same place
+  as the page, so it never mixes two deploys.
   The piano notes (2 MB) are cached separately, so a deploy doesn't download them
   again: each is kept the first time it's played, and the app asks for all of
   them on a computer and in the installed app (not on a phone's data, unless
@@ -348,6 +364,7 @@ relative URLs, so the site also works under a sub-path such as
 | `site/about.cy.md`, `site/guides.cy.md` | The Welsh About page, and the Welsh *How to add a tune* and *How to submit corrections* (keep in step with `about.md` and `CONTRIBUTING.md`). |
 | `.github/pull_request_template.md` | The checklist a new pull request starts with: credit and permission, checked in the abcjs editor, new tunes numbered in `tune_numbers.json`. |
 | `tune_numbers.json` | Each tune's number in set links. Only ever add to it (`python build_site.py --number-tunes`); never change a number or delete a line. |
+| `moved.json` | Renamed tune folders, old name to new, so old links still find them (see Features). Only ever add to it. |
 | `pronunciation.json` | How to say each Welsh tune name, by folder name (the build stops if a folder doesn't exist). |
 | `sessions.json` | The active sessions, for the sessions page (see above). |
 | `places.json`, `site/wales.svg` | The places named in tune titles, for the map; the outline of Wales (made once from the ONS local authority boundaries via [UK-GeoJSON](https://github.com/martinjc/UK-GeoJSON), merged and simplified; its projection is in a comment in the file and in `MAP` in `build_site.py`). The outline is used as a CSS mask, so it takes the page's colours. |

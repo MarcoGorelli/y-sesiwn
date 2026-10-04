@@ -124,8 +124,8 @@ def key_signature(key: str) -> dict[str, int]:
 
 def music(abc: str) -> str:
     """The tune's notes as one line: from the K: line on, without comments, other
-    header lines, grace notes, chord names, text or inline fields (key changes are
-    kept, as [K:...])."""
+    header lines, grace notes, chord names, text, decorations or inline fields (key
+    changes are kept, as [K:...])."""
     lines = abc.splitlines()
     start = next((i for i, line in enumerate(lines) if line.startswith("K:")), len(lines))
     body_parts = []
@@ -135,7 +135,7 @@ def music(abc: str) -> str:
         elif not re.match(r"^(%|[A-Za-z]:)", line):
             body_parts.append(line)
     body = " ".join(body_parts)
-    body = re.sub(r'\{[^}]*\}|"[^"]*"', " ", body)  # grace notes; chord names and text
+    body = re.sub(r'\{[^}]*\}|"[^"]*"|![^!\s]*!', " ", body)  # grace notes; chord names and text; !fermata! and the like
     return re.sub(r"\[(?!K:)[A-Za-z]:[^\]]*\]", " ", body)  # other inline fields, e.g. [M:6/8]
 
 
@@ -472,6 +472,21 @@ def set_code(slug: str, numbers: dict[str, int]) -> str:
     return digits(n, 2) if n < 62 ** 2 else "-" + digits(n, 3)
 
 
+def moved_tunes(slugs: set[str], numbers: dict[str, int]) -> list[dict]:
+    """moved.json: tunes whose folder was renamed (or that became another tune's
+    version), with the old folder's set codes, so old links still find them."""
+    path = ROOT / "moved.json"
+    moved = json.loads(path.read_text(encoding="utf-8"))["moved"] if path.exists() else {}
+    result = []
+    for old, new in moved.items():
+        if old in slugs:
+            raise SystemExit(f"moved.json: {old} is still a folder in tunes/ (only list folders that have gone)")
+        if new not in slugs:
+            raise SystemExit(f"moved.json: {old} moved to {new}, but there's no tunes/{new}/")
+        result.append({"from": old, "to": new, "code": set_code(old, numbers), "id": short_id(old)})
+    return result
+
+
 def main() -> None:
     tunes = [tune_record(p) for p in sorted((ROOT / "tunes").glob("*/tune.abc"))]
     numbers = load_numbers()
@@ -498,6 +513,7 @@ def main() -> None:
         "tunes": tunes,
         "places": places({t["group"] for t in tunes}),
         "say": pronunciations({t["group"] for t in tunes}),
+        "moved": moved_tunes({t["slug"] for t in tunes}, numbers),
         "mapSize": [float(n) for n in re.search(
             r'viewBox="0 0 ([\d.]+) ([\d.]+)"', (ROOT / "site" / "wales.svg").read_text()).groups()],
     }
@@ -517,7 +533,7 @@ def main() -> None:
     )
     tune_pages(tunes, index)
     write_service_worker()
-    print(f"built {OUT.relative_to(ROOT)}/ with {len(tunes)} tunes")
+    print(f"built {OUT.name}/ with {len(tunes)} tunes")
 
 
 # Not needed offline: link-preview images, the source of the service worker itself, and
@@ -642,6 +658,19 @@ def tune_pages(tunes: list[dict], index: dict) -> None:
             main=f"<h1>{esc(heading)}</h1><p>{esc(description)}</p><ul>"
                  + "".join(f'<li><a href="{TUNE_DIR}/{t["group"]}/">{esc(t["base"])}</a></li>' for t in listed)
                  + "</ul>"))
+
+    # A moved tune's old address sends people (and search engines) on to the new one;
+    # the app does the same offline, from tunes.json's "moved".
+    by_slug = {t["slug"]: t for t in tunes}
+    for move in index["moved"]:
+        new = by_slug[move["to"]]
+        to = f"../{new['group']}/" + (f"?v={new['version']}" if new["version"] > 1 else "")  # from alaw/<old>/
+        url = f"{SITE_URL}{TUNE_DIR}/{to[3:]}"
+        write_page(OUT / TUNE_DIR / move["from"], (
+            '<!doctype html>\n<html lang="en">\n<head>\n  <meta charset="utf-8">\n'
+            f'  <title>{esc(new["base"])} · Y Sesiwn</title>\n  <link rel="canonical" href="{esc(url)}">\n'
+            f'  <meta http-equiv="refresh" content="0; url={esc(to)}">\n</head>\n'
+            f'<body><p>This tune has moved: <a href="{esc(to)}">{esc(new["base"])}</a>.</p></body>\n</html>\n'))
 
     sessions_page(template, session_data())
     urls.append(f"{SITE_URL}{SESSIONS_DIR}/")

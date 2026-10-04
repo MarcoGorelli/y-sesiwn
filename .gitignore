@@ -25,4 +25,6 @@ compile.sh
 test-results/
 
 _todo_marco.md
+_data_report.md
+.claude/settings.local.json
 sian-philip/

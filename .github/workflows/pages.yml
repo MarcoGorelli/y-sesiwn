@@ -8,6 +8,10 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  # Every Monday morning too, so the sessions' next dates (in sesiynau/'s data for search
+  # engines, worked out at build time) never go stale.
+  schedule:
+    - cron: "0 5 * * 1"
 
 permissions:
   contents: read
@@ -22,7 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2  # the commit before too: tune_numbers.json is checked against it
+          fetch-depth: 0  # the history too: tune_numbers.json is checked against NUMBERS_BASE
       # uv installs the test dependencies in seconds, from a cache kept between runs.
       - uses: astral-sh/setup-uv@v6
         with:
@@ -45,6 +49,10 @@ jobs:
       - if: steps.browser-cache.outputs.cache-hit == 'true'
         run: python -m playwright install-deps chromium
       - run: python -m pytest
+        env:
+          # tune_numbers.json must only add to what main had before this push (or, for a
+          # pull request, to its base), however many commits it brings.
+          NUMBERS_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
       # A failed browser test leaves a trace of what the page did: download it from the
       # run's summary page and open it at trace.playwright.dev.
       - if: failure()

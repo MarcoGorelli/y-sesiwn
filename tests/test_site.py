@@ -1312,6 +1312,28 @@ def test_session_calendar(page):
     assert "RRULE:FREQ=WEEKLY;BYDAY=TU;UNTIL=20261229T235959Z" in unfolded
 
 
+@pytest.mark.parametrize("path, button", [
+    ("sesiynau/", ".pills [data-day='Monday']"),
+    ("?page=browse", ".pills [data-type='Jig']"),
+    ("?page=browse", ".pills.keys [data-key='D major']"),
+])
+def test_filter_unchosen_on_a_phone(browser, site, path, button):
+    # Tapping a filter again un-chooses it, and it looks un-chosen again (a phone keeps the
+    # tapped button's hover look, so there is none).
+    context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True, service_workers="block")
+    page = context.new_page()
+    page.goto(site + path)
+    page.wait_for_selector(".card.session, .tune-list li")
+    page.add_style_tag(content="* { transition: none !important; }")
+    look = "(b) => { const s = getComputedStyle(b); return [s.backgroundColor, s.borderColor, s.color]; }"
+    plain = page.eval_on_selector(button, look)
+    page.tap(button)
+    assert page.get_attribute(button, "aria-pressed") == "true" and page.eval_on_selector(button, look) != plain
+    page.tap(button)
+    assert page.get_attribute(button, "aria-pressed") == "false" and page.eval_on_selector(button, look) == plain
+    context.close()
+
+
 def test_session_report(page):
     # "Been lately?" writes an email saying which session, and whether it's still on.
     page.goto_site("sesiynau/")

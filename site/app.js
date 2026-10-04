@@ -2539,8 +2539,8 @@ async function renderSessions(main) {
 
   // Filters: a day of the week, and a county (or outside Wales); choosing one again clears it.
   let chosenDay = null, chosenCounty = null;
-  const dayPills = el("div", { class: "pills", role: "group", "aria-label": tr("Day of the week", "Dydd o'r wythnos") });
-  const countyPills = el("div", { class: "pills", role: "group", "aria-label": tr("Area", "Ardal") });
+  const dayPills = el("div", { class: "pills plain", role: "group", "aria-label": tr("Day of the week", "Dydd o'r wythnos") });
+  const countyPills = el("div", { class: "pills plain", role: "group", "aria-label": tr("Area", "Ardal") });
   const counties = [...new Set(sessions.map((s) => s.county))].sort((a, b) =>
     (a === "Outside Wales") - (b === "Outside Wales") || (normalize(a) < normalize(b) ? -1 : 1));
   const list = el("div", { class: "session-list" });

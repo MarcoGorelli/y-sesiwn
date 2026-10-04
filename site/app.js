@@ -1198,7 +1198,10 @@ function features() {
   // On a phone the full list would push the install card screens down the page: there it's
   // each feature's name (a link where it has a page), with the rest folded away under it.
   if (!matchMedia("(max-width: 800px)").matches) return el("section", { class: "features" }, heading, list);
-  const names = el("ul", { class: "feature-names" }, items.map((parts) => el("li", {}, bold(parts[0]))));
+  // Copies of the names: a link can't be in the pills and the list at once (appending it
+  // to the pills would take it out of its description).
+  const copy = (part) => (Array.isArray(part) ? part.map(copy) : part?.cloneNode ? part.cloneNode(true) : part);
+  const names = el("ul", { class: "feature-names" }, items.map((parts) => el("li", {}, bold(copy(parts[0])))));
   return el("section", { class: "features" }, heading, names,
     el("details", { class: "fold features-more" }, el("summary", {}, tr("More about each", "Rhagor am bob un")), list));
 }

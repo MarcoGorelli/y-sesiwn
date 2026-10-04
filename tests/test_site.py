@@ -558,6 +558,10 @@ def test_home_page_on_a_phone(browser, site):
     assert not page.locator(".features-more li").first.is_visible()
     page.click(".features-more summary")
     assert page.locator(".features-more li").first.is_visible()
+    # Every description starts with its feature's name (the pills have copies of the links).
+    descriptions = page.locator(".features-more li").all_inner_texts()
+    assert descriptions[0].startswith("Find a tune by its notes: ")
+    assert not [d for d in descriptions if d.startswith((":", " "))]
     context.close()
 
 

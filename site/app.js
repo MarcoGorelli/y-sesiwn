@@ -471,6 +471,15 @@ function detectPitch(samples, sampleRate) {
   return sampleRate / (lag + Math.max(-1, Math.min(1, shift)));
 }
 
+// The microphone's sound reaches the page through an AudioWorklet, every bit of it in
+// order however busy the page is (a slow phone, a background tab), and is timed by the
+// sound's own clock: a short note at reel speed isn't missed between two screen redraws.
+// Where there's no AudioWorklet, the sound is looked at once a redraw instead.
+const TAP = `registerProcessor("y-sesiwn-tap", class extends AudioWorkletProcessor {
+  process(inputs) { const sound = inputs[0]?.[0]; if (sound) this.port.postMessage(sound.slice(0)); return true; }
+});`;
+const LISTEN_STEP = 1024;  // samples between two looks (about 21 ms)
+
 async function startListening({ onNote, onHear, onStop }) {
   stopListening();
   if ("audioSession" in navigator) navigator.audioSession.type = "play-and-record";  // iPhone: allow the mic
@@ -489,15 +498,13 @@ async function startListening({ onNote, onHear, onStop }) {
     throw error;
   }
   await context.resume().catch(() => {});
-  const analyser = context.createAnalyser();
-  analyser.fftSize = 2048;  // ~45 ms of sound: two periods of the lowest note
-  context.createMediaStreamSource(stream).connect(analyser);
-  const samples = new Float32Array(analyser.fftSize);
-  const started = performance.now();
-  let candidate = null, since = 0, last = null, lastSound = started, heardAny = false, frame = 0;
+  const source = context.createMediaStreamSource(stream);
+  const samples = new Float32Array(2048);  // ~45 ms of sound: two periods of the lowest note
+  let candidate = null, since = 0, last = null, lastSound = 0, heardAny = false, frame = 0, tap = null;
   const listening = {
     stop(reason) {
       cancelAnimationFrame(frame);
+      if (tap) tap.port.onmessage = null;
       stream.getTracks().forEach((t) => t.stop());
       context.close().catch(() => {});
       if ("audioSession" in navigator) navigator.audioSession.type = "playback";
@@ -506,9 +513,8 @@ async function startListening({ onNote, onHear, onStop }) {
     },
   };
   state.listening = listening;
-  const tick = (now) => {
-    frame = requestAnimationFrame(tick);
-    analyser.getFloatTimeDomainData(samples);
+  // One look at the last 45 ms of sound, at time now (ms since listening started).
+  const look = (now) => {
     const hz = detectPitch(samples, context.sampleRate);
     const midi = hz ? Math.round(69 + 12 * Math.log2(hz / 440)) : null;
     if (midi !== candidate) { candidate = midi; since = now; }
@@ -520,11 +526,39 @@ async function startListening({ onNote, onHear, onStop }) {
       onNote(midi);
     }
     if (midi === null && now - since > 150) last = null;  // a gap: the same note may come again
-    if ((heardAny && now - lastSound > LISTEN.silence) || now - started > LISTEN.maxTime) {
-      listening.stop("done");
-    }
+    if ((heardAny && now - lastSound > LISTEN.silence) || now > LISTEN.maxTime) listening.stop("done");
   };
-  frame = requestAnimationFrame(tick);
+  try {
+    await context.audioWorklet.addModule(URL.createObjectURL(new Blob([TAP], { type: "text/javascript" })));
+    tap = new AudioWorkletNode(context, "y-sesiwn-tap");
+    const silent = context.createGain();
+    silent.gain.value = 0;  // the worklet needs pulling by the speakers to run, but nothing is played
+    source.connect(tap).connect(silent).connect(context.destination);
+    let total = 0, untilLook = LISTEN_STEP;
+    tap.port.onmessage = ({ data }) => {
+      samples.copyWithin(0, data.length);
+      samples.set(data, samples.length - data.length);
+      total += data.length;
+      untilLook -= data.length;
+      if (untilLook <= 0 && total >= samples.length && state.listening === listening) {
+        untilLook += LISTEN_STEP;
+        look((total / context.sampleRate) * 1000);
+      }
+    };
+  } catch {
+    // No AudioWorklet (older browsers): look at the sound once a screen redraw.
+    tap = null;
+    const analyser = context.createAnalyser();
+    analyser.fftSize = samples.length;
+    source.connect(analyser);
+    const started = performance.now();
+    const tick = (now) => {
+      frame = requestAnimationFrame(tick);
+      analyser.getFloatTimeDomainData(samples);
+      look(now - started);
+    };
+    frame = requestAnimationFrame(tick);
+  }
 }
 
 function stopListening() {

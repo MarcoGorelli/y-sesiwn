@@ -952,7 +952,7 @@ def test_keyboard_shortcuts(page):
     assert page.locator("dialog.shortcuts").is_visible()
     assert "Search for a tune by name" in page.inner_text("dialog.shortcuts")
     page.keyboard.press("Escape")
-    assert page.locator("dialog.shortcuts").count() == 0
+    page.wait_for_selector("dialog.shortcuts", state="detached")  # removed once its close event has run
     page.click("#shortcuts-button")
     assert page.locator("dialog.shortcuts").is_visible()
 
@@ -1069,9 +1069,11 @@ def fiddle_recording(path, notes, seconds_per_note=0.13, rate=48000):
         f, n = 440 * 2 ** ((midi - 69) / 12), int(seconds_per_note * rate)
         for i in range(n):
             t = i / rate
-            wobble = 1 + 0.006 * math.sin(2 * math.pi * 5.5 * t)
+            # Vibrato: the pitch swings ±0.6% (about 10 cents), 5.5 times a second. This is
+            # the phase of that frequency (its integral), so the swing doesn't grow with time.
+            phase = 2 * math.pi * f * t - f * 0.006 / 5.5 * math.cos(2 * math.pi * 5.5 * t)
             envelope = min(1, t / 0.01) * min(1, (n - i) / (0.005 * rate))
-            samples.append(envelope * sum(math.sin(2 * math.pi * f * k * wobble * t) / k for k in (1, 2, 3, 4, 5)) * 0.3)
+            samples.append(envelope * sum(math.sin(k * phase) / k for k in (1, 2, 3, 4, 5)) * 0.3)
     samples += [0.0] * int(3.2 * rate)
     with wave.open(str(path), "wb") as w:
         w.setnchannels(1)
@@ -1080,8 +1082,11 @@ def fiddle_recording(path, notes, seconds_per_note=0.13, rate=48000):
         w.writeframes(b"".join(struct.pack("<h", int(20000 * (x + rng.gauss(0, 0.004)))) for x in samples))
 
 
-def test_microphone(playwright_instance, site, tmp_path):
-    # Machynlleth's first ten notes, played a tone higher than written, fast.
+@pytest.mark.parametrize("slow", [1, 6])
+def test_microphone(playwright_instance, site, tmp_path, slow):
+    # Machynlleth's first ten notes, played a tone higher than written, fast: every note
+    # heard, also on a slow, busy device (the page six times slower) that redraws the
+    # screen less often.
     notes = [71, 72, 74, 76, 74, 72, 71, 72, 71, 69]
     fiddle_recording(tmp_path / "fiddle.wav", [n + 2 for n in notes])
     browser = playwright_instance.chromium.launch(args=[
@@ -1089,6 +1094,8 @@ def test_microphone(playwright_instance, site, tmp_path):
         f"--use-file-for-fake-audio-capture={tmp_path / 'fiddle.wav'}%noloop",
     ])
     page = browser.new_context(service_workers="block", permissions=["microphone"]).new_page()
+    if slow > 1:
+        page.context.new_cdp_session(page).send("Emulation.setCPUThrottlingRate", {"rate": slow})
     # From the home page: "Play it to me" opens the notes page and starts listening.
     page.goto(site)
     page.click("button.listen-start")
@@ -1099,6 +1106,25 @@ def test_microphone(playwright_instance, site, tmp_path):
     assert page.locator(".notes-results li a").first.inner_text() == "Machynlleth"
     # The previews (skipped while listening, so no notes are missed) appear once it stops.
     page.wait_for_selector(".notes-results .preview .abcjs-staff")
+    browser.close()
+
+
+def test_microphone_without_audio_worklet(playwright_instance, site, tmp_path):
+    # Browsers without AudioWorklet look at the sound once a screen redraw instead: still
+    # fine for notes played at a steady pace.
+    notes = [71, 72, 74, 76, 74, 72, 71, 72, 71, 69]
+    fiddle_recording(tmp_path / "fiddle.wav", [n + 2 for n in notes], seconds_per_note=0.3)
+    browser = playwright_instance.chromium.launch(args=[
+        "--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream",
+        f"--use-file-for-fake-audio-capture={tmp_path / 'fiddle.wav'}%noloop",
+    ])
+    page = browser.new_context(service_workers="block", permissions=["microphone"]).new_page()
+    page.add_init_script("Object.defineProperty(BaseAudioContext.prototype, 'audioWorklet', { get: () => undefined })")
+    page.goto(site + "?page=notes")
+    page.click("button.listen")
+    page.wait_for_selector("button.listen.on")
+    page.wait_for_function("!document.querySelector('button.listen').classList.contains('on')", timeout=30000)
+    assert page.input_value("#notes-search") == "C# D E F# E D C# D C# B"
     browser.close()
 
 

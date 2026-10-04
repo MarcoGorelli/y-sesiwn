@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- A pibgorn (Welsh hornpipe), after the 18th-century ones at St Fagans: an elder or
+       bone pipe with six finger-holes (and a thumb-hole behind), a cow-horn mouth horn
+       over the reed at the top, and an upturned cow-horn bell with a serrated edge. -->
+  <g transform="rotate(45 32 32)" stroke-linejoin="round">
+    <!-- pipe -->
+    <rect x="13" y="30.4" width="32" height="3.2" rx="0.8" fill="#7a3e12"/>
+    <!-- finger-holes -->
+    <g fill="#2a1606">
+      <circle cx="22.5" cy="32" r="0.75"/><circle cx="25.8" cy="32" r="0.75"/><circle cx="29.1" cy="32" r="0.75"/>
+      <circle cx="33.6" cy="32" r="0.75"/><circle cx="36.9" cy="32" r="0.75"/><circle cx="40.2" cy="32" r="0.75"/>
+    </g>
+    <!-- mouth horn -->
+    <path d="M6 28.6 Q10 29.6 14.5 30.2 V33.8 Q10 34.4 6 35.4 Q5.1 32 6 28.6 Z" fill="#e2d2a8" stroke="#8a6d3b" stroke-width="0.8"/>
+    <!-- bell: horn curving up, with a serrated mouth -->
+    <path d="M44 30.1 C50 30, 52.4 26.5, 52.4 20.2
+             L53.8 19.0 L54.2 20.8 L55.7 19.6 L56.1 21.4 L57.5 20.2 L57.9 22.0 L59.3 20.8 L59.8 22.6 L61.2 21.4 L61.6 23.2
+             C60.8 30.5, 55 34.6, 44 33.9 Z" fill="#e2d2a8" stroke="#8a6d3b" stroke-width="0.8"/>
+    <!-- bands where the horns meet the pipe -->
+    <rect x="13.6" y="29.8" width="1.6" height="4.4" rx="0.4" fill="#5c2d0c"/>
+    <rect x="43" y="29.8" width="1.6" height="4.4" rx="0.4" fill="#5c2d0c"/>
+  </g>
+</svg>

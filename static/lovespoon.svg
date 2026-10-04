@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- A Welsh lovespoon (llwy garu), carved from one piece of sycamore: a pierced heart
+       in the top panel, a chain of free links (faithfulness, two bound together), and
+       the bowl of the spoon. -->
+  <g fill="#d2a46a" stroke="#7a3e12" stroke-width="0.9" stroke-linejoin="round">
+    <!-- top panel, with the heart cut through it -->
+    <path fill-rule="evenodd" d="M20.5 16.5 V8.5 C20.5 3.8 25.5 1.6 32 1.6 C38.5 1.6 43.5 3.8 43.5 8.5 V16.5 Q43.5 18.6 41.4 18.6 H22.6 Q20.5 18.6 20.5 16.5 Z
+      M32 15.2 C24.6 10.6, 26.4 4.2, 32 7.2 C37.6 4.2, 39.4 10.6, 32 15.2 Z"/>
+    <!-- neck down to the chain -->
+    <path d="M30.4 18.6 H33.6 V21 H30.4 Z"/>
+    <!-- chain: a ring, a link seen edge-on through it and the next ring, and a ring -->
+    <ellipse cx="32" cy="25.4" rx="4.4" ry="5" fill="none" stroke="#7a3e12" stroke-width="3.2"/>
+    <ellipse cx="32" cy="25.4" rx="4.4" ry="5" fill="none" stroke="#d2a46a" stroke-width="1.5"/>
+    <rect x="30.6" y="27.6" width="2.8" height="10.8" rx="1.4"/>
+    <ellipse cx="32" cy="40.6" rx="4.4" ry="5" fill="none" stroke="#7a3e12" stroke-width="3.2"/>
+    <ellipse cx="32" cy="40.6" rx="4.4" ry="5" fill="none" stroke="#d2a46a" stroke-width="1.5"/>
+    <!-- the spoon: a short stem and the bowl -->
+    <path d="M30.8 45.6 H33.2 L33.8 48.6 H30.2 Z"/>
+    <ellipse cx="32" cy="55.2" rx="6.8" ry="7.2"/>
+  </g>
+  <!-- the hollow of the bowl -->
+  <ellipse cx="32" cy="55.8" rx="4.6" ry="5.2" fill="#b9874c"/>
+</svg>

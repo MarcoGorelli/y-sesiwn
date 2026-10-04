@@ -15,6 +15,8 @@
   --land: #e2e5e8;            /* the map of Wales */
   --chosen: #3b4550;          /* a chosen key (Browse): slate, with white on it */
   --on-chosen: #ffffff;
+  /* Red and black striped Welsh flannel (as in a pais or betgwn), down the edge of a call-out */
+  --flannel: linear-gradient(to right, #C8102E 0 2.5px, #1d1d1b 2.5px 4px, #C8102E 4px 7px) left / 7px 100% no-repeat;
   --search-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2366707a' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='m15.5 15.5 5 5'/%3E%3C/svg%3E");
   color-scheme: light dark;
 }
@@ -199,12 +201,26 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .offline-card.full { margin-top: 0; }
 .share-icon { width: 1.15em; height: 1.15em; vertical-align: -.2em; color: var(--link); }
 
+/* Home page: the welcome, beside the harp, crwth and pibgorn on a scrap of Welsh quilt */
+.home-intro { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .5rem 2rem; }
+.home-intro > div:first-child { flex: 1 1 26rem; }
+.instruments {
+  flex: none; display: flex; align-items: flex-end; justify-content: center; gap: 0;
+  width: 300px; aspect-ratio: 300 / 170; padding: 0 1.75rem 1.75rem; margin-top: .4rem;
+  background: url("static/quilt.svg") center / 100% 100% no-repeat;
+}
+.instruments img { width: 92px; height: 92px; }
+@media (max-width: 560px) {
+  .instruments { width: 220px; padding: 0 1.25rem 1.25rem; margin: 0 0 .75rem; }
+  .instruments img { width: 66px; height: 66px; }
+}
+
 /* Home page: the way into the notes page */
 .home-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
 .notes-invite {
   max-width: 40rem; margin: 1.25rem 0 .5rem; padding: .9rem 1.1rem 1rem;
-  border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: var(--radius);
-  background: var(--card-bg);
+  border: 1px solid var(--border); border-left: 0; border-radius: var(--radius);
+  padding-left: calc(1.1rem + 7px); background: var(--flannel), var(--card-bg);
 }
 .notes-invite p { margin: 0 0 .7rem; }
 .invite-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; }
@@ -624,7 +640,7 @@ main { view-transition-name: page; }
 .email-form button[type="submit"] { justify-self: start; }
 .abc-preview { overflow-x: auto; }
 .abc-problem:empty { display: none; }
-.email-sent:not(:empty) { margin-top: 1rem; padding: .75rem 1rem; border-left: 3px solid var(--accent); background: var(--sidebar-bg); border-radius: 0 var(--radius) var(--radius) 0; }
+.email-sent:not(:empty) { margin-top: 1rem; padding: .75rem 1rem .75rem calc(1rem + 7px); background: var(--flannel), var(--sidebar-bg); border-radius: 0 var(--radius) var(--radius) 0; }
 .email-sent p { margin: 0 0 .6rem; }
 .copy-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
 
@@ -650,7 +666,7 @@ main { view-transition-name: page; }
 .set-tune { margin: 0 0 1.5rem; }
 .set-tune h2 { font-size: 1.05rem; margin: 0 0 .4rem; }
 .set-paper { background: var(--paper); color: #000; border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .75rem; min-height: 8rem; }
-.sets-own { max-width: 40rem; padding: .6rem .9rem; border-left: 3px solid var(--accent); background: var(--card-bg); border-radius: 0 var(--radius) var(--radius) 0; }
+.sets-own { max-width: 40rem; padding: .6rem .9rem .6rem calc(.9rem + 7px); background: var(--flannel), var(--card-bg); border-radius: 0 var(--radius) var(--radius) 0; }
 .set-list-mine { list-style: none; padding: 0; max-width: 40rem; }
 .set-list-mine li { padding: .5rem 0; border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: .3rem .6rem; align-items: baseline; }
 .set-list-mine li a { font-weight: 600; }

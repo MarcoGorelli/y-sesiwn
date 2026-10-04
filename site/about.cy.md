@@ -83,8 +83,21 @@ canfod alaw, mae'r geiriau a chwiliwyd yn cael eu cyfrif hefyd, i weld pa
 alawon mae pobl yn chwilio amdanyn nhw sydd ddim yma eto. Mae'r nodau rydych
 chi'n eu chwarae neu'n eu teipio i ganfod alaw yn aros ar eich dyfais.
 
-## Y patrymau
+## Y patrymau a'r lluniau
 
 Mae'r band ar hyd top a gwaelod pob tudalen wedi'i ysbrydoli gan y
 *garthen*, y blanced frethyn draddodiadol Gymreig, a lliwiau'r mathau o
 alawon gan y lliwiau y mae'r blancedi hynny'n cael eu gwehyddu ynddynt.
+
+Y tri offeryn ar yr hafan yw hen offerynnau cerddoriaeth Cymru: y *delyn
+deires*; y *crwth*, sy'n cael ei chwarae â bwa, gyda chwe thant, dau
+ohonyn nhw'n dannau bwrdwn sy'n cael eu tynnu â'r bawd; a'r *pibgorn*, pib o
+ysgaw neu asgwrn gyda chloch o gorn buwch. Mae lluniau'r crwth a'r pibgorn
+yn seiliedig ar enghreifftiau o'r ddeunawfed ganrif sydd wedi goroesi mewn amgueddfeydd.
+Maen nhw'n sefyll ar ddarn o *gwilt* Cymreig, wedi'i gwiltio yn y patrwm
+ffrâm Cymreig, gyda throellau yn yr ymyl a ffaniau yn y corneli.
+
+Gwlanen streipiog Gymreig yw'r streipiau coch a du i lawr ochr rhai
+blychau, fel yn y *bais* a'r *betgwn* yng ngwisg draddodiadol Cymru. Ac mae
+cadwyn wedi'i cherfio yn y *llwy garu* ar dudalen wag Fy setiau: dolenni
+wedi'u clymu ynghyd, fel alawon mewn set.

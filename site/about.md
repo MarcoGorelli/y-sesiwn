@@ -83,8 +83,21 @@ identifies you. When a search by name finds no tune, the words searched for are
 counted too, to see which tunes people look for that aren't here yet. The notes
 you play or type to find a tune stay on your device.
 
-## The patterns
+## The patterns and pictures
 
 The band along the top and bottom of each page is inspired by the *carthen*,
 the traditional Welsh woollen tapestry blanket, and the colours of the tune
 types by the colours those blankets are woven in.
+
+The three instruments on the home page are the old instruments of Welsh
+music: the *telyn deires* (triple harp); the *crwth*, played with a bow, with
+six strings, two of them drones plucked with the thumb; and the *pibgorn*, a
+hornpipe of elder or bone with a cow-horn bell. The crwth and pibgorn are
+drawn after 18th-century ones that survive in museums. They stand on a scrap of
+Welsh quilt (*cwilt*), quilted in the Welsh frame pattern, with spirals in
+the border and fans in the corners.
+
+The red and black stripes down the side of some boxes are Welsh striped
+flannel, as in the *pais* (petticoat) and *betgwn* (bedgown) of traditional
+Welsh dress. And the lovespoon (*llwy garu*) on an empty My sets page has a
+chain carved into it: links bound together, like tunes in a set.

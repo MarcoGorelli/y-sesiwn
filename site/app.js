@@ -994,9 +994,10 @@ function loadAbcjs() {
   return abcjsLoading;
 }
 
-// A quiet picture for a page with nothing on it yet: the triple harp over a scrap of carthen.
-const emptyArt = () => el("div", { class: "empty-art", "aria-hidden": "true" },
-  el("img", { src: "static/harp.svg", alt: "", width: 64, height: 64 }));
+// A quiet picture for a page with nothing on it yet: a Welsh instrument (the triple harp,
+// crwth or pibgorn) or a lovespoon, over a scrap of carthen.
+const emptyArt = (instrument = "harp") => el("div", { class: "empty-art", "aria-hidden": "true" },
+  el("img", { src: `static/${instrument}.svg`, alt: "", width: 64, height: 64 }));
 
 // A link to a tune the site doesn't have (any more): the tunes with the nearest names,
 // since it has most likely been renamed or merged into another tune's versions.
@@ -1006,7 +1007,7 @@ function renderNotFound(main, slug) {
   const near = search(words).slice(0, 5);
   main.replaceChildren(...[
     el("h1", {}, tr("Tune not found", "Alaw heb ei chanfod")),
-    emptyArt(),
+    emptyArt("crwth"),
     el("p", { class: "lead" }, tr(`There's no tune at this address (“${slug}”). It may have been renamed, or joined to another tune as one of its versions.`,
       `Does dim alaw yn y cyfeiriad hwn (“${slug}”). Efallai iddi gael enw newydd, neu ei hychwanegu at alaw arall fel un o'i fersiynau.`)),
     near.length ? el("p", {}, tr("Were you looking for:", "Oeddech chi'n chwilio am:")) : null,
@@ -1033,18 +1034,26 @@ document.addEventListener("visibilitychange", () => { if (state.awake) keepAwake
 
 // ---- Home page -----------------------------------------------------------------
 
+// The three instruments of Welsh traditional music, on a scrap of Welsh quilt.
+const instruments = () => el("div", { class: "instruments", role: "img",
+  "aria-label": tr("A Welsh triple harp, a crwth and a pibgorn", "Telyn deires, crwth a phibgorn") },
+  ...["harp", "crwth", "pibgorn"].map((name) => el("img", { src: `static/${name}.svg`, alt: "", width: 72, height: 72 })));
+
 function renderHome(main) {
   document.title = "Y Sesiwn";
   const count = state.groupList.length;  // one entry per tune, whatever its number of versions
   main.replaceChildren(...[
-    el("h1", {}, tr("Croeso! Welcome to Y Sesiwn", "Croeso i'r Sesiwn!")),
-    el("p", { class: "lead" }, ...tr(
+    el("div", { class: "home-intro" },
+      el("div", {},
+        el("h1", {}, tr("Croeso! Welcome to Y Sesiwn", "Croeso i'r Sesiwn!")),
+        el("p", { class: "lead" }, ...tr(
       ["Y Sesiwn is a ", el("strong", {}, "completely free and open-source"),
         ` resource to help you learn and share Welsh folk tunes: ${count} of them so far, `,
         "each with its sheet music. Search by name, browse by type and key, or let chance decide."],
       ["Mae'r Sesiwn yn adnodd ", el("strong", {}, "hollol am ddim a chod agored"),
         ` i'ch helpu i ddysgu a rhannu alawon gwerin Cymru: ${count} ohonyn nhw hyd yma, `,
-        "pob un â'i sgôr. Chwiliwch yn ôl enw, porwch yn ôl math a chywair, neu gadewch i ffawd ddewis."])),
+        "pob un â'i sgôr. Chwiliwch yn ôl enw, porwch yn ôl math a chywair, neu gadewch i ffawd ddewis."]))),
+      instruments()),
     heroSearch(count),
     el("div", { class: "home-actions" },
       el("button", { type: "button", class: "primary", onclick: openRandomTune }, tr("Surprise me", "Alaw ar hap")),
@@ -2927,7 +2936,7 @@ function renderSets(main) {
               draw();
             } }, tr("Delete", "Dileu")));
         }))
-      : el("div", {}, emptyArt(), el("p", {}, tr("No sets yet. Open a tune and press Add to set, or start one here.",
+      : el("div", {}, emptyArt("lovespoon"), el("p", {}, tr("No sets yet. Open a tune and press Add to set, or start one here.",
         "Dim setiau eto. Agorwch alaw a phwyso Ychwanegu at set, neu dechreuwch un yma.")));
     main.replaceChildren(...[
       el("h1", {}, tr("My sets", "Fy setiau")),
@@ -3105,7 +3114,7 @@ function renderSet(main) {
     if (Math.abs(dx) > 60 && Math.abs(dx) > 2 * Math.abs(dy)) turn(dx < 0 ? 1 : -1);
   });
   const count = el("span", { class: "caption" });
-  const empty = el("div", { class: "set-empty" }, emptyArt(), el("p", { class: "caption" },
+  const empty = el("div", { class: "set-empty" }, emptyArt("pibgorn"), el("p", { class: "caption" },
     tr("No tunes yet: add some with the box above, or with Add to set on a tune's page.",
       "Dim alawon eto: ychwanegwch rai gyda'r blwch uchod, neu gyda Ychwanegu at set ar dudalen alaw.")));
   // Adding tunes: type part of a name and press Enter (the arrow keys pick another

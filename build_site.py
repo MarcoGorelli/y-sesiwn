@@ -505,7 +505,7 @@ def main() -> None:
     if OUT.exists():
         shutil.rmtree(OUT)
     shutil.copytree(ROOT / "site", OUT)
-    for part in ["abcjs", "soundfont", "marked", "qrcode", "harp.svg"]:
+    for part in ["abcjs", "soundfont", "marked", "qrcode", "harp.svg", "crwth.svg", "pibgorn.svg", "lovespoon.svg", "quilt.svg"]:
         src = ROOT / "static" / part
         if src.is_dir():
             shutil.copytree(src, OUT / "static" / part)

@@ -704,19 +704,30 @@ COUNTIES = {
 DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
 
-def session_data() -> list[dict]:
+def session_data(today: "date | None" = None) -> list[dict]:
     """sessions.json, checked, with each session's id (for links to it), the Welsh for
-    its town and county, and its position on site/wales.svg (none outside Wales)."""
+    its town and county, and its position on site/wales.svg (none outside Wales). A
+    session on announced dates (repeat: "dates") gets the day of its next one (as of
+    the build, or its last if none is to come), for sorting and the day filter."""
+    from datetime import date
+    today = today or date.today()
     sessions, ids = [], set()
     for i, s in enumerate(json.loads((ROOT / "sessions.json").read_text(encoding="utf-8"))["sessions"]):
         where = f"sessions.json, session {i + 1} ({s.get('venue', '?')})"
-        for field in ("venue", "address", "town", "county", "lat", "lon", "day", "repeat", "start", "confirmed"):
-            if s.get(field) in (None, ""):
+        on_dates = s.get("repeat") == "dates"
+        for field in ("venue", "address", "town", "county", "lat", "lon", "repeat", "start", "confirmed",
+                      *(("dates",) if on_dates else ("day",))):
+            if s.get(field) in (None, "", []):
                 raise SystemExit(f"{where}: no {field}")
+        dates = s.get("dates", [])
         problems = [
             s["county"] not in COUNTIES and f"county should be one of {', '.join(COUNTIES)}",
-            s["day"] not in DAYS and f"day should be one of {', '.join(DAYS)}",
-            s["repeat"] not in ("weekly", "monthly") and 'repeat should be "weekly" or "monthly"',
+            not on_dates and s["day"] not in DAYS and f"day should be one of {', '.join(DAYS)}",
+            on_dates and "day" in s and "a session on dates has no day (it's worked out from the dates)",
+            on_dates and (not isinstance(dates, list) or not all(isinstance(d, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", d) for d in dates))
+            and 'dates should be a list of dates like "2026-10-22"',
+            on_dates and isinstance(dates, list) and dates != sorted(set(dates)) and "dates should be in order, each once",
+            s["repeat"] not in ("weekly", "monthly", "dates") and 'repeat should be "weekly", "monthly" or "dates"',
             s.get("kind", "session") not in ("session", "tune club") and 'kind should be "tune club" (or left out, for a session)',
             s["repeat"] == "monthly" and s.get("nth") not in (1, 2, 3, 4, -1) and "a monthly session needs nth: 1-4, or -1 for the last",
             *[s.get(t) and not re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", s[t]) and f'{t} should be a 24-hour time like "19:30"'
@@ -727,9 +738,15 @@ def session_data() -> list[dict]:
         for problem in problems:
             if problem:
                 raise SystemExit(f"{where}: {problem}")
-        sid = slugify(f"{s['venue']} {s['town']} {s['day']}")
+        if on_dates:
+            upcoming = [d for d in dates if date.fromisoformat(d) >= today]
+            if not upcoming:
+                print(f"note: {where} has no dates to come (add the next one when it's announced)")
+            s = {**s, "day": DAYS[date.fromisoformat((upcoming or dates[-1:])[0]).weekday()]}
+        # (A session on dates is named without its day, which changes from date to date.)
+        sid = slugify(f"{s['venue']} {s['town']}" + ("" if on_dates else f" {s['day']}"))
         if sid in ids:
-            raise SystemExit(f"{where}: two sessions at {s['venue']} on {s['day']}: give one a different venue name")
+            raise SystemExit(f"{where}: two sessions at {s['venue']}{'' if on_dates else ' on ' + s['day']}: give one a different venue name")
         ids.add(sid)
         x = round((s["lon"] - MAP["lon0"]) * MAP["k"] * MAP["scale"], 1)
         y = round((MAP["lat0"] - s["lat"]) * MAP["scale"], 1)
@@ -740,16 +757,32 @@ def session_data() -> list[dict]:
     return sorted(sessions, key=lambda s: (normalize(s["town"]), DAYS.index(s["day"]), s["start"]))
 
 
-def describe_session(s: dict) -> str:
-    """'Every Tuesday, 19:00-21:00' or '2nd Friday of the month, from 21:00', for the static page."""
+def upcoming_dates(s: dict, today: "date") -> list["date"]:
+    """A session on announced dates: those still to come (today's included)."""
+    from datetime import date
+    return [d for d in map(date.fromisoformat, s["dates"]) if d >= today]
+
+
+def describe_session(s: dict, today: "date | None" = None) -> str:
+    """'Every Tuesday, 19:00-21:00', '2nd Friday of the month, from 21:00' or
+    'Thursday 22 October 2026, from 19:30', for the static page."""
+    from datetime import date
     nth = {1: "1st", 2: "2nd", 3: "3rd", 4: "4th", -1: "Last"}
+    time = f"{s['start']}–{s['end']}" if s.get("end") else f"from {s['start']}"
+    if s["repeat"] == "dates":
+        dates = upcoming_dates(s, today or date.today())
+        if not dates:
+            return "On dates announced as they come; none to come yet"
+        return f"{', '.join(f'{DAYS[d.weekday()]} {d.day} {d:%B %Y}' for d in dates)}, {time}"
     when = f"Every {s['day']}" if s["repeat"] == "weekly" else f"{nth[s['nth']]} {s['day']} of the month"
-    return f"{when}, " + (f"{s['start']}–{s['end']}" if s.get("end") else f"from {s['start']}")
+    return f"{when}, {time}"
 
 
 def next_session(s: dict, today: "date") -> "date | None":
     """The session's next date from today (app.js: nextSession)."""
     from datetime import date, timedelta
+    if s["repeat"] == "dates":
+        return next(iter(upcoming_dates(s, today)), None)
     day = max(today, date.fromisoformat(s["from"])) if s.get("from") else today
     until = date.fromisoformat(s["until"]) if s.get("until") else None
     for _ in range(400):
@@ -765,11 +798,28 @@ def next_session(s: dict, today: "date") -> "date | None":
 
 def session_events(sessions: list[dict], today: "date") -> list[dict]:
     """The sessions as schema.org events (for search engines): where, and when they
-    repeat, with the next date (as of the build) as startDate."""
+    repeat, with the next date (as of the build) as startDate. A session on announced
+    dates is an event for each date to come."""
     events = []
     for s in sessions:
         nxt = next_session(s, today)
         if not nxt:
+            continue
+        location = {"@type": "Place", "name": s["venue"],
+                    "address": {"@type": "PostalAddress", "streetAddress": s["address"],
+                                "addressLocality": s["town"], "addressRegion": s["county"], "addressCountry": "GB"},
+                    "geo": {"@type": "GeoCoordinates", "latitude": s["lat"], "longitude": s["lon"]}}
+        about = {"name": s.get("name") or f"Welsh folk session at {s['venue']}",
+                 "eventStatus": "https://schema.org/EventScheduled",
+                 "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+                 "location": location, "description": s.get("music") or "A session where Welsh folk tunes are played.",
+                 **({"url": s["link"]} if s.get("link") else {})}
+        if s["repeat"] == "dates":
+            for day in upcoming_dates(s, today):
+                event = {"@type": "Event", **about, "startDate": f"{day.isoformat()}T{s['start']}"}
+                if s.get("end"):
+                    event["endDate"] = f"{day.isoformat()}T{s['end']}"
+                events.append(event)
             continue
         schedule = {"@type": "Schedule", "byDay": f"https://schema.org/{s['day']}", "startTime": s["start"],
                     "scheduleTimezone": "Europe/London", "repeatFrequency": "P1W" if s["repeat"] == "weekly" else "P1M"}
@@ -777,17 +827,7 @@ def session_events(sessions: list[dict], today: "date") -> list[dict]:
         if s["repeat"] == "monthly": schedule["byMonthWeek"] = s["nth"]
         if s.get("from"): schedule["startDate"] = s["from"]
         if s.get("until"): schedule["endDate"] = s["until"]
-        event = {"@type": "Event", "name": s.get("name") or f"Welsh folk session at {s['venue']}",
-                 "startDate": f"{nxt.isoformat()}T{s['start']}", "eventSchedule": schedule,
-                 "eventStatus": "https://schema.org/EventScheduled",
-                 "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
-                 "location": {"@type": "Place", "name": s["venue"],
-                              "address": {"@type": "PostalAddress", "streetAddress": s["address"],
-                                          "addressLocality": s["town"], "addressRegion": s["county"], "addressCountry": "GB"},
-                              "geo": {"@type": "GeoCoordinates", "latitude": s["lat"], "longitude": s["lon"]}},
-                 "description": s.get("music") or "A session where Welsh folk tunes are played."}
-        if s.get("link"): event["url"] = s["link"]
-        events.append(event)
+        events.append({"@type": "Event", **about, "startDate": f"{nxt.isoformat()}T{s['start']}", "eventSchedule": schedule})
     return events
 
 

@@ -1064,7 +1064,7 @@ function renderHome(main) {
         tr(`Browse all ${count} tunes`, `Pori'r ${count} alaw`))),
     recentTunes(),  // nothing yet on a first visit
     notesInvite(),
-    sessionsThisWeek(),
+    upcomingSessions(),
     features(),
     offlineCard(),
   ].filter(Boolean));
@@ -2313,7 +2313,14 @@ const CY_DAYS = { Monday: "Llun", Tuesday: "Mawrth", Wednesday: "Mercher", Thurs
 const dateOf = (text) => new Date(`${text}T00:00`);
 const dateLabel = (date, options) => date.toLocaleDateString(state.lang === "cy" ? "cy" : "en-GB", options);
 
+// A session on announced dates (repeat: "dates"): those still to come, today's included.
+function upcomingDates(session, today = new Date()) {
+  const day = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  return (session.dates ?? []).map(dateOf).filter((d) => d >= day);
+}
+
 function nextSession(session, today = new Date()) {
+  if (session.repeat === "dates") return upcomingDates(session, today)[0] ?? null;
   const weekday = (DAYS.indexOf(session.day) + 1) % 7;  // getDay(): Sunday is 0
   const day = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   if (session.from && dateOf(session.from) > day) day.setTime(dateOf(session.from).getTime());
@@ -2343,8 +2350,15 @@ function sessionTime({ start, end }) {
   return `${a.text}${a.pm === b.pm ? "" : suffix(a.pm)}–${b.text}${suffix(b.pm)}`;
 }
 
-// "Every Tuesday", "2nd Friday of the month"; "Bob dydd Mawrth", "Ail ddydd Gwener y mis".
-function sessionDays({ day, repeat, nth }) {
+// "Every Tuesday", "2nd Friday of the month"; "Bob dydd Mawrth", "Ail ddydd Gwener y mis";
+// for a session on announced dates, the next one ("Thursday 22 October").
+function sessionDays(session, today = new Date()) {
+  const { day, repeat, nth } = session;
+  if (repeat === "dates") {
+    const next = upcomingDates(session, today)[0];
+    return next ? dateLabel(next, { weekday: "long", day: "numeric", month: "long" }).replace(/^./, (c) => c.toUpperCase())
+      : tr("No date announced yet", "Dim dyddiad wedi'i gyhoeddi eto");
+  }
   if (repeat === "weekly") return tr(`Every ${day}`, `Bob dydd ${CY_DAYS[day]}`);
   const en = { 1: "1st", 2: "2nd", 3: "3rd", 4: "4th", [-1]: "Last" }[nth];
   const cy = { 1: `Dydd ${CY_DAYS[day]} cyntaf y mis`, 2: `Ail ddydd ${CY_DAYS[day]} y mis`, 3: `Trydydd dydd ${CY_DAYS[day]} y mis`,
@@ -2385,22 +2399,28 @@ function sessionCalendar(session, first) {
   const text = (t) => t.replace(/[\\;,]/g, (c) => `\\${c}`).replace(/\n/g, "\\n");
   const stamp = (date, time) => `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}T${time.replace(":", "")}00`;
   const [h, m] = session.start.split(":").map(Number);
-  let end = session.end, endDay = first;
+  let end = session.end;
   if (!end) end = `${String((h + 2) % 24).padStart(2, "0")}:${String(m).padStart(2, "0")}`;  // no end time: two hours
-  if (end <= session.start) endDay = new Date(first.getFullYear(), first.getMonth(), first.getDate() + 1);  // past midnight
   const rule = session.repeat === "weekly" ? `FREQ=WEEKLY;BYDAY=${ICS_DAYS[session.day]}`
     : `FREQ=MONTHLY;BYDAY=${session.nth}${ICS_DAYS[session.day]}`;
   const until = session.until ? `;UNTIL=${session.until.replaceAll("-", "")}T235959Z` : "";
+  // A session on announced dates: an event for each date to come, none repeating.
+  const days = session.repeat === "dates" ? upcomingDates(session, first) : [first];
+  const after = (day) => (end <= session.start ? new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1) : day);  // past midnight
   const page = "https://ysesiwn.cymru/sesiynau/";
   const about = [session.music ? tr(session.music, session.music_cy ?? session.music) : null,
     tr("Times change: check before you go.", "Mae amseroedd yn newid: gwiriwch cyn mynd."),
     session.link, page].filter(Boolean).join("\n\n");
   const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Y Sesiwn//Sessions//EN", "CALSCALE:GREGORIAN", ...LONDON,
-    "BEGIN:VEVENT", `UID:${session.id}@ysesiwn.cymru`, `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}Z`,
-    `DTSTART;TZID=Europe/London:${stamp(first, session.start)}`, `DTEND;TZID=Europe/London:${stamp(endDay, end)}`,
-    `RRULE:${rule}${until}`, `SUMMARY:${text(session.name ?? `${tr("Session", "Sesiwn")}: ${session.venue}`)}`,
-    `LOCATION:${text(`${session.venue}, ${session.address}`)}`, `DESCRIPTION:${text(about)}`, `URL:${session.link ?? page}`,
-    "END:VEVENT", "END:VCALENDAR"];
+    ...days.flatMap((day) => ["BEGIN:VEVENT",
+      `UID:${session.id}${session.repeat === "dates" ? `-${stamp(day, "00:00").slice(0, 8)}` : ""}@ysesiwn.cymru`,
+      `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}Z`,
+      `DTSTART;TZID=Europe/London:${stamp(day, session.start)}`, `DTEND;TZID=Europe/London:${stamp(after(day), end)}`,
+      session.repeat === "dates" ? null : `RRULE:${rule}${until}`,
+      `SUMMARY:${text(session.name ?? `${tr("Session", "Sesiwn")}: ${session.venue}`)}`,
+      `LOCATION:${text(`${session.venue}, ${session.address}`)}`, `DESCRIPTION:${text(about)}`, `URL:${session.link ?? page}`,
+      "END:VEVENT"].filter(Boolean)),
+    "END:VCALENDAR"];
   // Lines longer than 75 bytes are folded (a line break and a space), as the format asks.
   const fold = (line) => {
     const out = []; let cur = "";
@@ -2418,18 +2438,28 @@ function sessionCard(session) {
   const today = new Date().toDateString() === next?.toDateString();
   const place = `${session.venue}, ${tr(session.town, session.town_cy)}`;
   const map = `https://www.openstreetmap.org/?mlat=${session.lat}&mlon=${session.lon}#map=17/${session.lat}/${session.lon}`;
-  const season = session.until && !next ? tr("This season has ended.", "Mae'r tymor wedi dod i ben.")
+  const onDates = session.repeat === "dates";
+  // A session on announced dates: its later ones, or (with none to come) how to find the next.
+  const later = onDates ? upcomingDates(session).slice(1).map((d) => dateLabel(d, { day: "numeric", month: "long" })) : [];
+  const and = (items) => (items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} ${tr("and", "a")} ${items.at(-1)}`);
+  const season = onDates
+    ? next ? (later.length ? tr(`Then ${and(later)}.`, `Yna ${and(later)}.`) : null)
+      : session.link ? tr("It runs on dates announced as they come: see their page for the next one.",
+        "Mae'n cael ei chynnal ar ddyddiadau a gyhoeddir fesul un: gwelwch eu tudalen am yr un nesaf.")
+        : tr("It runs on dates announced as they come: if you hear of the next one, tell us below.",
+          "Mae'n cael ei chynnal ar ddyddiadau a gyhoeddir fesul un: os clywch chi am yr un nesaf, rhowch wybod i ni isod.")
+    : session.until && !next ? tr("This season has ended.", "Mae'r tymor wedi dod i ben.")
     : session.from && dateOf(session.from) > new Date()
       ? tr(`Starts ${dateLabel(dateOf(session.from), { day: "numeric", month: "long" })}`, `Yn dechrau ${dateLabel(dateOf(session.from), { day: "numeric", month: "long" })}`)
         + (session.until ? tr(`, until ${dateLabel(dateOf(session.until), { day: "numeric", month: "long", year: "numeric" })}.`,
           `, tan ${dateLabel(dateOf(session.until), { day: "numeric", month: "long", year: "numeric" })}.`) : ".")
       : session.until ? tr(`Until ${dateLabel(dateOf(session.until), { day: "numeric", month: "long", year: "numeric" })}.`,
         `Tan ${dateLabel(dateOf(session.until), { day: "numeric", month: "long", year: "numeric" })}.`) : null;
-  return el("article", { class: "card session", id: `session-${session.id}` },
+  return el("article", { class: "card session", id: `session-${session.id}`, tabindex: -1 },
     el("h3", {}, session.name ?? session.venue,
       session.kind === "tune club" ? el("span", { class: "badge" }, tr("Tune club", "Clwb alawon")) : null),
     el("p", { class: "when" }, el("strong", {}, `${sessionDays(session)}, ${sessionTime(session)}`),
-      next ? [" · ", today ? tr("today", "heddiw") : tr(`next: ${dateLabel(next, { weekday: "long", day: "numeric", month: "long" })}`,
+      next && (today || !onDates) ? [" · ", today ? tr("today", "heddiw") : tr(`next: ${dateLabel(next, { weekday: "long", day: "numeric", month: "long" })}`,
         `nesaf: ${dateLabel(next, { weekday: "long", day: "numeric", month: "long" })}`)] : null),
     el("p", {}, session.name ? `${session.venue}, ` : "", session.address, " · ",
       el("a", { href: map, target: "_blank", rel: "noopener" }, tr("Map", "Map"))),
@@ -2470,31 +2500,57 @@ function loadSessions() {
   return state.sessionData;
 }
 
-// On the home page: the sessions in the next seven days, soonest first. It's filled in
-// once sessions.json has come (the page doesn't wait for it), and stays hidden in a week
-// with none.
-const THIS_WEEK = 3;  // at most
-function sessionsThisWeek() {
-  const box = el("section", { class: "this-week", hidden: true });
+// Coming up: every session in the next seven days (counted from today, so on a Sunday
+// that's Monday to Saturday too), soonest first; and, further ahead, a session on
+// announced dates up to four weeks off (an occasional one is worth knowing about sooner).
+const SOON_DAYS = 7, ANNOUNCED_DAYS = 28;
+function comingUp(sessions) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const all = sessions.map((s) => ({ s, next: nextSession(s) })).filter(({ next }) => next)
+    .sort((a, b) => a.next - b.next || (a.s.start < b.s.start ? -1 : 1));
+  const days = ({ next }) => (next - today) / 864e5;
+  return { soon: all.filter((x) => days(x) < SOON_DAYS),
+    later: all.filter((x) => days(x) >= SOON_DAYS && days(x) < ANNOUNCED_DAYS && x.s.repeat === "dates") };
+}
+
+// "Tonight", "Tomorrow", "Saturday" (within the week), "Thursday 22 October" (further on).
+function soonDay(next, start) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const days = Math.round((next - today) / 864e5);
+  if (days === 0) return start >= "17:00" ? tr("Tonight", "Heno") : tr("Today", "Heddiw");
+  if (days === 1) return tr("Tomorrow", "Yfory");
+  const name = dateLabel(next, days < SOON_DAYS ? { weekday: "long" } : { weekday: "long", day: "numeric", month: "long" });
+  return name[0].toUpperCase() + name.slice(1);
+}
+
+// One session in a coming-up list: when, what and where (its name, or link: its name as a link to its card).
+const soonItem = ({ s, next }, link = null) => el("li", {}, el("strong", {}, soonDay(next, s.start)), " · ",
+  ...(link ? [link, `, ${tr(s.town, s.town_cy)}, ${sessionTime(s)}`] : [`${s.name ?? s.venue}, ${tr(s.town, s.town_cy)}, ${sessionTime(s)}`]),
+  s.kind === "tune club" && !/tune club|clwb alawon/i.test(s.name ?? "") ? el("span", { class: "caption" }, ` (${tr("tune club", "clwb alawon")})`) : null);
+
+// On the home page: the next HOME_SOON sessions, in order; then, under "Also coming up", up to
+// HOME_ALSO on announced dates that aren't among them (the occasional ones, easy to miss:
+// the weekly ones are on next week too); then how many more there are in the next seven
+// days, on the sessions page. Filled in once sessions.json has come (the page doesn't wait
+// for it), and hidden when there are none.
+const HOME_SOON = 3, HOME_ALSO = 2;
+function upcomingSessions() {
+  const box = el("section", { class: "coming-up", hidden: true });
   loadSessions().then(({ sessions }) => {
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const soon = sessions.map((s) => ({ s, next: nextSession(s) }))
-      .filter(({ next }) => next && (next - today) / 864e5 < 7)
-      .sort((a, b) => a.next - b.next || (a.s.start < b.s.start ? -1 : 1)).slice(0, THIS_WEEK);
-    if (!soon.length || !box.isConnected) return;
-    const when = (next, start) => {
-      const days = Math.round((next - today) / 864e5);
-      if (days === 0) return start >= "17:00" ? tr("Tonight", "Heno") : tr("Today", "Heddiw");
-      if (days === 1) return tr("Tomorrow", "Yfory");
-      const name = dateLabel(next, { weekday: "long" });
-      return name[0].toUpperCase() + name.slice(1);
-    };
-    box.replaceChildren(
-      el("h2", { class: "section-heading" }, tr("Sessions this week", "Sesiynau'r wythnos hon")),
-      el("ul", {}, soon.map(({ s, next }) => el("li", {}, el("strong", {}, when(next, s.start)), " · ",
-        `${s.name ?? s.venue}, ${tr(s.town, s.town_cy)}, ${sessionTime(s)}`,
-        s.kind === "tune club" && !/tune club|clwb alawon/i.test(s.name ?? "") ? el("span", { class: "caption" }, ` (${tr("tune club", "clwb alawon")})`) : null))),
-      el("p", {}, el("a", { href: "sesiynau/", "data-route": true }, tr("All sessions, on a map", "Pob sesiwn, ar fap"))));
+    const { soon, later } = comingUp(sessions);
+    if (!(soon.length || later.length) || !box.isConnected) return;
+    const first = soon.slice(0, HOME_SOON);
+    const also = [...soon.slice(HOME_SOON), ...later].filter((x) => x.s.repeat === "dates").slice(0, HOME_ALSO);
+    const more = soon.length - first.length - also.filter((x) => soon.includes(x)).length;
+    box.replaceChildren(...[
+      el("h2", { class: "section-heading" }, tr("Upcoming sessions", "Sesiynau i ddod")),
+      first.length ? el("ul", {}, first.map((x) => soonItem(x))) : null,
+      also.length ? el("p", { class: "also" }, tr("Also coming up:", "Hefyd i ddod:")) : null,
+      also.length ? el("ul", {}, also.map((x) => soonItem(x))) : null,
+      el("p", {}, el("a", { href: "sesiynau/", "data-route": true }, more
+        ? tr(`And ${more} more in the next seven days: all sessions, on a map`, `A ${more} arall yn y saith diwrnod nesaf: pob sesiwn, ar fap`)
+        : tr("All sessions, on a map", "Pob sesiwn, ar fap"))),
+    ].filter(Boolean));
     box.hidden = false;
   }).catch(() => {});
   return box;
@@ -2540,19 +2596,48 @@ async function renderSessions(main) {
       return [d.left + d.width / 2 - b.left, d.top + d.height / 2 - b.top];
     });
     const taken = centres.filter((_, i) => !circles[i].classList.contains("off")).map(([x, y]) => [x - 5, x + 5, y - 5, y + 5]);
-    const clear = ([x0, x1, y0, y1]) => x0 >= 0 && x1 <= b.width && y0 >= 0 && y1 <= b.height
-      && !taken.some((t) => x0 < t[1] && x1 > t[0] && y0 < t[3] && y1 > t[2]);
+    const inside = ([x0, x1, y0, y1]) => x0 >= 0 && x1 <= b.width && y0 >= 0 && y1 <= b.height;
+    const hits = (box, others) => others.some((t) => box[0] < t[1] && box[1] > t[0] && box[2] < t[3] && box[3] > t[2]);
+    const overlap = ([x0, x1, y0, y1], others) => others.reduce((sum, t) =>
+      sum + Math.max(0, Math.min(x1, t[1]) - Math.max(x0, t[0])) * Math.max(0, Math.min(y1, t[3]) - Math.max(y0, t[2])), 0);
+    // Each shown name's places beside its dot, best first: right, left, above, below; then
+    // the same a little higher or lower, for a crowded corner (the valleys).
+    const shown = [];
     labels.forEach((label, i) => {
       const [x, y] = centres[i];
       label.hidden = circles[i].classList.contains("off") || x < 0 || y < 0 || x > b.width || y > b.height;
       if (label.hidden) return;
       const w = label.offsetWidth, h = label.offsetHeight, gap = 6;
-      const sides = [[x + gap, y - h / 2], [x - gap - w, y - h / 2], [x - w / 2, y - gap - h], [x - w / 2, y + gap]]
-        .map(([left, top]) => [left, left + w, top, top + h]);
-      const [x0, x1, y0, y1] = sides.find(clear) ?? sides[0];
-      taken.push([x0, x1, y0, y1]);
-      Object.assign(label.style, { left: `${x0}px`, top: `${y0}px` });
+      const sides = [[x + gap, y - h / 2], [x - gap - w, y - h / 2], [x - w / 2, y - gap - h], [x - w / 2, y + gap],
+        [x + gap, y - h - 2], [x + gap, y + 2], [x - gap - w, y - h - 2], [x - gap - w, y + 2]]
+        .map(([left, top]) => [left, left + w, top, top + h]).filter((box) => inside(box) && !hits(box, taken));
+      shown.push({ label, sides });
     });
+    // Placed one by one, a name with no clear place moves the ones before it (a search
+    // that goes back, cut short in a hopeless tangle: then each takes whichever place runs
+    // into the fewest names already placed).
+    const placed = [];
+    let steps = 0;
+    const place = (k) => {
+      if (k === shown.length) return true;
+      for (const box of shown[k].sides) {
+        if (++steps > 5000) return false;
+        if (hits(box, placed)) continue;
+        placed.push(box);
+        if (place(k + 1)) return true;
+        placed.pop();
+      }
+      return false;
+    };
+    if (!place(0)) {
+      placed.length = 0;
+      for (const { label, sides } of shown) {
+        const w = label.offsetWidth, h = label.offsetHeight;
+        const options = sides.length ? sides : [[0, w, 0, h]];
+        placed.push(options.reduce((best, box) => (overlap(box, placed) < overlap(best, placed) ? box : best)));
+      }
+    }
+    shown.forEach(({ label }, k) => Object.assign(label.style, { left: `${placed[k][0]}px`, top: `${placed[k][2]}px` }));
   };
   const light = (town, on) => circles[mapped.indexOf(town)]?.classList.toggle("lit", on);
   mapZoom(map, placeLabels);
@@ -2615,11 +2700,29 @@ async function renderSessions(main) {
     addHeading.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
     addHeading.focus({ preventScroll: true });
   } }, text);
-  main.replaceChildren(
+  // Every session coming up (see comingUp), at the top: each a link down to its card
+  // (shown again first, if the filters below have hidden it).
+  const toCard = (session, text) => el("a", { href: `#session-${session.id}`, onclick: (e) => {
+    e.preventDefault();
+    if (!document.getElementById(`session-${session.id}`)) { chosenDay = chosenCounty = null; show(); }
+    const card = document.getElementById(`session-${session.id}`);
+    card?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+    card?.focus({ preventScroll: true });
+  } }, text);
+  const { soon, later } = comingUp(sessions);
+  const soonList = (items) => el("ul", {}, items.map((x) => soonItem(x, toCard(x.s, x.s.name ?? x.s.venue))));
+  const upcoming = soon.length || later.length ? el("section", { class: "coming-up" }, ...[
+    el("h2", { class: "section-heading" }, tr("Coming up", "I ddod")),
+    soon.length ? [el("p", { class: "pills-label" }, tr("Next seven days", "Y saith diwrnod nesaf")), soonList(soon)] : null,
+    later.length ? [el("p", { class: "pills-label" }, tr("Further ahead", "Ymhellach ymlaen")), soonList(later)] : null,
+  ].filter(Boolean)) : null;
+  main.replaceChildren(...[
     el("h1", {}, tr("Active sessions", "Sesiynau cyfredol")),
     el("p", { class: "lead" }, tr("Folk sessions and tune clubs with a strong focus on Welsh music: come along with an instrument, or just to listen.",
       "Sesiynau gwerin a chlybiau alawon sy'n canolbwyntio ar gerddoriaeth Gymreig: dewch ag offeryn, neu dim ond i wrando."),
       " ", toForm(tr("Know a session we're missing? Tell us about it.", "Gwybod am sesiwn sydd ar goll? Rhowch wybod i ni amdani."))),
+    upcoming,
+    el("h2", { class: "section-heading" }, tr("All sessions", "Pob sesiwn")),
     el("p", { class: "pills-label" }, tr("Day", "Dydd")), dayPills,
     el("p", { class: "pills-label" }, tr("Area", "Ardal")), countyPills,
     caption,
@@ -2632,7 +2735,8 @@ async function renderSessions(main) {
       addHeading,
       el("p", {}, tr("If you know a session with a heavy focus on Welsh music, anywhere, tell us about it: this opens an email to Y Sesiwn, and we'll add it.",
         "Os ydych chi'n gwybod am sesiwn sy'n canolbwyntio'n drwm ar gerddoriaeth Gymreig, unrhyw le, rhowch wybod i ni: mae hyn yn agor e-bost i'r Sesiwn, a byddwn ni'n ei hychwanegu.")),
-      addSessionForm()));
+      addSessionForm()),
+  ].filter(Boolean));
   show();  // now the map is on the page, its names can be placed
 }
 

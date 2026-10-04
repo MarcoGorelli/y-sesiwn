@@ -290,10 +290,20 @@ scheduled runs after 60 days without a commit).
   as such) with a heavy focus on Welsh music, by town, with a map (a dot per town), filters by day
   and area, and each session's next date (weekly, or the nth or last weekday
   of the month, within its season if it has one; `nextSession()` in
-  `app.js`). Each shows when it was last confirmed, and has a form to say
+  `app.js`). A session that isn't regular has `"repeat": "dates"` and a list
+  of `dates` (and no `day`): add each date as it's announced. Its card shows
+  the next date and any later ones, then "No date announced yet" once they've
+  all passed (the build prints a note, so it can be updated or removed), and
+  search engines get an event for each date to come. Each shows when it was last confirmed, and has a form to say
   it's still on, has changed or has stopped; another sends a missing one.
   *Add to calendar* downloads an `.ics` file that repeats as the session does
-  (in Welsh time), and the home page lists the next three sessions in the coming seven days.
+  (in Welsh time). The page starts with *Coming up*: every session in the next
+  seven days (counted from today, so a Sunday visit sees the week ahead), then,
+  under *Further ahead*, any on announced dates up to four weeks off, each a
+  link down to its card. The home page's *Upcoming sessions* lists the next
+  three, in order; then, under *Also coming up*, up to two on announced dates
+  that aren't among them (the occasional ones are easy to miss; the weekly ones
+  are on next week too); then how many more there are in the next seven days.
   Both open an email, like the tune form. The sessions are listed by hand in
   `sessions.json` (its `_comment` says what each field is); `build_site.py`
   checks them, stops with a clear error on a mistake, and writes

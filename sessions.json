@@ -1,5 +1,5 @@
 {
-  "_comment": "Sessions where Welsh tunes are played, for the Sessions page (sesiynau/). Each: venue, address, town (town_cy if its Welsh name differs), county (a Welsh principal area in English, or \"Outside Wales\"), lat, lon, day (Monday … Sunday), repeat (\"weekly\", or \"monthly\" with nth: 1-4, or -1 for the last), start and end (24-hour \"19:00\"; end optional), and confirmed (the date someone last checked it's running as listed). Optional: kind (\"tune club\" for a club where people learn tunes together; a session otherwise), name (the session's own name), from and until (a season), music and music_cy (what's played), link (the session's or venue's page). Check a session again whenever someone writes in about it, and update confirmed.",
+  "_comment": "Sessions where Welsh tunes are played, for the Sessions page (sesiynau/). Each: venue, address, town (town_cy if its Welsh name differs), county (a Welsh principal area in English, or \"Outside Wales\"), lat, lon, day (Monday … Sunday), repeat (\"weekly\", or \"monthly\" with nth: 1-4, or -1 for the last; or \"dates\" for a session on announced dates, with dates: [\"2026-10-22\", …] in order and no day: add each new date as it's announced, and leave past ones in), start and end (24-hour \"19:00\"; end optional), and confirmed (the date someone last checked it's running as listed). Optional: kind (\"tune club\" for a club where people learn tunes together; a session otherwise), name (the session's own name), from and until (a season), music and music_cy (what's played), link (the session's or venue's page). Check a session again whenever someone writes in about it, and update confirmed.",
   "sessions": [
     {
       "name": "Noson Lawen: Folk in the Bar",
@@ -139,6 +139,22 @@
       "music_cy": "Alawon Cymreig, yn bennaf o lyfrau Alawon Sesiwn, ac ambell gân. Mae'r dyddiad yn newid weithiau: edrychwch ar eu tudalen Facebook.",
       "link": "https://www.facebook.com/share/1AA7WKBk6L/",
       "confirmed": "2026-10-03"
+    },
+    {
+      "venue": "Afan Mountain Lodge",
+      "address": "Afan Road, Duffryn Rhondda, Port Talbot SA13 3ES",
+      "town": "Duffryn Rhondda",
+      "county": "Neath Port Talbot",
+      "lat": 51.648,
+      "lon": -3.6788,
+      "repeat": "dates",
+      "dates": [
+        "2026-10-22"
+      ],
+      "start": "19:30",
+      "music": "Traditional Welsh music: bring an instrument and join in, or just sit and enjoy the tunes and the energy.",
+      "music_cy": "Cerddoriaeth Gymreig draddodiadol: dewch ag offeryn ac ymuno, neu eisteddwch a mwynhau'r alawon a'r egni.",
+      "confirmed": "2026-10-04"
     }
   ]
 }

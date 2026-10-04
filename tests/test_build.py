@@ -308,6 +308,31 @@ def test_session_events():
     assert '<script type="application/ld+json">' in page and '"@type": "Event"' in page
 
 
+def test_sessions_on_dates(tmp_path, monkeypatch, capsys):
+    # A session on announced dates (repeat: "dates"): its next date, an event for each
+    # date to come, the day of the next one (for the day filter), and no day of its own.
+    from datetime import date
+    session = {"venue": "Y Llew Coch", "address": "Stryd y Bont", "town": "Llandeilo", "county": "Carmarthenshire",
+               "lat": 51.88, "lon": -3.99, "repeat": "dates", "dates": ["2026-10-22", "2026-11-19"],
+               "start": "19:30", "confirmed": "2026-10-04"}
+    (tmp_path / "sessions.json").write_text(json.dumps({"sessions": [session]}), encoding="utf-8")
+    monkeypatch.setattr(b, "ROOT", tmp_path)
+    [s] = b.session_data(date(2026, 10, 23))
+    assert s["day"] == "Thursday" and s["id"] == "y-llew-coch-llandeilo"
+    assert b.next_session(s, date(2026, 10, 4)) == date(2026, 10, 22)
+    assert b.next_session(s, date(2026, 10, 22)) == date(2026, 10, 22)  # on the day itself
+    assert b.next_session(s, date(2026, 11, 20)) is None
+    assert b.describe_session(s, date(2026, 10, 4)) == "Thursday 22 October 2026, Thursday 19 November 2026, from 19:30"
+    assert b.describe_session(s, date(2026, 12, 1)) == "On dates announced as they come; none to come yet"
+    events = b.session_events([s], date(2026, 10, 4))
+    assert [e["startDate"] for e in events] == ["2026-10-22T19:30", "2026-11-19T19:30"]
+    assert not any("eventSchedule" in e for e in events) and events[0]["location"]["name"] == "Y Llew Coch"
+    assert b.session_events([s], date(2026, 12, 1)) == []
+    capsys.readouterr()
+    b.session_data(date(2026, 12, 1))  # all past: still listed, with a note to add the next date
+    assert "no dates to come" in capsys.readouterr().out
+
+
 @pytest.mark.parametrize("change, says", [
     ({"day": "Tuesdays"}, "day should be one of"),
     ({"county": "South Glamorgan"}, "county should be one of"),
@@ -316,12 +341,18 @@ def test_session_events():
     ({"confirmed": "2/10/2026"}, "a date like"),
     ({"venue": ""}, "no venue"),
     ({"kind": "workshop"}, "kind should be"),
+    ({"repeat": "dates"}, "no dates"),
+    ({"repeat": "dates", "dates": ["2026-10-22"]}, "has no day"),
+    ({"repeat": "dates", "dates": ["22/10/2026"], "day": None}, "a list of dates like"),
+    ({"repeat": "dates", "dates": ["2026-11-19", "2026-10-22"], "day": None}, "in order"),
+    ({"repeat": "fortnightly"}, 'repeat should be "weekly", "monthly" or "dates"'),
 ])
 def test_session_mistakes(tmp_path, monkeypatch, change, says):
     # A mistake in sessions.json stops the build, saying what's wrong.
     good = {"venue": "Y Llew Coch", "address": "Stryd y Bont", "town": "Llandeilo", "county": "Carmarthenshire",
             "lat": 51.88, "lon": -3.99, "day": "Wednesday", "repeat": "weekly", "start": "20:00", "confirmed": "2026-10-02"}
-    (tmp_path / "sessions.json").write_text(json.dumps({"sessions": [{**good, **change}]}), encoding="utf-8")
+    session = {k: v for k, v in {**good, **change}.items() if v is not None}  # None: left out
+    (tmp_path / "sessions.json").write_text(json.dumps({"sessions": [session]}), encoding="utf-8")
     monkeypatch.setattr(b, "ROOT", tmp_path)
     with pytest.raises(SystemExit, match=says):
         b.session_data()

@@ -533,16 +533,56 @@ def test_practice_tools_folded_on_a_phone(browser, site, page):
     context.close()
 
 
-def test_sessions_this_week(page):
-    # The home page lists the sessions in the next seven days, soonest first (there are
-    # weekly ones, so the list is never empty), and links to the sessions page.
+def test_upcoming_sessions(page):
+    # The home page lists the next few sessions in order; then, under "Also coming up", ones
+    # on announced dates that aren't among them (up to four weeks ahead: the occasional
+    # ones, easy to miss); then how many more there are in the next seven days.
     page.goto_site()
-    page.wait_for_selector(".this-week li")
-    expected = page.evaluate("""async () => { const { sessions } = await loadSessions(); const today = new Date(); today.setHours(0, 0, 0, 0);
-      return Math.min(THIS_WEEK, sessions.filter((s) => { const n = nextSession(s); return n && (n - today) / 864e5 < 7; }).length); }""")
-    assert page.locator(".this-week li").count() == expected > 0
-    page.click(".this-week a[href='sesiynau/']")
+    page.wait_for_selector(".coming-up li")
+    soon = page.evaluate("""async () => { const { sessions } = await loadSessions();
+      const { soon, later } = comingUp(sessions); return [soon.length, later.length]; }""")
+    assert soon[0] > 0  # there are weekly sessions, so the list is never empty
+    # A made-up fortnight: four weekly sessions in the next few days, one on announced dates
+    # among them, and another in three weeks.
+    texts = page.evaluate("""() => {
+      const day = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return d; };
+      const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const weekday = (n) => ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][day(n).getDay()];
+      const at = (n, more = {}) => ({ venue: `Venue ${n}`, town: "Llandeilo", start: "19:30", id: `v${n}`,
+        repeat: "weekly", day: weekday(n), ...more });
+      const sessions = [at(0), at(1), at(2), at(3), at(4), at(5, { repeat: "dates", dates: [iso(day(5))] }),
+        at(21, { repeat: "dates", dates: [iso(day(21))] }), at(40, { repeat: "dates", dates: [iso(day(40))] })];
+      state.sessionData = Promise.resolve({ sessions });
+      const box = upcomingSessions(); document.body.append(box);
+      return new Promise((done) => setTimeout(() => {
+        done([...box.querySelectorAll("li, p")].map((x) => x.textContent)); box.remove(); }, 50));
+    }""")
+    venue = lambda t: t.split(" · ")[1].split(",")[0]
+    assert [venue(t) for t in texts[:3]] == ["Venue 0", "Venue 1", "Venue 2"]  # the next three, in order
+    assert texts[3] == "Also coming up:" and [venue(t) for t in texts[4:6]] == ["Venue 5", "Venue 21"]  # not 40: too far
+    assert texts[6].startswith("And 2 more in the next seven days")  # Venue 3 and 4
+    page.click(".coming-up a[href='sesiynau/']")
     page.wait_for_selector(".card.session")
+
+
+def test_coming_up_on_the_sessions_page(page):
+    # The sessions page lists every session in the next seven days at the top, then ones on
+    # announced dates further ahead, each a link down to its card, even when the filters
+    # had hidden it.
+    page.goto_site("sesiynau/")
+    page.wait_for_selector(".card.session")
+    soon, later = page.evaluate("async () => { const { soon, later } = comingUp((await loadSessions()).sessions); return [soon.length, later.length]; }")
+    assert page.locator(".coming-up li").count() == soon + later and soon > 0
+    text = page.text_content(".coming-up")  # (the labels are shown in capitals)
+    assert "Next seven days" in text and ("Further ahead" in text) == (later > 0)
+    link = page.locator(".coming-up li a").first
+    card = link.get_attribute("href")[1:]
+    day = page.evaluate(f"async () => (await loadSessions()).sessions.find((s) => 'session-' + s.id === '{card}').day")
+    page.locator(f".pills [data-day]:not([data-day='{day}']):not([disabled])").first.click()  # another day: its card is hidden
+    assert page.locator(f"#{card}").count() == 0
+    link.click()
+    page.wait_for_function(f"document.activeElement.id === '{card}'")
+    assert page.url.endswith("sesiynau/")
 
 
 def test_home_page_on_a_phone(browser, site):
@@ -1254,9 +1294,17 @@ def test_session_dates(page):
     times = page.evaluate("""() => [sessionTime({ start: "19:00", end: "21:00" }), sessionTime({ start: "20:30", end: "23:00" }),
       sessionTime({ start: "11:00", end: "13:00" }), sessionTime({ start: "21:00" })]""")
     assert times == ["7–9pm", "8:30–11pm", "11am–1pm", "from 9pm"]
+    # A session on announced dates: the next one to come (today's included), or none.
+    on_dates = {"repeat": "dates", "dates": ["2026-10-22", "2026-11-19"]}
+    assert when(on_dates) == "2026-10-22" and when(on_dates, "2026-10-22") == "2026-10-22"
+    assert when(on_dates, "2026-10-23") == "2026-11-19" and when(on_dates, "2026-11-20") is None
+    days = """([session, today]) => sessionDays(session, new Date(`${today}T12:00`))"""
+    assert page.evaluate(days, [on_dates, "2026-10-02"]) == "Thursday 22 October"
+    assert page.evaluate(days, [on_dates, "2026-12-01"]) == "No date announced yet"
     page.click(".lang-switch [data-lang=cy]")
     assert page.evaluate("""() => [sessionDays({ day: "Friday", repeat: "monthly", nth: 2 }), sessionDays({ day: "Tuesday", repeat: "weekly" }),
       sessionTime({ start: "21:00" })]""") == ["Ail ddydd Gwener y mis", "Bob dydd Mawrth", "o 9yh"]
+    assert page.evaluate(days, [on_dates, "2026-12-01"]) == "Dim dyddiad wedi'i gyhoeddi eto"
 
 
 def test_sessions_page(page, site):
@@ -1307,6 +1355,12 @@ def test_session_calendar(page):
         page.click("#session-chapter-cardiff-tuesday .session-links button")
     unfolded = Path(info.value.path()).read_bytes().decode("utf-8").replace("\r\n ", "")
     assert "RRULE:FREQ=WEEKLY;BYDAY=TU;UNTIL=20261229T235959Z" in unfolded
+    # A session on announced dates: an event for each date to come, none repeating.
+    ics = page.evaluate("""() => sessionCalendar({ id: "y-llew-coch-llandeilo", venue: "Y Llew Coch", address: "Stryd y Bont",
+      repeat: "dates", dates: ["2026-10-22", "2026-11-19"], start: "19:30" }, new Date(2026, 9, 22))""").replace("\r\n ", "")
+    assert "RRULE:FREQ=WEEKLY" not in ics and "RRULE:FREQ=MONTHLY" not in ics and ics.count("BEGIN:VEVENT") == 2
+    assert "DTSTART;TZID=Europe/London:20261022T193000" in ics and "DTEND;TZID=Europe/London:20261119T213000" in ics
+    assert "UID:y-llew-coch-llandeilo-20261119@ysesiwn.cymru" in ics
 
 
 @pytest.mark.parametrize("path, button", [

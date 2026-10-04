@@ -171,10 +171,11 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .features ul { columns: 2 22rem; column-gap: 2.5rem; margin: 0; padding-left: 1.2rem; max-width: 60rem; }
 .features li { break-inside: avoid; margin-bottom: .45rem; }
 .features li::marker { color: var(--accent); }
-/* Sessions this week, on the home page */
-.this-week ul { list-style: none; padding: 0; margin: 0; }
-.this-week li { padding: .2rem 0; }
-.this-week p { margin: .5rem 0 0; }
+/* Upcoming sessions, on the home page and the sessions page */
+.coming-up ul { list-style: none; padding: 0; margin: 0; }
+.coming-up li { padding: .2rem 0; }
+.coming-up p { margin: .5rem 0 0; }
+.coming-up p.also { margin: .4rem 0 .1rem; color: var(--muted); }
 .features strong a { color: inherit; text-decoration-color: var(--accent); text-underline-offset: .15em; }
 .features strong a:hover { color: var(--accent); }
 

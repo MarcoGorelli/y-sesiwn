@@ -11,12 +11,9 @@ a'r rhai chwilfrydig. Does dim yn cael ei werthu yma, a does dim hysbysebion.
 
 ## Mewn sesiwn
 
-Unwaith y byddwch wedi agor y wefan, mae'n cadw copi o bob alaw, felly mae'n
-gweithio heb signal. Ar ffôn, dewiswch **Add to Home Screen** o fotwm rhannu
-neu ddewislen y porwr i'w chadw fel ap. Mae'r botwm **Argraffu** ar bob alaw
-yn rhoi sgôr glân yn y cywair rydych chi wedi'i ddewis, ac mae
-[Alawon ar y map](?page=map) yn dangos o ble mae'r alawon sydd wedi'u henwi
-ar ôl lleoedd yn dod.
+Unwaith y byddwch wedi agor y wefan mae'n gweithio heb signal (gweler
+[Defnyddio'r Sesiwn all-lein](?page=offline)), ac mae'r botwm **Argraffu** ar
+bob alaw yn rhoi sgôr glân yn y cywair rydych chi wedi'i ddewis.
 
 ## Y sesiwn
 
@@ -94,8 +91,8 @@ deires*; y *crwth*, sy'n cael ei chwarae â bwa, gyda chwe thant, dau
 ohonyn nhw'n dannau bwrdwn sy'n cael eu tynnu â'r bawd; a'r *pibgorn*, pib o
 ysgaw neu asgwrn gyda chloch o gorn buwch. Mae lluniau'r crwth a'r pibgorn
 yn seiliedig ar enghreifftiau o'r ddeunawfed ganrif sydd wedi goroesi mewn amgueddfeydd.
-Maen nhw'n sefyll ar ddarn o *gwilt* Cymreig, wedi'i gwiltio yn y patrwm
-ffrâm Cymreig, gyda throellau yn yr ymyl a ffaniau yn y corneli.
+Maen nhw'n sefyll ar ddarn o *gwilt* Cymreig, wedi'i gwiltio yn y patrwm ffrâm
+Cymreig, gyda throellau yn yr ymyl a ffaniau yn y corneli.
 
 Gwlanen streipiog Gymreig yw'r streipiau coch a du i lawr ochr rhai
 blychau, fel yn y *bais* a'r *betgwn* yng ngwisg draddodiadol Cymru. Ac mae

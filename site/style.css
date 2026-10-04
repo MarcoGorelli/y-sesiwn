@@ -168,13 +168,6 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 
 /* "What you can do": the features, two columns on wide screens */
 /* On a phone: the features' names as pills, the descriptions folded under them */
-.features .feature-names { display: flex; flex-wrap: wrap; gap: .45rem; list-style: none; padding: 0; margin: 0 0 .75rem; columns: auto; }
-.features .feature-names li { margin: 0; }
-.feature-names strong { display: inline-block; padding: .35rem .8rem; border: 1px solid var(--border); border-radius: 999px;
-  background: var(--card-bg); font-weight: 500; font-size: .95rem; }
-.features .feature-names strong a { color: var(--link); text-decoration: underline; text-underline-offset: .15em; }
-.features-more > summary { color: var(--link); padding: .3rem 0; }
-.features-more[open] > summary { margin-bottom: .6rem; }
 .features ul { columns: 2 22rem; column-gap: 2.5rem; margin: 0; padding-left: 1.2rem; max-width: 60rem; }
 .features li { break-inside: avoid; margin-bottom: .45rem; }
 .features li::marker { color: var(--accent); }
@@ -201,29 +194,23 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .offline-card.full { margin-top: 0; }
 .share-icon { width: 1.15em; height: 1.15em; vertical-align: -.2em; color: var(--link); }
 
-/* Home page: the welcome, beside the harp, crwth and pibgorn on a scrap of Welsh quilt */
-.home-intro { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .5rem 2rem; }
+/* Home page: the welcome, beside the harp, crwth and pibgorn on a scrap of Welsh quilt
+   (left out on narrow screens, to keep the search near the top) */
+.home-intro { display: flex; align-items: flex-start; gap: .5rem 2rem; }
 .home-intro > div:first-child { flex: 1 1 26rem; }
 .instruments {
-  flex: none; display: flex; align-items: flex-end; justify-content: center; gap: 0;
+  flex: none; display: flex; align-items: flex-end; justify-content: center;
   width: 300px; aspect-ratio: 300 / 170; padding: 0 1.75rem 1.75rem; margin-top: .4rem;
   background: url("static/quilt.svg") center / 100% 100% no-repeat;
 }
 .instruments img { width: 92px; height: 92px; }
-@media (max-width: 560px) {
-  .instruments { width: 220px; padding: 0 1.25rem 1.25rem; margin: 0 0 .75rem; }
-  .instruments img { width: 66px; height: 66px; }
-}
+@media (max-width: 1100px) { .instruments { display: none; } }
 
 /* Home page: the way into the notes page */
 .home-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
-.notes-invite {
-  max-width: 40rem; margin: 1.25rem 0 .5rem; padding: .9rem 1.1rem 1rem;
-  border: 1px solid var(--border); border-left: 0; border-radius: var(--radius);
-  padding-left: calc(1.1rem + 7px); background: var(--flannel), var(--card-bg);
-}
-.notes-invite p { margin: 0 0 .7rem; }
-.invite-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; }
+.notes-invite { margin: 1.1rem 0 .5rem; }
+.notes-invite .link-button { margin: 0; font-size: inherit; }
+.notes-invite .mic-icon { margin-right: .2em; }
 .button-link { font-weight: 600; }
 
 /* The notes page: previews of the top matches */
@@ -295,10 +282,12 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
   background: url("carthen.svg") repeat-x left center / auto 7px; }
 .set-empty[hidden] { display: none; }
 
-/* A short strip of the carthen under section headings */
+/* A strip of the carthen under section headings, as long as the heading (centred, so a
+   part-repeat is cut evenly at both ends, like a strip of cloth) */
+.section-heading, .about h2 { width: fit-content; }
 .section-heading::after, .about h2::after {
-  content: ""; display: block; width: 9rem; height: 7px; margin-top: .45rem;
-  background: url("carthen.svg") repeat-x left center / auto 7px;
+  content: ""; display: block; height: 7px; margin-top: .45rem;
+  background: url("carthen.svg") repeat-x center / auto 7px;
 }
 .tune-list { columns: 3 14rem; column-gap: 2rem; padding: 0; list-style: none; margin: .5rem 0 0; }
 .tune-list li { break-inside: avoid; padding: .15rem 0; display: flex; align-items: baseline; }  /* long names wrap beside the swatch */

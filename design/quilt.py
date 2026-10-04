@@ -1,4 +1,5 @@
-# Draws static/quilt.svg, the scrap of Welsh quilt the home page's instruments stand on:
+# Draws static/quilt.svg, the scrap of Welsh quilt the instruments stand on, on the
+# home page and in the link-preview card (design/og-card.html):
 # python3 design/quilt.py static/quilt.svg
 #
 # A wholecloth quilt quilted in the Welsh frame layout: a field framed by double stitched
@@ -36,7 +37,7 @@ for cx, cy, sx, sy in [(27, 27, 1, 1), (W - 27, 27, -1, 1), (27, H - 27, 1, -1),
 
 frames = "\n".join(f'    <rect x="{i}" y="{i}" width="{W - 2 * i}" height="{H - 2 * i}" rx="2"/>' for i in (7, 10, 24, 27))
 svg = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}">
-  <!-- A scrap of Welsh wholecloth quilt, for the home page's instruments. Made by design/quilt.py. -->
+  <!-- A scrap of Welsh wholecloth quilt, for the instruments. Made by design/quilt.py. -->
   <rect x="1" y="1" width="{W - 2}" height="{H - 2}" rx="4" fill="{cream}" stroke="{slate}" stroke-opacity=".6" stroke-width="1.2"/>
   <g stroke="{slate}" stroke-opacity=".55" stroke-width=".9" stroke-dasharray="2.4 1.8" fill="none" stroke-linecap="round">
 {frames}

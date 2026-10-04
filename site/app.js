@@ -627,7 +627,6 @@ function renderNotesPage(main) {
       "ac yn ysgrifennu'r nodau wrth i chi chwarae (dyw e ddim yn gweithio i hymian). Does dim yn cael ei recordio na'i anfon i unman."],
     ["Mae chwech i wyth nodyn fel arfer yn ddigon. Gallwch adael nodau arwain alaw allan, neu eu chwarae; ",
       "y naill ffordd neu'r llall, caiff ei chanfod."],
-    ["Does dim ots am y cywair na'r wythfed: mae'r chwilio'n cymharu'r camau rhwng y nodau."],
     ["Mae nodyn anghywir, coll neu ychwanegol yn dal i ganfod yr alaw, ymhlith y cyfatebiaethau ", el("em", {}, "agos"),
       ". Os nad oes dim yn cyfateb, dangosir yr alawon agosaf."],
     ["Mae cyfeiriad y dudalen hon yn cadw'ch nodau, felly gallwch roi nod tudalen ar chwiliad neu ei anfon at rywun."],
@@ -636,7 +635,6 @@ function renderNotesPage(main) {
       "microphone and writes down the notes as you play (it doesn't work for humming). Nothing is recorded or sent anywhere."],
     ["Six to eight notes is usually plenty. A tune's lead-in notes can be left out, or played; ",
       "either way it's found."],
-    ["The key and the octave don't matter: the search compares the steps between the notes."],
     ["A wrong, missing or extra note still finds the tune, among the ", el("em", {}, "close"),
       " matches. If nothing matches, the nearest tunes are shown."],
     ["The address of this page keeps your notes, so you can bookmark a search or send it to someone."],
@@ -644,9 +642,9 @@ function renderNotesPage(main) {
   main.replaceChildren(
     el("h1", {}, tr("Find a tune by its notes", "Canfod alaw o'i nodau")),
     el("p", { class: "lead" }, tr("Know how a tune goes but not what it's called? Play its first few notes on your "
-      + "instrument, tap them on the keyboard or type them. The key doesn't matter.",
+      + "instrument, tap them on the keyboard or type them, in any key or octave.",
       "Gwybod sut mae alaw'n mynd ond nid beth yw ei henw? Chwaraewch ei hychydig nodau cyntaf ar eich offeryn, "
-      + "tapiwch nhw ar y bysellfwrdd neu teipiwch nhw. Does dim ots am y cywair.")),
+      + "tapiwch nhw ar y bysellfwrdd neu teipiwch nhw, mewn unrhyw gywair neu wythfed.")),
     notesSearch({ autoListen }),
     el("section", { class: "guide notes-how" },
       el("h2", {}, tr("How it works", "Sut mae'n gweithio")),
@@ -671,8 +669,7 @@ function notesSearch({ autoListen = false } = {}) {
       const n = collapse(parseNotes(input.value).map((x) => x.midi ?? x.pc)).length;
       help.textContent = n
         ? tr(`Keep going: ${MIN_NOTES - n} more note${MIN_NOTES - n > 1 ? "s" : ""}.`, `Daliwch ati: ${MIN_NOTES - n} nodyn arall.`)
-        : tr("Type or play the first few notes of a tune. The key doesn't matter.",
-          "Teipiwch neu chwaraewch ychydig nodau cyntaf alaw. Does dim ots am y cywair.");
+        : "";
       results.replaceChildren();
       return;
     }
@@ -1047,12 +1044,8 @@ function renderHome(main) {
       el("div", {},
         el("h1", {}, tr("Croeso! Welcome to Y Sesiwn", "Croeso i'r Sesiwn!")),
         el("p", { class: "lead" }, ...tr(
-      ["Y Sesiwn is a ", el("strong", {}, "completely free and open-source"),
-        ` resource to help you learn and share Welsh folk tunes: ${count} of them so far, `,
-        "each with its sheet music. Search by name, browse by type and key, or let chance decide."],
-      ["Mae'r Sesiwn yn adnodd ", el("strong", {}, "hollol am ddim a chod agored"),
-        ` i'ch helpu i ddysgu a rhannu alawon gwerin Cymru: ${count} ohonyn nhw hyd yma, `,
-        "pob un â'i sgôr. Chwiliwch yn ôl enw, porwch yn ôl math a chywair, neu gadewch i ffawd ddewis."]))),
+          [el("strong", {}, "Free and open source"), `: sheet music for ${count} Welsh folk tunes, to learn, play and share.`],
+          [el("strong", {}, "Am ddim a chod agored"), `: sgorau ${count} o alawon gwerin Cymru, i'w dysgu, eu chwarae a'u rhannu.`]))),
       instruments()),
     heroSearch(count),
     el("div", { class: "home-actions" },
@@ -1167,8 +1160,8 @@ function renderBrowse(main) {
 
   main.replaceChildren(
     el("h1", {}, tr("Browse by type and key", "Pori yn ôl math a chywair")),
-    el("p", { class: "lead" }, tr("Pick types of tune, keys, or both, as many as you like: the jigs and reels in D, say, or everything in G or D.",
-      "Dewiswch fathau o alaw, cyweiriau, neu'r ddau, faint bynnag a fynnwch: y jigiau yn D, dyweder, neu bopeth yn G neu D.")),
+    el("p", { class: "lead" }, tr("Pick any types and keys: the jigs and reels in D, say.",
+      "Dewiswch unrhyw fathau a chyweiriau: y jigiau yn D, dyweder.")),
     el("p", { class: "pills-label" }, tr("Type", "Math")), pills,
     el("p", { class: "pills-label" }, tr("Key", "Cywair")), keyPills, caption, list,
   );
@@ -1177,59 +1170,37 @@ function renderBrowse(main) {
 
 // On the home page, the way into the notes page: "Play it to me" goes there and starts
 // listening at once (the tap is still the go-ahead for the microphone and sound).
+// One line under the search: finding a tune by its notes, played to the microphone or tapped.
 function notesInvite() {
-  return el("section", { class: "notes-invite" },
-    el("p", {}, el("strong", {}, tr("Know the tune but not its name?", "Gwybod yr alaw ond nid ei henw?")),
-      tr(" Play it on your instrument, or tap the notes, and Y Sesiwn will find it.",
-        " Chwaraewch hi ar eich offeryn, neu tapiwch y nodau, a daw'r Sesiwn o hyd iddi.")),
-    el("div", { class: "invite-actions" },
-      canListen() ? el("button", { type: "button", class: "primary listen-start",
-        onclick: () => { state.autoListen = true; navigate("?page=notes"); } }, micIcon(), tr(" Play it to me", " Chwaraewch hi i mi")) : null,
-      el("a", { href: "?page=notes", "data-route": true, class: "button-link" },
-        tr("Tap or type the notes", "Tapio neu deipio'r nodau"))));
+  const notes = (text) => el("a", { href: "?page=notes", "data-route": true }, text);
+  return el("p", { class: "notes-invite" }, el("strong", {}, tr("Know the tune but not its name?", "Gwybod yr alaw ond nid ei henw?")), " ",
+    ...(canListen() ? [
+      el("button", { type: "button", class: "link-button listen-start",
+        onclick: () => { state.autoListen = true; navigate("?page=notes"); } }, micIcon(), tr("Play it to me", "Chwaraewch hi i mi")),
+      tr(" or ", " neu "), notes(tr("tap the notes", "tapiwch y nodau")),
+    ] : [notes(tr("Tap or type the notes", "Tapio neu deipio'r nodau"))]));
 }
 
 function features() {
-  // What the site does, in one list: each item's first words say it, the rest how.
-  const link = (href, text) => el("a", { href, "data-route": href.startsWith("http") ? null : true }, text);
+  // A few things worth knowing before opening a tune; the sidebar has the rest.
+  const link = (href, text) => el("a", { href, "data-route": true }, text);
   const withChords = state.groupList.filter((g) => g.versions.some((v) => v.chords != null)).length;
-  // The name search, the browse button and the offline card are right above and below.
   const items = state.lang === "cy" ? [
-    [[link("?page=notes", "Canfod alaw o'i nodau")], ": chwaraewch yr ychydig nodau cyntaf ar eich offeryn i'r meicroffon, tapiwch nhw ar y bysellfwrdd neu teipiwch nhw, mewn unrhyw gywair."],
-    [["Unrhyw gywair, unrhyw dempo"], ": trawsgyweiriwch alaw i siwtio'ch offeryn, eich llais neu'r sesiwn, a gwrandewch arni gyda'r nodau'n goleuo wrth iddyn nhw gael eu chwarae."],
-    [["Ymarfer"], ": chwaraewch un rhan o alaw drosodd a throsodd gan gyflymu ychydig bob tro, gyda chyfrif i mewn a chlic os mynnwch, a ", ["thablatur"], " ar gyfer mandolin, ffidil neu gitâr."],
-    [["Cyfeiliant"], `: cordiau awgrymedig fel siart ar gyfer gitâr, piano neu delyn, i'w chwarae gyda'r alaw neu hebddi (${withChords} o alawon hyd yma, a mwy i ddod).`],
-    [["Modd ymarfer"], " sy'n llenwi'r sgrin â'r gerddoriaeth, ar gyfer llechen ar stand gerddoriaeth; neu ", ["argraffwch"], " hi."],
-    [[link("?page=sets", "Setiau")], ": casglwch alawon i'w chwarae gyda'i gilydd, yn y cyweiriau a fynnwch, a'u rhannu fel dolen neu god QR."],
-    [[link("?page=map", "Alawon ar y map")], ": y lleoedd yng Nghymru y mae alawon wedi'u henwi ar eu hôl."],
-    [[link("sesiynau/", "Sesiynau cyfredol")], ": ble i chwarae alawon Cymreig gydag eraill, ar fap, yn ôl dydd ac ardal."],
-    [["Rhydd ac agored"], ": ", link("?page=add", "ychwanegwch alaw"), " neu ", link("?page=contact", "awgrymwch gywiriad"),
-      "; mae popeth ", link(state.data.repo, "ar GitHub"), "."],
+    [["Unrhyw gywair, unrhyw dempo"], ": trawsgyweiriwch alaw i siwtio'ch offeryn neu'ch llais, a gwrandewch arni gyda'r nodau'n goleuo."],
+    [["Ymarfer"], ": chwaraewch un rhan drosodd a throsodd gan gyflymu bob tro, gyda thablatur ar gyfer mandolin, ffidil neu gitâr."],
+    [["Cordiau"], `: cyfeiliant awgrymedig ar gyfer gitâr, piano neu delyn (${withChords} o alawon hyd yma).`],
+    [[link("?page=sets", "Setiau")], ": casglwch alawon i'w chwarae gyda'i gilydd, yn eich cyweiriau chi, a'u rhannu fel dolen neu god QR."],
   ] : [
-    [[link("?page=notes", "Find a tune by its notes")], ": play the first few notes on your instrument to the microphone, tap them on the keyboard or type them, in any key."],
-    [["Any key, any tempo"], ": transpose a tune to suit your instrument, your voice or the session, and play it back with the notes lit up as they play."],
-    [["Practise"], ": loop one part of a tune and speed up a little each time round, with a count-in and a click if you like, and ", ["tablature"], " for mandolin, fiddle or guitar."],
-    [["Accompaniment"], `: suggested chords as a chart for guitar, piano or harp, played with or without the tune (${withChords} tunes so far, and growing).`],
-    [["Practice mode"], " fills the screen with the music, for a tablet on a music stand; or ", ["print"], " it."],
-    [[link("?page=sets", "Sets")], ": gather tunes to play together, in the keys you want, and share them as a link or a QR code."],
-    [[link("?page=map", "Tunes on the map")], ": the places in Wales that tunes are named after."],
-    [[link("sesiynau/", "Active sessions")], ": where to play Welsh tunes with others, on a map, by day and area."],
-    [["Free and open"], ": ", link("?page=add", "add a tune"), " or ", link("?page=contact", "suggest a correction"),
-      "; everything is ", link(state.data.repo, "on GitHub"), "."],
+    [["Any key, any tempo"], ": transpose a tune for your instrument or voice, and hear it with the notes lit up."],
+    [["Practise"], ": loop a part and speed up each time round, with tablature for mandolin, fiddle or guitar."],
+    [["Chords"], `: suggested accompaniment for guitar, piano or harp (${withChords} tunes so far).`],
+    [[link("?page=sets", "Sets")], ": gather tunes to play together, in your keys, and share them as a link or a QR code."],
   ];
-  // [["words"]] is the bold lead-in (possibly a link); plain strings and links follow it.
+  // [["words"]] is the bold lead-in (possibly a link); plain strings follow it.
   const bold = (part) => Array.isArray(part) ? el("strong", {}, part) : part;
-  const heading = el("h2", { class: "section-heading" }, tr("What you can do", "Beth allwch chi ei wneud"));
-  const list = el("ul", {}, items.map((parts) => el("li", {}, parts.map(bold))));
-  // On a phone the full list would push the install card screens down the page: there it's
-  // each feature's name (a link where it has a page), with the rest folded away under it.
-  if (!matchMedia("(max-width: 800px)").matches) return el("section", { class: "features" }, heading, list);
-  // Copies of the names: a link can't be in the pills and the list at once (appending it
-  // to the pills would take it out of its description).
-  const copy = (part) => (Array.isArray(part) ? part.map(copy) : part?.cloneNode ? part.cloneNode(true) : part);
-  const names = el("ul", { class: "feature-names" }, items.map((parts) => el("li", {}, bold(copy(parts[0])))));
-  return el("section", { class: "features" }, heading, names,
-    el("details", { class: "fold features-more" }, el("summary", {}, tr("More about each", "Rhagor am bob un")), list));
+  return el("section", { class: "features" },
+    el("h2", { class: "section-heading" }, tr("What you can do", "Beth allwch chi ei wneud")),
+    el("ul", {}, items.map((parts) => el("li", {}, parts.map(bold)))));
 }
 
 function heroSearch(count) {
@@ -2472,7 +2443,7 @@ function loadSessions() {
 // On the home page: the sessions in the next seven days, soonest first. It's filled in
 // once sessions.json has come (the page doesn't wait for it), and stays hidden in a week
 // with none.
-const THIS_WEEK = 6;  // at most
+const THIS_WEEK = 3;  // at most
 function sessionsThisWeek() {
   const box = el("section", { class: "this-week", hidden: true });
   loadSessions().then(({ sessions }) => {
@@ -2616,12 +2587,8 @@ async function renderSessions(main) {
   } }, text);
   main.replaceChildren(
     el("h1", {}, tr("Active sessions", "Sesiynau cyfredol")),
-    el("p", { class: "lead" }, tr("Folk sessions and tune clubs where you can play Welsh tunes with others: come along with an instrument, or just to listen. "
-      + "We only list sessions where there's a heavy focus on Welsh music. Each says when someone last confirmed it's running "
-      + "as described; if you've been lately, let us know.",
-      "Sesiynau gwerin a chlybiau alawon lle gallwch chi chwarae alawon Cymreig gydag eraill: dewch ag offeryn, neu dim ond i wrando. "
-      + "Dim ond sesiynau sy'n canolbwyntio'n drwm ar gerddoriaeth Gymreig rydyn ni'n eu rhestru. Mae pob un yn dweud pryd y cadarnhaodd "
-      + "rhywun ddiwethaf ei bod yn cael ei chynnal fel y disgrifir; os ydych chi wedi bod yn ddiweddar, rhowch wybod i ni."),
+    el("p", { class: "lead" }, tr("Folk sessions and tune clubs with a strong focus on Welsh music: come along with an instrument, or just to listen.",
+      "Sesiynau gwerin a chlybiau alawon sy'n canolbwyntio ar gerddoriaeth Gymreig: dewch ag offeryn, neu dim ond i wrando."),
       " ", toForm(tr("Know a session we're missing? Tell us about it.", "Gwybod am sesiwn sydd ar goll? Rhowch wybod i ni amdani."))),
     el("p", { class: "pills-label" }, tr("Day", "Dydd")), dayPills,
     el("p", { class: "pills-label" }, tr("Area", "Ardal")), countyPills,
@@ -2745,9 +2712,10 @@ function fillOfflineCard(card) {
         "Ychwanegwch Y Sesiwn at eich sgrin gartref ac mae'n agor fel ap, gyda phob alaw wedi'i chadw ar eich ffôn: mae'n gweithio yn y dafarn hyd yn oed heb signal.")
       : tr("Install Y Sesiwn on this computer and it opens like an app, in its own window, with every tune saved: it works even with no internet. (On a phone, add it to your home screen.)",
         "Gosodwch Y Sesiwn ar y cyfrifiadur hwn ac mae'n agor fel ap, yn ei ffenest ei hun, gyda phob alaw wedi'i chadw: mae'n gweithio hyd yn oed heb y rhyngrwyd. (Ar ffôn, ychwanegwch hi at eich sgrin gartref.)")),
-    how, status,
+    // The home page's card keeps to the browser's own install button; the steps are on the offline page.
+    full || installPrompt ? how : null, status,
     full ? null : el("p", { class: "more" }, el("a", { href: "?page=offline", "data-route": true },
-      tr("More about using it offline", "Rhagor am ei defnyddio all-lein"))),
+      tr("How to install it and use it offline", "Sut i'w gosod a'i defnyddio all-lein"))),
   ].filter(Boolean));
 }
 
@@ -2761,7 +2729,8 @@ function renderOffline(main) {
         offlineCard({ full: true }),
         el("h2", {}, "Ar ffôn neu dabled"),
         el("ul", {},
-          el("li", {}, b("iPhone neu iPad"), ": yn Safari (neu Chrome), ", ui("Share → Add to Home Screen"), "."),
+          el("li", {}, b("iPhone neu iPad"), ": yn Safari (neu Chrome), ", ui("Share → Add to Home Screen"),
+            "; yna agorwch hi o'r sgrin gartref unwaith tra bod gennych signal, i gadw ei chopi ei hun."),
           el("li", {}, b("Android"), ": y botwm ", b("Gosod yr ap"), " uchod, neu ddewislen y porwr (⋮) → ",
             ui("Install app"), " neu ", ui("Add to Home screen"), ".")),
         el("h2", {}, "Ar gyfrifiadur"),
@@ -2776,10 +2745,6 @@ function renderOffline(main) {
         el("p", {}, "Mae synau'r piano ar gyfer chwarae (2 MB arall) yn cael eu cadw i gyd ar gyfrifiadur ac yn yr ap wedi'i osod. ",
           "Mewn porwr ar ffôn, i arbed eich data, dim ond y nodau rydych chi wedi'u chwarae sy'n cael eu cadw, nes i chi ",
           "bwyso ", b("Eu cadw nawr"), " uchod."),
-        el("p", {}, "Mae ei gosod yn rhoi ei heicon ei hun iddi ac yn ei hagor heb far cyfeiriad y porwr: sgrin lawn ",
-          "ar ffôn (o'r sgrin gartref), yn ei ffenest ei hun ar gyfrifiadur (o'r Doc, y ddewislen Start neu'r bwrdd ",
-          "gwaith). Ar iPhone neu iPad mae'r ap wedi'i osod yn cadw ei gopi ei hun, ar wahân i un Safari, felly ",
-          "agorwch ef unwaith tra bod gennych signal."),
         el("p", {}, "Pan fydd alawon yn cael eu hychwanegu neu eu cywiro, fe'u gwelwch chi cyn gynted ag y byddwch chi ",
           "ar-lein, ac mae'ch copi ar y ddyfais yn cael ei ddiweddaru yn y cefndir.")));
     return;
@@ -2790,7 +2755,8 @@ function renderOffline(main) {
       offlineCard({ full: true }),
       el("h2", {}, "On a phone or tablet"),
       el("ul", {},
-        el("li", {}, b("iPhone or iPad"), ": in Safari (or Chrome), ", b("Share → Add to Home Screen"), "."),
+        el("li", {}, b("iPhone or iPad"), ": in Safari (or Chrome), ", b("Share → Add to Home Screen"),
+          "; then open it from your home screen once while you have signal, so it keeps its own copy."),
         el("li", {}, b("Android"), ": the ", b("Install the app"), " button above, or the browser's menu (⋮) → ",
           b("Install app"), " or ", b("Add to Home screen"), ".")),
       el("h2", {}, "On a computer"),
@@ -2806,10 +2772,6 @@ function renderOffline(main) {
       el("p", {}, "The piano sounds for playback (another 2 MB) are all saved on a computer and in the installed ",
         "app. In a phone's browser, to spare your data, only the notes you've played are kept, until you press ",
         b("Save them now"), " above."),
-      el("p", {}, "Installing it gives it its own icon and opens it without the browser's address bar: ",
-        "full screen on a phone (from the home screen), in its own window on a computer (from the Dock, ",
-        "Start menu or desktop). On an iPhone or iPad the installed app keeps its own copy, separate ",
-        "from Safari's, so open it once while you have signal."),
       el("p", {}, "When tunes are added or corrected, you see them as soon as you're online, and the copy on your ",
         "device is brought up to date in the background.")));
 }

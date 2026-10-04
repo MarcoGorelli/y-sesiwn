@@ -546,22 +546,16 @@ def test_sessions_this_week(page):
 
 
 def test_home_page_on_a_phone(browser, site):
-    # "What you can do" is folded away, so the install card isn't screens down the page.
+    # The search is near the top (no pictures above it), and "What you can do" is short
+    # enough to show whole.
     context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True,
                                   service_workers="block")
     page = context.new_page()
     page.goto(site)
     page.wait_for_selector(".features")
-    # Each feature's name shows (linking to its page where it has one); the descriptions fold away.
-    assert page.locator(".feature-names li").count() == 9 and page.locator(".feature-names li").first.is_visible()
-    assert page.locator(".feature-names a[href='sesiynau/']").count() == 1
-    assert not page.locator(".features-more li").first.is_visible()
-    page.click(".features-more summary")
-    assert page.locator(".features-more li").first.is_visible()
-    # Every description starts with its feature's name (the pills have copies of the links).
-    descriptions = page.locator(".features-more li").all_inner_texts()
-    assert descriptions[0].startswith("Find a tune by its notes: ")
-    assert not [d for d in descriptions if d.startswith((":", " "))]
+    assert not page.locator(".instruments").is_visible()
+    assert page.locator("#hero-search").bounding_box()["y"] < 844 / 2
+    assert page.locator(".features li").count() == 4 and page.locator(".features li").last.is_visible()
     context.close()
 
 
@@ -705,7 +699,10 @@ def test_fits_a_phone(browser, site, path, lang):
 def test_home_page(page):
     page.goto_site()
     features = page.locator(".features li").all_inner_texts()
-    assert len(features) == 9 and any("Accompaniment" in f for f in features)
+    assert len(features) == 4 and any(f.startswith("Chords: ") for f in features)
+    # One red button: Surprise me. Finding a tune by its notes is a line of text.
+    assert page.locator("main button.primary:visible").count() == 1
+    assert page.locator(".notes-invite a[href='?page=notes']").is_visible()
     assert page.locator(".offline-card").is_visible()
     # One Surprise me: the home page's own, not the sidebar's too.
     assert page.locator(".home-actions button:has-text('Surprise me')").is_visible() and not page.locator("#surprise-sidebar").is_visible()
@@ -745,7 +742,7 @@ def test_welsh_home_page(page):
     assert page.get_attribute(".lang-switch [data-lang=cy]", "aria-pressed") == "true"
     assert page.inner_text("#surprise-sidebar") == "Alaw ar hap"
     assert page.get_attribute("#search-input", "placeholder") == "Chwilio am alaw…"
-    assert page.locator(".features li").count() == 9
+    assert page.locator(".features li").count() == 4
     # Nothing left in English: no sentence of the English page shows up in the Welsh one.
     welsh = page.evaluate(VISIBLE_TEXT)
     fragments = {f.strip() for f in re.split(r"[.:;?!()\n]", english) if len(f.strip()) >= 12}
@@ -822,7 +819,7 @@ def test_install_card(browser, site, user_agent, touch, says):
     # How to install depends on the device and browser; the card should say the right thing.
     context = browser.new_context(user_agent=user_agent, has_touch=touch, service_workers="block")
     page = context.new_page()
-    page.goto(site)
+    page.goto(site + "?page=offline")  # the home page's card only links here
     assert says in page.locator(".offline-card").inner_text()
     context.close()
 
@@ -1899,7 +1896,7 @@ def test_tablature_choices(page):
 def test_notes_page(page):
     # From the home page's invitation, typed notes are searched and kept in the address.
     page.goto_site()
-    page.click("text=Tap or type the notes")
+    page.click(".notes-invite a[href='?page=notes']")
     page.fill("#notes-search", "D G B D C B G A")
     assert "q=D%20G%20B%20D%20C%20B%20G%20A" in page.url
     assert page.locator(".notes-results li a").first.inner_text() == "Glandyfi"

@@ -89,10 +89,11 @@ relative URLs, so the site also works under a sub-path such as
 
 ## Features
 
-- **Home page:** a welcome, a big name search box, **Surprise me** (a random
-  tune; also in the sidebar), an invitation to find a tune by its notes, **Browse by type and key**,
-  **What you can do** (every feature in one list, `features()` in `app.js`;
-  keep it up to date when adding one) and the offline card. Browsing:
+- **Home page:** kept short on purpose: a one-line welcome (beside the harp, crwth and
+  pibgorn on a scrap of Welsh quilt, on wide screens), a big name search box, **Surprise me** (a random
+  tune; also in the sidebar) and **Browse by type and key**, a line inviting you to find a tune by its notes,
+  the next three sessions, **What you can do** (four highlights, `features()` in `app.js`;
+  the sidebar has everything else) and a short offline card. Browsing:
   buttons for each tune type (Jig, Polca, Walts, Rîl, Pibddawns, …, from `R:`,
   Welsh or English, via `tune_type()` in `build_site.py`), each with a
   *carthen* colourway, a second row of keys (the key each tune's first version
@@ -280,7 +281,7 @@ relative URLs, so the site also works under a sub-path such as
   `app.js`). Each shows when it was last confirmed, and has a form to say
   it's still on, has changed or has stopped; another sends a missing one.
   *Add to calendar* downloads an `.ics` file that repeats as the session does
-  (in Welsh time), and the home page lists the sessions in the next seven days.
+  (in Welsh time), and the home page lists the next three sessions in the coming seven days.
   Both open an email, like the tune form. The sessions are listed by hand in
   `sessions.json` (its `_comment` says what each field is); `build_site.py`
   checks them, stops with a clear error on a mistake, and writes
@@ -295,8 +296,9 @@ relative URLs, so the site also works under a sub-path such as
   The piano notes (2 MB) are cached separately, so a deploy doesn't download them
   again: each is kept the first time it's played, and the app asks for all of
   them on a computer and in the installed app (not on a phone's data, unless
-  the reader presses *Save them now* on the offline card). A **"Take it to the session"** card on the home page (and the *Use
-  it offline* page, `?page=offline`) advertises it: on Chrome/Edge it's an
+  the reader presses *Save them now* on the offline card). A short **"Take it to the session"** card on the home page (just the
+  browser's install button where there is one, and a link) and the full one on the *Use
+  it offline* page (`?page=offline`) advertise it: on Chrome/Edge it's an
   **Install the app** button (from the `beforeinstallprompt` event), on
   iPhones and iPads the Share → Add to Home Screen steps (Apple has no install
   prompt for websites), on a Mac in Safari *File → Add to Dock*, in Firefox (which can't
@@ -354,7 +356,7 @@ relative URLs, so the site also works under a sub-path such as
 | `CONTRIBUTING.md` | How to add a tune, and how to submit corrections. Each `# ` section is one page on the site, and GitHub shows the whole file, so edit it in one place. Keep the two `# ` headings as they are: the site finds the sections by them. |
 | `static/abcjs/` | [abcjs](https://www.abcjs.net/) 6.4.4 (`abcjs-basic-min.js`, `abcjs-audio.css`): draws and plays the music. |
 | `static/soundfont/acoustic_grand_piano-mp3/` | The 88 piano notes (A0–C8) from the FluidR3_GM soundfont, one MP3 each; a tune loads only the notes it uses. |
-| `static/marked/`, `static/qrcode/`, `static/harp.svg`, `static/crwth.svg`, `static/pibgorn.svg`, `static/lovespoon.svg`, `static/quilt.svg` | [marked](https://marked.js.org/) 15 (Markdown pages); [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 1.4.4 (MIT, the QR code, loaded when first used); the icon, a Welsh triple harp drawn by `design/triple-harp.py` (the PNG icons and link-preview card are screenshots of it, see above); a crwth and a pibgorn, drawn by hand after 18th-century museum examples, shown with the harp on the home page and on empty pages; a lovespoon, for an empty My sets page; and a scrap of Welsh quilt behind the home page's instruments, drawn by `design/quilt.py`. |
+| `static/marked/`, `static/qrcode/`, `static/harp.svg`, `static/crwth.svg`, `static/pibgorn.svg`, `static/lovespoon.svg`, `static/quilt.svg` | [marked](https://marked.js.org/) 15 (Markdown pages); [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 1.4.4 (MIT, the QR code, loaded when first used); the icon, a Welsh triple harp drawn by `design/triple-harp.py` (the PNG icons and link-preview card are screenshots of it, see above); a crwth and a pibgorn, drawn by hand after 18th-century museum examples, shown with the harp on the home page and on empty pages; a lovespoon, for an empty My sets page; and a scrap of Welsh quilt behind the instruments on the home page and in the link-preview card, drawn by `design/quilt.py`. |
 | `download_assets.py` | Re-downloads everything in `static/` (skips files that exist). Only needed if `static/` is lost or you want to change version. |
 | `tunes/<folder>/tune.abc` | One tune (or version) per folder; the site reads only these. |
 | `.github/workflows/pages.yml` | Tests, builds and publishes the site. |

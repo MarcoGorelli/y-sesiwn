@@ -11,12 +11,9 @@ curious. Nothing here is sold, and there are no adverts.
 
 ## At a session
 
-Once you've opened the site, it keeps a copy of every tune, so it works
-without a signal. On a phone, choose **Add to Home Screen** from the
-browser's share or menu button to keep it as an app. The **Print** button on
-each tune gives clean sheet music in the key you've chosen, and
-[Tunes on the map](?page=map) shows where the tunes named after places come
-from.
+Once you've opened the site it works without a signal (see
+[Use Y Sesiwn offline](?page=offline)), and the **Print** button on each tune
+gives clean sheet music in the key you've chosen.
 
 ## The sesiwn
 
@@ -93,9 +90,9 @@ The three instruments on the home page are the old instruments of Welsh
 music: the *telyn deires* (triple harp); the *crwth*, played with a bow, with
 six strings, two of them drones plucked with the thumb; and the *pibgorn*, a
 hornpipe of elder or bone with a cow-horn bell. The crwth and pibgorn are
-drawn after 18th-century ones that survive in museums. They stand on a scrap of
-Welsh quilt (*cwilt*), quilted in the Welsh frame pattern, with spirals in
-the border and fans in the corners.
+drawn after 18th-century ones that survive in museums. They stand on a scrap
+of Welsh quilt (*cwilt*), quilted in the Welsh frame pattern, with spirals in the border and
+fans in the corners.
 
 The red and black stripes down the side of some boxes are Welsh striped
 flannel, as in the *pais* (petticoat) and *betgwn* (bedgown) of traditional

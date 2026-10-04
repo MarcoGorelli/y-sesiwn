@@ -1793,15 +1793,40 @@ def test_chosen_key_stands_out(browser, site, scheme):
     context.close()
 
 
+def test_browse_several_types_and_keys(page, site):
+    # Types add up (jigs and polkas), keys add up (D or G), and the two narrow each other
+    # down; clicking a chosen one again takes just that one off.
+    page.goto_site("?page=browse")
+    page.wait_for_selector(".tune-list li")
+    groups = page.evaluate("state.groupList.map((g) => [g.type, g.versions[0].key ? `${g.versions[0].key.root} ${g.versions[0].key.modeName}` : null])")
+    count = lambda types=(), keys=(): sum((not types or t in types) and (not keys or k in keys) for t, k in groups)
+    shown = lambda: page.locator(".tune-list li").count()
+    page.click(".pills [data-type='Jig']")
+    page.click(".pills [data-type='Polca']")
+    assert shown() == count({"Jig", "Polca"})
+    assert page.locator("p.caption", has_text="jigs and polkas").count() == 1
+    page.click(".pills.keys [data-key='D major']")
+    page.click(".pills.keys [data-key='G major']")
+    assert shown() == count({"Jig", "Polca"}, {"D major", "G major"})
+    assert page.locator("p.caption", has_text="jigs and polkas in G major or D major").count() == 1
+    assert page.url == site + "?page=browse&type=Jig&type=Polca&key=G+major&key=D+major"
+    page.click(".pills [data-type='Jig']")  # takes off just the jigs
+    assert page.get_attribute(".pills [data-type='Polca']", "aria-pressed") == "true"
+    assert shown() == count({"Polca"}, {"D major", "G major"})
+    page.reload()  # the choice is in the address
+    page.wait_for_selector(".tune-list li")
+    assert shown() == count({"Polca"}, {"D major", "G major"})
+
+
 def test_type_page(page, site):
     # A type's own page (math/<type>/) opens the browse page with that type chosen, at
-    # its own address; choosing another moves to the browse page's.
+    # its own address; choosing another (as well) moves to the browse page's.
     page.goto_site("math/pibddawns/")
     page.wait_for_selector(".tune-list li")
     assert page.get_attribute(".pills [data-type='Pibddawns']", "aria-pressed") == "true"
     assert page.url == site + "math/pibddawns/"
     page.click(".pills [data-type='Jig']")
-    assert page.url == site + "?page=browse&type=Jig"
+    assert page.url == site + "?page=browse&type=Jig&type=Pibddawns"
     page.click(".tune-list a >> nth=0")
     page.wait_for_selector(".score .abcjs-staff")
 

@@ -1080,8 +1080,8 @@ function recentTunes() {
 
 // ---- Browse page -------------------------------------------------------------------
 
-// Every tune, narrowed down by type and key. The choice is kept in the address
-// (?page=browse&type=Jig&key=D%20major), so "the jigs in D" can be shared.
+// Every tune, narrowed down by types and keys. The choice is kept in the address
+// (?page=browse&type=Jig&type=Polca&key=D%20major), so "the jigs and polkas in D" can be shared.
 function renderBrowse(main) {
   document.title = tr("Browse · Y Sesiwn", "Pori · Y Sesiwn");
   const { types } = state.data;
@@ -1096,57 +1096,74 @@ function renderBrowse(main) {
   const keyOf = (t) => (t.versions[0].key ? `${t.versions[0].key.root} ${t.versions[0].key.modeName}` : null);
   const keyCounts = new Map();
   for (const t of tunes) if (keyOf(t)) keyCounts.set(keyOf(t), (keyCounts.get(keyOf(t)) ?? 0) + 1);
-  // Nothing selected (null) lists every tune; clicking the selected type or key again
-  // clears it. A type and a key together list, say, the jigs in D major.
+  // Any number of types and keys: nothing chosen lists every tune; clicking a chosen one
+  // again takes just that one off. Types add up (the jigs and the polkas), as do keys, and
+  // a type and a key together narrow it down (the jigs and polkas in D or G).
   const params = new URLSearchParams(location.search);
-  let chosenType = types.some((t) => t.name === params.get("type")) ? params.get("type") : addressType();
-  let chosenKey = keyCounts.has(params.get("key")) ? params.get("key") : null;
-  const show = (name, key, first = false) => {
-    [chosenType, chosenKey] = [name, key];
+  const typeNames = types.map((t) => t.name);
+  const chosenTypes = new Set(params.getAll("type").filter((t) => typeNames.includes(t)));
+  if (!chosenTypes.size && addressType()) chosenTypes.add(addressType());
+  const chosenKeys = new Set(params.getAll("key").filter((k) => keyCounts.has(k)));
+  const inOrder = (set, order) => order.filter((x) => set.has(x));  // as the buttons are
+  const keyOrder = [...keyCounts].sort((a, b) => b[1] - a[1]).map(([k]) => k);
+  const andList = (items, word) => (items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} ${word} ${items.at(-1)}`);
+  const show = (first = false) => {
     const url = new URLSearchParams({ page: "browse" });
-    if (name) url.set("type", name);
-    if (key) url.set("key", key);
+    for (const t of inOrder(chosenTypes, typeNames)) url.append("type", t);
+    for (const k of inOrder(chosenKeys, keyOrder)) url.append("key", k);
     if (!first) history.replaceState(null, "", `?${url}`);  // a type's own page keeps its address at first
-    const type = types.find((t) => t.name === name);
-    for (const pill of pills.children) pill.setAttribute("aria-pressed", pill.dataset.type === name);
+    const typeOk = (t) => !chosenTypes.size || chosenTypes.has(t.type);
+    const keyOk = (t) => !chosenKeys.size || chosenKeys.has(keyOf(t));
+    for (const pill of pills.children) pill.setAttribute("aria-pressed", chosenTypes.has(pill.dataset.type));
     for (const pill of keyPills.children) {
-      // Each key's count among the tunes of the chosen type; keys it has none in are greyed out.
-      const n = tunes.filter((t) => (!type || t.type === name) && keyOf(t) === pill.dataset.key).length;
-      pill.setAttribute("aria-pressed", pill.dataset.key === key);
+      // Each key's count among the tunes of the chosen types; keys they have none in are greyed out.
+      const n = tunes.filter((t) => typeOk(t) && keyOf(t) === pill.dataset.key).length;
+      const on = chosenKeys.has(pill.dataset.key);
+      pill.setAttribute("aria-pressed", on);
       pill.lastChild.textContent = String(n);
-      pill.disabled = n === 0 && pill.dataset.key !== key;
+      pill.disabled = n === 0 && !on;
     }
-    const listed = tunes.filter((t) => (!type || t.type === name) && (!key || keyOf(t) === key));
-    caption.textContent = state.lang === "cy"
-      ? (type || key ? `${listed.length} ${type ? CY_TYPE[name] : "alaw"}${key ? ` yn ${keyLabel(key)}` : ""}` : `Y ${tunes.length} alaw i gyd`)
-      : type || key
-        ? `${listed.length} ${listed.length === 1 && type ? type.name.toLowerCase() : type ? type.english : listed.length === 1 ? "tune" : "tunes"}${key ? ` in ${key}` : ""}`
-        : `All ${tunes.length} tunes`;
+    const listed = tunes.filter((t) => typeOk(t) && keyOk(t));
+    const n = listed.length;
+    const ts = inOrder(chosenTypes, typeNames).map((name) => types.find((t) => t.name === name));
+    const ks = inOrder(chosenKeys, keyOrder);
+    if (state.lang === "cy") {
+      const what = !ts.length ? "alaw" : ts.length === 1 ? CY_TYPE[ts[0].name] : `alaw (${ts.map((t) => CY_TYPE[t.name]).join(", ")})`;
+      caption.textContent = ts.length || ks.length
+        ? `${n} ${what}${ks.length ? ` yn ${ks.map(keyLabel).join(" neu ")}` : ""}` : `Y ${tunes.length} alaw i gyd`;
+    } else {
+      const plural = (t) => (t.name === "Other" && ts.length > 1 ? "other tunes" : t.english);
+      const what = n === 1 ? (ts.length === 1 ? ts[0].name.toLowerCase() : "tune")
+        : !ts.length ? "tunes" : andList(ts.map(plural), "and");
+      caption.textContent = ts.length || ks.length
+        ? `${n} ${what}${ks.length ? ` in ${andList(ks, "or")}` : ""}` : `All ${tunes.length} tunes`;
+    }
     list.replaceChildren(...listed.map((t) =>
       el("li", { style: `--c: ${colour[t.type]}` },
         el("span", { class: "swatch", title: typeName(t.type) }),
         el("a", { href: tuneUrl(t.slug), "data-route": true }, tuneName(t.slug, t.title)))));
   };
+  const toggle = (set, item) => { if (!set.delete(item)) set.add(item); show(); };
   for (const type of types) {
     pills.append(el("button", {
       type: "button", "data-type": type.name, style: `--c: ${type.colour}`,
-      onclick: () => show(chosenType === type.name ? null : type.name, chosenKey),
+      onclick: () => toggle(chosenTypes, type.name),
     }, el("span", { class: "swatch" }), `${typeName(type.name)} · ${type.count}`));
   }
-  for (const [key, count] of [...keyCounts].sort((a, b) => b[1] - a[1])) {
+  for (const key of keyOrder) {
     keyPills.append(el("button", {
-      type: "button", "data-key": key, onclick: () => show(chosenType, chosenKey === key ? null : key),
-    }, `${keyLabel(key)} ·\u00a0`, el("span", {}, String(count))));  // no-break: flex drops a plain trailing space
+      type: "button", "data-key": key, onclick: () => toggle(chosenKeys, key),
+    }, `${keyLabel(key)} ·\u00a0`, el("span", {}, String(keyCounts.get(key)))));  // no-break: flex drops a plain trailing space
   }
 
   main.replaceChildren(
     el("h1", {}, tr("Browse by type and key", "Pori yn ôl math a chywair")),
-    el("p", { class: "lead" }, tr("Pick a type of tune, a key, or both: the jigs in D, say, or everything in G.",
-      "Dewiswch fath o alaw, cywair, neu'r ddau: y jigiau yn D, dyweder, neu bopeth yn G.")),
+    el("p", { class: "lead" }, tr("Pick types of tune, keys, or both, as many as you like: the jigs and reels in D, say, or everything in G or D.",
+      "Dewiswch fathau o alaw, cyweiriau, neu'r ddau, faint bynnag a fynnwch: y jigiau yn D, dyweder, neu bopeth yn G neu D.")),
     el("p", { class: "pills-label" }, tr("Type", "Math")), pills,
     el("p", { class: "pills-label" }, tr("Key", "Cywair")), keyPills, caption, list,
   );
-  show(chosenType, chosenKey, true);
+  show(true);
 }
 
 // On the home page, the way into the notes page: "Play it to me" goes there and starts

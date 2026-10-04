@@ -13,6 +13,8 @@
   --brand: #C8102E;           /* the site name; lighter in dark mode, for contrast */
   --radius: 8px;
   --land: #e2e5e8;            /* the map of Wales */
+  --chosen: #3b4550;          /* a chosen key (Browse): slate, with white on it */
+  --on-chosen: #ffffff;
   --search-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2366707a' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='m15.5 15.5 5 5'/%3E%3C/svg%3E");
   color-scheme: light dark;
 }
@@ -27,6 +29,8 @@
     --link: #6fb1ff;
     --brand: #ee4a66;
     --land: #2f3740;
+    --chosen: #dfe3e8;
+    --on-chosen: #111418;
     --paper: #ddd6c6;         /* still paper for the sheet music, but not glaring at night */
   }
 }
@@ -317,7 +321,12 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .pills.keys { margin-top: 0; }
 .pills-label { margin: 1.5rem 0 .5rem; font-size: .8rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .pills.keys button { font-size: .9rem; }
-.pills.keys button[aria-pressed="true"] { border-color: var(--slate); background: color-mix(in srgb, var(--slate) 12%, transparent); font-weight: 600; }
+/* A chosen key: filled, as clear as a chosen type's colour */
+.pills.keys button[aria-pressed="true"], .pills.keys button[aria-pressed="true"]:hover:not(:disabled) {
+  border-color: var(--chosen); background: var(--chosen); color: var(--on-chosen); font-weight: 600; }
+/* And a tick on whatever is chosen (types and keys), so it isn't told by colour alone;
+   screen readers already say "pressed", so they skip it */
+.pills button[aria-pressed="true"]::before { content: "✓" / ""; margin-right: .35em; font-weight: 700; }
 .pills.keys button:hover:not(:disabled) { border-color: var(--slate); color: inherit; }
 .tune-layout { display: grid; grid-template-columns: minmax(0, 3fr) minmax(14rem, 1fr); gap: 1.5rem; align-items: start; }
 .score {                     /* sheet music on cream "paper", also in dark mode */

@@ -1756,6 +1756,21 @@ def test_melody_and_search_names_as_built(page):
     assert len(got) == len(list(b.ROOT.glob("tunes/*/tune.abc"))) and not wrong, wrong
 
 
+@pytest.mark.parametrize("scheme", ["light", "dark"])
+def test_chosen_key_stands_out(browser, site, scheme):
+    # A chosen key is filled (not just a faint tint) and ticked, in light and dark mode.
+    context = browser.new_context(color_scheme=scheme, service_workers="block")
+    page = context.new_page()
+    page.goto(site + "?page=browse&key=D%20major")
+    page.wait_for_selector(".tune-list li")
+    look = """(b) => { const s = getComputedStyle(b); return [s.backgroundColor, s.color, getComputedStyle(b, '::before').content]; }"""
+    chosen = page.eval_on_selector(".pills.keys [aria-pressed=true]", look)
+    other = page.eval_on_selector(".pills.keys [aria-pressed=false]", look)
+    assert chosen[0] != other[0] and chosen[1] != other[1]  # its own fill and text colour
+    assert "✓" in chosen[2] and "✓" not in other[2]
+    context.close()
+
+
 def test_type_page(page, site):
     # A type's own page (math/<type>/) opens the browse page with that type chosen, at
     # its own address; choosing another moves to the browse page's.

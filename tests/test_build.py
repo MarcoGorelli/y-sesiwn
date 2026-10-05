@@ -112,6 +112,7 @@ def test_pronunciations():
     assert set(say) <= groups and len(say) > 500
     assert say["llancesau-trefaldwyn"] == "hlan-KEH-sai treh-VAL-dooin"
     assert "tom-jones" not in say  # English names have none
+    assert not [k for k in say if k.startswith("the-")]  # "The Grey Cuckoo" isn't "theh gray kik-KO-o"
     assert all(re.fullmatch(r"[\w ,'-]+", v) for v in say.values())
 
 

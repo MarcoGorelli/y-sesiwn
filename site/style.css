@@ -146,7 +146,9 @@ button.primary:hover { color: #fff; filter: brightness(1.1); }
   box-shadow: 0 10px 30px #00000026;
 }
 .suggestions li { padding: .45rem 1rem; cursor: pointer; }
-.suggestions li[aria-selected="true"] { background: var(--accent-soft); }
+@media (hover: hover) { .suggestions li:not(.empty):hover { background: var(--accent-soft); } }
+/* The one Enter opens: a clear bar down its side as well as the tint. */
+.suggestions li[aria-selected="true"] { background: var(--accent-soft); box-shadow: inset 4px 0 var(--accent); }
 .suggestions li.empty { color: var(--muted); cursor: default; }
 
 .hero-search { max-width: 40rem; margin: 1.5rem 0 1rem; }
@@ -315,7 +317,7 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 /* Folding sections (details.fold): a red arrow that turns when open */
 .fold > summary { cursor: pointer; list-style: none; display: flex; align-items: baseline; gap: .5rem; }
 .fold > summary::-webkit-details-marker { display: none; }
-.fold > summary::before { content: "▸"; color: var(--accent); transition: transform .15s; }
+.fold > summary::before { content: "▸" / ""; color: var(--accent); transition: transform .15s; }
 .fold[open] > summary::before { transform: rotate(90deg); }
 /* The practice tools under the music: loop a part, speed up, count-in, click, tablature */
 .practice-tools { margin-top: .75rem; border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .9rem; background: var(--card-bg); }
@@ -445,8 +447,8 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 /* Repeat signs: a thick bar line with a colon beside it, in red */
 .chart .repeat-start { margin-left: -1px; border-left: 3px solid var(--accent); }
 .chart .repeat-end { border-right: 3px solid var(--accent); }
-.chart .repeat-start::before { content: ":"; color: var(--accent); font-weight: 700; margin-right: .1rem; }
-.chart .repeat-end::after { content: ":"; color: var(--accent); font-weight: 700; margin-left: auto; }
+.chart .repeat-start::before { content: ":" / ""; color: var(--accent); font-weight: 700; margin-right: .1rem; }
+.chart .repeat-end::after { content: ":" / ""; color: var(--accent); font-weight: 700; margin-left: auto; }
 .chart sup { font-size: .65rem; color: var(--muted); font-weight: 400; }
 .chord-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1.5rem; margin: 1rem 0 .6rem; font-size: .9rem; }
 .score > .playback { margin: .5rem 0 .8rem; font-size: .9rem;
@@ -551,11 +553,11 @@ body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 
   .sidebar-actions { display: flex; gap: .5rem; margin-left: auto; }
   .sidebar-actions button { padding: .35rem .8rem; }
   .menu-button { display: inline-block; }
-  .menu-button::after { content: " ▾"; }
-  .sidebar.menu-open .menu-button::after { content: " ▴"; }
+  .menu-button::after { content: " ▾" / ""; }  /* aria-expanded says it */
+  .sidebar.menu-open .menu-button::after { content: " ▴" / ""; }
   .sidebar-links { display: none; flex: 1 0 100%; flex-wrap: wrap; gap: .35rem 1rem; padding-top: .5rem; font-size: .95rem; }
   .sidebar.menu-open .sidebar-links { display: flex; }
-  /* Key and Practice mode, then tempo and swing: the music starts on the first screen. */
+  /* Key and Full screen, then tempo and swing: the music starts on the first screen. */
   .controls { gap: .75rem 1.25rem; margin-bottom: 1rem; }
   .controls > .tempo, .controls > .swing { order: 1; }
   .control.tempo { flex: 1 1 12rem; }

@@ -418,8 +418,10 @@ function keyboard(onPress) {
       whites.push(key);
     }
   }
+  // In pitch order (G3, G♯3, A3, …), for Tab and screen readers; the black keys are placed over the white ones.
+  const keys = [...whites, ...blacks].sort((a, b) => a.dataset.midi - b.dataset.midi);
   return el("div", { class: "piano", role: "group", "aria-label": tr("Piano keyboard, G3 to A5", "Bysellfwrdd piano, G3 i A5"), style: `--whites: ${whites.length}` },
-    whites, blacks);
+    keys);
 }
 
 // ---- Listening: find a tune by playing it to the microphone ------------------------------
@@ -1785,7 +1787,7 @@ function printButton(tune, paper, settings) {
   const toggle = el("button", { type: "button", "aria-haspopup": "menu", "aria-expanded": "false", onclick: () => {
     menu.hidden = !menu.hidden;
     toggle.setAttribute("aria-expanded", String(!menu.hidden));
-  } }, tr("Print / save ▾", "Argraffu / cadw ▾"));
+  } }, tr("Print / save", "Argraffu / cadw"), el("span", { "aria-hidden": "true" }, " ▾"));
   // Clicking anywhere else closes it (and once the page has gone, stop listening).
   const close = (e) => {
     if (!wrap.isConnected) document.removeEventListener("pointerdown", close);
@@ -2051,7 +2053,8 @@ function qrButton(group, tune, settings) {
   }, tr("QR code", "Cod QR"));
 }
 
-const practiceLabel = (on) => (on ? tr("Exit practice mode", "Gadael y modd ymarfer") : tr("Practice mode", "Modd ymarfer"));
+// Called Full screen on the page (what it does), so it isn't mixed up with the Practice tools.
+const practiceLabel = (on) => (on ? tr("Exit full screen", "Gadael y sgrin lawn") : tr("Full screen", "Sgrin lawn"));
 
 // How to say a Welsh tune name (pronunciation.json), for English readers.
 function sayIt(group) {
@@ -3542,7 +3545,11 @@ function attachSearch(input, list, { showAllOnFocus = true, onPick = null } = {}
   // which would drop focus onto the page. The arrow keys move through it instead.
   list.tabIndex = -1;
 
-  const close = () => { list.hidden = true; input.setAttribute("aria-expanded", "false"); };
+  const close = () => {
+    list.hidden = true;
+    input.setAttribute("aria-expanded", "false");
+    input.removeAttribute("aria-activedescendant");
+  };
   const open = (group) => {
     input.value = "";
     close();
@@ -3559,13 +3566,16 @@ function attachSearch(input, list, { showAllOnFocus = true, onPick = null } = {}
     active = 0;
     list.replaceChildren(...(results.length
       ? results.map((tune, i) => el("li", {
-          role: "option", id: `${input.id}-option-${i}`, "aria-selected": i === active,
+          role: "option", id: `${input.id}-option-${i}`, "aria-selected": String(i === active),
           onmousedown: (e) => { e.preventDefault(); open(tune); },
         }, tuneName(tune.slug, tune.title)))
       : [el("li", { class: "empty" }, state.complete ? tr("No tunes match that name.", "Does dim alaw â'r enw hwnnw.")
         : tr("Loading tunes…", "Yn llwytho'r alawon…"))]));
     list.hidden = false;
     input.setAttribute("aria-expanded", "true");
+    // The first is picked already (Enter opens it), so a screen reader says it, and ↓ goes on to the second.
+    if (results.length) input.setAttribute("aria-activedescendant", `${input.id}-option-0`);
+    else input.removeAttribute("aria-activedescendant");
   };
   const highlight = (i) => {
     if (!results.length) return;
@@ -3661,7 +3671,7 @@ async function start() {
   // A tune's own page (alaw/<folder>/) comes with that tune's data, so its sheet music
   // can be drawn at once; every other tune (tunes.json, about 150 KB) follows.
   const own = document.getElementById("tune-data");
-  state.loaded = fetch("tunes.json").then((answer) => {
+  state.loaded = (window.tunesJson ?? fetch("tunes.json")).then((answer) => {
     if (!answer.ok) throw new Error(`tunes.json: ${answer.status}`);
     return answer.json();
   });

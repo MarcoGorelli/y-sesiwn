@@ -12,7 +12,9 @@ No MIDI files or score images are used by the site.
 
 It's a **static site**: plain HTML, CSS and JavaScript with no server, so it
 never sleeps and loads almost instantly. Everything it needs (the tunes, abcjs
-and the piano sounds) is in this repo; it contacts no other website. After
+and the piano sounds) is in this repo; the only other website it contacts is
+[GoatCounter](https://www.goatcounter.com), on the live site, to count visits
+without cookies (see the About page). After
 the first visit it also **works offline**, and can be added to a phone's home
 screen as an app.
 
@@ -173,7 +175,7 @@ scheduled runs after 60 days without a commit).
   another page puts the focus on its heading; the search says how many tunes it
   found; selections stay visible in Windows high-contrast mode; `?` lists the
   keyboard shortcuts (also in the footer, on a computer).
-- **Practice mode:** just the controls and a full-width score, full screen
+- **Full screen** (practice mode): just the controls and a full-width score, full screen
   where supported.
 - **Practice tools** (under the music; folded away on phones): **Loop** one part of the tune
   (parts start at a repeat sign or double bar line, as in the chord chart;

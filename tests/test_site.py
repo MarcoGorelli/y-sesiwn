@@ -426,6 +426,29 @@ def test_tunes_sharing_a_name(page):
     assert versions == ["Alawon Cymru", "51 Welsh Airs"]
 
 
+def test_search_keys(page):
+    # The first match is picked as the list opens (Enter opens it), and a screen reader
+    # is told so; ↓ goes on to the second, and Escape closes the list.
+    page.goto_site()
+    page.fill("#hero-search", "llongau")
+    box = page.locator("#hero-search")
+    assert box.get_attribute("aria-activedescendant") == "hero-search-option-0"
+    assert page.locator("#hero-search-option-0").get_attribute("aria-selected") == "true"
+    page.keyboard.press("ArrowDown")
+    assert box.get_attribute("aria-activedescendant") == "hero-search-option-1"
+    page.keyboard.press("Escape")
+    assert box.get_attribute("aria-activedescendant") is None
+    page.fill("#hero-search", "xqzxqz")  # nothing found: nothing picked
+    assert box.get_attribute("aria-activedescendant") is None
+
+
+def test_piano_keys_in_pitch_order(page):
+    # Tab and a screen reader go up the keyboard a semitone at a time.
+    page.goto_site("?page=notes")
+    labels = page.locator(".piano .key").evaluate_all("(keys) => keys.map((k) => k.getAttribute('aria-label'))")
+    assert labels[:4] == ["G3", "G sharp 3", "A3", "A sharp 3"] and labels[-1] == "A5" and len(labels) == 27
+
+
 @pytest.mark.parametrize("notes, group, how", [
     ("G B D C B G A", "glandyfi", "starts like this"),                # without its lead-in
     ("D G B D C B G A", "glandyfi", "starts like this"),              # with it
@@ -890,6 +913,25 @@ def test_works_offline(browser, site):
     page.click(".sidebar-links a[href='?page=map']")
     page.wait_for_selector(".wales-map circle")
     assert page.url == site + "?page=map"
+    context.close()
+
+
+def test_with_the_offline_copy(browser, site):
+    # Once sw.js answers for the site: tunes.json is fetched once a visit, not twice
+    # (as a <link rel="preload"> was), and an address with no page says so (the server's
+    # 404), rather than showing the home page as if the address were right.
+    context = browser.new_context()  # service worker allowed
+    page = context.new_page()
+    page.goto(site)
+    page.wait_for_function("navigator.serviceWorker.controller !== null", timeout=30000)
+    requests = []
+    page.on("request", lambda r: requests.append(r.url) if r.url.endswith("tunes.json") else None)
+    page.reload()
+    page.wait_for_selector(".features")
+    page.wait_for_timeout(300)
+    assert len(requests) == 1
+    answer = page.goto(site + "no-such-page/")
+    assert answer.status == 404 and not page.locator(".features").count()
     context.close()
 
 

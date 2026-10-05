@@ -28,8 +28,6 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="static/abcjs/abcjs-audio.css">
   <link rel="stylesheet" href="style.css">
-  <!-- The tunes, fetched by app.js: start now, alongside the scripts, not after them. -->
-  <link rel="preload" href="tunes.json" as="fetch" crossorigin>
   <!-- abcjs (the sheet music) is loaded by app.js when a page needs it; a tune's own
        page (build_site.py) loads it here, so its music is drawn at once. -->
   <script src="app.js" defer></script>
@@ -38,6 +36,10 @@
        the page instead, so that copy is hidden (style.css), not flashed. Should the app not
        have taken over after 8 s (app.js failed to load, say), it shows after all. -->
   <script>
+    // The tunes, for app.js: start now, alongside the scripts, not after them. (Not a
+    // <link rel="preload">: once sw.js answers for the site, Chrome fetches those twice.)
+    window.tunesJson = fetch("tunes.json");
+    window.tunesJson.catch(function () {});  // app.js reports a failure
     document.documentElement.classList.add("js");
     setTimeout(function () { if (document.querySelector("#main .static")) document.documentElement.classList.remove("js"); }, 8000);
   </script>

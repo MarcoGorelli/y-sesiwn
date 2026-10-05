@@ -70,13 +70,13 @@ const PAGE_WAIT = 10000;
 const FRESH = new Set(["", "index.html", "app.js", "style.css", "tunes.json", "sessions.json"]);
 const pageFrom = new Map();  // client id -> "network" or "saved"
 
-async function freshOrSaved(url, saved, wait = FRESH_WAIT, from = () => {}) {
+async function freshOrSaved(url, saved, wait = FRESH_WAIT, from = () => {}, keep = (answer) => answer.ok) {
   try {
     const answer = await Promise.race([
       fetch(url, { cache: "no-cache" }),
       new Promise((_, reject) => setTimeout(() => reject(new Error("slow")), wait)),
     ]);
-    if (answer.ok) { from("network"); return answer; }
+    if (keep(answer)) { from("network"); return answer; }
   } catch {}
   from("saved");
   return (await saved()) ?? fetch(url);
@@ -117,10 +117,12 @@ self.addEventListener("fetch", (event) => {
       for (const id of pageFrom.keys()) if (!ids.has(id)) pageFrom.delete(id);
     });
   };
+  // An address with no page gets the site's own 404.html, as on a first visit: it says
+  // so, or opens a renamed tune; not the home page as if the address were right.
   event.respondWith(freshOrSaved(request.url, async () => {
     const app = await caches.match("./", { ignoreSearch: true });
     if (!app || !up) return app;
     const html = (await app.text()).replace('<base href="./">', `<base href="${up}">`);
     return new Response(html, { headers: app.headers });
-  }, FRESH_WAIT, from));
+  }, FRESH_WAIT, from, (answer) => answer.ok || answer.status === 404));
 });

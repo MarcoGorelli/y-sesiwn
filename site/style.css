@@ -1,6 +1,7 @@
 :root {
   --accent: #C8102E;          /* Welsh flag red: accents only */
   --accent-soft: #c8102e1a;
+  --accent-ink: #C8102E;      /* red as a line or text (focus rings, hovers, marks): lighter in dark mode */
   --slate: #3b4550;           /* Welsh slate */
   --bg: #fdfbf7;              /* warm off-white */
   --sidebar-bg: #eef0f1;      /* pale slate */
@@ -15,6 +16,18 @@
   --land: #e2e5e8;            /* the map of Wales */
   --chosen: #3b4550;          /* a chosen key (Browse): slate, with white on it */
   --on-chosen: #ffffff;
+  /* The piano keyboard (notes page): ivory and ebony in both colour schemes */
+  --ivory: #fffdf8;
+  --ivory-hover: #f3ead3;     /* the carthen's cream */
+  --key-edge: #b9bcc2;
+  --key-label: #5f6973;       /* 5.5:1 on ivory */
+  --ebony: #262b31;
+  --ebony-hover: #3b4550;
+  --ebony-edge: #111;
+  --player-track: #2a323b;    /* the player's position bar, on its slate */
+  --scrim: #0006;             /* behind a dialog */
+  --shadow-float: #00000026;  /* things that float over the page */
+  --shadow-soft: #0000001f;
   /* Red and black striped Welsh flannel (as in a pais or betgwn), down the edge of a call-out */
   --flannel: linear-gradient(to right, #C8102E 0 2.5px, #1d1d1b 2.5px 4px, #C8102E 4px 7px) left / 7px 100% no-repeat;
   --search-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2366707a' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='m15.5 15.5 5 5'/%3E%3C/svg%3E");
@@ -30,6 +43,7 @@
     --border: #343b44;
     --link: #6fb1ff;
     --brand: #ee4a66;
+    --accent-ink: #ee4a66;    /* 4.5:1 or more on every dark background; #C8102E stays for red fills with white text */
     --land: #2f3740;
     --chosen: #dfe3e8;
     --on-chosen: #111418;
@@ -55,7 +69,7 @@ a { color: var(--link); }
 h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 .5rem; }
 main h1::after, .guide h1::after {    /* short red underline under page titles */
   content: ""; display: block; width: 3rem; height: 3px;
-  margin-top: .45rem; border-radius: 2px; background: var(--accent);
+  margin-top: .45rem; border-radius: 2px; background: var(--accent-ink);
 }
 h2 { font-size: 1.35rem; margin: 2rem 0 .75rem; }
 button, input, select { font: inherit; color: inherit; }
@@ -97,7 +111,7 @@ body[data-page="home"] #surprise-sidebar { display: none; }  /* and its own Surp
 .lang-switch button[aria-pressed="true"], .lang-switch button[aria-pressed="true"]:hover:not(:disabled) { background: var(--accent); color: #fff; font-weight: 600; }
 .sidebar-links { display: grid; gap: .35rem; border-top: 1px solid var(--border); padding-top: 1rem; }
 .sidebar-links a { text-decoration: none; }
-.sidebar-links a:hover { color: var(--accent); text-decoration: underline; }
+.sidebar-links a:hover { color: var(--accent-ink); text-decoration: underline; }
 
 button {
   border: 1px solid var(--border);
@@ -109,11 +123,11 @@ button {
 }
 /* Hover looks only where a pointer really hovers: after a tap, phones keep a button's
    :hover look until the next tap elsewhere, as if it were still chosen. */
-@media (hover: hover) { button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); } }
+@media (hover: hover) { button:hover:not(:disabled) { border-color: var(--accent-ink); color: var(--accent-ink); } }
 button:disabled { opacity: .5; cursor: default; }
 button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 button.primary:hover { color: #fff; filter: brightness(1.1); }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
 
 /* Search boxes (sidebar and the big one on the home page) */
 .search { position: relative; }
@@ -127,7 +141,7 @@ button.primary:hover { color: #fff; filter: brightness(1.1); }
   transition: border-color .15s, box-shadow .15s;
 }
 .search input::-webkit-search-cancel-button { display: none; }
-.search input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.search input:focus { outline: none; border-color: var(--accent-ink); box-shadow: 0 0 0 3px var(--accent-soft); }
 .shortcut {
   position: absolute; right: .8rem; top: 1.35rem; transform: translateY(-50%);
   font: 600 .75rem/1 ui-monospace, monospace; color: var(--muted);
@@ -143,12 +157,12 @@ button.primary:hover { color: #fff; filter: brightness(1.1); }
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: 0 10px 30px #00000026;
+  box-shadow: 0 10px 30px var(--shadow-float);
 }
 .suggestions li { padding: .45rem 1rem; cursor: pointer; }
 @media (hover: hover) { .suggestions li:not(.empty):hover { background: var(--accent-soft); } }
 /* The one Enter opens: a clear bar down its side as well as the tint. */
-.suggestions li[aria-selected="true"] { background: var(--accent-soft); box-shadow: inset 4px 0 var(--accent); }
+.suggestions li[aria-selected="true"] { background: var(--accent-soft); box-shadow: inset 4px 0 var(--accent-ink); }
 .suggestions li.empty { color: var(--muted); cursor: default; }
 
 .hero-search { max-width: 40rem; margin: 1.5rem 0 1rem; }
@@ -177,14 +191,14 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 /* On a phone: the features' names as pills, the descriptions folded under them */
 .features ul { columns: 2 22rem; column-gap: 2.5rem; margin: 0; padding-left: 1.2rem; max-width: 60rem; }
 .features li { break-inside: avoid; margin-bottom: .45rem; }
-.features li::marker { color: var(--accent); }
+.features li::marker { color: var(--accent-ink); }
 /* Upcoming sessions, on the home page and the sessions page */
 .coming-up ul { list-style: none; padding: 0; margin: 0; }
 .coming-up li { padding: .2rem 0; }
 .coming-up p { margin: .5rem 0 0; }
 .coming-up p.also { margin: .4rem 0 .1rem; color: var(--muted); }
-.features strong a { color: inherit; text-decoration-color: var(--accent); text-underline-offset: .15em; }
-.features strong a:hover { color: var(--accent); }
+.features strong a { color: inherit; text-decoration-color: var(--accent-ink); text-underline-offset: .15em; }
+.features strong a:hover { color: var(--accent-ink); }
 
 /* "Take it to the session": installing the app and using it offline */
 .offline-card {  /* with a strip of carthen along the top */
@@ -193,7 +207,7 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
   border: 1px solid var(--border); border-radius: var(--radius);
   box-shadow: 0 1px 3px #0000000f;
 }
-.offline-card h2 { margin: 0 0 .35rem; font-size: 1.2rem; }
+.offline-card h2 { margin: 0 0 .35rem; font-size: 1.15rem; }
 .offline-card p { margin: 0 0 .7rem; }
 .offline-card .steps { margin: 0 0 .7rem; padding-left: 1.3rem; }
 .offline-card .steps li { margin-bottom: .25rem; }
@@ -226,18 +240,18 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .preview-score { flex: 1; min-width: 0; background: var(--paper); border-radius: 6px; padding: .2rem .4rem; color: #000; }
 .preview-score .abcjs-tempo { display: none; }  /* the tempo only sets playback speed */
 .preview-play { flex: none; width: 2.2rem; height: 2.2rem; padding: 0; border-radius: 50%; font-size: .9rem; }
-.notes-search .listen { font-size: 1.05rem; padding: .6rem 1.1rem; margin-bottom: .8rem; }
+.notes-search .listen { font-size: 1.1rem; padding: .6rem 1.1rem; margin-bottom: .8rem; }
 .notes-search .listen:not(.on) { background: var(--accent); border-color: var(--accent); color: #fff; }
 .notes-how { margin-top: 2rem; }
 
 /* Search by notes */
 .notes-search { max-width: 40rem; }
 .notes-search input {
-  width: 100%; padding: .7rem 1rem; font-size: 1.05rem;
+  width: 100%; padding: .7rem 1rem; font-size: 1.1rem;
   border: 1.5px solid var(--border); border-radius: var(--radius); background: var(--card-bg);
   font-family: ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .03em;
 }
-.notes-search input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.notes-search input:focus { outline: none; border-color: var(--accent-ink); box-shadow: 0 0 0 3px var(--accent-soft); }
 /* Piano keyboard (G3 to A5) */
 .piano-wrap { overflow-x: auto; margin: .7rem 0 .4rem; padding-bottom: .2rem; }
 .piano {
@@ -248,26 +262,26 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .piano .key { border-radius: 0 0 5px 5px; padding: 0; cursor: pointer; transition: background-color .08s; }
 .piano .white {
   flex: 1; display: flex; align-items: flex-end; justify-content: center; padding-bottom: .35rem;
-  background: #fffdf8; border: 1px solid #b9bcc2; border-top: none; margin-right: -1px; color: #8a9099;
+  background: var(--ivory); border: 1px solid var(--key-edge); border-top: none; margin-right: -1px; color: var(--key-label);
   font-size: .72rem;
 }
 .piano .white.c { color: var(--slate); font-weight: 600; }
 .piano .black {
   position: absolute; top: 0; width: var(--black); height: 62%; z-index: 1;
-  background: #262b31; border: 1px solid #111; border-top: none;
+  background: var(--ebony); border: 1px solid var(--ebony-edge); border-top: none;
 }
-@media (hover: hover) { .piano .white:hover { background: #f3ead3; border-color: #b9bcc2; color: var(--accent); } }
-@media (hover: hover) { .piano .black:hover { background: #3b4550; border-color: #111; } }
+@media (hover: hover) { .piano .white:hover { background: var(--ivory-hover); border-color: var(--key-edge); color: var(--accent); } }
+@media (hover: hover) { .piano .black:hover { background: var(--ebony-hover); border-color: var(--ebony-edge); } }
 .piano .white:active, .piano .black:active, .piano .key.heard { background: var(--accent); }
 .notes-search .listen.on { background: var(--accent); border-color: var(--accent); color: #fff; }
-.listen-status { margin: .2rem 0 .3rem; font-size: .95rem; }
+.listen-status { margin: .2rem 0 .3rem; font-size: .9rem; }
 .mic-icon { width: 1.1em; height: 1.1em; vertical-align: -.2em; }
 .note-edit { display: flex; gap: .4rem; margin: .1rem 0 .3rem; }
 .note-edit button { padding: .3rem .7rem; font-size: .9rem; }
 .notes-results { margin: .4rem 0 0; padding-left: 2.1rem; }  /* room for 2-digit numbers */
 .notes-results li { padding: .15rem 0; }
 .notes-results a { color: var(--text); text-decoration: none; font-weight: 500; }
-.notes-results a:hover { color: var(--accent); text-decoration: underline; }
+.notes-results a:hover { color: var(--accent-ink); text-decoration: underline; }
 
 /* Tune-type colourways: a scrap of carthen in each, the cream diamond of the band
    across the top of the page woven into the type's colour */
@@ -280,7 +294,7 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 }
 .swatch::after {
   content: ""; position: absolute; inset: 21%; transform: rotate(45deg);
-  background: linear-gradient(var(--c), var(--c)) center / 42% 42% no-repeat, #f3ead3;
+  background: linear-gradient(var(--c), var(--c)) center / 42% 42% no-repeat, var(--ivory-hover);
 }
 .tune-list .swatch { width: .75em; height: .75em; transform: translateY(.05em); }
 
@@ -300,14 +314,14 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .tune-list { columns: 3 14rem; column-gap: 2rem; padding: 0; list-style: none; margin: .5rem 0 0; }
 .tune-list li { break-inside: avoid; padding: .15rem 0; display: flex; align-items: baseline; }  /* long names wrap beside the swatch */
 .tune-list a { color: var(--text); text-decoration: none; }
-.tune-list a:hover { color: var(--accent); text-decoration: underline; }
+.tune-list a:hover { color: var(--accent-ink); text-decoration: underline; }
 
 /* Tune page */
 .controls { display: flex; flex-wrap: wrap; gap: 1rem 2.5rem; align-items: end; margin: 1rem 0 1.25rem; }
 .control label { display: block; font-size: .9rem; margin-bottom: .3rem; }
 .control select { padding: .4rem .6rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); }
 .control.tempo { flex: 1 1 18rem; max-width: 32rem; }
-.control input[type="range"] { width: 100%; height: 2rem; accent-color: var(--accent); }
+.control input[type="range"] { width: 100%; height: 2rem; accent-color: var(--accent-ink); }
 .controls .practice-toggle { margin-left: auto; }
 .tune-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
 /* − and + for the music's size, at the end of the row */
@@ -317,7 +331,7 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 /* Folding sections (details.fold): a red arrow that turns when open */
 .fold > summary { cursor: pointer; list-style: none; display: flex; align-items: baseline; gap: .5rem; }
 .fold > summary::-webkit-details-marker { display: none; }
-.fold > summary::before { content: "▸" / ""; color: var(--accent); transition: transform .15s; }
+.fold > summary::before { content: "▸" / ""; color: var(--accent-ink); transition: transform .15s; }
 .fold[open] > summary::before { transform: rotate(90deg); }
 /* The practice tools under the music: loop a part, speed up, count-in, click, tablature */
 .practice-tools { margin-top: .75rem; border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .9rem; background: var(--card-bg); }
@@ -352,14 +366,14 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
   box-shadow: 0 1px 3px #0000000f;
 }
 .score .abcjs-inline-audio { background-color: var(--slate); border-radius: 6px; }
-.score .abcjs-inline-audio .abcjs-midi-progress-background { background-color: #2a323b; }
+.score .abcjs-inline-audio .abcjs-midi-progress-background { background-color: var(--player-track); }
 .score .abcjs-note_playing { fill: var(--accent); }
 .score .abcjs-note { cursor: pointer; }  /* a tap plays from that note (playFrom in app.js) */
 .score .abcjs-note_selected { fill: currentColor; }  /* …without leaving it marked */
 /* Player: red progress knob, and play/loop in red while they're on. */
 .score .abcjs-inline-audio .abcjs-midi-progress-indicator { background-color: var(--accent); }
 .score .abcjs-inline-audio .abcjs-btn.abcjs-pushed { background-color: var(--accent); }
-.card { border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: var(--radius); padding: 1rem 1.1rem; background: var(--card-bg); }
+.card { border: 1px solid var(--border); border-top: 3px solid var(--accent-ink); border-radius: var(--radius); padding: 1rem 1.1rem; background: var(--card-bg); }
 .card h2 { margin: 0 0 .6rem; font-size: 1.15rem; }
 .card dl { margin: 0; }
 .card dt { font-weight: 600; }
@@ -376,7 +390,7 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 }
 .site-footer p { margin: 0; max-width: 1200px; }
 .site-footer a { color: var(--muted); }
-.site-footer a:hover { color: var(--accent); }
+.site-footer a:hover { color: var(--accent-ink); }
 
 /* Version tabs on a tune page */
 .versions { display: flex; flex-wrap: wrap; gap: .4rem; margin: .9rem 0 .2rem; }
@@ -385,15 +399,15 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
   background: var(--card-bg); color: var(--text); text-decoration: none; line-height: 1.3;
 }
 .versions a small { color: var(--muted); font-size: .75rem; }
-@media (hover: hover) { .versions a:hover { border-color: var(--accent); } }
-.versions a.active { border-color: var(--accent); box-shadow: inset 0 -3px 0 var(--accent); font-weight: 600; }
+@media (hover: hover) { .versions a:hover { border-color: var(--accent-ink); } }
+.versions a.active { border-color: var(--accent-ink); box-shadow: inset 0 -3px 0 var(--accent-ink); font-weight: 600; }
 .versions a.active small { font-weight: 400; }
 
 /* Map of Wales (the outline is a mask, so it follows the colour scheme) */
 .wales-map { position: relative; width: 100%; }
 .map-view { position: absolute; inset: 0; touch-action: pan-y; }  /* a swipe scrolls the page; a pinch zooms */
 .map-view.zoomed { overflow: hidden; overflow: clip; touch-action: none;  /* clip: not scrollable, even by code */ cursor: grab; border-radius: var(--radius); outline: 1px solid var(--border); }
-.map-view:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.map-view:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
 .map-canvas { position: absolute; inset: 0; transform-origin: 0 0; --z: 1; }
 .map-canvas::before {  /* the land; on its own layer so the mask doesn't clip dots over the border */
   content: ""; position: absolute; inset: 0;
@@ -407,17 +421,17 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
   transition: fill .15s; }  /* no transition on r: it would lag behind zooming */
 .wales-map circle.other { fill: var(--muted); opacity: .35; r: 1.6; }
 .wales-map circle.here { r: 5; stroke-width: 1.2; }
-.wales-map circle.here, .wales-map circle.lit { fill: var(--accent); }
+.wales-map circle.here, .wales-map circle.lit { fill: var(--accent-ink); }
 .wales-map circle.lit { r: calc(4.2px / var(--z)); }
 @media (prefers-color-scheme: dark) { .wales-map circle { fill: var(--muted); } }
 .wales-map circle.target { fill: transparent; stroke: none; cursor: pointer; r: calc(5px / var(--z)); }
 .map-zoom { position: absolute; top: .4rem; right: .4rem; z-index: 4; display: grid; gap: .3rem; }
-.map-zoom button { width: 2.1rem; height: 2.1rem; padding: 0; font-size: 1.15rem; line-height: 1; box-shadow: 0 1px 3px #0000001f; }
+.map-zoom button { width: 2.1rem; height: 2.1rem; padding: 0; font-size: 1.15rem; line-height: 1; box-shadow: 0 1px 3px var(--shadow-soft); }
 .map-popup {
   position: absolute; z-index: 5; width: max-content; max-width: 16rem;
   padding: .55rem .8rem; font-size: .9rem; line-height: 1.4;
-  background: var(--card-bg); border: 1px solid var(--border); border-top: 3px solid var(--accent);
-  border-radius: var(--radius); box-shadow: 0 8px 24px #00000026;
+  background: var(--card-bg); border: 1px solid var(--border); border-top: 3px solid var(--accent-ink);
+  border-radius: var(--radius); box-shadow: 0 8px 24px var(--shadow-float);
   --dx: -50%; --dy: calc(-100% - 10px);
   transform: translate(var(--dx), var(--dy));
 }
@@ -426,7 +440,7 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .map-popup[data-align="right"] { --dx: calc(-100% + 1.2rem); }
 .map-popup ul { list-style: none; margin: .2rem 0 0; padding: 0; }
 .map-popup a { color: var(--text); }
-.map-popup a:hover { color: var(--accent); }
+.map-popup a:hover { color: var(--accent-ink); }
 .card.place { margin-top: 1rem; }
 
 /* Suggested chords: a chart for accompanists, and switches for the score and playback */
@@ -445,15 +459,15 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .chart .spacer { border-right-color: transparent; }
 .chart .spacer + .bar:not(.spacer) { border-left: 1px solid var(--muted); }
 /* Repeat signs: a thick bar line with a colon beside it, in red */
-.chart .repeat-start { margin-left: -1px; border-left: 3px solid var(--accent); }
-.chart .repeat-end { border-right: 3px solid var(--accent); }
-.chart .repeat-start::before { content: ":" / ""; color: var(--accent); font-weight: 700; margin-right: .1rem; }
-.chart .repeat-end::after { content: ":" / ""; color: var(--accent); font-weight: 700; margin-left: auto; }
+.chart .repeat-start { margin-left: -1px; border-left: 3px solid var(--accent-ink); }
+.chart .repeat-end { border-right: 3px solid var(--accent-ink); }
+.chart .repeat-start::before { content: ":" / ""; color: var(--accent-ink); font-weight: 700; margin-right: .1rem; }
+.chart .repeat-end::after { content: ":" / ""; color: var(--accent-ink); font-weight: 700; margin-left: auto; }
 .chart sup { font-size: .65rem; color: var(--muted); font-weight: 400; }
 .chord-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1.5rem; margin: 1rem 0 .6rem; font-size: .9rem; }
 .score > .playback { margin: .5rem 0 .8rem; font-size: .9rem;
   /* on the cream paper, so in its light-mode colours even in dark mode */
-  --text: #262b31; --muted: #505963; --card-bg: #ffffff; --border: #dcdfe3; color: var(--text); }  /* muted: 4.5:1 on either paper */
+  --text: #262b31; --muted: #505963; --card-bg: #ffffff; --border: #dcdfe3; --accent-ink: #C8102E; color: var(--text); }  /* muted: 4.5:1 on either paper */
 .playback { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .5rem; min-width: 0; }
 .playback .label { color: var(--muted); }
 /* Three buttons in a row, one pressed: which parts playback plays */
@@ -468,15 +482,15 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
   .segmented { max-width: 100%; }
   .segmented label { flex: 1 1 0; min-width: 0; display: flex; }
   .segmented span { flex: 1; white-space: normal; text-align: center; display: flex; align-items: center; justify-content: center; }
-  .chart { font-size: .95rem; }
+  .chart { font-size: .9rem; }
   .chart .bar { padding: .15rem .25rem; }
   .chart .beats { column-gap: .25rem; }
 }
-@media (hover: hover) { .segmented label:hover span { color: var(--accent); } }
+@media (hover: hover) { .segmented label:hover span { color: var(--accent-ink); } }
 .segmented input:checked + span { background: var(--accent); color: #fff; }
-.segmented input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: -2px; }
+.segmented input:focus-visible + span { outline: 2px solid var(--accent-ink); outline-offset: -2px; }
 .switch { display: flex; align-items: center; gap: .45rem; cursor: pointer; }
-.switch input { accent-color: var(--accent); width: 1.5rem; height: 1.5rem; margin: 0; flex: none; }
+.switch input { accent-color: var(--accent-ink); width: 1.5rem; height: 1.5rem; margin: 0; flex: none; }
 .card.chords .caption { margin: 0; }
 .hide-chords .abcjs-chord { display: none; }
 .card.place .wales-map { max-width: 14rem; margin: .25rem auto .5rem; }
@@ -505,7 +519,7 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .card.session p { margin: .3rem 0; }
 .card.session .confirmed { margin-top: .6rem; }
 .session-links .link-button { margin-left: 0; font-size: inherit; }
-.session-report { margin-top: .4rem; font-size: .95rem; }
+.session-report { margin-top: .4rem; font-size: .9rem; }
 .session-report summary { cursor: pointer; color: var(--link); text-decoration: underline; }
 .session-report fieldset { border: none; margin: .5rem 0; padding: 0; display: grid; gap: .3rem; }
 .add-session { margin-top: 2.5rem; max-width: 40rem; }
@@ -519,7 +533,7 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 body.practice { grid-template-columns: 1fr; }
 body.practice .nav, body.practice .tune-side, body.practice .card.chords, body.practice .site-footer, body.practice main h1::after, body.practice .aka { display: none; }
 body.practice main { max-width: none; padding: 1rem 1.5rem 2rem; }
-body.practice h1 { font-size: 1.4rem; }
+body.practice h1 { font-size: 1.35rem; }
 body.practice .controls { margin: .5rem 0 1rem; }
 body.practice .tune-layout { grid-template-columns: 1fr; }
 body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 1rem 1.5rem 1.5rem; }
@@ -555,7 +569,7 @@ body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 
   .menu-button { display: inline-block; }
   .menu-button::after { content: " ▾" / ""; }  /* aria-expanded says it */
   .sidebar.menu-open .menu-button::after { content: " ▴" / ""; }
-  .sidebar-links { display: none; flex: 1 0 100%; flex-wrap: wrap; gap: .35rem 1rem; padding-top: .5rem; font-size: .95rem; }
+  .sidebar-links { display: none; flex: 1 0 100%; flex-wrap: wrap; gap: .35rem 1rem; padding-top: .5rem; font-size: .9rem; }
   .sidebar.menu-open .sidebar-links { display: flex; }
   /* Key and Full screen, then tempo and swing: the music starts on the first screen. */
   .controls { gap: .75rem 1.25rem; margin-bottom: 1rem; }
@@ -605,7 +619,7 @@ body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 
 .print-menu {
   position: absolute; right: 0; top: calc(100% + .3rem); z-index: 10; display: grid; min-width: 14rem;
   background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius);
-  box-shadow: 0 8px 24px #00000026; padding: .3rem;
+  box-shadow: 0 8px 24px var(--shadow-float); padding: .3rem;
 }
 .print-menu[hidden] { display: none; }
 .print-menu button { border: none; background: none; text-align: left; padding: .45rem .7rem; border-radius: 6px; white-space: nowrap; }
@@ -631,9 +645,9 @@ main { view-transition-name: page; }
 }
 .email-form textarea { resize: vertical; }
 .email-form .abc-input { font: .9rem/1.45 ui-monospace, monospace; }
-.email-form :is(input, select, textarea):focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.email-form :is(input, select, textarea):focus { outline: none; border-color: var(--accent-ink); box-shadow: 0 0 0 3px var(--accent-soft); }
 .email-form .check { display: flex; gap: .5rem; align-items: baseline; }
-.email-form .check input { accent-color: var(--accent); width: 1.5rem; height: 1.5rem; flex: none; align-self: center; }
+.email-form .check input { accent-color: var(--accent-ink); width: 1.5rem; height: 1.5rem; flex: none; align-self: center; }
 .email-form button[type="submit"] { justify-self: start; }
 .abc-preview { overflow-x: auto; }
 .abc-problem:empty { display: none; }
@@ -643,7 +657,7 @@ main { view-transition-name: page; }
 
 /* QR code for a tune: always black on white, as scanners expect, also in dark mode */
 .qr-dialog { border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1.5rem; background: var(--card-bg); color: var(--text); text-align: center; max-width: min(24rem, calc(100vw - 2rem)); }
-.qr-dialog::backdrop { background: #0008; }
+.qr-dialog::backdrop { background: var(--scrim); }
 .qr-dialog h2 { margin: 0 0 .75rem; }
 .qr-dialog .qr { width: min(18rem, 70vw); height: auto; display: block; margin: 0 auto; border-radius: 4px; }
 .qr-dialog .qr-link { word-break: break-all; }
@@ -652,7 +666,7 @@ main { view-transition-name: page; }
 /* Sets: a list to arrange, then every tune's music */
 .set-name { font-family: inherit; font-size: 2rem; font-weight: 700; line-height: 1.2; color: var(--text); background: transparent; border: 1px dashed var(--border);
   border-radius: var(--radius); padding: .2rem .5rem; width: 100%; max-width: 40rem; margin: 0 0 .4rem; }
-.set-name:focus { outline: none; border-color: var(--accent); border-style: solid; }
+.set-name:focus { outline: none; border-color: var(--accent-ink); border-style: solid; }
 .set-count { margin: 0 0 1rem; }
 .set-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 0 1.25rem; }
 .set-list { padding-left: 1.6rem; margin: 0 0 2rem; max-width: 46rem; }
@@ -661,7 +675,7 @@ main { view-transition-name: page; }
 .set-item-controls select { padding: .25rem .4rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); max-width: 11rem; }
 .set-item-controls button { padding: .2rem .55rem; }
 .set-tune { margin: 0 0 1.5rem; }
-.set-tune h2 { font-size: 1.05rem; margin: 0 0 .4rem; }
+.set-tune h2 { font-size: 1.1rem; margin: 0 0 .4rem; }
 .set-paper { background: var(--paper); color: #000; border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .75rem; min-height: 8rem; }
 .sets-own { max-width: 40rem; padding: .6rem .9rem .6rem calc(.9rem + 7px); background: var(--flannel), var(--card-bg); border-radius: 0 var(--radius) var(--radius) 0; }
 .set-list-mine { list-style: none; padding: 0; max-width: 40rem; }
@@ -682,7 +696,7 @@ body.practice .set-list, body.practice .set-count, body.practice .set-actions > 
 }
 
 /* Home page: the last few tunes opened on this device */
-.recent { margin: -.25rem 0 1.5rem; font-size: .95rem; }
+.recent { margin: -.25rem 0 1.5rem; font-size: .9rem; }
 .recent-label { color: var(--muted); }
 .print-menu .menu-sep { border-top: 1px solid var(--border); }
 .whistle-key { flex-basis: 100%; }
@@ -690,7 +704,7 @@ body.practice .set-list, body.practice .set-count, body.practice .set-actions > 
 .score .abcjs-lyric { fill: #262b31; }
 
 /* How to say a Welsh tune name (English only) */
-.say { margin: -.4rem 0 .9rem; color: var(--muted); font-size: .95rem; }
+.say { margin: -.4rem 0 .9rem; color: var(--muted); font-size: .9rem; }
 .say-words { color: var(--text); font-weight: 600; letter-spacing: .01em; }
 .say-key { display: inline-block; font-size: .85rem; }
 .say-key summary { cursor: pointer; color: var(--link); text-decoration: underline; }
@@ -710,18 +724,30 @@ body.practice .say { display: none; }
   .set-item-controls select { min-height: 2.5rem; }
   .link-button { padding: .5rem 0; }
   .say-key summary { padding: .3rem 0; }
+  /* At a session it's one thumb, often in the dark: 44px for every control (WCAG 2.5.5).
+     Not the player's own buttons (abcjs's large size), the piano's keys or links in a line of text. */
+  button:not(.key, .link-button, .abcjs-btn), select, .segmented span, .versions a, .fold > summary,
+  input:not([type="range"], [type="checkbox"], [type="radio"]) { min-height: 44px; }
+  .segmented span, .fold > summary { display: flex; align-items: center; }
+  .versions a { align-content: center; }
+  .preview-play, .map-zoom button { width: 44px; height: 44px; }
+  .music-size button { min-width: 44px; }
+  .set-item-controls button { min-width: 44px; }
+  .switch input { width: 1.75rem; height: 1.75rem; }
+  /* Wider keys, scrolling sideways in their own strip: black keys over 24px wide on a phone */
+  .piano { min-width: 36rem; --black: calc(var(--white) * .7); }
 }
 
 /* A set: previous / next tune, along the bottom of the screen */
 .set-nav {
   position: sticky; bottom: .75rem; z-index: 5; display: flex; align-items: center; gap: .75rem;
   width: fit-content; max-width: 100%; margin: 1rem auto 0; padding: .35rem; border: 1px solid var(--border);
-  border-radius: 999px; background: var(--card-bg); box-shadow: 0 2px 8px #0002;
+  border-radius: 999px; background: var(--card-bg); box-shadow: 0 2px 8px var(--shadow-soft);
 }
 .set-nav[hidden] { display: none; }
-.set-nav button { min-width: 2.75rem; min-height: 2.75rem; border-radius: 999px; font-size: 1.4rem; line-height: 1; }
+.set-nav button { min-width: 2.75rem; min-height: 2.75rem; border-radius: 999px; font-size: 1.35rem; line-height: 1; }
 .set-nav-where { font-size: .9rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.not-found { font-size: 1.05rem; }
+.not-found { font-size: 1.1rem; }
 @media print { .set-nav { display: none !important; } }
 /* A page's heading gets the focus when the page changes (focusHeading in app.js): no ring */
 main h1:focus { outline: none; }
@@ -746,7 +772,7 @@ main h1:focus { outline: none; }
 @media (hover: none) { .shortcuts-link { display: none; } }
 .site-footer .link-button { margin: 0; font-size: inherit; color: inherit; }
 dialog.shortcuts { max-width: 34rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); color: var(--text); padding: 1.25rem 1.5rem; }
-dialog.shortcuts::backdrop { background: #0006; }
+dialog.shortcuts::backdrop { background: var(--scrim); }
 dialog.shortcuts h2 { margin-top: 0; }
 dialog.shortcuts table { border-collapse: collapse; margin: .5rem 0 1rem; }
 dialog.shortcuts th { text-align: left; white-space: nowrap; padding: .35rem 1rem .35rem 0; vertical-align: top; font-weight: 400; }

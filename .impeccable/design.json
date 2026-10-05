@@ -1,0 +1,862 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-05T13:04:16.918347+00:00",
+  "title": "Design System: Y Sesiwn",
+  "extensions": {
+    "colorMeta": {
+      "welsh-red": {
+        "role": "primary",
+        "displayName": "Welsh Flag Red",
+        "canonical": "#C8102E",
+        "tonalRamp": [
+          "#470610",
+          "#76091b",
+          "#a50d26",
+          "#d41131",
+          "#f0425e",
+          "#f6899b",
+          "#fac2cb",
+          "#fde7eb"
+        ]
+      },
+      "welsh-red-soft": {
+        "role": "primary",
+        "displayName": "Red Wash",
+        "canonical": "#c8102e1a"
+      },
+      "brand-red-night": {
+        "role": "primary",
+        "displayName": "Night Red",
+        "canonical": "#ee4a66",
+        "tonalRamp": [
+          "#460711",
+          "#750b1d",
+          "#a30f29",
+          "#d21434",
+          "#ed4561",
+          "#f48a9c",
+          "#f9c2cc",
+          "#fde8eb"
+        ]
+      },
+      "slate": {
+        "role": "secondary",
+        "displayName": "Welsh Slate",
+        "canonical": "#3b4550",
+        "tonalRamp": [
+          "#20262c",
+          "#363f49",
+          "#4c5967",
+          "#617284",
+          "#8a98a8",
+          "#b6bfc9",
+          "#d9dee3",
+          "#f0f2f4"
+        ]
+      },
+      "warm-off-white": {
+        "role": "neutral",
+        "displayName": "Warm Off-White",
+        "canonical": "#fdfbf7",
+        "tonalRamp": [
+          "#3d2e0f",
+          "#664c19",
+          "#8f6b24",
+          "#b88a2e",
+          "#d6ad5c",
+          "#e6cc99",
+          "#f2e4ca",
+          "#faf5eb"
+        ]
+      },
+      "pale-slate": {
+        "role": "neutral",
+        "displayName": "Pale Slate",
+        "canonical": "#eef0f1",
+        "tonalRamp": [
+          "#23272a",
+          "#3a4246",
+          "#515c62",
+          "#68767e",
+          "#8f9ca3",
+          "#b9c1c5",
+          "#dbdfe1",
+          "#f1f3f3"
+        ]
+      },
+      "card-white": {
+        "role": "neutral",
+        "displayName": "Card White",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#999999",
+          "#bfbfbf",
+          "#dedede",
+          "#f2f2f2"
+        ]
+      },
+      "cream-paper": {
+        "role": "neutral",
+        "displayName": "Cream Paper",
+        "canonical": "#fbf6ea",
+        "tonalRamp": [
+          "#40310c",
+          "#6b5214",
+          "#96721d",
+          "#c19325",
+          "#deb654",
+          "#ebd194",
+          "#f4e7c7",
+          "#fbf6ea"
+        ]
+      },
+      "carthen-cream": {
+        "role": "neutral",
+        "displayName": "Carthen Cream",
+        "canonical": "#f3ead3",
+        "tonalRamp": [
+          "#3c3010",
+          "#64501b",
+          "#8c7026",
+          "#b48f31",
+          "#d3b25f",
+          "#e4cf9b",
+          "#f1e6cb",
+          "#faf5eb"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#262b31",
+        "tonalRamp": [
+          "#21262b",
+          "#383f48",
+          "#4e5865",
+          "#647181",
+          "#8c98a6",
+          "#b7bfc7",
+          "#dadde2",
+          "#f1f2f4"
+        ]
+      },
+      "muted-slate": {
+        "role": "neutral",
+        "displayName": "Muted Slate",
+        "canonical": "#5f6973",
+        "tonalRamp": [
+          "#23262a",
+          "#3a4046",
+          "#515962",
+          "#68737e",
+          "#8f99a3",
+          "#b9bfc5",
+          "#dbdee1",
+          "#f1f2f3"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#dcdfe3",
+        "tonalRamp": [
+          "#22262a",
+          "#393f47",
+          "#4f5863",
+          "#66717f",
+          "#8e97a4",
+          "#b8bec6",
+          "#dadde2",
+          "#f1f2f4"
+        ]
+      },
+      "link-blue": {
+        "role": "neutral",
+        "displayName": "Link Blue",
+        "canonical": "#1a67c2",
+        "tonalRamp": [
+          "#092443",
+          "#0f3c70",
+          "#15549d",
+          "#1b6bca",
+          "#4b93e7",
+          "#8fbbf0",
+          "#c5dcf7",
+          "#e9f1fc"
+        ]
+      },
+      "land-grey": {
+        "role": "neutral",
+        "displayName": "Land Grey",
+        "canonical": "#e2e5e8",
+        "tonalRamp": [
+          "#22262b",
+          "#384047",
+          "#4f5964",
+          "#667380",
+          "#8d99a5",
+          "#b8bfc7",
+          "#dadee2",
+          "#f1f2f4"
+        ]
+      },
+      "flannel-black": {
+        "role": "neutral",
+        "displayName": "Flannel Black",
+        "canonical": "#1d1d1b",
+        "tonalRamp": [
+          "#282825",
+          "#42423d",
+          "#5c5c56",
+          "#77776f",
+          "#9d9d95",
+          "#c2c2bd",
+          "#dfdfdd",
+          "#f3f3f2"
+        ]
+      },
+      "night-bg": {
+        "role": "neutral",
+        "displayName": "Night Background",
+        "canonical": "#111418",
+        "tonalRamp": [
+          "#20252d",
+          "#353e4b",
+          "#4a5768",
+          "#5f7086",
+          "#8897aa",
+          "#b4beca",
+          "#d8dde4",
+          "#f0f2f4"
+        ]
+      },
+      "night-sidebar": {
+        "role": "neutral",
+        "displayName": "Night Sidebar",
+        "canonical": "#1a1f25",
+        "tonalRamp": [
+          "#20262d",
+          "#353f4b",
+          "#4a5869",
+          "#5f7187",
+          "#8797ab",
+          "#b4beca",
+          "#d8dde4",
+          "#f0f2f4"
+        ]
+      },
+      "night-card": {
+        "role": "neutral",
+        "displayName": "Night Card",
+        "canonical": "#171b21",
+        "tonalRamp": [
+          "#1f252d",
+          "#343d4b",
+          "#495669",
+          "#5e6f87",
+          "#8795ab",
+          "#b4bdcb",
+          "#d8dde4",
+          "#f0f2f5"
+        ]
+      },
+      "night-text": {
+        "role": "neutral",
+        "displayName": "Night Text",
+        "canonical": "#eef0f2",
+        "tonalRamp": [
+          "#21262b",
+          "#374048",
+          "#4d5965",
+          "#637382",
+          "#8b99a7",
+          "#b7bfc8",
+          "#d9dee2",
+          "#f1f2f4"
+        ]
+      },
+      "night-muted": {
+        "role": "neutral",
+        "displayName": "Night Muted",
+        "canonical": "#a0a8b1",
+        "tonalRamp": [
+          "#22262a",
+          "#393f46",
+          "#505962",
+          "#67727e",
+          "#8f98a3",
+          "#b9bfc6",
+          "#dbdee1",
+          "#f1f2f4"
+        ]
+      },
+      "night-border": {
+        "role": "neutral",
+        "displayName": "Night Border",
+        "canonical": "#343b44",
+        "tonalRamp": [
+          "#21262b",
+          "#373f48",
+          "#4d5865",
+          "#637182",
+          "#8b97a7",
+          "#b7bec8",
+          "#d9dde2",
+          "#f1f2f4"
+        ]
+      },
+      "night-link": {
+        "role": "neutral",
+        "displayName": "Night Link",
+        "canonical": "#6fb1ff",
+        "tonalRamp": [
+          "#00234c",
+          "#003a80",
+          "#0052b2",
+          "#0069e6",
+          "#3390ff",
+          "#80baff",
+          "#bddbff",
+          "#e5f1ff"
+        ]
+      },
+      "night-paper": {
+        "role": "neutral",
+        "displayName": "Night Paper",
+        "canonical": "#ddd6c6",
+        "tonalRamp": [
+          "#302a1d",
+          "#504630",
+          "#706243",
+          "#907e56",
+          "#b3a37f",
+          "#cfc6af",
+          "#e6e1d5",
+          "#f5f4ef"
+        ]
+      },
+      "type-jig": {
+        "role": "tertiary",
+        "displayName": "Jig Red",
+        "canonical": "#C8102E",
+        "tonalRamp": [
+          "#470610",
+          "#76091b",
+          "#a50d26",
+          "#d41131",
+          "#f0425e",
+          "#f6899b",
+          "#fac2cb",
+          "#fde7eb"
+        ]
+      },
+      "type-polca": {
+        "role": "tertiary",
+        "displayName": "Polca Indigo",
+        "canonical": "#2f4f8f",
+        "tonalRamp": [
+          "#13203a",
+          "#203560",
+          "#2c4a86",
+          "#395fad",
+          "#6588cd",
+          "#9fb5df",
+          "#cdd8ef",
+          "#ecf0f9"
+        ]
+      },
+      "type-walts": {
+        "role": "tertiary",
+        "displayName": "Walts Mustard",
+        "canonical": "#c28f1c",
+        "tonalRamp": [
+          "#43310a",
+          "#6f5210",
+          "#9c7317",
+          "#c9941d",
+          "#e5b64d",
+          "#efd290",
+          "#f7e7c5",
+          "#fcf6e9"
+        ]
+      },
+      "type-ril": {
+        "role": "tertiary",
+        "displayName": "Rîl Bottle Green",
+        "canonical": "#2e6b4f",
+        "tonalRamp": [
+          "#173527",
+          "#265942",
+          "#367d5c",
+          "#45a076",
+          "#70c29c",
+          "#a6d9c1",
+          "#d1ebdf",
+          "#edf7f3"
+        ]
+      },
+      "type-pibddawns": {
+        "role": "tertiary",
+        "displayName": "Pibddawns Plum",
+        "canonical": "#7b3f6e",
+        "tonalRamp": [
+          "#331a2d",
+          "#542b4b",
+          "#763c6a",
+          "#984e88",
+          "#ba78ac",
+          "#d4abcb",
+          "#e9d3e4",
+          "#f6eef5"
+        ]
+      },
+      "type-ymdaith": {
+        "role": "tertiary",
+        "displayName": "Ymdaith Teal",
+        "canonical": "#2b7a7f",
+        "tonalRamp": [
+          "#133739",
+          "#205c5f",
+          "#2d8085",
+          "#3aa5ab",
+          "#67c5cb",
+          "#a0dbdf",
+          "#cdecee",
+          "#ecf8f9"
+        ]
+      },
+      "type-dawns": {
+        "role": "tertiary",
+        "displayName": "Dawns Rust",
+        "canonical": "#b4532a",
+        "tonalRamp": [
+          "#3e1d0e",
+          "#673018",
+          "#914322",
+          "#ba562b",
+          "#d87f5a",
+          "#e7af98",
+          "#f2d5c9",
+          "#faefea"
+        ]
+      },
+      "type-alaw": {
+        "role": "tertiary",
+        "displayName": "Alaw Slate Blue",
+        "canonical": "#5b6f8c",
+        "tonalRamp": [
+          "#1e252e",
+          "#323d4d",
+          "#46566c",
+          "#5a6e8b",
+          "#8395af",
+          "#b2bdcd",
+          "#d7dde5",
+          "#f0f2f5"
+        ]
+      },
+      "type-can": {
+        "role": "tertiary",
+        "displayName": "Cân Rose",
+        "canonical": "#a3456a",
+        "tonalRamp": [
+          "#361723",
+          "#5a263a",
+          "#7d3552",
+          "#a14469",
+          "#c27090",
+          "#d9a5ba",
+          "#ebd0db",
+          "#f7edf1"
+        ]
+      },
+      "type-carol": {
+        "role": "tertiary",
+        "displayName": "Carol Olive",
+        "canonical": "#6b7b2c",
+        "tonalRamp": [
+          "#313814",
+          "#525e22",
+          "#72832f",
+          "#93a93c",
+          "#b6c969",
+          "#d1dda1",
+          "#e7eece",
+          "#f6f8ec"
+        ]
+      },
+      "type-other": {
+        "role": "tertiary",
+        "displayName": "Other Slate Grey",
+        "canonical": "#6b737c",
+        "tonalRamp": [
+          "#232629",
+          "#3b3f44",
+          "#535960",
+          "#6a727b",
+          "#9199a1",
+          "#bbbfc4",
+          "#dbdee0",
+          "#f1f2f3"
+        ]
+      },
+      "accent-ink-night": {
+        "role": "primary",
+        "displayName": "Night Red (ink)",
+        "canonical": "#ee4a66",
+        "tonalRamp": [
+          "#460711",
+          "#750b1d",
+          "#a30f29",
+          "#d21434",
+          "#ed4561",
+          "#f48a9c",
+          "#f9c2cc",
+          "#fde8eb"
+        ]
+      },
+      "ivory": {
+        "role": "neutral",
+        "displayName": "Ivory",
+        "canonical": "#fffdf8",
+        "tonalRamp": [
+          "#4c3700",
+          "#805b00",
+          "#b28000",
+          "#e6a400",
+          "#ffc533",
+          "#ffdb80",
+          "#ffecbd",
+          "#fff8e5"
+        ]
+      },
+      "key-edge": {
+        "role": "neutral",
+        "displayName": "Key Edge",
+        "canonical": "#b9bcc2",
+        "tonalRamp": [
+          "#242529",
+          "#3b3e44",
+          "#53575f",
+          "#6b707b",
+          "#9297a0",
+          "#bbbec4",
+          "#dcdde0",
+          "#f1f2f3"
+        ]
+      },
+      "ebony": {
+        "role": "neutral",
+        "displayName": "Ebony",
+        "canonical": "#262b31",
+        "tonalRamp": [
+          "#21262b",
+          "#383f48",
+          "#4e5865",
+          "#647181",
+          "#8c98a6",
+          "#b7bfc7",
+          "#dadde2",
+          "#f1f2f4"
+        ]
+      },
+      "ebony-edge": {
+        "role": "neutral",
+        "displayName": "Ebony Edge",
+        "canonical": "#111111",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#999999",
+          "#bfbfbf",
+          "#dedede",
+          "#f2f2f2"
+        ]
+      },
+      "player-track": {
+        "role": "neutral",
+        "displayName": "Player Track",
+        "canonical": "#2a323b",
+        "tonalRamp": [
+          "#20262d",
+          "#353f4a",
+          "#4a5868",
+          "#5f7286",
+          "#8898aa",
+          "#b5bfca",
+          "#d8dee3",
+          "#f0f2f4"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "brand": {
+        "displayName": "Brand",
+        "purpose": "The site name in Welsh red."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Page titles, with a short red bar beneath."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section headings, often over a carthen strip."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "All reading text."
+      },
+      "lead": {
+        "displayName": "Lead",
+        "purpose": "A page's opening line."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Muted notes, footer, statuses."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Uppercase group labels over pill rows."
+      },
+      "keycap": {
+        "displayName": "Keycap",
+        "purpose": "Keyboard shortcut hints."
+      },
+      "card-title": {
+        "displayName": "Card title",
+        "purpose": "Card headings and the big home search."
+      },
+      "small": {
+        "displayName": "Small",
+        "purpose": "Language switch, map town labels, compact phone controls."
+      }
+    },
+    "shadows": [
+      {
+        "name": "resting",
+        "value": "0 1px 3px #0000000f",
+        "purpose": "Score paper and offline card at rest."
+      },
+      {
+        "name": "search",
+        "value": "0 1px 2px #0000000d",
+        "purpose": "Search fields."
+      },
+      {
+        "name": "floating",
+        "value": "0 10px 30px #00000026",
+        "purpose": "Search suggestions."
+      },
+      {
+        "name": "popup",
+        "value": "0 8px 24px #00000026",
+        "purpose": "Map popups."
+      },
+      {
+        "name": "topbar",
+        "value": "0 2px 8px #0000000f",
+        "purpose": "Sticky phone top bar."
+      },
+      {
+        "name": "focus-ring",
+        "value": "0 0 0 3px #c8102e1a",
+        "purpose": "Focused search inputs."
+      },
+      {
+        "name": "soft",
+        "value": "0 1px 3px #0000001f",
+        "purpose": "Small floating controls: map zoom, set navigation."
+      },
+      {
+        "name": "scrim",
+        "value": "#0006",
+        "purpose": "Behind dialogs."
+      }
+    ],
+    "motion": [
+      {
+        "name": "state",
+        "value": ".15s",
+        "purpose": "Border, colour and background changes on buttons, pills, inputs; fold arrow rotation."
+      },
+      {
+        "name": "page-in",
+        "value": "fade-in .2s ease-out (4px rise)",
+        "purpose": "Main column on page change; off under reduced motion."
+      },
+      {
+        "name": "view-transition",
+        "value": "document.startViewTransition cross-fade",
+        "purpose": "Page changes where supported, unless reduced motion."
+      },
+      {
+        "name": "piano-key",
+        "value": ".08s",
+        "purpose": "Piano key background flash."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "wide",
+        "value": "1100px"
+      },
+      {
+        "name": "phone",
+        "value": "800px"
+      },
+      {
+        "name": "small-phone",
+        "value": "420px"
+      },
+      {
+        "name": "tiny-phone",
+        "value": "380px"
+      },
+      {
+        "name": "touch",
+        "value": "(pointer: coarse)"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Button",
+      "kind": "button",
+      "refersTo": "button",
+      "description": "Default button: white, hairline border, red on hover.",
+      "html": "<button class=\"ds-btn\">Surprise me</button>",
+      "css": ".ds-btn { font: inherit; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size: 16px; border: 1px solid var(--border, #dcdfe3); background: var(--card-bg, #fff); color: var(--text, #262b31); border-radius: 8px; padding: .45rem .9rem; cursor: pointer; transition: border-color .15s, color .15s, background-color .15s; } .ds-btn:hover { border-color: #C8102E; color: #C8102E; } .ds-btn:focus-visible { outline: 2px solid #C8102E; outline-offset: 2px; }"
+    },
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Filled Welsh red, for the one main action.",
+      "html": "<button class=\"ds-btn-primary\">Play it to me</button>",
+      "css": ".ds-btn-primary { font: inherit; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size: 16px; border: 1px solid #C8102E; background: #C8102E; color: #fff; border-radius: 8px; padding: .45rem .9rem; cursor: pointer; } .ds-btn-primary:hover { filter: brightness(1.1); } .ds-btn-primary:focus-visible { outline: 2px solid #C8102E; outline-offset: 2px; }"
+    },
+    {
+      "name": "Search",
+      "kind": "input",
+      "refersTo": "search-input",
+      "description": "Pill search with magnifier and / keycap; red focus ring.",
+      "html": "<div class=\"ds-search\"><input type=\"search\" placeholder=\"Search tunes\"><span class=\"ds-keycap\">/</span></div>",
+      "css": ".ds-search { position: relative; max-width: 24rem; } .ds-search input { font: inherit; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size: 16px; width: 100%; box-sizing: border-box; padding: .7rem 2.4rem .7rem 2.5rem; border: 1.5px solid #dcdfe3; border-radius: 999px; background: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2366707a' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='m15.5 15.5 5 5'/%3E%3C/svg%3E\") no-repeat .85rem center / 1.15rem, #fff; color: #262b31; box-shadow: 0 1px 2px #0000000d; transition: border-color .15s, box-shadow .15s; } .ds-search input:focus { outline: none; border-color: #C8102E; box-shadow: 0 0 0 3px #c8102e1a; } .ds-keycap { position: absolute; right: .8rem; top: 50%; transform: translateY(-50%); font: 600 .75rem/1 ui-monospace, monospace; color: #5f6973; border: 1px solid #dcdfe3; border-radius: 4px; padding: .2rem .4rem; } .ds-search input:focus ~ .ds-keycap { display: none; }"
+    },
+    {
+      "name": "Type and Key Pills",
+      "kind": "chip",
+      "refersTo": "pill-chosen",
+      "description": "Filter pills: type pills carry a carthen swatch; chosen keys fill slate with a tick.",
+      "html": "<div class=\"ds-pills\"><button class=\"ds-pill ds-pill-type\" style=\"--c:#2e6b4f\" aria-pressed=\"true\"><span class=\"ds-swatch\"></span>Rîl</button><button class=\"ds-pill ds-pill-type\" style=\"--c:#2f4f8f\" aria-pressed=\"false\"><span class=\"ds-swatch\"></span>Polca</button><button class=\"ds-pill ds-pill-key\" aria-pressed=\"true\">D</button><button class=\"ds-pill ds-pill-key\" aria-pressed=\"false\">G</button></div>",
+      "css": ".ds-pills { display: flex; flex-wrap: wrap; gap: .5rem; } .ds-pill { font: inherit; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size: 16px; display: inline-flex; align-items: center; border: 1px solid #dcdfe3; background: #fff; color: #262b31; border-radius: 999px; padding: .45rem .9rem; cursor: pointer; transition: border-color .15s, background-color .15s; } .ds-pill-type:hover { border-color: var(--c); } .ds-pill-key:hover { border-color: #3b4550; } .ds-pill:focus-visible { outline: 2px solid #C8102E; outline-offset: 2px; } .ds-pill[aria-pressed=\"true\"] { font-weight: 600; } .ds-pill[aria-pressed=\"true\"]::before { content: '✓'; margin-right: .35em; font-weight: 700; } .ds-pill-type[aria-pressed=\"true\"] { border-color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); } .ds-pill-key[aria-pressed=\"true\"] { background: #3b4550; border-color: #3b4550; color: #fff; } .ds-swatch { display: inline-block; position: relative; overflow: hidden; width: .95em; height: .95em; margin-right: .5em; border-radius: 2px; background: var(--c); box-shadow: inset 0 0 0 1px #00000022; } .ds-swatch::after { content: ''; position: absolute; inset: 21%; transform: rotate(45deg); background: linear-gradient(var(--c), var(--c)) center / 42% 42% no-repeat, #f3ead3; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Details card with a Welsh-red top edge.",
+      "html": "<div class=\"ds-card\"><h2>Details</h2><dl><dt>Type</dt><dd>Rîl</dd><dt>Trefniant</dt><dd>Meurig Williams</dd></dl></div>",
+      "css": ".ds-card { font: inherit; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size: 16px; max-width: 18rem; border: 1px solid #dcdfe3; border-top: 3px solid #C8102E; border-radius: 8px; padding: 1rem 1.1rem; background: #fff; color: #262b31; line-height: 1.55; } .ds-card h2 { margin: 0 0 .6rem; font-size: 1.15rem; } .ds-card dl { margin: 0; } .ds-card dt { font-weight: 600; } .ds-card dd { margin: 0 0 .5rem; }"
+    },
+    {
+      "name": "Score Paper",
+      "kind": "custom",
+      "refersTo": "score-paper",
+      "description": "Cream paper behind the sheet music, with a slate player bar.",
+      "html": "<div class=\"ds-score\"><svg viewBox=\"0 0 300 50\" width=\"100%\" aria-hidden=\"true\"><g stroke=\"#000\" stroke-width=\".6\"><line x1=\"0\" y1=\"10\" x2=\"300\" y2=\"10\"/><line x1=\"0\" y1=\"18\" x2=\"300\" y2=\"18\"/><line x1=\"0\" y1=\"26\" x2=\"300\" y2=\"26\"/><line x1=\"0\" y1=\"34\" x2=\"300\" y2=\"34\"/><line x1=\"0\" y1=\"42\" x2=\"300\" y2=\"42\"/></g><ellipse cx=\"60\" cy=\"30\" rx=\"4.5\" ry=\"3.4\"/><ellipse cx=\"100\" cy=\"22\" rx=\"4.5\" ry=\"3.4\" fill=\"#C8102E\"/><ellipse cx=\"140\" cy=\"26\" rx=\"4.5\" ry=\"3.4\"/><ellipse cx=\"180\" cy=\"18\" rx=\"4.5\" ry=\"3.4\"/></svg><div class=\"ds-player\"><span class=\"ds-knob\"></span></div></div>",
+      "css": ".ds-score { background: #fbf6ea; color: #000; border: 1px solid #dcdfe3; border-radius: 8px; padding: .75rem 1rem 1rem; box-shadow: 0 1px 3px #0000000f; max-width: 26rem; } .ds-player { margin-top: .6rem; height: 1.6rem; background: #3b4550; border-radius: 6px; position: relative; } .ds-knob { position: absolute; left: 35%; top: 50%; width: .8rem; height: .8rem; border-radius: 50%; background: #C8102E; transform: translate(-50%, -50%); }"
+    },
+    {
+      "name": "Sidebar Navigation",
+      "kind": "nav",
+      "refersTo": "sidebar",
+      "description": "Pale slate sidebar: red name, language switch, links.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-brand\" href=\"#\">Y Sesiwn</a><div class=\"ds-lang\"><button aria-pressed=\"false\">English</button><button aria-pressed=\"true\">Cymraeg</button></div><div class=\"ds-links\"><a href=\"#\">Browse by type and key</a><a href=\"#\">Find a tune by its notes</a><a href=\"#\">Sessions</a></div></nav>",
+      "css": ".ds-nav { font: inherit; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size: 16px; width: 300px; box-sizing: border-box; background: #eef0f1; border-right: 1px solid #dcdfe3; padding: 1.5rem 1.25rem; display: flex; flex-direction: column; gap: 1.25rem; } .ds-brand { font-size: 1.75rem; font-weight: 700; color: #C8102E; text-decoration: none; } .ds-lang { display: flex; align-self: flex-start; border: 1px solid #dcdfe3; border-radius: 8px; overflow: hidden; font-size: .85rem; } .ds-lang button { font: inherit; border: 0; padding: .25rem .7rem; background: #fff; color: #262b31; cursor: pointer; } .ds-lang button + button { border-left: 1px solid #dcdfe3; } .ds-lang button[aria-pressed=\"true\"] { background: #C8102E; color: #fff; font-weight: 600; } .ds-lang button:focus-visible { outline: 2px solid #C8102E; outline-offset: -2px; } .ds-links { display: grid; gap: .35rem; border-top: 1px solid #dcdfe3; padding-top: 1rem; } .ds-links a { color: #1a67c2; text-decoration: none; } .ds-links a:hover { color: #C8102E; text-decoration: underline; }"
+    },
+    {
+      "name": "Version Tabs",
+      "kind": "nav",
+      "refersTo": "button",
+      "description": "Bordered tabs per version; active one has a red underline bar.",
+      "html": "<div class=\"ds-versions\"><a href=\"#\" class=\"active\">Version 1<small>Alawon Cymru</small></a><a href=\"#\">Version 2<small>Blodau'r Grug</small></a></div>",
+      "css": ".ds-versions { font: inherit; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size: 16px; display: flex; flex-wrap: wrap; gap: .4rem; } .ds-versions a { display: grid; padding: .4rem .85rem; border: 1px solid #dcdfe3; border-radius: 8px; background: #fff; color: #262b31; text-decoration: none; line-height: 1.3; } .ds-versions small { color: #5f6973; font-size: .75rem; } .ds-versions a:hover { border-color: #C8102E; } .ds-versions a.active { border-color: #C8102E; box-shadow: inset 0 -3px 0 #C8102E; font-weight: 600; } .ds-versions a:focus-visible { outline: 2px solid #C8102E; outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Carthen on the Chair",
+    "overview": "**Creative North Star: \"The Carthen on the Chair\"**\n\nY Sesiwn looks like a warm, practical room in a Welsh house: a woven *carthen* blanket thrown over the chair, slate on the roof, sheet music on cream paper left open on the stand. It is homely and useful, never fussy. The furniture is plain (system fonts, thin borders, gentle corners) so that the few Welsh materials carry the identity: the carthen band across the top and bottom of every page, Welsh slate for structure, Welsh flag red for accents, and red-and-black flannel down the edge of a call-out.\n\nDensity is moderate and calm. A fixed slate sidebar holds the name, search and links; the page beside it has generous padding and a single readable column, with the sheet music as the largest and most important object on a tune page. Decoration is woven in, not laid on top: carthen strips under section headings, a carthen colourway for each tune type, a scrap of quilt behind the drawn instruments. Everything works in dark mode, where the paper stays paper (dimmed, never inverted).\n\nThe system is built for a phone at a session as much as a laptop at home, so every flourish has to survive 360px wide, offline, in a dark pub.",
+    "keyCharacteristics": [
+      "Plain, sturdy chrome; identity carried by Welsh materials (carthen, slate, flannel, red).",
+      "Sheet music always on cream \"paper\", in light and dark mode.",
+      "Red is for accents, focus and chosen states; slate is for structure.",
+      "One colourway per tune type, shown as a small woven swatch.",
+      "System font stack throughout; no web fonts.",
+      "Light and dark themes from the same tokens; high-contrast and reduced-motion respected."
+    ],
+    "rules": [
+      {
+        "name": "The Flag Not Paint Rule",
+        "body": "Welsh red marks what is active, focused, chosen or important. It never fills large areas or backgrounds.",
+        "section": "colors"
+      },
+      {
+        "name": "The Paper Stays Paper Rule",
+        "body": "Sheet music always sits on cream paper with black notes, in both themes. Dark mode dims the paper; it never inverts the music.",
+        "section": "colors"
+      },
+      {
+        "name": "The Ink and Fill Rule",
+        "body": "Red used as a line or text uses `--accent-ink`; red behind white text uses `--accent`. Never put red text or outlines on a dark surface in Welsh Flag Red: it is under 3:1.",
+        "section": "colors"
+      },
+      {
+        "name": "The Colourway Rule",
+        "body": "Tune-type colours belong to tune types only. Do not reuse them for status, categories or decoration elsewhere.",
+        "section": "colors"
+      },
+      {
+        "name": "The Ramp Rule",
+        "body": "Sizes come from the ramp: .75, .8, .85, .9, 1, 1.1, 1.15, 1.35 and 2rem, plus the brand (1.25/1.75rem), the piano's key labels (.72rem), chord superscripts (.65rem) and print-only chart sizes. Don't add in-between sizes like .95 or 1.05rem.",
+        "section": "typography"
+      },
+      {
+        "name": "The One Face Rule",
+        "body": "The system font stack is the only typeface. No web fonts: they cost the offline cache and the instant load.",
+        "section": "typography"
+      },
+      {
+        "name": "The Hairline First Rule",
+        "body": "Separate with a 1px hairline border and a tonal step before reaching for a shadow. Shadows are for things that float.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** keep Welsh red for accents, focus, chosen states and the brand name only.",
+      "**Do** put all sheet music on cream paper with black notes, in both themes.",
+      "**Do** separate surfaces with a 1px hairline and a tonal step first; keep shadows faint.",
+      "**Do** mark a chosen state with more than colour (a ✓, weight, an underline bar or a fill).",
+      "**Do** use the carthen band as a strip or edge (14px or 7px), never as a full background.",
+      "**Do** define every colour as a token in `:root` with a dark-mode value, and check it in forced-colors mode.",
+      "**Do** use `--accent-ink` for red lines and text and `--accent` for red fills with white text.",
+      "**Do** make every control at least 44px tall on touch screens.",
+      "**Do** limit hover styles to `(hover: hover)` devices, and keep transitions short (.15s) and off under reduced motion."
+    ],
+    "donts": [
+      "**Don't** add web fonts or a second typeface.",
+      "**Don't** fill large areas with Welsh red or carthen pattern.",
+      "**Don't** invert or dark-theme the sheet music.",
+      "**Don't** reuse tune-type colourways for anything other than tune types.",
+      "**Don't** add glossy gradients, heavy shadows or glassy blur; the chrome stays plain and sturdy.",
+      "**Don't** let anything but the piano scroll sideways at phone width.",
+      "**Don't** hard-code colours in rules; add a token in `:root` (the QR code's pure black on white is the one exception)."
+    ]
+  }
+}

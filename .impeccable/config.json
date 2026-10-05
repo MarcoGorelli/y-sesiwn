@@ -1,0 +1,23 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "site/style.css"
+        ],
+        "createdAt": "2026-10-05T13:04:30.296Z",
+        "reason": "Claude, from the audit: the only matches are the chord chart's repeat signs (thick bar lines), music notation, not card accents"
+      },
+      {
+        "rule": "design-system-radius",
+        "value": "5px",
+        "createdAt": "2026-10-05T13:04:30.322Z",
+        "reason": "Claude, from the audit: the piano keys' rounded bottoms (.piano .key), drawn to look like real keys"
+      }
+    ]
+  }
+}

@@ -93,8 +93,8 @@ scheduled runs after 60 days without a commit).
 
 ## Features
 
-- **Home page:** kept short on purpose: a one-line welcome (beside the harp, crwth and
-  pibgorn on a scrap of Welsh quilt, on wide screens), a big name search box, **Surprise me** (a random
+- **Home page:** kept short on purpose: a one-line welcome, the harp, crwth and
+  pibgorn on a scrap of Welsh quilt (near the end of the page on a phone), a big name search box, **Surprise me** (a random
   tune; also in the sidebar) and **Browse by type and key**, a line inviting you to find a tune by its notes,
   the next three sessions, **What you can do** (four highlights, `features()` in `app.js`;
   the sidebar has everything else) and a short offline card. Browsing:

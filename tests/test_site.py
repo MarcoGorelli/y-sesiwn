@@ -616,7 +616,7 @@ def test_home_page_on_a_phone(browser, site):
     page = context.new_page()
     page.goto(site)
     page.wait_for_selector(".features")
-    assert not page.locator(".home-intro .instruments").is_visible()
+    assert not page.locator(".instruments.at-top").is_visible()
     assert page.locator("#hero-search").bounding_box()["y"] < 844 / 2
     # The picture comes near the end instead, after "What you can do".
     assert page.locator(".instruments.at-end").bounding_box()["y"] > page.locator(".features").bounding_box()["y"]

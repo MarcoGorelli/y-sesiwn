@@ -215,23 +215,20 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .offline-card.full { margin-top: 0; }
 .share-icon { width: 1.15em; height: 1.15em; vertical-align: -.2em; color: var(--link); }
 
-/* Home page: the welcome, beside the harp, crwth and pibgorn on a scrap of Welsh quilt
-   (left out on narrow screens, to keep the search near the top) */
-.home-intro { display: flex; align-items: flex-start; gap: .5rem 2rem; }
-.home-intro > div:first-child { flex: 1 1 26rem; }
+/* Home page: the welcome, then the harp, crwth and pibgorn on a scrap of Welsh quilt,
+   then the search. On a phone the picture comes near the end instead (by "Take it to the
+   session"), so the search stays near the top. */
 .instruments {
   flex: none; display: flex; align-items: flex-end; justify-content: center;
-  width: 300px; aspect-ratio: 300 / 170; padding: 0 1.75rem 1.75rem; margin-top: .4rem;
+  width: min(100%, 300px); aspect-ratio: 300 / 170; padding: 0 1.75rem 1.75rem;
   background: url("static/quilt.svg") center / 100% 100% no-repeat;
 }
-.instruments img { width: 92px; height: 92px; }
-.instruments.at-end { display: none; }
-/* Narrower screens: no room beside the welcome, so the picture comes near the end of the
-   page instead, by "Take it to the session", rather than not at all. */
-@media (max-width: 1100px) {
-  .home-intro .instruments { display: none; }
-  .instruments.at-end { display: flex; width: min(100%, 300px); margin: 2rem 0 0; }
-  .instruments.at-end img { width: 30%; height: auto; }
+.instruments img { width: 30%; height: auto; }
+.instruments.at-top { margin: 1.25rem 0 0; }
+.instruments.at-end { display: none; margin: 2rem 0 0; }
+@media (max-width: 800px) {
+  .instruments.at-top { display: none; }
+  .instruments.at-end { display: flex; }
 }
 
 /* Home page: the way into the notes page */

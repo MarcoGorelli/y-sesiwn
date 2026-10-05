@@ -1060,12 +1060,11 @@ function renderHome(main) {
   const count = state.groupList.length;  // one entry per tune, whatever its number of versions
   main.replaceChildren(...[
     el("div", { class: "home-intro" },
-      el("div", {},
-        el("h1", {}, tr("Croeso! Welcome to Y Sesiwn", "Croeso i'r Sesiwn!")),
-        el("p", { class: "lead" }, ...tr(
-          [el("strong", {}, "Free and open source"), `: sheet music for ${count} Welsh folk tunes, to learn, play and share.`],
-          [el("strong", {}, "Am ddim a chod agored"), `: sgorau ${count} o alawon gwerin Cymru, i'w dysgu, eu chwarae a'u rhannu.`]))),
-      instruments()),
+      el("h1", {}, tr("Croeso! Welcome to Y Sesiwn", "Croeso i'r Sesiwn!")),
+      el("p", { class: "lead" }, ...tr(
+        [el("strong", {}, "Free and open source"), `: sheet music for ${count} Welsh folk tunes, to learn, play and share.`],
+        [el("strong", {}, "Am ddim a chod agored"), `: sgorau ${count} o alawon gwerin Cymru, i'w dysgu, eu chwarae a'u rhannu.`])),
+      instruments(" at-top")),
     heroSearch(count),
     el("div", { class: "home-actions" },
       el("button", { type: "button", onclick: openRandomTune }, tr("Surprise me", "Alaw ar hap")),  // the search comes first
@@ -1075,7 +1074,7 @@ function renderHome(main) {
     notesInvite(),
     upcomingSessions(),
     features(),
-    instruments(" at-end"),  // narrower screens: the picture here instead, by the offline card
+    instruments(" at-end"),  // phones: the picture here instead, by the offline card
     offlineCard(),
   ].filter(Boolean));
 }

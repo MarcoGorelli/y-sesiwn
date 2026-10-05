@@ -1335,31 +1335,41 @@ function tuneParts(visualObj) {
     .map((p, i) => ({ ...p, label: String.fromCharCode(65 + i) }));
 }
 
-// Looping one part: whenever playback reaches a note outside it (the player's own loop
-// brings it back round at the end of the tune), jump to the part's first note, played
-// the way it's written (its repeat included). With speedUp, each time round is 5%
-// faster, up to the tune's usual tempo.
-function partLoop(controller, part, tune, settings, onSpeed) {
-  let jumping = false, inside = false;
+// Repeating the whole tune or one part. The player's own loop brings playback round at
+// the end of the tune; for a part, whenever playback reaches a note outside it, it jumps
+// to the part's first note, played the way it's written (its repeat included). With
+// speedUp, each time round is 5% (of the starting tempo) faster, up to speedTo bpm.
+function repeatLoop(controller, part, settings, onSpeed) {
+  let jumping = false, inside = false, last = -1;
   const firstNote = () => controller.timer.noteTimings.find((e) => e.type === "event" && e.startChar >= part.from && e.startChar < part.to);
-  const jump = () => {
-    jumping = true;
-    const seek = () => controller.seek(firstNote().milliseconds / 1000, "seconds");
-    const cap = Math.max(100, Math.round((100 * tune.bpm) / settings.bpm));
-    if (settings.speedUp && inside && controller.warp < cap) {
-      const warp = Math.min(cap, controller.warp + 5);
-      onSpeed(warp, cap);
-      controller.setWarp(warp).then(seek);
+  const cap = () => Math.round((100 * settings.speedTo) / settings.bpm);
+  // Faster for the next time round, if speeding up (then, for a part, back to its start).
+  const roundAgain = (then = () => {}) => {
+    if (settings.speedUp && controller.warp < cap()) {
+      const warp = Math.min(cap(), controller.warp + 5);
+      onSpeed(warp, cap());
+      controller.setWarp(warp).then(then);
     } else {
-      seek();
+      then();
     }
-    inside = false;
   };
   return {
     onEvent(event) {
       if (event.startChar == null) return;  // a count-in click
+      if (part.whole) {
+        // Round again: playback has gone from late in the tune back to its start.
+        const end = controller.timer.noteTimings.at(-1)?.milliseconds ?? 0;
+        if (last > end / 2 && event.milliseconds + 1000 < last) roundAgain();
+        last = event.milliseconds;
+        return;
+      }
       const within = event.startChar >= part.from && event.startChar < part.to;
-      if (within) { jumping = false; inside = true; } else if (!jumping) jump();
+      if (within) { jumping = false; inside = true; return; }
+      if (jumping) return;
+      jumping = true;
+      const seek = () => controller.seek(firstNote().milliseconds / 1000, "seconds");
+      if (inside) roundAgain(seek); else seek();
+      inside = false;
     },
   };
 }
@@ -1542,7 +1552,8 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
     ...clickParams(visualObj, tune) };
   const settings = state.settings.get(tune.slug);
   const parts = tuneParts(visualObj);
-  const part = parts[settings.loop];
+  // The Repeat menu: -2 off, -1 the whole tune, 0… a part.
+  const part = settings.loop === -1 ? { from: 0, to: Infinity, whole: true } : parts[settings.loop];
 
   audio.replaceChildren();
   if (!ABCJS.synth.supportsAudio()) {
@@ -1552,19 +1563,13 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   const controller = new ABCJS.synth.SynthController();
   const cursor = new Cursor();
   controller.load(audio, cursor, {
-    displayLoop: true, displayRestart: true, displayPlay: true, displayProgress: true,
+    displayLoop: false, displayRestart: true, displayPlay: true, displayProgress: true,
   });
   // load() doesn't pass abcjs's title options on, so set them here (its own say "Click to …").
-  for (const [button, title] of [["loop", tr("Repeat", "Ailadrodd")], ["reset", tr("Back to the start", "Yn ôl i'r dechrau")],
+  for (const [button, title] of [["reset", tr("Back to the start", "Yn ôl i'r dechrau")],
     ["start", tr("Play / pause (space bar)", "Chwarae / oedi (bylchwr)")], ["progress-background", tr("Move to another point in the tune", "Symud i fan arall yn yr alaw")]]) {
     audio.querySelector(`.abcjs-midi-${button}`)?.setAttribute("title", title);
     audio.querySelector(`.abcjs-midi-${button}`)?.setAttribute("aria-label", title);
-  }
-  const repeat = audio.querySelector(".abcjs-midi-loop");
-  if (repeat && controller.control) {  // a toggle: say whether it's on
-    repeat.setAttribute("aria-pressed", "false");
-    const push = controller.control.pushLoop;
-    controller.control.pushLoop = (on) => { push(on); repeat.setAttribute("aria-pressed", String(!!on)); };
   }
   controller.setTune(visualObj, false, audioParams);
   state.synth = controller;
@@ -1572,7 +1577,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   if (controller.control) controller.control.setWarp = () => {};
   if (part) {
     // The player's own loop brings playback round again after the last part.
-    cursor.loop = partLoop(controller, part, tune, settings, onSpeed);
+    cursor.loop = repeatLoop(controller, part, settings, onSpeed);
     if (!controller.isLooping) controller.toggleLoop();
   }
   // Fetch and decode this tune's notes now, so pressing play doesn't wait. The
@@ -1845,7 +1850,7 @@ function renderTune(main, group, tune) {
   rememberTune(group, tune);
   if (!state.settings.has(tune.slug)) {
     const usual = savedKeys()[tune.slug];
-    state.settings.set(tune.slug, { transpose: Number.isInteger(usual) && usual >= -5 && usual <= 6 ? usual : 0, bpm: tune.bpm, loop: -1, speedUp: false,
+    state.settings.set(tune.slug, { transpose: Number.isInteger(usual) && usual >= -5 && usual <= 6 ? usual : 0, bpm: tune.bpm, loop: -2, speedUp: false, speedTo: tune.bpm,
       swing: canSwing(tune) && tune.type === "Pibddawns" });  // hornpipes are played swung
   }
   const settings = state.settings.get(tune.slug);
@@ -1860,23 +1865,29 @@ function renderTune(main, group, tune) {
   const audio = el("div", { class: "audio" });
   const chords = chordCard(tune, () => redraw());
   const speedNote = el("span", { class: "caption speed-note", "aria-live": "polite" });
-  // Speeding up: how far there is to go, then a "da iawn" (well done) when the part has
-  // been worked up to the tune's usual tempo, with a strip of carthen woven in under it.
+  // Speeding up: how far there is to go, then a "da iawn" (well done) when the tune or
+  // part has been worked up to speed, with a strip of carthen woven in under it.
   const onSpeed = (warp, cap) => {
-    const bpm = Math.round((settings.bpm * warp) / 100), goal = Math.round((settings.bpm * cap) / 100);
+    const bpm = Math.round((settings.bpm * warp) / 100), goal = settings.speedTo;
     const arrived = warp >= cap;
     speedNote.classList.toggle("arrived", arrived);
     speedNote.replaceChildren(arrived
-      ? tr(`Up to its usual speed, ${bpm} bpm. `, `Ar ei chyflymder arferol, ${bpm} curiad y funud. `)
+      ? tr(`Reached ${bpm} bpm. `, `Wedi cyrraedd ${bpm} curiad y funud. `)
       : tr(`now ${bpm} of ${goal} bpm`, `nawr ${bpm} o ${goal} curiad y funud`));
     if (arrived) speedNote.append(el("strong", { lang: "cy" }, "Da iawn!"));
+  };
+  // Before it starts: a "to" no faster than the tempo has nothing to speed up to.
+  const speedHint = () => {
+    speedNote.classList.remove("arrived");
+    speedNote.textContent = settings.speedUp && settings.loop >= -1 && settings.speedTo <= settings.bpm
+      ? tr(`To speed up, start slower (the tempo above) or set a faster “to”.`, `I gyflymu, dechreuwch yn arafach (y tempo uchod) neu gosodwch “i” cyflymach.`)
+      : "";
   };
   let drawn = { parts: [] };
   // Drawing it again (a new tempo or key, a phone turned on its side) makes a new player:
   // if the tune was playing, it carries on from the same point in it.
   const redraw = () => {
-    speedNote.textContent = "";
-    speedNote.classList.remove("arrived");
+    speedHint();
     const playingAt = state.synth?.isStarted ? state.synth.percent ?? 0 : null;
     drawn = drawScore(tune, paper, audio, chords?.querySelector(".chart-box"), onSpeed);
     const player = state.synth;
@@ -1907,9 +1918,11 @@ function renderTune(main, group, tune) {
     controls.append(el("div", { class: "control" }, el("label", { for: "key-select" }, tr("Key", "Cywair"), usual), select));
   }
   const tempoLabel = el("label", { for: "tempo" });
+  const speedFrom = el("span");
   const showTempo = () => {
     tempoLabel.textContent = tr(`Tempo: ${settings.bpm} bpm (${tune.beatName} beats)`,
       `Tempo: ${settings.bpm} curiad y funud (curiad ${CY_BEATS[tune.beatName] ?? tune.beatName})`);
+    speedFrom.textContent = String(settings.bpm);
   };
   showTempo();
   const practice = el("button", { type: "button", class: "practice-toggle", onclick: () => setPractice(!document.body.classList.contains("practice")) });
@@ -1920,15 +1933,12 @@ function renderTune(main, group, tune) {
       oninput: (e) => { settings.bpm = +e.target.value; showTempo(); },
       onchange: redraw,
     })),
-    canSwing(tune) ? el("label", { class: "switch swing", title: tr("Play the quavers long-short, as hornpipes are played",
-      "Chwarae'r cwafers yn hir-byr, fel y chwaraeir pibddawnsiau") },
-      el("input", { type: "checkbox", checked: settings.swing, onchange: (e) => { settings.swing = e.target.checked; redraw(); } }),
-      tr("Swing", "Swing")) : null,
-    practice].filter(Boolean));  // no swing switch: nothing (not the text "null")
-  // Under the music: printing, saving and sharing it.
-  const actions = el("div", { class: "tune-actions" },
+    // How the music is shown, at the end of the row: its size, and full screen.
+    el("div", { class: "view-tools" }, musicSize(redraw), practice)]);
+  // Under the music: taking it with you (sharing, printing, saving, a set).
+  const actions = el("div", { class: "tune-actions", role: "group", "aria-label": tr("Take it with you", "Mynd â hi gyda chi") },
     shareButton(group.title, () => `https://ysesiwn.cymru/${tuneLink(group, tune, settings)}`),
-    printButton(tune, paper, settings), qrButton(group, tune, settings), addToSetButton(tune, settings), musicSize(redraw));
+    printButton(tune, paper, settings), qrButton(group, tune, settings), addToSetButton(tune, settings));
 
   const shownElsewhere = new Set(["Key", "Composer / arranger"]);  // the key menu; the score's credit
   const details = el("dl", {}, tune.details.filter(([label]) => !shownElsewhere.has(label)).map(([label, value]) =>
@@ -1947,10 +1957,22 @@ function renderTune(main, group, tune) {
         }, el("span", {}, tr(`Version ${v.version}`, `Fersiwn ${v.version}`)), v.source ? el("small", {}, v.source) : null)))
     : null;
 
-  // The practice row: loop a part (and speed up each time), count-in, click, tablature.
+  // The practice tools, in three lines: repeat (and speed up each time round, from the
+  // tempo to a faster one); count-in, click and swing; tablature.
   const loopSelect = el("select", { id: "loop-select", onchange: (e) => { settings.loop = +e.target.value; redraw(); } });
-  const toggle = (label, checked, onchange, cls) => el("label", { class: `switch${cls ? ` ${cls}` : ""}` },
+  const toggle = (label, checked, onchange, cls, title) => el("label", { class: `switch${cls ? ` ${cls}` : ""}`, title },
     el("input", { type: "checkbox", checked, onchange: (e) => { onchange(e.target.checked); redraw(); } }), label);
+  const speedTo = el("input", { id: "speed-to", type: "number", min: 30, max: 240, step: 1, inputmode: "numeric", value: settings.speedTo,
+    "aria-label": tr("Speed up to (bpm)", "Cyflymu i (curiad y funud)"),
+    onchange: (e) => {
+      const to = Math.round(+e.target.value);
+      settings.speedTo = Number.isFinite(to) && to >= 30 ? Math.min(240, to) : tune.bpm;
+      e.target.value = settings.speedTo;
+      speedHint();
+    } });
+  const speedUp = el("div", { class: "speed-up" },
+    toggle(tr("Speed up each time", "Cyflymu bob tro"), settings.speedUp, (on) => { settings.speedUp = on; }),
+    el("span", { class: "speed-range" }, tr("from ", "o "), speedFrom, tr(" to ", " i "), speedTo, tr(" bpm", " curiad y funud")));
   const whistleKey = el("span", { class: "caption whistle-key", hidden: !WHISTLES[state.practice.tab] },
     tr("● covered · ○ open · ◐ half-covered · + blow harder · ? not on this whistle",
       "● ar gau · ○ ar agor · ◐ hanner ar gau · + chwythu'n galetach · ? ddim ar y chwisl hon"));
@@ -1964,24 +1986,28 @@ function renderTune(main, group, tune) {
       ...Object.entries(WHISTLES).map(([value, w]) => [value, tr(`Whistle in ${w.name}`, `Chwisl ${w.name}`)])].map(([value, label]) =>
       el("option", { value, selected: state.practice.tab === value }, label)));
   const practiceRow = el("div", { class: "practice-row" },
-    el("div", { class: "control" }, el("label", { for: "loop-select" }, tr("Loop", "Ailadrodd")), loopSelect),
-    toggle(tr("Speed up each time", "Cyflymu bob tro"), settings.speedUp, (on) => { settings.speedUp = on; }, "speed-up"),
+    el("div", { class: "practice-line" },
+      el("div", { class: "control" }, el("label", { for: "loop-select" }, tr("Repeat", "Ailadrodd")), loopSelect), speedUp),
     speedNote,
-    toggle(tr("Count-in", "Cyfrif i mewn"), state.practice.countIn, (on) => { state.practice.countIn = on; }),
-    toggle(tr("Click", "Clic"), state.practice.click, (on) => { state.practice.click = on; }),
-    el("div", { class: "control" }, el("label", { for: "tab-select" }, tr("Tablature", "Tablatur")), tabSelect),
-    whistleKey);
+    el("div", { class: "practice-line" },
+      toggle(tr("Count-in", "Cyfrif i mewn"), state.practice.countIn, (on) => { state.practice.countIn = on; }),
+      toggle(tr("Click", "Clic"), state.practice.click, (on) => { state.practice.click = on; }),
+      canSwing(tune) ? toggle(tr("Swing", "Swing"), settings.swing, (on) => { settings.swing = on; }, "swing",
+        tr("Play the quavers long-short, as hornpipes are played", "Chwarae'r cwafers yn hir-byr, fel y chwaraeir pibddawnsiau")) : null),
+    el("div", { class: "practice-line" },
+      el("div", { class: "control" }, el("label", { for: "tab-select" }, tr("Tablature", "Tablatur")), tabSelect), whistleKey));
   // Folded away on a phone (the music comes first), open on wider screens; then as left.
   const practiceTools = el("details", { class: "practice-tools fold", open: state.practice.open ?? !matchMedia("(max-width: 800px)").matches,
     ontoggle: (e) => { state.practice.open = e.target.open; } },
     el("summary", {}, el("span", {}, tr("Practice tools", "Offer ymarfer"),
-      el("span", { class: "caption" }, tr(" · loop a part, count-in, click, tablature", " · ailadrodd rhan, cyfrif i mewn, clic, tablatur")))),
+      el("span", { class: "caption" }, tr(" · repeat, speed up, count-in, click, tablature", " · ailadrodd, cyflymu, cyfrif i mewn, clic, tablatur")))),
     practiceRow);
   const fillLoops = () => {
-    loopSelect.replaceChildren(el("option", { value: -1 }, tr("The whole tune", "Yr alaw gyfan")),
-      ...drawn.parts.map((p, i) => el("option", { value: i, selected: settings.loop === i }, tr(`Part ${p.label}`, `Rhan ${p.label}`))));
-    loopSelect.disabled = drawn.parts.length < 2;
-    practiceRow.querySelector(".speed-up").hidden = settings.loop < 0;
+    loopSelect.replaceChildren(el("option", { value: -2 }, tr("Off", "Dim")),
+      el("option", { value: -1, selected: settings.loop === -1 }, tr("The whole tune", "Yr alaw gyfan")),
+      ...(drawn.parts.length > 1 ? drawn.parts : []).map((p, i) =>
+        el("option", { value: i, selected: settings.loop === i }, tr(`Part ${p.label}`, `Rhan ${p.label}`))));
+    speedUp.hidden = settings.loop < -1;
   };
   loopSelect.addEventListener("change", fillLoops);
 

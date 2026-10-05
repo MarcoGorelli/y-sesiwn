@@ -307,8 +307,15 @@ The score sits on cream paper in an 8px bordered panel with a resting shadow; no
 ### Carthen Band (signature)
 A repeating woven strip in Welsh red, slate and cream: 14px across the top of the page and footer, 7px under section headings (as long as the heading), along the top of the offline card, and beneath empty-state art.
 
+### Tune Page Controls
+Grouped by what you're doing, not by how they were built:
+- **Listen** (always visible): Key and Tempo above the music; the player bar (restart, play, position) and the Tune / chords choice on the paper. At the end of the Key and Tempo row, apart from them, **how the music is shown**: Size − / + and Full screen. On a phone that row becomes two: Key with Size, then Tempo with Full screen, so the music starts on the first screen.
+- **Practise** (folding, open on wide screens, folded on phones), three lines: Repeat (Off / The whole tune / Part A…) with Speed up *from* the tempo *to* a bpm box; Count-in, Click, Swing; Tablature. There is one way to repeat: the player's own repeat button is hidden.
+- **Take it with you** (a quiet row under the practise tools): Share, Print / save, QR code, Add to set.
+- **Reference** (side column): Details, On the map, ABC notation, Report a problem.
+
 ### Practice Tools: "Da iawn"
-The one celebration in the system, saved for real effort. While **Speed up** loops a part, a caption under the row says how far there is to go ("now 94 of 100 bpm"). When the part reaches the tune's usual tempo, the caption says so, ends with a red, Welsh **Da iawn!** (well done), and a 6rem strip of carthen weaves in under it, left to right, once (clip-path, 0.7s, exponential ease-out; static under reduced motion). The caption has its own line, so the controls never move; it is announced politely to screen readers.
+The one celebration in the system, saved for real effort. While **Speed up** repeats the tune or a part, a caption under the repeat line says how far there is to go ("now 94 of 100 bpm"). When it reaches the "to" bpm, the caption says "Reached 100 bpm.", ends with a red, Welsh **Da iawn!** (well done), and a 6rem strip of carthen weaves in under it, left to right, once (clip-path, 0.7s, exponential ease-out; static under reduced motion). The caption has its own line, so the controls never move; it is announced politely to screen readers.
 
 **The Earned Moment Rule.** Celebrate only what took effort (working a tune up to speed), never a click. Use the carthen and a word of Welsh, not confetti or emoji.
 

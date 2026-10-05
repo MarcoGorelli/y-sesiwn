@@ -1218,8 +1218,10 @@ def test_loop_parts(page, slug, parts):
     page.goto_site(f"?tune={slug}")
     page.wait_for_selector(".score .abcjs-staff")
     options = page.eval_on_selector_all("#loop-select option", "os => os.map((o) => o.textContent)")
-    assert options == ["The whole tune"] + [f"Part {chr(65 + i)}" for i in range(parts)]
-    assert not page.locator(".speed-up").is_visible()  # only when a part is looped
+    assert options == ["Off", "The whole tune"] + [f"Part {chr(65 + i)}" for i in range(parts)]
+    assert not page.locator(".speed-up").is_visible()  # only when repeating
+    page.select_option("#loop-select", "-1")
+    assert page.locator(".speed-up").is_visible()
     page.select_option("#loop-select", "0")
     assert page.locator(".speed-up").is_visible()
 
@@ -1268,9 +1270,37 @@ def test_speed_up_arrives(browser, site):
     page.evaluate("() => { const e = state.synth.timer.noteTimings.filter((e) => e.type === 'event'); "
                   "state.synth.seek((e.at(-1).milliseconds - 800) / 1000, 'seconds'); }")
     page.wait_for_function("document.querySelector('.speed-note.arrived')", timeout=15000)
-    assert page.inner_text(".speed-note") == "Up to its usual speed, 100 bpm. Da iawn!"
+    assert page.inner_text(".speed-note") == "Reached 100 bpm. Da iawn!"
     assert page.get_attribute(".speed-note strong", "lang") == "cy"
     page.click(".abcjs-midi-start")  # pause
+    context.close()
+
+
+def test_speed_up_the_whole_tune(browser, site):
+    # Repeating the whole tune speeds up each time it comes round, up to the "to" bpm; a
+    # "to" no faster than the tempo says what to do instead.
+    context = browser.new_context(service_workers="block")
+    page = context.new_page()
+    page.goto(site + "?tune=glandyfi")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.select_option("#loop-select", "-1")
+    page.check("text=Speed up each time")
+    assert " ".join(page.text_content(".speed-range").split()) == "from 100 to bpm" and page.input_value("#speed-to") == "100"
+    assert page.inner_text(".speed-note").startswith("To speed up, start slower")
+    page.fill("#tempo", "90")
+    page.dispatch_event("#tempo", "change")
+    page.fill("#speed-to", "99")
+    page.dispatch_event("#speed-to", "change")
+    assert page.inner_text(".speed-note") == ""
+    page.click(".abcjs-midi-start")
+    page.wait_for_function("document.querySelector('.abcjs-note_playing') && state.synth.timer")
+    page.evaluate("() => { const e = state.synth.timer.noteTimings.filter((e) => e.type === 'event'); "
+                  "state.synth.seek((e.at(-1).milliseconds - 800) / 1000, 'seconds'); }")
+    page.wait_for_function("document.querySelector('.speed-note').textContent === 'now 95 of 99 bpm'", timeout=15000)
+    page.click(".abcjs-midi-start")  # pause
+    page.fill("#speed-to", "1000")  # out of range: the fastest allowed
+    page.dispatch_event("#speed-to", "change")
+    assert page.input_value("#speed-to") == "240"
     context.close()
 
 
@@ -1839,14 +1869,15 @@ def test_score_and_player_names(page):
     assert label() == 'Sheet Music for "Glandyfi": G major, 6/8 time'
     page.select_option("#key-select", "2")
     page.wait_for_function("document.querySelector('.score svg[role=img]').getAttribute('aria-label').includes('A major')")
-    repeat = page.locator(".abcjs-midi-loop")
-    assert repeat.get_attribute("aria-label") == "Repeat"
-    assert repeat.get_attribute("aria-pressed") == "false"
-    repeat.click()  # abcjs resumes the audio context first, so the toggle lands a moment later
-    page.wait_for_function("document.querySelector('.abcjs-midi-loop').getAttribute('aria-pressed') === 'true'")
+    # Repeating is the Repeat menu's (the player's own repeat button is left out).
+    assert page.locator(".abcjs-midi-loop").count() == 0
+    assert page.inner_text("label[for=loop-select]") == "Repeat"
+    assert not page.evaluate("state.synth.isLooping")
+    page.select_option("#loop-select", "-1")
+    page.wait_for_function("state.synth.isLooping")
     assert page.get_attribute(".abcjs-midi-start", "aria-label") == "Play / pause (space bar)"
     page.click(".lang-switch [data-lang=cy]")
-    page.wait_for_function("document.querySelector('.abcjs-midi-loop').getAttribute('aria-label') === 'Ailadrodd'")
+    page.wait_for_function("document.querySelector('label[for=loop-select]').textContent === 'Ailadrodd'")
     assert label().startswith('Sgôr "Glandyfi": A fwyaf')
 
 

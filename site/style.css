@@ -324,7 +324,9 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .control select { padding: .4rem .6rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); }
 .control.tempo { flex: 1 1 18rem; max-width: 32rem; }
 .control input[type="range"] { width: 100%; height: 2rem; accent-color: var(--accent-ink); }
-.controls .practice-toggle { margin-left: auto; }
+/* How the music is shown (size, full screen): at the end of the row, apart from the rest */
+.view-tools { display: flex; align-items: center; gap: .75rem; margin-left: auto; }
+.view-tools .music-size { margin-left: 0; }
 .tune-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
 /* − and + for the music's size, at the end of the row */
 .music-size { display: flex; align-items: center; gap: .3rem; margin-left: auto; }
@@ -346,18 +348,24 @@ details[open] > summary::before { transform: rotate(90deg); }
 .practice-tools { margin-top: .75rem; border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .9rem; background: var(--card-bg); }
 .practice-tools > summary { padding: .2rem 0; }
 .practice-tools .caption { font-size: .85rem; }
-.practice-row {
-  display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1.5rem;
-  margin: .6rem 0 .3rem; font-size: .9rem;
+/* Three lines: repeat and speed up; count-in, click and swing; tablature */
+.practice-row { display: grid; gap: .7rem; margin: .6rem 0 .3rem; font-size: .9rem; }
+.practice-line { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1.5rem; }
+.speed-up { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .6rem; }
+.speed-up[hidden] { display: none; }
+.speed-range { display: inline-flex; align-items: center; gap: .35rem; color: var(--muted); }
+.speed-range > span { color: var(--text); font-variant-numeric: tabular-nums; }
+#speed-to {
+  width: 4.5rem; padding: .3rem .4rem; text-align: right; font-variant-numeric: tabular-nums;
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg);
 }
 .practice-row .control { display: flex; align-items: center; gap: .45rem; }
 .practice-row .control label { margin: 0; font-size: .9rem; }
 .practice-row select { padding: .3rem .5rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); }
-.practice-row .switch[hidden] { display: none; }
 .speed-note:empty { display: none; }
-/* Worked up to the tune's usual tempo: the note in ink, and a strip of carthen woven in
-   under it, left to right, once. */
-.practice-row .speed-note { flex-basis: 100%; order: 10; margin: 0; }  /* its own line, so the controls don't move */
+/* Worked up to speed: the note in ink, and a strip of carthen woven in under it, left to
+   right, once. It has its own line, under the repeat line, so the controls don't move. */
+.practice-row .speed-note { margin: -.3rem 0 0; }
 .speed-note.arrived { color: var(--text); }
 .speed-note.arrived strong { color: var(--accent-ink); }
 .speed-note.arrived::after {
@@ -594,9 +602,13 @@ body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 
   .sidebar.menu-open .menu-button::after { transform: rotate(-90deg); }
   .sidebar-links { display: none; flex: 1 0 100%; flex-wrap: wrap; gap: .35rem 1rem; padding-top: .5rem; font-size: .9rem; }
   .sidebar.menu-open .sidebar-links { display: flex; }
-  /* Key and Full screen, then tempo and swing: the music starts on the first screen. */
+  /* Two rows, so the music starts on the first screen. */
   .controls { gap: .75rem 1.25rem; margin-bottom: 1rem; }
-  .controls > .tempo, .controls > .swing { order: 1; }
+  .controls .view-tools { display: contents; }  /* Key and size; then tempo and full screen */
+  .controls .music-size { margin-left: auto; }
+  .controls .music-size .label { display: none; }  /* the group is named for screen readers */
+  .controls > .tempo { order: 1; }
+  .controls .practice-toggle { order: 2; }
   .control.tempo { flex: 1 1 12rem; }
   main { padding: 1.5rem 1rem 3rem; }
   .site-footer { padding: 22px 1rem 1.25rem; }

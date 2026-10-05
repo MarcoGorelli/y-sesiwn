@@ -162,8 +162,9 @@ scheduled runs after 60 days without a commit).
   felt beat: dotted crotchets in 6/8, minims in 4/4), and **playback** with
   the notes highlighted as they play (the space bar plays and pauses). On a
   phone the music is laid out again in shorter lines at a readable size
-  (`scoreLayout()` in `app.js`), and **− / +** under it make it smaller or
-  bigger on any screen (kept on the device). Under the music: **Share** (the
+  (`scoreLayout()` in `app.js`), and **− / +** (at the end of the key and tempo
+  row, by *Full screen*) make it smaller or bigger on any screen (kept on the
+  device). Under the music, to take it with you: **Share** (the
   device's own share sheet, where it has one), *Print / save*, *QR code* and
   *Add to set*. The address carries the key chosen (`alaw/glandyfi/?key=A`,
   by name, in the tune's own mode), so a copied link, *Share* and the QR code
@@ -177,13 +178,17 @@ scheduled runs after 60 days without a commit).
   keyboard shortcuts (also in the footer, on a computer).
 - **Full screen** (practice mode): just the controls and a full-width score, full screen
   where supported.
-- **Practice tools** (under the music; folded away on phones): **Loop** one part of the tune
-  (parts start at a repeat sign or double bar line, as in the chord chart;
-  `tuneParts()`), optionally **speeding up** 5% each time round up to the
-  tune's usual tempo (`partLoop()`: whenever playback reaches a note outside
-  the part it seeks back to the part's first note, and abcjs's own loop
-  brings it round after the last part; the speed-up uses `setWarp`, which
-  keeps playing from the same place). **Count-in** (one bar of woodblock
+- **Practice tools** (under the music; folded away on phones), in three lines.
+  **Repeat** (off, the whole tune, or one part: parts start at a repeat sign
+  or double bar line, as in the chord chart; `tuneParts()`; it replaces abcjs's
+  own repeat button), optionally **speeding up** each time round, by 5% of the
+  starting tempo, *from* the tempo slider *to* a bpm of your choice (the
+  tune's usual tempo to start with), with "now 94 of 100 bpm" as it goes and
+  "Reached 100 bpm. *Da iawn!*" when it gets there (`repeatLoop()`: a part
+  seeks back to its first note whenever playback reaches a note outside it,
+  and abcjs's own loop brings it round after the last part; the speed-up uses
+  `setWarp`, which keeps playing from the same place). Then **Count-in**,
+  **Click** and **Swing**; then **Tablature**. **Count-in** (one bar of woodblock
   clicks before the tune) and **Click** (a woodblock on every felt beat, high
   on the first of the bar) use abcjs's `drum`, `drumIntro` and `drumOff`
   options, with General MIDI percussion 76/77 from abcjs's own sound set in
@@ -228,7 +233,7 @@ scheduled runs after 60 days without a commit).
   second octave, ? for a note the whistle doesn't have. They're written as
   lines of lyrics (`w:`), so abcjs lines them up; worked out from the notes as
   drawn (`withFingerings()` in `app.js`), so they follow the key menu.
-- **Swing:** hornpipes play swung by default (a switch by the tempo), using
+- **Swing:** hornpipes play swung by default (a switch in the practice tools), using
   abcjs's `swing` option; only for tunes in 2/4, 3/4 or 4/4.
 - **Save:** the Print menu (*Print / save*) also saves the tune as ABC or MIDI,
   in the key chosen (and for MIDI the tempo and Play choice).

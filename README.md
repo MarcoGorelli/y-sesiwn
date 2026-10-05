@@ -307,7 +307,7 @@ scheduled runs after 60 days without a commit).
   (in Welsh time). The page starts with *Coming up*: every session in the next
   seven days (counted from today, so a Sunday visit sees the week ahead), then,
   under *Further ahead*, any on announced dates up to four weeks off, each a
-  link down to its card. The home page's *Upcoming sessions* lists the next
+  link down to its card. The home page's *Coming up* lists the next
   three, in order; then, under *One-off dates*, up to two on announced dates
   that aren't among them (the occasional ones are easy to miss; the weekly ones
   are on next week too); then how many more there are in the next seven days.

@@ -73,6 +73,7 @@ a { color: var(--link); }
 h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 .5rem; }
 h2 { font-size: 1.35rem; margin: 2rem 0 .75rem; }
 button, input, select { font: inherit; color: inherit; }
+::placeholder { color: var(--muted); opacity: 1; }  /* the browser's grey is too faint at night */
 .skip-link {  /* out of sight until it has keyboard focus */
   position: absolute; top: .5rem; left: .5rem; z-index: 100; padding: .5rem .9rem; border-radius: 6px;
   background: var(--accent); color: #fff; font-weight: 600; text-decoration: none; transform: translateY(-200%);
@@ -197,8 +198,6 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .coming-up li { padding: .2rem 0; }
 .coming-up p { margin: .5rem 0 0; }
 .coming-up p.also { margin: .4rem 0 .1rem; color: var(--muted); }
-.features strong a { color: inherit; text-decoration-color: var(--accent-ink); text-underline-offset: .15em; }
-.features strong a:hover { color: var(--accent-ink); }
 
 /* "Take it to the session": installing the app and using it offline */
 .offline-card {  /* with a strip of carthen along the top */
@@ -226,7 +225,14 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
   background: url("static/quilt.svg") center / 100% 100% no-repeat;
 }
 .instruments img { width: 92px; height: 92px; }
-@media (max-width: 1100px) { .instruments { display: none; } }
+.instruments.at-end { display: none; }
+/* Narrower screens: no room beside the welcome, so the picture comes near the end of the
+   page instead, by "Take it to the session", rather than not at all. */
+@media (max-width: 1100px) {
+  .home-intro .instruments { display: none; }
+  .instruments.at-end { display: flex; width: min(100%, 300px); margin: 2rem 0 0; }
+  .instruments.at-end img { width: 30%; height: auto; }
+}
 
 /* Home page: the way into the notes page */
 .home-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
@@ -548,7 +554,16 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .card.session .badge { display: inline-block; margin-left: .5rem; padding: .05rem .5rem; border: 1px solid var(--border);
   border-radius: 999px; font-size: .75rem; font-weight: 500; color: var(--muted); vertical-align: .15em; }
 .card.session p { margin: .3rem 0; }
-.session-links .link-button { margin-left: 0; font-size: inherit; }
+/* A session's actions: Map, Add to calendar, More about it, as quiet buttons */
+.session-links { display: flex; flex-wrap: wrap; gap: .5rem; margin: .7rem 0 0; }
+.session-links :is(.action, button) {
+  display: inline-flex; align-items: center; padding: .35rem .8rem; font-size: .9rem;
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); color: var(--text); text-decoration: none;
+}
+@media (hover: hover) { .session-links .action:hover { border-color: var(--accent-ink); color: var(--accent-ink); } }
+.area-filter { margin: 1.25rem 0 .5rem; }
+.area-filter .pills-label { margin: 0 0 .4rem; display: block; }
+#area-select { padding: .4rem .6rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); max-width: 100%; }
 /* "Confirmed 2 Oct 2026 · Been lately? Tell us": one quiet line, which opens the form */
 .session-report { margin-top: .6rem; font-size: .9rem; }
 .session-report > summary { color: var(--muted); }
@@ -557,7 +572,7 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .session-report fieldset { border: none; margin: .5rem 0; padding: 0; display: grid; gap: .3rem; }
 .add-session { margin-top: 2.5rem; max-width: 40rem; }
 /* Jumped to (from the introduction, or a town's dot): clear of the top bar pinned on phones */
-#add-session, .session-list h2 { scroll-margin-top: 5.5rem; }
+#add-session, .session-list h2, .card.session { scroll-margin-top: 5.5rem; }
 .place-list li { padding: .35rem .5rem; border-radius: 6px; }
 .place-list li:hover { background: var(--accent-soft); }
 .place-list strong { display: block; }
@@ -617,6 +632,8 @@ body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 
   .site-footer { padding: 22px 1rem 1.25rem; }
   .tune-layout, .map-layout { grid-template-columns: 1fr; }
   .map-layout figure { position: static; max-width: 22rem; margin: 0 auto; }
+  /* Sessions: the list first, right under the filters, so a filter's result is in sight; the map after it */
+  .sessions-layout .session-list { order: -1; }
 }
 /* Language, Surprise me and Menu on one row, even on a small phone */
 @media (max-width: 420px) {
@@ -771,6 +788,10 @@ body.practice .say { display: none; }
   .music-size button { min-width: 44px; }
   .set-item-controls button { min-width: 44px; }
   .switch input { width: 1.75rem; height: 1.75rem; }
+  .session-links .action, .session-report > summary, .email-form .check { min-height: 44px; }
+  .session-report > summary { display: flex; flex-wrap: wrap; align-items: center; column-gap: .3em; }
+  .email-form .check { display: flex; align-items: center; }
+  .sessions-layout .wales-map circle.target { r: calc(11px / var(--z)); }  /* a town's dot (fewer, further apart than the tunes' places) */
   /* Wider keys, scrolling sideways in their own strip: black keys over 24px wide on a phone */
   .piano { min-width: 36rem; --black: calc(var(--white) * .7); }
 }

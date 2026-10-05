@@ -616,8 +616,10 @@ def test_home_page_on_a_phone(browser, site):
     page = context.new_page()
     page.goto(site)
     page.wait_for_selector(".features")
-    assert not page.locator(".instruments").is_visible()
+    assert not page.locator(".home-intro .instruments").is_visible()
     assert page.locator("#hero-search").bounding_box()["y"] < 844 / 2
+    # The picture comes near the end instead, after "What you can do".
+    assert page.locator(".instruments.at-end").bounding_box()["y"] > page.locator(".features").bounding_box()["y"]
     assert page.locator(".features li").count() == 4 and page.locator(".features li").last.is_visible()
     context.close()
 
@@ -763,8 +765,9 @@ def test_home_page(page):
     page.goto_site()
     features = page.locator(".features li").all_inner_texts()
     assert len(features) == 4 and any(f.startswith("Chords: ") for f in features)
-    # One red button: Surprise me. Finding a tune by its notes is a line of text.
-    assert page.locator("main button.primary:visible").count() == 1
+    # No red button competes with the search: Surprise me is a plain one, and finding a
+    # tune by its notes is a line of text.
+    assert page.locator("main button.primary:visible").count() == 0
     assert page.locator(".notes-invite a[href='?page=notes']").is_visible()
     assert page.locator(".offline-card").is_visible()
     # One Surprise me: the home page's own, not the sidebar's too.
@@ -808,7 +811,8 @@ def test_welsh_home_page(page):
     assert page.locator(".features li").count() == 4
     # Nothing left in English: no sentence of the English page shows up in the Welsh one.
     welsh = page.evaluate(VISIBLE_TEXT)
-    fragments = {f.strip() for f in re.split(r"[.:;?!()\n]", english) if len(f.strip()) >= 12}
+    names = set(page.locator(".coming-up li a").all_inner_texts())  # sessions' own names stay as they are
+    fragments = {f.strip() for f in re.split(r"[.:;?!()\n]", english) if len(f.strip()) >= 12 and not any(f.strip() in n for n in names)}
     assert fragments and not [f for f in fragments if f in welsh]
     # The choice is remembered.
     page.reload()
@@ -1423,13 +1427,38 @@ def test_sessions_page(page, site):
       const r = l.getBoundingClientRect(); return [r.left, r.right, r.top, r.bottom]; })""")
     assert len(boxes) == len(towns)
     assert not [(a, b) for i, a in enumerate(boxes) for b in boxes[i + 1:] if a[0] < b[1] and a[1] > b[0] and a[2] < b[3] and a[3] > b[2]]
-    page.click(".pills [data-county='Cardiff']")
+    page.select_option("#area-select", "Cardiff")
     assert page.locator(".card.session").count() == sum(s["county"] == "Cardiff" for s in sessions)
     # Opened from the sidebar, it's the page's own address.
     page.click(".brand")
     page.click(".sidebar-links a[href='sesiynau/']")
     page.wait_for_selector(".card.session")
     assert page.url == site + "sesiynau/"
+
+
+def test_session_dates_in_welsh(page):
+    # Welsh dates are written by the site (many browsers have none, and give English ones).
+    page.goto_site("sesiynau/")
+    page.wait_for_selector(".card.session")
+    page.click(".lang-switch [data-lang=cy]")
+    page.wait_for_function("document.querySelector('main h1').textContent === 'Sesiynau cyfredol'")
+    import re
+    text = page.inner_text("main")
+    english = re.findall(r"\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|January|February|March|April|June|July|"
+                         r"August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b", text)
+    assert not english, english
+    assert re.search(r"Cadarnhawyd \d+ (Ion|Chwef|Maw|Ebr|Mai|Meh|Gorff|Awst|Medi|Hyd|Tach|Rhag) 20\d\d", text)
+
+
+def test_home_sessions_link_to_their_cards(page):
+    # Tonight's session on the home page opens its card on the sessions page.
+    page.goto_site()
+    link = page.locator(".coming-up li a").first
+    link.wait_for()
+    target = link.get_attribute("href").split("#")[1]
+    link.click()
+    page.wait_for_function(f"document.activeElement && document.activeElement.id === '{target}'")
+    assert page.locator(f"#{target}").is_visible()
 
 
 def test_session_calendar(page):

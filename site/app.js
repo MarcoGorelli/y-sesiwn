@@ -1051,7 +1051,7 @@ document.addEventListener("visibilitychange", () => { if (state.awake) keepAwake
 // ---- Home page -----------------------------------------------------------------
 
 // The three instruments of Welsh traditional music, on a scrap of Welsh quilt.
-const instruments = () => el("div", { class: "instruments", role: "img",
+const instruments = (where = "") => el("div", { class: `instruments${where}`, role: "img",
   "aria-label": tr("A Welsh triple harp, a crwth and a pibgorn", "Telyn deires, crwth a phibgorn") },
   ...["harp", "crwth", "pibgorn"].map((name) => el("img", { src: `static/${name}.svg`, alt: "", width: 72, height: 72 })));
 
@@ -1068,13 +1068,14 @@ function renderHome(main) {
       instruments()),
     heroSearch(count),
     el("div", { class: "home-actions" },
-      el("button", { type: "button", class: "primary", onclick: openRandomTune }, tr("Surprise me", "Alaw ar hap")),
+      el("button", { type: "button", onclick: openRandomTune }, tr("Surprise me", "Alaw ar hap")),  // the search comes first
       el("a", { href: "?page=browse", "data-route": true, class: "button-link" },
         tr(`Browse all ${count} tunes`, `Pori'r ${count} alaw`))),
     recentTunes(),  // nothing yet on a first visit
     notesInvite(),
     upcomingSessions(),
     features(),
+    instruments(" at-end"),  // narrower screens: the picture here instead, by the offline card
     offlineCard(),
   ].filter(Boolean));
 }
@@ -1205,20 +1206,19 @@ function notesInvite() {
 
 function features() {
   // A few things worth knowing before opening a tune; the sidebar has the rest.
-  const link = (href, text) => el("a", { href, "data-route": true }, text);
   const withChords = state.groupList.filter((g) => g.versions.some((v) => v.chords != null)).length;
   const items = state.lang === "cy" ? [
     [["Unrhyw gywair, unrhyw dempo"], ": trawsgyweiriwch alaw i siwtio'ch offeryn neu'ch llais, a gwrandewch arni gyda'r nodau'n goleuo."],
     [["Ymarfer"], ": ailadroddwch yr alaw neu un rhan gan gyflymu bob tro, gyda thablatur ar gyfer mandolin, ffidil neu gitâr."],
     [["Cordiau"], `: cyfeiliant awgrymedig ar gyfer gitâr, piano neu delyn (${withChords} o alawon hyd yma).`],
-    [[link("?page=sets", "Setiau")], ": casglwch alawon i'w chwarae gyda'i gilydd, yn eich cyweiriau chi, a'u rhannu fel dolen neu god QR."],
+    [["Setiau"], ": casglwch alawon i'w chwarae gyda'i gilydd, yn eich cyweiriau chi, a'u rhannu fel dolen neu god QR."],
   ] : [
     [["Any key, any tempo"], ": transpose a tune for your instrument or voice, and hear it with the notes lit up."],
     [["Practise"], ": repeat the tune or a part, speeding up each time, with tablature for mandolin, fiddle or guitar."],
     [["Chords"], `: suggested accompaniment for guitar, piano or harp (${withChords} tunes so far).`],
-    [[link("?page=sets", "Sets")], ": gather tunes to play together, in your keys, and share them as a link or a QR code."],
+    [["Sets"], ": gather tunes to play together, in your keys, and share them as a link or a QR code."],
   ];
-  // [["words"]] is the bold lead-in (possibly a link); plain strings follow it.
+  // [["words"]] is the bold lead-in; plain strings follow it.
   const bold = (part) => Array.isArray(part) ? el("strong", {}, part) : part;
   return el("section", { class: "features" },
     el("h2", { class: "section-heading" }, tr("What you can do", "Beth allwch chi ei wneud")),
@@ -2355,7 +2355,20 @@ const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
 const CY_DAYS = { Monday: "Llun", Tuesday: "Mawrth", Wednesday: "Mercher", Thursday: "Iau", Friday: "Gwener",
   Saturday: "Sadwrn", Sunday: "Sul" };
 const dateOf = (text) => new Date(`${text}T00:00`);
-const dateLabel = (date, options) => date.toLocaleDateString(state.lang === "cy" ? "cy" : "en-GB", options);
+// Dates in Welsh are written here, not by the browser: many (Android's Chrome among them)
+// have no Welsh dates and give English ones, in American order. In English, "en-GB".
+const CY_MONTHS = ["Ionawr", "Chwefror", "Mawrth", "Ebrill", "Mai", "Mehefin", "Gorffennaf", "Awst", "Medi", "Hydref", "Tachwedd", "Rhagfyr"];
+const CY_MONTHS_SHORT = ["Ion", "Chwef", "Maw", "Ebr", "Mai", "Meh", "Gorff", "Awst", "Medi", "Hyd", "Tach", "Rhag"];
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const dateLabel = (date, options) => {
+  if (state.lang !== "cy") return date.toLocaleDateString("en-GB", options);
+  return [  // "dydd Iau 22 Hydref 2026", "2 Hyd 2026"
+    options.weekday && `dydd ${CY_DAYS[WEEKDAYS[date.getDay()]]}`,
+    options.day && String(date.getDate()),
+    options.month && (options.month === "short" ? CY_MONTHS_SHORT : CY_MONTHS)[date.getMonth()],
+    options.year && String(date.getFullYear()),
+  ].filter(Boolean).join(" ");
+};
 
 // A session on announced dates (repeat: "dates"): those still to come, today's included.
 function upcomingDates(session, today = new Date()) {
@@ -2507,14 +2520,15 @@ function sessionCard(session) {
     el("p", { class: "when" }, el("strong", {}, `${sessionDays(session)}, ${sessionTime(session)}`),
       next && (today || !onDates) ? [" · ", today ? tr("today", "heddiw") : tr(`next: ${dateLabel(next, { weekday: "long", day: "numeric", month: "long" })}`,
         `nesaf: ${dateLabel(next, { weekday: "long", day: "numeric", month: "long" })}`)] : null),
-    el("p", {}, session.name ? `${session.venue}, ` : "", session.address, " · ",
-      el("a", { href: map, target: "_blank", rel: "noopener" }, tr("Map", "Map"))),
+    el("p", {}, session.name ? `${session.venue}, ` : "", session.address),
     session.music ? el("p", {}, tr(session.music, session.music_cy ?? session.music)) : null,
     season ? el("p", { class: "caption" }, season) : null,
-    el("p", { class: "session-links" },
-      session.link ? [el("a", { href: session.link, target: "_blank", rel: "noopener" }, tr("More about it", "Rhagor amdani")), " · "] : null,
-      next ? el("button", { type: "button", class: "link-button", onclick: () => download(`${session.id}.ics`, "text/calendar", sessionCalendar(session, next)) },
-        tr("Add to calendar", "Ychwanegu at y calendr")) : null),
+    // What you'd do with it, as a row of buttons big enough for a thumb.
+    el("div", { class: "session-links" },
+      el("a", { class: "action", href: map, target: "_blank", rel: "noopener" }, tr("Map", "Map")),
+      next ? el("button", { type: "button", onclick: () => download(`${session.id}.ics`, "text/calendar", sessionCalendar(session, next)) },
+        tr("Add to calendar", "Ychwanegu at y calendr")) : null,
+      session.link ? el("a", { class: "action", href: session.link, target: "_blank", rel: "noopener" }, tr("More about it", "Rhagor amdani")) : null),
     sessionReport(session, place));
 }
 
@@ -2586,11 +2600,13 @@ function upcomingSessions() {
     const first = soon.slice(0, HOME_SOON);
     const also = [...soon.slice(HOME_SOON), ...later].filter((x) => x.s.repeat === "dates").slice(0, HOME_ALSO);
     const more = soon.length - first.length - also.filter((x) => soon.includes(x)).length;
+    // Each one links to its card on the sessions page (address, map, calendar).
+    const item = (x) => soonItem(x, el("a", { href: `sesiynau/#session-${x.s.id}`, "data-route": true }, x.s.name ?? x.s.venue));
     box.replaceChildren(...[
-      el("h2", { class: "section-heading" }, tr("Upcoming sessions", "Sesiynau i ddod")),
-      first.length ? el("ul", {}, first.map((x) => soonItem(x))) : null,
+      el("h2", { class: "section-heading" }, tr("Coming up", "I ddod")),
+      first.length ? el("ul", {}, first.map(item)) : null,
       also.length ? el("p", { class: "also" }, tr("One-off dates:", "Dyddiadau arbennig:")) : null,
-      also.length ? el("ul", {}, also.map((x) => soonItem(x))) : null,
+      also.length ? el("ul", {}, also.map(item)) : null,
       el("p", {}, el("a", { href: "sesiynau/", "data-route": true }, more
         ? tr(`And ${more} more in the next seven days: all sessions, on a map`, `A ${more} arall yn y saith diwrnod nesaf: pob sesiwn, ar fap`)
         : tr("All sessions, on a map", "Pob sesiwn, ar fap"))),
@@ -2605,7 +2621,8 @@ async function renderSessions(main) {
   let sessions;
   try { ({ sessions } = await loadSessions()); } catch {
     main.replaceChildren(el("h1", {}, tr("Active sessions", "Sesiynau cyfredol")),
-      el("p", {}, tr("Couldn't load the sessions. Check your connection and try again.", "Methu llwytho'r sesiynau. Gwiriwch eich cysylltiad a rhoi cynnig arall arni.")));
+      el("p", {}, tr("Couldn't load the sessions. Check your connection and try again.", "Methu llwytho'r sesiynau. Gwiriwch eich cysylltiad a rhoi cynnig arall arni.")),
+      el("button", { type: "button", class: "primary", onclick: () => renderSessions(main) }, tr("Try again", "Rhoi cynnig arall arni")));
     return;
   }
   if (!/^sesiynau\/?$/.test(sitePath())) return;  // left while loading
@@ -2696,7 +2713,8 @@ async function renderSessions(main) {
   // Filters: a day of the week, and a county (or outside Wales); choosing one again clears it.
   let chosenDay = null, chosenCounty = null;
   const dayPills = el("div", { class: "pills plain", role: "group", "aria-label": tr("Day of the week", "Dydd o'r wythnos") });
-  const countyPills = el("div", { class: "pills plain", role: "group", "aria-label": tr("Area", "Ardal") });
+  // Areas are a drop-down, not buttons: there are more of them, and the list will grow.
+  const countySelect = el("select", { id: "area-select", onchange: (e) => { chosenCounty = e.target.value || null; show(); } });
   const counties = [...new Set(sessions.map((s) => s.county))].sort((a, b) =>
     (a === "Outside Wales") - (b === "Outside Wales") || (normalize(a) < normalize(b) ? -1 : 1));
   const list = el("div", { class: "session-list" });
@@ -2709,9 +2727,11 @@ async function renderSessions(main) {
       pill.lastChild.textContent = String(n);
       pill.disabled = n === 0 && pill.dataset.day !== chosenDay;
     }
-    for (const pill of countyPills.children) {
-      pill.setAttribute("aria-pressed", pill.dataset.county === chosenCounty);
-      pill.lastChild.textContent = String(sessions.filter((s) => fits(s, chosenDay, pill.dataset.county)).length);
+    for (const option of countySelect.options) {
+      const n = sessions.filter((s) => fits(s, chosenDay, option.value || null)).length;
+      option.textContent = `${option.dataset.name} (${n})`;
+      option.selected = option.value === (chosenCounty ?? "");
+      option.disabled = n === 0 && option.value !== (chosenCounty ?? "");
     }
     const shown = sessions.filter((s) => fits(s));
     caption.textContent = tr(`${shown.length} session${shown.length === 1 ? "" : "s"}`, `${shown.length} sesiwn`);
@@ -2730,10 +2750,10 @@ async function renderSessions(main) {
     dayPills.append(el("button", { type: "button", "data-day": day, onclick: () => { chosenDay = chosenDay === day ? null : day; show(); } },
       `${tr(day, CY_DAYS[day])} ·\u00a0`, el("span", {})));
   }
+  countySelect.append(el("option", { value: "", "data-name": tr("Everywhere", "Pob man") }));
   for (const county of counties) {
     const cy = sessions.find((s) => s.county === county).county_cy;
-    countyPills.append(el("button", { type: "button", "data-county": county, onclick: () => { chosenCounty = chosenCounty === county ? null : county; show(); } },
-      `${tr(county, cy)} ·\u00a0`, el("span", {})));
+    countySelect.append(el("option", { value: county, "data-name": tr(county, cy) }));
   }
 
   // The form for a missing session is at the foot of the page: the introduction links to
@@ -2766,9 +2786,9 @@ async function renderSessions(main) {
       "Sesiynau gwerin a chlybiau alawon sy'n canolbwyntio ar gerddoriaeth Gymreig: dewch ag offeryn, neu dim ond i wrando."),
       " ", toForm(tr("Know a session we're missing? Tell us about it.", "Gwybod am sesiwn sydd ar goll? Rhowch wybod i ni amdani."))),
     upcoming,
-    el("h2", { class: "section-heading" }, tr("All sessions", "Pob sesiwn")),
+    el("h2", { class: "section-heading" }, tr("Every session, by town", "Pob sesiwn, fesul tref")),
     el("p", { class: "pills-label" }, tr("Day", "Dydd")), dayPills,
-    el("p", { class: "pills-label" }, tr("Area", "Ardal")), countyPills,
+    el("div", { class: "control area-filter" }, el("label", { class: "pills-label", for: "area-select" }, tr("Area", "Ardal")), countySelect),
     caption,
     el("div", { class: "map-layout sessions-layout" },
       el("figure", {}, map, el("figcaption", { class: "caption" },
@@ -2782,6 +2802,10 @@ async function renderSessions(main) {
       addSessionForm()),
   ].filter(Boolean));
   show();  // now the map is on the page, its names can be placed
+  // Come from a link to one session (sesiynau/#session-…, on the home page): its card,
+  // after the page's own move to the top and its heading.
+  const linked = location.hash.startsWith("#session-") && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+  if (linked) setTimeout(() => { linked.scrollIntoView({ block: "start" }); linked.focus({ preventScroll: true }); }, 0);
 }
 
 // ---- Installing the app ---------------------------------------------------------------

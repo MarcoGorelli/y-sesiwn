@@ -236,7 +236,7 @@ A two-column app shell: a sticky 300px pale-slate sidebar (name, language switch
 Tune pages split the main column 3:1: score on the left, details card on the right (min 14rem). Lists of tunes flow into newspaper columns (3 × min 14rem); feature lists into 2 columns of 22rem.
 
 Breakpoints:
-- **≤1100px:** the instruments-on-quilt picture on the home page is hidden.
+- **≤1100px:** the instruments-on-quilt picture moves from beside the welcome to near the end of the home page, just before "Take it to the session", so phones still see it without it pushing the search down.
 - **≤800px (phone):** the sidebar becomes a sticky top bar (name + search) with a row underneath (language, Surprise me, Menu); links fold under Menu. Single column, main padding 1.5rem/1rem; the tune's controls reorder so the music starts on the first screen.
 - **≤420px / ≤380px:** tighter button padding so language, Surprise me and Menu stay on one row.
 - **Touch screens (`pointer: coarse`):** every button, select, input, segment, version tab and fold heading is at least 44px tall (preview play and map zoom 44 × 44px); the player uses abcjs's large size; the piano widens to at least 36rem (black keys about 25px wide) and scrolls sideways within its own strip.
@@ -298,7 +298,7 @@ Drawn, never typed: the search magnifier, microphone, share, play and stop are i
 
 ### Navigation
 - **Sidebar:** pale slate, sticky, the name in red at top, a two-button language switch (chosen = red), then search, actions, and a list of links separated by a hairline. Links go red with underline on hover.
-- **Phone:** sticky top bar (name + search) and a row with language, Surprise me and a Menu button (▾/▴) that unfolds the links.
+- **Phone:** sticky top bar (name + search) and a row with language, Surprise me and a Menu button (a drawn chevron) that unfolds the links.
 - **Version tabs:** bordered boxes in a row; the active one has a red border and a 3px red underline.
 
 ### Sheet Music (signature)
@@ -324,6 +324,11 @@ One cell per bar in rows of 4 (3 or 5 where the part divides that way), bold 1.1
 
 ### Piano Keyboard
 G3–A5, ivory white keys (`#fffdf8`) with mid-grey borders and dark ink black keys; hover warms to carthen cream; a pressed or heard key flashes Welsh red. Scrolls horizontally inside itself on a phone.
+
+### Session Cards
+A hairline card per session: name (with a Tune club badge), when and next date, address, what's played, then a row of quiet bordered buttons, **Map**, **Add to calendar**, **More about it** (44px tall on touch), and one muted closing line, "Confirmed 2 Oct 2026 · Been lately? Tell us", which opens the report form. Session lines elsewhere (home "Coming up", the sessions page's own list) link to their card. Filters: days as pills (only days that have a session), areas as a drop-down with counts. On phones the list comes before the map, so a filter's result is in sight.
+
+**The Plain Primary Rule.** On the home page nothing is red but the search's focus: the search box is the way in, and Surprise me is a plain button beside Browse.
 
 ### Map of Wales
 Land in land grey as a mask so it follows the theme; session towns as small slate dots that keep their size when zoomed; the current or lit town in red; popups are plain hairline cards with the floating shadow.

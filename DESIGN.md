@@ -76,11 +76,13 @@ typography:
   small:
     fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
     fontSize: "0.85rem"
-  label:
+  fine:
     fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
     fontSize: "0.8rem"
+  label:
+    fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "0.9rem"
     fontWeight: 600
-    letterSpacing: "0.06em"
   keycap:
     fontFamily: "ui-monospace, SF Mono, Menlo, monospace"
     fontSize: "0.75rem"
@@ -169,7 +171,7 @@ The system is built for a phone at a session as much as a laptop at home, so eve
 A warm off-white room framed in Welsh slate, with Welsh flag red used sparingly and a family of carthen dye colours to tell tune types apart.
 
 ### Primary
-- **Welsh Flag Red** (`welsh-red`): the accent. As a **fill** (`--accent`, the same in both themes, always with white text): primary buttons, the chosen language and segment, the skip link, the heard piano key, selection highlight. As **ink** (`--accent-ink`): focus outlines, hover text and borders, the short underline beneath page titles, the top edge of cards, fold arrows, the chord chart's repeat signs, lit map dots.
+- **Welsh Flag Red** (`welsh-red`): the accent. As a **fill** (`--accent`, the same in both themes, always with white text): primary buttons, the chosen language and segment, the skip link, the heard piano key, selection highlight. As **ink** (`--accent-ink`): focus outlines, hover text and borders, fold chevrons, the chord chart's repeat signs, lit map dots.
 - **Night Red** (`brand-red-night`, `accent-ink-night`): the ink and the site name in dark mode, 4.5:1 or more on every dark surface. Fills stay Welsh Flag Red, because white on Night Red is only 3.6:1. Inside the score's cream paper the ink stays Welsh Flag Red in both themes.
 - **Red Wash** (`welsh-red-soft`): a 10% tint of the red for hovered/selected suggestions, places and the search focus ring.
 
@@ -212,14 +214,14 @@ A warm off-white room framed in Welsh slate, with Welsh flag red used sparingly 
 
 ### Hierarchy
 - **Brand** (700, 1.75rem; 1.25rem on phones): the site name in Welsh red beside the harp icon.
-- **Headline** (700, 2rem, 1.2): page titles, with a short red bar (3rem × 3px) beneath.
+- **Headline** (700, 2rem, 1.2): page titles, with nothing beneath: the size carries them, and the carthen band is already above.
 - **Title** (700, 1.35rem): section headings, often with a carthen strip beneath; also the practice-mode page title.
 - **Card title** (700, 1.15rem): card and offline-card headings; also the big home search's text.
 - **Body** (400, 16px, 1.55): all reading text; long prose capped near 50rem.
 - **Lead** (1.1rem): the opening line of a page.
 - **Caption** (0.9rem, muted): notes under controls, footer, statuses, secondary lists.
 - **Small** (0.85rem): the language switch, town labels on the map, compact controls on small phones.
-- **Label** (600, 0.8rem, 0.06em, uppercase, muted): small group labels over pill rows ("Key").
+- **Label** (600, 0.9rem, sentence case, ink): group labels over pill rows and lists ("Key", "Next seven days").
 - **Keycap** (600, 0.75rem mono, bordered): keyboard shortcut hints like `/`.
 
 ### Named Rules
@@ -258,7 +260,7 @@ Mostly flat: surfaces are separated by hairline borders and tonal steps (off-whi
 
 ## Shapes
 
-Gentle, consistent corners: 8px on buttons, cards, inputs, tabs, panels and the score; full pills (999px) for search fields and filter/key pills; 6px for small insets (audio bar, previews); 2px for swatches; 4px for keycaps; round for preview play buttons. Cards carry a 3px Welsh-red top edge. Woven geometry (the carthen band, the rotated cream diamond inside each swatch) is the one recurring motif; it appears as bands and small marks, never as large fills.
+Gentle, consistent corners: 8px on buttons, cards, inputs, tabs, panels and the score; full pills (999px) for search fields and filter/key pills; 6px for small insets (audio bar, previews); 2px for swatches; 4px for keycaps; round for preview play buttons. Woven geometry (the carthen band, the rotated cream diamond inside each swatch) is the one recurring motif; it appears as bands and small marks, never as large fills.
 
 ## Components
 
@@ -276,20 +278,23 @@ Plain and sturdy throughout: thin borders, gentle corners, red only on hover and
 - **Style:** fully rounded white pills with a hairline border, in wrapping rows.
 - **Type pills:** a small woven swatch in the type's colourway; chosen = border in the colourway, 14% tint fill, bold.
 - **Key / plain pills:** chosen = filled slate, white text, bold.
-- **All chosen pills** get a ✓ before the label, so the state is never colour alone.
+- **All chosen pills** get a drawn tick before the label, so the state is never colour alone.
 
 ### Cards / Containers
 - **Corner Style:** 8px.
 - **Background:** card white.
-- **Border:** hairline, with a 3px Welsh-red top edge.
+- **Border:** hairline only. The title carries the card; no coloured edge.
 - **Internal Padding:** 1rem 1.1rem.
-- **Variants:** the offline card swaps the red edge for a thin carthen strip along its top; folding panels (practice tools, ABC source) use a red ▸ that turns when open.
+- **Variants:** the offline card has a thin carthen strip along its top (the one card that does); folding panels (practice tools) use a red chevron that turns when open.
 
 ### Inputs / Fields
 - **Search:** full pill, 1.5px hairline border, magnifier icon inset left, `/` keycap hint right (hidden on touch). Focus: red border plus a 3px red-wash ring. Suggestions drop below in a floating card; the one Enter opens has a red bar down its left side.
 - **Selects:** 8px corners, hairline border, white.
 - **Range / checkbox:** native, tinted with `accent-color` Welsh red.
 - **Segmented control:** joined buttons in one bordered group; the chosen one fills red with white text.
+
+### Icons
+Drawn, never typed: the search magnifier, microphone, share, play and stop are inline SVGs in a 1.8 rounded stroke or solid fill; the chevron (on every `summary`, the Menu button and the Print menu) and the pill tick are SVG masks (`--chevron`, `--tick`) in the text's colour, so they follow the theme. A chevron points right when closed and turns down when open. Unicode stays for content only: the whistle fingering charts (● ○ ◐), "·" separators, and the "✓" in short confirmations ("✓ Link copied").
 
 ### Navigation
 - **Sidebar:** pale slate, sticky, the name in red at top, a two-button language switch (chosen = red), then search, actions, and a list of links separated by a hairline. Links go red with underline on hover.
@@ -309,7 +314,7 @@ One cell per bar in rows of 4 (3 or 5 where the part divides that way), bold 1.1
 G3–A5, ivory white keys (`#fffdf8`) with mid-grey borders and dark ink black keys; hover warms to carthen cream; a pressed or heard key flashes Welsh red. Scrolls horizontally inside itself on a phone.
 
 ### Map of Wales
-Land in land grey as a mask so it follows the theme; session towns as small slate dots that keep their size when zoomed; the current or lit town in red; popups are cards with a red top edge and the floating shadow.
+Land in land grey as a mask so it follows the theme; session towns as small slate dots that keep their size when zoomed; the current or lit town in red; popups are plain hairline cards with the floating shadow.
 
 ## Do's and Don'ts
 
@@ -317,7 +322,7 @@ Land in land grey as a mask so it follows the theme; session towns as small slat
 - **Do** keep Welsh red for accents, focus, chosen states and the brand name only.
 - **Do** put all sheet music on cream paper with black notes, in both themes.
 - **Do** separate surfaces with a 1px hairline and a tonal step first; keep shadows faint.
-- **Do** mark a chosen state with more than colour (a ✓, weight, an underline bar or a fill).
+- **Do** mark a chosen state with more than colour (a drawn tick, weight, an underline bar or a fill).
 - **Do** use the carthen band as a strip or edge (14px or 7px), never as a full background.
 - **Do** define every colour as a token in `:root` with a dark-mode value, and check it in forced-colors mode.
 - **Do** use `--accent-ink` for red lines and text and `--accent` for red fills with white text.
@@ -325,6 +330,9 @@ Land in land grey as a mask so it follows the theme; session towns as small slat
 - **Do** limit hover styles to `(hover: hover)` devices, and keep transitions short (.15s) and off under reduced motion.
 
 ### Don't:
+- **Don't** put a coloured bar on one edge of a card or popup, or a short accent bar under a heading: the carthen strip is the system's one heading mark.
+- **Don't** set labels in small tracked uppercase; use sentence case at .9rem, semibold.
+- **Don't** use Unicode glyphs (▶ ▸ ▾ ⌫ ■) as icons; draw them.
 - **Don't** add web fonts or a second typeface.
 - **Don't** fill large areas with Welsh red or carthen pattern.
 - **Don't** invert or dark-theme the sheet music.

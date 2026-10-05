@@ -220,7 +220,7 @@ def test_print(page, mode, score, chords_on_score, chart):
     page.wait_for_selector(".chart .bar")
     page.evaluate("window.print = () => {}")  # the real print dialog can't be driven
     page.select_option("#key-select", "2")  # prints in the key chosen on the page
-    page.click("text=Print / save ▾")
+    page.click("text=Print / save")
     page.click(f".print-menu >> text='{mode}'")
     page.emulate_media(media="print")
     assert page.locator(".score").is_visible() == score
@@ -239,12 +239,12 @@ def test_print(page, mode, score, chords_on_score, chart):
 
 def test_print_menu(page):
     page.goto_site("?tune=glandyfi")
-    page.click("text=Print / save ▾")
+    page.click("text=Print / save")
     assert page.locator(".print-menu").is_visible()
     page.mouse.click(5, 900)  # clicking elsewhere closes it
     assert not page.locator(".print-menu").is_visible()
     page.goto_site("?tune=cawl-cennin")  # no chords: no chord printing, but still saving
-    page.click("text=Print / save ▾")
+    page.click("text=Print / save")
     assert page.locator(".print-menu button").all_inner_texts() == ["Print the sheet music", "Save as ABC", "Save as MIDI"]
 
 
@@ -374,7 +374,7 @@ def test_save_abc_and_midi(page):
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-staff")
     page.select_option("#key-select", "2")  # G major -> A major
-    page.click("text=Print / save ▾")
+    page.click("text=Print / save")
     with page.expect_download() as info:
         page.click(".print-menu >> text='Save as ABC'")
     abc = open(info.value.path(), encoding="utf-8").read()
@@ -383,7 +383,7 @@ def test_save_abc_and_midi(page):
     sizes = {}
     for play in ["Tune only", "Tune and chords"]:
         page.click(f".playback label:has-text('{play}')")
-        page.click("text=Print / save ▾")
+        page.click("text=Print / save")
         with page.expect_download() as info:
             page.click(".print-menu >> text='Save as MIDI'")
         data = open(info.value.path(), "rb").read()
@@ -1882,7 +1882,7 @@ def test_chosen_key_stands_out(browser, site, scheme):
     chosen = page.eval_on_selector(".pills.keys [aria-pressed=true]", look)
     other = page.eval_on_selector(".pills.keys [aria-pressed=false]", look)
     assert chosen[0] != other[0] and chosen[1] != other[1]  # its own fill and text colour
-    assert "✓" in chosen[2] and "✓" not in other[2]
+    assert chosen[2] != "none" and other[2] == "none"  # the drawn tick
     context.close()
 
 
@@ -1997,7 +1997,7 @@ def test_notes_page(page):
     assert "q=D%20G%20B%20D%20C%20B%20G%20A" in page.url
     assert page.locator(".notes-results li a").first.inner_text() == "Glandyfi"
     # The best matches show their opening bars, with a play button.
-    page.wait_for_function("document.querySelectorAll('.notes-results .preview svg').length === 5")
+    page.wait_for_function("document.querySelectorAll('.notes-results .preview-score svg').length === 5")
     assert page.locator(".notes-results .preview-play").count() == 5
 
 
@@ -2041,19 +2041,20 @@ def test_preview_can_be_stopped(page):
       ABCJS.synth.CreateSynth = function () { const s = new P(); const start = s.start;
         s.start = function (...a) { window.__started++; return start.apply(this, a); }; return s; }; }""")
     button.click()
-    assert button.inner_text() == "■" and button.get_attribute("aria-label").startswith("Stop")
+    playing = lambda b: b.get_attribute("data-playing") == "true"
+    assert playing(button) and button.get_attribute("aria-label").startswith("Stop")
     # It really plays: abcjs stops the synth itself while getting it ready, which must
     # not count as pressing stop.
     page.wait_for_function("window.__started === 1")
     page.wait_for_timeout(500)
-    assert button.inner_text() == "■"
+    assert playing(button)
     button.click()
-    assert button.inner_text() == "▶" and button.get_attribute("aria-label").startswith("Play")
+    assert not playing(button) and button.get_attribute("aria-label").startswith("Play")
     # Starting another preview stops the first.
     button.click()
     page.locator(".notes-results .preview-play").nth(1).click()
-    assert button.inner_text() == "▶"
-    assert page.locator(".notes-results .preview-play").nth(1).inner_text() == "■"
+    assert not playing(button)
+    assert playing(page.locator(".notes-results .preview-play").nth(1))
 
 
 def test_browse_groups_are_labelled(page):

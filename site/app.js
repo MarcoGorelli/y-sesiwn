@@ -572,6 +572,11 @@ const micIcon = () => svg("svg", { viewBox: "0 0 24 24", class: "mic-icon", "ari
   svg("rect", { x: 9, y: 3, width: 6, height: 11, rx: 3, fill: "currentColor" }),
   svg("path", { d: "M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7", fill: "none", stroke: "currentColor",
     "stroke-width": 1.8, "stroke-linecap": "round" }));
+// Play and stop, drawn to sit with the microphone: a rounded triangle and square.
+const playIcon = () => svg("svg", { viewBox: "0 0 24 24", class: "play-icon", "aria-hidden": "true" },
+  svg("path", { d: "M8 5.5v13l10.5-6.5z", fill: "currentColor", stroke: "currentColor", "stroke-width": 1.8, "stroke-linejoin": "round" }));
+const stopIcon = () => svg("svg", { viewBox: "0 0 24 24", class: "stop-icon", "aria-hidden": "true" },
+  svg("rect", { x: 6.5, y: 6.5, width: 11, height: 11, rx: 1.5, fill: "currentColor" }));
 const canListen = () => !!navigator.mediaDevices?.getUserMedia && "AudioContext" in window;
 
 // ---- The notes page: find a tune by its notes (?page=notes&q=D E F# G A) ----------
@@ -587,16 +592,17 @@ function tunePreview(tune) {
   const first = lines.slice(k + 1).find((l) => l.trim() && !/^(%|[A-Za-z]:)/.test(l)) ?? "";
   const abc = setTempo([...head, first.replace(/\s*(:\||\|)?\s*$/, " |]")].join("\n"), tune.beat, tune.bpm);
   const paper = el("div", { class: "preview-score hide-chords" });
-  const button = el("button", { type: "button", class: "preview-play", "aria-label": tr(`Play the opening of ${tune.base}`, `Chwarae dechrau ${tune.base}`) }, "▶");
+  const button = el("button", { type: "button", class: "preview-play", "aria-label": tr(`Play the opening of ${tune.base}`, `Chwarae dechrau ${tune.base}`), "data-playing": "false" }, playIcon());
   const box = el("div", { class: "preview" }, button, paper);
   requestAnimationFrame(() => {
     const visualObj = ABCJS.renderAbc(paper, abc, { responsive: "resize", paddingtop: 0, paddingbottom: 0, add_classes: true })[0];
     nameScore(paper);
-    // ▶ plays the opening; while it plays the button is ■, which stops it.
+    // Play plays the opening; while it plays the button is a stop button.
     let playing = null;
     const done = () => {
       playing = null;
-      button.textContent = "▶";
+      button.replaceChildren(playIcon());
+      button.dataset.playing = "false";
       button.setAttribute("aria-label", tr(`Play the opening of ${tune.base}`, `Chwarae dechrau ${tune.base}`));
     };
     button.onclick = () => {
@@ -609,7 +615,8 @@ function tunePreview(tune) {
       const preview = { stop() { clearTimeout(timer); synth.stop(); if (playing === preview) done(); } };
       state.keyNote = preview;  // one sound at a time, like the keyboard
       playing = preview;
-      button.textContent = "■";
+      button.replaceChildren(stopIcon());
+      button.dataset.playing = "true";
       button.setAttribute("aria-label", tr(`Stop the opening of ${tune.base}`, `Stopio dechrau ${tune.base}`));
       synth.init({ visualObj, options: AUDIO_PARAMS }).then(() => synth.prime()).then(({ duration }) => {
         if (state.keyNote !== preview || playing !== preview) return;
@@ -708,7 +715,7 @@ function notesSearch({ autoListen = false } = {}) {
   const listenStatus = el("p", { class: "listen-status", "aria-live": "polite", hidden: true });
   const listenButton = el("button", { type: "button", class: "listen", onclick: () => toggleListening() });
   const showListening = (on) => {
-    listenButton.replaceChildren(on ? tr("■ Stop listening", "■ Stopio gwrando") : micIcon(), on ? "" : tr(" Play it to me", " Chwaraewch hi i mi"));
+    listenButton.replaceChildren(on ? stopIcon() : micIcon(), on ? tr(" Stop listening", " Stopio gwrando") : tr(" Play it to me", " Chwaraewch hi i mi"));
     listenButton.classList.toggle("on", on);
   };
   const light = (midi) => {
@@ -752,7 +759,7 @@ function notesSearch({ autoListen = false } = {}) {
   showListening(false);
   const edit = el("div", { class: "note-edit" },
     el("button", { type: "button", "aria-label": tr("Delete last note", "Dileu'r nodyn olaf"), onclick: () => {
-      input.value = input.value.trimEnd().replace(/\s*\S+$/, ""); update(); } }, tr("⌫ Delete", "⌫ Dileu")),
+      input.value = input.value.trimEnd().replace(/\s*\S+$/, ""); update(); } }, tr("Delete", "Dileu")),
     el("button", { type: "button", onclick: () => { input.value = ""; update(); } }, tr("Clear", "Clirio")));
   update();
   // From the home page's "Play it to me": start listening straight away.
@@ -1787,7 +1794,7 @@ function printButton(tune, paper, settings) {
   const toggle = el("button", { type: "button", "aria-haspopup": "menu", "aria-expanded": "false", onclick: () => {
     menu.hidden = !menu.hidden;
     toggle.setAttribute("aria-expanded", String(!menu.hidden));
-  } }, tr("Print / save", "Argraffu / cadw"), el("span", { "aria-hidden": "true" }, " ▾"));
+  } }, tr("Print / save", "Argraffu / cadw"), el("span", { class: "chevron", "aria-hidden": "true" }));
   // Clicking anywhere else closes it (and once the page has gone, stop listening).
   const close = (e) => {
     if (!wrap.isConnected) document.removeEventListener("pointerdown", close);

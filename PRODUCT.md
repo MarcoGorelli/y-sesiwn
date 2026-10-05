@@ -44,7 +44,7 @@ Y Sesiwn (https://ysesiwn.cymru/) is a free, open-source collection of Welsh fol
 - Voice: plain, friendly, short; Welsh and English at equal standing. Thanks expressed in Welsh (*Diolch yn fawr*).
 
 ## Evidence on Hand
-- 787 tunes (813 folders in `tunes/`, counting versions), from CLERA's Alawon Cymru (arrangements mostly by Meurig Williams) and Brian Martin's ABC transcriptions (Blodau'r Grug, Edward Jones, Mary Richards and others), credited per tune.
+- 606 tunes (787 versions, in 813 folders in `tunes/`), from CLERA's Alawon Cymru (arrangements mostly by Meurig Williams) and Brian Martin's ABC transcriptions (Blodau'r Grug, Edward Jones, Mary Richards and others), credited per tune.
 - Sessions and places in `sessions.json` / `places.json`; pronunciations in `pronunciation.json`.
 - No testimonials, user counts, press or endorsements exist; do not invent them. Organisations linked on the About page (CLERA, trac cymru, Tŷ Cerdd) are pointers, not endorsements.
 

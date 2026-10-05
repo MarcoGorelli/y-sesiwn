@@ -30,6 +30,10 @@
   --shadow-soft: #0000001f;
   /* Red and black striped Welsh flannel (as in a pais or betgwn), down the edge of a call-out */
   --flannel: linear-gradient(to right, #C8102E 0 2.5px, #1d1d1b 2.5px 4px, #C8102E 4px 7px) left / 7px 100% no-repeat;
+  /* Drawn icons, used as masks so they take the text colour: a chevron (pointing right)
+     and a tick, in the same 1.8 rounded stroke as the search, microphone and share icons */
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 5 7 7-7 7'/%3E%3C/svg%3E");
+  --tick: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4.5 12.5 5 5 10-11'/%3E%3C/svg%3E");
   --search-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2366707a' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='m15.5 15.5 5 5'/%3E%3C/svg%3E");
   color-scheme: light dark;
 }
@@ -67,10 +71,6 @@ body {
 a { color: var(--link); }
 ::selection { background: var(--accent); color: #fff; }
 h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 .5rem; }
-main h1::after, .guide h1::after {    /* short red underline under page titles */
-  content: ""; display: block; width: 3rem; height: 3px;
-  margin-top: .45rem; border-radius: 2px; background: var(--accent-ink);
-}
 h2 { font-size: 1.35rem; margin: 2rem 0 .75rem; }
 button, input, select { font: inherit; color: inherit; }
 .skip-link {  /* out of sight until it has keyboard focus */
@@ -239,7 +239,9 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .notes-results .preview { display: flex; align-items: center; gap: .5rem; margin: .2rem 0 .6rem; max-width: 36rem; }
 .preview-score { flex: 1; min-width: 0; background: var(--paper); border-radius: 6px; padding: .2rem .4rem; color: #000; }
 .preview-score .abcjs-tempo { display: none; }  /* the tempo only sets playback speed */
-.preview-play { flex: none; width: 2.2rem; height: 2.2rem; padding: 0; border-radius: 50%; font-size: .9rem; }
+.preview-play { flex: none; width: 2.2rem; height: 2.2rem; padding: 0; border-radius: 50%; font-size: .9rem; display: grid; place-items: center; }
+.preview-play svg { width: 1.1rem; height: 1.1rem; }
+.preview-play .play-icon { margin-left: .15rem; }  /* optically centred */
 .notes-search .listen { font-size: 1.1rem; padding: .6rem 1.1rem; margin-bottom: .8rem; }
 .notes-search .listen:not(.on) { background: var(--accent); border-color: var(--accent); color: #fff; }
 .notes-how { margin-top: 2rem; }
@@ -275,7 +277,7 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .piano .white:active, .piano .black:active, .piano .key.heard { background: var(--accent); }
 .notes-search .listen.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 .listen-status { margin: .2rem 0 .3rem; font-size: .9rem; }
-.mic-icon { width: 1.1em; height: 1.1em; vertical-align: -.2em; }
+.mic-icon, .stop-icon { width: 1.1em; height: 1.1em; vertical-align: -.2em; }
 .note-edit { display: flex; gap: .4rem; margin: .1rem 0 .3rem; }
 .note-edit button { padding: .3rem .7rem; font-size: .9rem; }
 .notes-results { margin: .4rem 0 0; padding-left: 2.1rem; }  /* room for 2-digit numbers */
@@ -328,11 +330,18 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .music-size { display: flex; align-items: center; gap: .3rem; margin-left: auto; }
 .music-size .label { color: var(--muted); font-size: .9rem; margin-right: .2rem; }
 .music-size button { min-width: 2.4rem; font-weight: 600; }
-/* Folding sections (details.fold): a red arrow that turns when open */
-.fold > summary { cursor: pointer; list-style: none; display: flex; align-items: baseline; gap: .5rem; }
-.fold > summary::-webkit-details-marker { display: none; }
-.fold > summary::before { content: "▸" / ""; color: var(--accent-ink); transition: transform .15s; }
-.fold[open] > summary::before { transform: rotate(90deg); }
+/* Anything that folds open (details), and menus: a drawn chevron in the text's colour,
+   turned to point the way it opens. Red on the folding sections under the music. */
+summary { cursor: pointer; list-style: none; }
+summary::-webkit-details-marker { display: none; }
+summary::before, .chevron {
+  content: ""; display: inline-block; flex: none; width: .7em; height: .7em; margin-right: .35em; vertical-align: -.02em;
+  background: currentColor; mask: var(--chevron) center / contain no-repeat; transition: transform .15s;
+}
+details[open] > summary::before { transform: rotate(90deg); }
+.chevron { margin: 0 0 0 .35em; transform: rotate(90deg); }
+.fold > summary { display: flex; align-items: baseline; gap: .15rem; }
+.fold > summary::before { background: var(--accent-ink); }
 /* The practice tools under the music: loop a part, speed up, count-in, click, tablature */
 .practice-tools { margin-top: .75rem; border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .9rem; background: var(--card-bg); }
 .practice-tools > summary { padding: .2rem 0; }
@@ -348,14 +357,15 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .speed-note:empty { display: none; }
 .report-line { margin: 1rem 0 0; font-size: .9rem; line-height: 1.4; }
 .pills.keys { margin-top: 0; }
-.pills-label { margin: 1.5rem 0 .5rem; font-size: .8rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.pills-label { margin: 1.5rem 0 .5rem; font-size: .9rem; font-weight: 600; }
 :is(.pills.keys, .pills.plain) button { font-size: .9rem; }
 /* A chosen key (or day, or area: pills without a colour of their own): filled, as clear as a chosen type's colour */
 :is(.pills.keys, .pills.plain) button[aria-pressed="true"], :is(.pills.keys, .pills.plain) button[aria-pressed="true"]:hover:not(:disabled) {
   border-color: var(--chosen); background: var(--chosen); color: var(--on-chosen); font-weight: 600; }
 /* And a tick on whatever is chosen (types and keys), so it isn't told by colour alone;
    screen readers already say "pressed", so they skip it */
-.pills button[aria-pressed="true"]::before { content: "✓" / ""; margin-right: .35em; font-weight: 700; }
+.pills button[aria-pressed="true"]::before {
+  content: ""; flex: none; width: .9em; height: .9em; margin-right: .35em; background: currentColor; mask: var(--tick) center / contain no-repeat; }
 @media (hover: hover) { :is(.pills.keys, .pills.plain) button:hover:not(:disabled) { border-color: var(--slate); color: inherit; } }
 .tune-layout { display: grid; grid-template-columns: minmax(0, 3fr) minmax(14rem, 1fr); gap: 1.5rem; align-items: start; }
 .score {                     /* sheet music on cream "paper", also in dark mode */
@@ -373,7 +383,7 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 /* Player: red progress knob, and play/loop in red while they're on. */
 .score .abcjs-inline-audio .abcjs-midi-progress-indicator { background-color: var(--accent); }
 .score .abcjs-inline-audio .abcjs-btn.abcjs-pushed { background-color: var(--accent); }
-.card { border: 1px solid var(--border); border-top: 3px solid var(--accent-ink); border-radius: var(--radius); padding: 1rem 1.1rem; background: var(--card-bg); }
+.card { border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.1rem; background: var(--card-bg); }
 .card h2 { margin: 0 0 .6rem; font-size: 1.15rem; }
 .card dl { margin: 0; }
 .card dt { font-weight: 600; }
@@ -430,7 +440,7 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .map-popup {
   position: absolute; z-index: 5; width: max-content; max-width: 16rem;
   padding: .55rem .8rem; font-size: .9rem; line-height: 1.4;
-  background: var(--card-bg); border: 1px solid var(--border); border-top: 3px solid var(--accent-ink);
+  background: var(--card-bg); border: 1px solid var(--border);
   border-radius: var(--radius); box-shadow: 0 8px 24px var(--shadow-float);
   --dx: -50%; --dy: calc(-100% - 10px);
   transform: translate(var(--dx), var(--dy));
@@ -531,7 +541,7 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 
 /* Practice mode: just the controls and a big score, for a tablet on a music stand */
 body.practice { grid-template-columns: 1fr; }
-body.practice .nav, body.practice .tune-side, body.practice .card.chords, body.practice .site-footer, body.practice main h1::after, body.practice .aka { display: none; }
+body.practice .nav, body.practice .tune-side, body.practice .card.chords, body.practice .site-footer, body.practice .aka { display: none; }
 body.practice main { max-width: none; padding: 1rem 1.5rem 2rem; }
 body.practice h1 { font-size: 1.35rem; }
 body.practice .controls { margin: .5rem 0 1rem; }
@@ -567,8 +577,9 @@ body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 
   .sidebar-actions { display: flex; gap: .5rem; margin-left: auto; }
   .sidebar-actions button { padding: .35rem .8rem; }
   .menu-button { display: inline-block; }
-  .menu-button::after { content: " ▾" / ""; }  /* aria-expanded says it */
-  .sidebar.menu-open .menu-button::after { content: " ▴" / ""; }
+  .menu-button::after { content: ""; display: inline-block; width: .7em; height: .7em; margin-left: .35em; vertical-align: -.02em;
+    background: currentColor; mask: var(--chevron) center / contain no-repeat; transform: rotate(90deg); transition: transform .15s; }  /* aria-expanded says it */
+  .sidebar.menu-open .menu-button::after { transform: rotate(-90deg); }
   .sidebar-links { display: none; flex: 1 0 100%; flex-wrap: wrap; gap: .35rem 1rem; padding-top: .5rem; font-size: .9rem; }
   .sidebar.menu-open .sidebar-links { display: flex; }
   /* Key and Full screen, then tempo and swing: the music starts on the first screen. */
@@ -604,7 +615,6 @@ body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 
   /* "Chord chart": the title, the key and the chart, big enough for a music stand */
   body[data-print="chart"] .score { display: none !important; }
   body[data-print="chart"] main > h1 { display: block !important; font-size: 1.8rem; }
-  body[data-print="chart"] main > h1::after { display: none; }
   body[data-print="chart"] .card.chords { display: block !important; border: none; padding: 0; margin: 0; background: none; }
   body[data-print="chart"] .card.chords > h2, body[data-print="chart"] .chord-controls { display: none; }
   body[data-print="chart"] .print-key { display: block; margin: 0 0 1rem; font-size: 1.1rem; }
@@ -763,6 +773,9 @@ main h1:focus { outline: none; }
   .versions a.active small { color: HighlightText; }
   .segmented input:focus-visible + span { outline: 2px solid CanvasText; }
   .swatch { display: none; }
+  /* Drawn icons are masked backgrounds, which forced colours would blank out */
+  summary::before, .chevron, .menu-button::after, .pills button[aria-pressed="true"]::before { forced-color-adjust: none; background: CanvasText; }
+  .pills button[aria-pressed="true"]::before { background: HighlightText; }
   .score .abcjs-note_playing { fill: Highlight; }
   .wales-map circle.here, .wales-map circle.lit { fill: Highlight; }
 }

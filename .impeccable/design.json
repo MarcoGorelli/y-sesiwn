@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-05T13:04:16.918347+00:00",
+  "generatedAt": "2026-10-05T13:32:35.108301+00:00",
   "title": "Design System: Y Sesiwn",
   "extensions": {
     "colorMeta": {
@@ -622,7 +622,7 @@
       },
       "label": {
         "displayName": "Label",
-        "purpose": "Uppercase group labels over pill rows."
+        "purpose": "Sentence-case group labels over pill rows and lists."
       },
       "keycap": {
         "displayName": "Keycap",
@@ -635,6 +635,10 @@
       "small": {
         "displayName": "Small",
         "purpose": "Language switch, map town labels, compact phone controls."
+      },
+      "fine": {
+        "displayName": "Fine",
+        "purpose": "ABC source, the language switch on small phones."
       }
     },
     "shadows": [
@@ -755,15 +759,15 @@
       "refersTo": "pill-chosen",
       "description": "Filter pills: type pills carry a carthen swatch; chosen keys fill slate with a tick.",
       "html": "<div class=\"ds-pills\"><button class=\"ds-pill ds-pill-type\" style=\"--c:#2e6b4f\" aria-pressed=\"true\"><span class=\"ds-swatch\"></span>Rîl</button><button class=\"ds-pill ds-pill-type\" style=\"--c:#2f4f8f\" aria-pressed=\"false\"><span class=\"ds-swatch\"></span>Polca</button><button class=\"ds-pill ds-pill-key\" aria-pressed=\"true\">D</button><button class=\"ds-pill ds-pill-key\" aria-pressed=\"false\">G</button></div>",
-      "css": ".ds-pills { display: flex; flex-wrap: wrap; gap: .5rem; } .ds-pill { font: inherit; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size: 16px; display: inline-flex; align-items: center; border: 1px solid #dcdfe3; background: #fff; color: #262b31; border-radius: 999px; padding: .45rem .9rem; cursor: pointer; transition: border-color .15s, background-color .15s; } .ds-pill-type:hover { border-color: var(--c); } .ds-pill-key:hover { border-color: #3b4550; } .ds-pill:focus-visible { outline: 2px solid #C8102E; outline-offset: 2px; } .ds-pill[aria-pressed=\"true\"] { font-weight: 600; } .ds-pill[aria-pressed=\"true\"]::before { content: '✓'; margin-right: .35em; font-weight: 700; } .ds-pill-type[aria-pressed=\"true\"] { border-color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); } .ds-pill-key[aria-pressed=\"true\"] { background: #3b4550; border-color: #3b4550; color: #fff; } .ds-swatch { display: inline-block; position: relative; overflow: hidden; width: .95em; height: .95em; margin-right: .5em; border-radius: 2px; background: var(--c); box-shadow: inset 0 0 0 1px #00000022; } .ds-swatch::after { content: ''; position: absolute; inset: 21%; transform: rotate(45deg); background: linear-gradient(var(--c), var(--c)) center / 42% 42% no-repeat, #f3ead3; }"
+      "css": ".ds-pills { display: flex; flex-wrap: wrap; gap: .5rem; } .ds-pill { font: inherit; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size: 16px; display: inline-flex; align-items: center; border: 1px solid #dcdfe3; background: #fff; color: #262b31; border-radius: 999px; padding: .45rem .9rem; cursor: pointer; transition: border-color .15s, background-color .15s; } .ds-pill-type:hover { border-color: var(--c); } .ds-pill-key:hover { border-color: #3b4550; } .ds-pill:focus-visible { outline: 2px solid #C8102E; outline-offset: 2px; } .ds-pill[aria-pressed=\"true\"] { font-weight: 600; } .ds-pill[aria-pressed=\"true\"]::before { content: ''; width: .9em; height: .9em; margin-right: .35em; background: currentColor; -webkit-mask: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4.5 12.5 5 5 10-11'/%3E%3C/svg%3E\") center / contain no-repeat; mask: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4.5 12.5 5 5 10-11'/%3E%3C/svg%3E\") center / contain no-repeat; } .ds-pill-type[aria-pressed=\"true\"] { border-color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); } .ds-pill-key[aria-pressed=\"true\"] { background: #3b4550; border-color: #3b4550; color: #fff; } .ds-swatch { display: inline-block; position: relative; overflow: hidden; width: .95em; height: .95em; margin-right: .5em; border-radius: 2px; background: var(--c); box-shadow: inset 0 0 0 1px #00000022; } .ds-swatch::after { content: ''; position: absolute; inset: 21%; transform: rotate(45deg); background: linear-gradient(var(--c), var(--c)) center / 42% 42% no-repeat, #f3ead3; }"
     },
     {
       "name": "Card",
       "kind": "card",
       "refersTo": "card",
-      "description": "Details card with a Welsh-red top edge.",
+      "description": "Details card: hairline border, no coloured edge.",
       "html": "<div class=\"ds-card\"><h2>Details</h2><dl><dt>Type</dt><dd>Rîl</dd><dt>Trefniant</dt><dd>Meurig Williams</dd></dl></div>",
-      "css": ".ds-card { font: inherit; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size: 16px; max-width: 18rem; border: 1px solid #dcdfe3; border-top: 3px solid #C8102E; border-radius: 8px; padding: 1rem 1.1rem; background: #fff; color: #262b31; line-height: 1.55; } .ds-card h2 { margin: 0 0 .6rem; font-size: 1.15rem; } .ds-card dl { margin: 0; } .ds-card dt { font-weight: 600; } .ds-card dd { margin: 0 0 .5rem; }"
+      "css": ".ds-card { font: inherit; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size: 16px; max-width: 18rem; border: 1px solid #dcdfe3; border-radius: 8px; padding: 1rem 1.1rem; background: #fff; color: #262b31; line-height: 1.55; } .ds-card h2 { margin: 0 0 .6rem; font-size: 1.15rem; } .ds-card dl { margin: 0; } .ds-card dt { font-weight: 600; } .ds-card dd { margin: 0 0 .5rem; }"
     },
     {
       "name": "Score Paper",
@@ -842,7 +846,7 @@
       "**Do** keep Welsh red for accents, focus, chosen states and the brand name only.",
       "**Do** put all sheet music on cream paper with black notes, in both themes.",
       "**Do** separate surfaces with a 1px hairline and a tonal step first; keep shadows faint.",
-      "**Do** mark a chosen state with more than colour (a ✓, weight, an underline bar or a fill).",
+      "**Do** mark a chosen state with more than colour (a drawn tick, weight, an underline bar or a fill).",
       "**Do** use the carthen band as a strip or edge (14px or 7px), never as a full background.",
       "**Do** define every colour as a token in `:root` with a dark-mode value, and check it in forced-colors mode.",
       "**Do** use `--accent-ink` for red lines and text and `--accent` for red fills with white text.",
@@ -850,6 +854,9 @@
       "**Do** limit hover styles to `(hover: hover)` devices, and keep transitions short (.15s) and off under reduced motion."
     ],
     "donts": [
+      "**Don't** put a coloured bar on one edge of a card or popup, or a short accent bar under a heading: the carthen strip is the system's one heading mark.",
+      "**Don't** set labels in small tracked uppercase; use sentence case at .9rem, semibold.",
+      "**Don't** use Unicode glyphs (▶ ▸ ▾ ⌫ ■) as icons; draw them.",
       "**Don't** add web fonts or a second typeface.",
       "**Don't** fill large areas with Welsh red or carthen pattern.",
       "**Don't** invert or dark-theme the sheet music.",

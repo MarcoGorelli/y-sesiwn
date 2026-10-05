@@ -2967,14 +2967,13 @@ function renderOffline(main) {
         el("li", {}, b("Safari on a Mac"), ": ", b("File → Add to Dock"), " (macOS Sonoma or later)."),
         el("li", {}, b("Firefox"), ": it can't install websites as apps, but Y Sesiwn still works offline in the browser once it's loaded.")),
       el("h2", {}, "How it works"),
-      el("p", {}, "The first time you open the site, it quietly saves a copy of itself on your ",
-        "device: every tune, the map and these pages, about 1 MB. After that it works without a ",
-        "connection, whether or not you install it."),
-      el("p", {}, "The piano sounds for playback (another 2 MB) are all saved on a computer and in the installed ",
-        "app. In a phone's browser, to spare your data, only the notes you've played are kept, until you press ",
-        b("Save them now"), " above."),
-      el("p", {}, "When tunes are added or corrected, you see them as soon as you're online, and the copy on your ",
-        "device is brought up to date in the background.")));
+      el("p", {}, "Your browser keeps a copy of the site, as it does for pages you've visited, so the tunes, the ",
+        "map and these pages still open when you're offline. When tunes are added or corrected, you get them ",
+        "next time you're online."),
+      el("p", {}, "It takes about 1 MB, plus 2 MB for the piano sounds on a computer. On a phone, only the notes ",
+        "you've played are kept, until you press ", b("Save them now"), " above."),
+      el("p", {}, "To remove it, clear this site's data in your browser, as you would its cookies: click the icon ",
+        "at the left of the address bar, or look in your browser's privacy settings.")));
 }
 
 // ---- Sets: tunes to play together, kept in the link --------------------------------------

@@ -1243,13 +1243,34 @@ def test_loop_part_and_speed_up(browser, site):
         # Jump to just before the end of the tune and wait to come back round.
         page.evaluate("() => { const e = state.synth.timer.noteTimings.filter((e) => e.type === 'event'); "
                       "state.synth.seek((e.at(-1).milliseconds - 800) / 1000, 'seconds'); }")
-        page.wait_for_function(f"document.querySelector('.speed-note').textContent === 'now {bpm} bpm'", timeout=15000)
+        page.wait_for_function(f"document.querySelector('.speed-note').textContent === 'now {bpm} of 100 bpm'", timeout=15000)
         # Back in part B (not part A), still playing.
         page.wait_for_function(f"(() => {{ const n = document.querySelector('.abcjs-note_playing'); "
                                f"return n && state.synth.isStarted && "
                                f"[...document.querySelectorAll('.score .abcjs-note')].indexOf(n) >= 30; }})()", timeout=15000)
     page.click(".abcjs-midi-start")  # pause
     assert not errors, errors
+    context.close()
+
+
+def test_speed_up_arrives(browser, site):
+    # Sped up to the tune's usual tempo (100 bpm, from 95), the note says so: "da iawn".
+    context = browser.new_context(service_workers="block")
+    page = context.new_page()
+    page.goto(site + "?tune=glandyfi")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.fill("#tempo", "95")
+    page.dispatch_event("#tempo", "change")
+    page.select_option("#loop-select", "1")
+    page.check("text=Speed up each time")
+    page.click(".abcjs-midi-start")
+    page.wait_for_function("document.querySelector('.abcjs-note_playing') && state.synth.timer")
+    page.evaluate("() => { const e = state.synth.timer.noteTimings.filter((e) => e.type === 'event'); "
+                  "state.synth.seek((e.at(-1).milliseconds - 800) / 1000, 'seconds'); }")
+    page.wait_for_function("document.querySelector('.speed-note.arrived')", timeout=15000)
+    assert page.inner_text(".speed-note") == "Up to its usual speed, 100 bpm. Da iawn!"
+    assert page.get_attribute(".speed-note strong", "lang") == "cy"
+    page.click(".abcjs-midi-start")  # pause
     context.close()
 
 

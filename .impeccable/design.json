@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-05T13:32:35.108301+00:00",
+  "generatedAt": "2026-10-05T13:57:05.420982+00:00",
   "title": "Design System: Y Sesiwn",
   "extensions": {
     "colorMeta": {
@@ -703,6 +703,11 @@
         "name": "piano-key",
         "value": ".08s",
         "purpose": "Piano key background flash."
+      },
+      {
+        "name": "weave",
+        "value": "clip-path inset 100%→0, .7s cubic-bezier(.16,1,.3,1)",
+        "purpose": "The carthen strip under 'Da iawn!' when a part reaches its usual tempo; off under reduced motion."
       }
     ],
     "breakpoints": [
@@ -840,6 +845,11 @@
         "name": "The Hairline First Rule",
         "body": "Separate with a 1px hairline border and a tonal step before reaching for a shadow. Shadows are for things that float.",
         "section": "elevation"
+      },
+      {
+        "name": "The Earned Moment Rule",
+        "body": "Celebrate only what took effort (working a tune up to speed), never a click. Use the carthen and a word of Welsh, not confetti or emoji.",
+        "section": "components"
       }
     ],
     "dos": [

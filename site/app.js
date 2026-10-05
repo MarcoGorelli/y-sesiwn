@@ -1348,7 +1348,7 @@ function partLoop(controller, part, tune, settings, onSpeed) {
     const cap = Math.max(100, Math.round((100 * tune.bpm) / settings.bpm));
     if (settings.speedUp && inside && controller.warp < cap) {
       const warp = Math.min(cap, controller.warp + 5);
-      onSpeed(warp);
+      onSpeed(warp, cap);
       controller.setWarp(warp).then(seek);
     } else {
       seek();
@@ -1860,15 +1860,23 @@ function renderTune(main, group, tune) {
   const audio = el("div", { class: "audio" });
   const chords = chordCard(tune, () => redraw());
   const speedNote = el("span", { class: "caption speed-note", "aria-live": "polite" });
-  const onSpeed = (warp) => {
-    const bpm = Math.round((settings.bpm * warp) / 100);
-    speedNote.textContent = tr(`now ${bpm} bpm`, `nawr ${bpm} curiad y funud`);
+  // Speeding up: how far there is to go, then a "da iawn" (well done) when the part has
+  // been worked up to the tune's usual tempo, with a strip of carthen woven in under it.
+  const onSpeed = (warp, cap) => {
+    const bpm = Math.round((settings.bpm * warp) / 100), goal = Math.round((settings.bpm * cap) / 100);
+    const arrived = warp >= cap;
+    speedNote.classList.toggle("arrived", arrived);
+    speedNote.replaceChildren(arrived
+      ? tr(`Up to its usual speed, ${bpm} bpm. `, `Ar ei chyflymder arferol, ${bpm} curiad y funud. `)
+      : tr(`now ${bpm} of ${goal} bpm`, `nawr ${bpm} o ${goal} curiad y funud`));
+    if (arrived) speedNote.append(el("strong", { lang: "cy" }, "Da iawn!"));
   };
   let drawn = { parts: [] };
   // Drawing it again (a new tempo or key, a phone turned on its side) makes a new player:
   // if the tune was playing, it carries on from the same point in it.
   const redraw = () => {
     speedNote.textContent = "";
+    speedNote.classList.remove("arrived");
     const playingAt = state.synth?.isStarted ? state.synth.percent ?? 0 : null;
     drawn = drawScore(tune, paper, audio, chords?.querySelector(".chart-box"), onSpeed);
     const player = state.synth;

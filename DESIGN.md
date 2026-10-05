@@ -307,6 +307,11 @@ The score sits on cream paper in an 8px bordered panel with a resting shadow; no
 ### Carthen Band (signature)
 A repeating woven strip in Welsh red, slate and cream: 14px across the top of the page and footer, 7px under section headings (as long as the heading), along the top of the offline card, and beneath empty-state art.
 
+### Practice Tools: "Da iawn"
+The one celebration in the system, saved for real effort. While **Speed up** loops a part, a caption under the row says how far there is to go ("now 94 of 100 bpm"). When the part reaches the tune's usual tempo, the caption says so, ends with a red, Welsh **Da iawn!** (well done), and a 6rem strip of carthen weaves in under it, left to right, once (clip-path, 0.7s, exponential ease-out; static under reduced motion). The caption has its own line, so the controls never move; it is announced politely to screen readers.
+
+**The Earned Moment Rule.** Celebrate only what took effort (working a tune up to speed), never a click. Use the carthen and a word of Welsh, not confetti or emoji.
+
 ### Chord Chart
 One cell per bar in rows of 4 (3 or 5 where the part divides that way), bold 1.1rem chord names, muted bar lines, repeat signs as thick red bars with red colons; held chords muted.
 

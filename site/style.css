@@ -348,6 +348,7 @@ details[open] > summary::before { transform: rotate(90deg); }
 .practice-tools { margin-top: .75rem; border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .9rem; background: var(--card-bg); }
 .practice-tools > summary { padding: .2rem 0; }
 .practice-tools .caption { font-size: .85rem; }
+.practice-tools[open] > summary .caption { display: none; }  /* what's in it: only while it's folded */
 /* Three lines: repeat and speed up; count-in, click and swing; tablature */
 .practice-row { display: grid; gap: .7rem; margin: .6rem 0 .3rem; font-size: .9rem; }
 .practice-line { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1.5rem; }
@@ -547,10 +548,12 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .card.session .badge { display: inline-block; margin-left: .5rem; padding: .05rem .5rem; border: 1px solid var(--border);
   border-radius: 999px; font-size: .75rem; font-weight: 500; color: var(--muted); vertical-align: .15em; }
 .card.session p { margin: .3rem 0; }
-.card.session .confirmed { margin-top: .6rem; }
 .session-links .link-button { margin-left: 0; font-size: inherit; }
-.session-report { margin-top: .4rem; font-size: .9rem; }
-.session-report summary { cursor: pointer; color: var(--link); text-decoration: underline; }
+/* "Confirmed 2 Oct 2026 · Been lately? Tell us": one quiet line, which opens the form */
+.session-report { margin-top: .6rem; font-size: .9rem; }
+.session-report > summary { color: var(--muted); }
+.session-report > summary::before { display: none; }
+.session-report .tell { color: var(--link); text-decoration: underline; }
 .session-report fieldset { border: none; margin: .5rem 0; padding: 0; display: grid; gap: .3rem; }
 .add-session { margin-top: 2.5rem; max-width: 40rem; }
 /* Jumped to (from the introduction, or a town's dot): clear of the top bar pinned on phones */
@@ -816,3 +819,9 @@ dialog.shortcuts th { text-align: left; white-space: nowrap; padding: .35rem 1re
 dialog.shortcuts td { padding: .35rem 0; }
 dialog.shortcuts kbd { display: inline-block; min-width: 1.6em; padding: .05rem .4rem; border: 1px solid var(--border); border-bottom-width: 2px;
   border-radius: 4px; font: 600 .85rem/1.4 ui-monospace, monospace; text-align: center; background: var(--bg); }
+
+/* How to add a tune: the GitHub way, folded under the form */
+.github-way { margin-top: 2rem; }
+.github-way > summary { display: flex; align-items: baseline; }
+.github-way > summary h2 { display: inline; margin: 0; }
+.github-way > summary::before { width: .9em; height: .9em; }

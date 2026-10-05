@@ -308,7 +308,7 @@ scheduled runs after 60 days without a commit).
   seven days (counted from today, so a Sunday visit sees the week ahead), then,
   under *Further ahead*, any on announced dates up to four weeks off, each a
   link down to its card. The home page's *Upcoming sessions* lists the next
-  three, in order; then, under *Also coming up*, up to two on announced dates
+  three, in order; then, under *One-off dates*, up to two on announced dates
   that aren't among them (the occasional ones are easy to miss; the weekly ones
   are on next week too); then how many more there are in the next seven days.
   Both open an email, like the tune form. The sessions are listed by hand in

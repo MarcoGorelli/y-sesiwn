@@ -557,7 +557,7 @@ def test_practice_tools_folded_on_a_phone(browser, site, page):
 
 
 def test_upcoming_sessions(page):
-    # The home page lists the next few sessions in order; then, under "Also coming up", ones
+    # The home page lists the next few sessions in order; then, under "One-off dates", ones
     # on announced dates that aren't among them (up to four weeks ahead: the occasional
     # ones, easy to miss); then how many more there are in the next seven days.
     page.goto_site()
@@ -582,7 +582,7 @@ def test_upcoming_sessions(page):
     }""")
     venue = lambda t: t.split(" · ")[1].split(",")[0]
     assert [venue(t) for t in texts[:3]] == ["Venue 0", "Venue 1", "Venue 2"]  # the next three, in order
-    assert texts[3] == "Also coming up:" and [venue(t) for t in texts[4:6]] == ["Venue 5", "Venue 21"]  # not 40: too far
+    assert texts[3] == "One-off dates:" and [venue(t) for t in texts[4:6]] == ["Venue 5", "Venue 21"]  # not 40: too far
     assert texts[6].startswith("And 2 more in the next seven days")  # Venue 3 and 4
     page.click(".coming-up a[href='sesiynau/']")
     page.wait_for_selector(".card.session")
@@ -883,7 +883,7 @@ def test_install_card(browser, site, user_agent, touch, says):
     context = browser.new_context(user_agent=user_agent, has_touch=touch, service_workers="block")
     page = context.new_page()
     page.goto(site + "?page=offline")  # the home page's card only links here
-    assert says in page.locator(".offline-card").inner_text()
+    assert says in page.locator("main").inner_text()  # the card, or the list of steps under it
     context.close()
 
 
@@ -1408,7 +1408,7 @@ def test_sessions_page(page, site):
     sessions = b.session_data()
     assert page.locator(".card.session").count() == len(sessions)
     assert page.locator(".session-list .town h2").first.inner_text().startswith("Aberystwyth")  # towns A to Z
-    assert "Last confirmed" in page.locator(".card.session").first.inner_text()
+    assert "Confirmed " in page.locator(".card.session").first.inner_text()
     towns = {s["town"] for s in sessions}
     assert page.locator(".wales-map circle:not(.target):not(.off)").count() == len(towns)
     page.click(".pills [data-day='Friday']")
@@ -1518,6 +1518,9 @@ def test_send_a_tune(page):
     assert page.locator("main h2").first.inner_text() == "Send us a tune"
     assert page.locator("main h2", has_text="Or add it yourself on GitHub").count() == 1
     assert page.locator("main h2", has_text="1. Write the tune in ABC").count() == 1
+    assert not page.locator("main h2", has_text="1. Write the tune in ABC").is_visible()  # folded away
+    page.click(".github-way > summary")
+    assert page.locator("main h2", has_text="1. Write the tune in ABC").is_visible()
     assert "Not on GitHub" not in page.inner_text("main")
     page.evaluate(CATCH_MAIL)
     form = page.locator(".send-tune form")

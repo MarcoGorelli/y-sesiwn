@@ -1209,12 +1209,12 @@ function features() {
   const withChords = state.groupList.filter((g) => g.versions.some((v) => v.chords != null)).length;
   const items = state.lang === "cy" ? [
     [["Unrhyw gywair, unrhyw dempo"], ": trawsgyweiriwch alaw i siwtio'ch offeryn neu'ch llais, a gwrandewch arni gyda'r nodau'n goleuo."],
-    [["Ymarfer"], ": chwaraewch un rhan drosodd a throsodd gan gyflymu bob tro, gyda thablatur ar gyfer mandolin, ffidil neu gitâr."],
+    [["Ymarfer"], ": ailadroddwch yr alaw neu un rhan gan gyflymu bob tro, gyda thablatur ar gyfer mandolin, ffidil neu gitâr."],
     [["Cordiau"], `: cyfeiliant awgrymedig ar gyfer gitâr, piano neu delyn (${withChords} o alawon hyd yma).`],
     [[link("?page=sets", "Setiau")], ": casglwch alawon i'w chwarae gyda'i gilydd, yn eich cyweiriau chi, a'u rhannu fel dolen neu god QR."],
   ] : [
     [["Any key, any tempo"], ": transpose a tune for your instrument or voice, and hear it with the notes lit up."],
-    [["Practise"], ": loop a part and speed up each time round, with tablature for mandolin, fiddle or guitar."],
+    [["Practise"], ": repeat the tune or a part, speeding up each time, with tablature for mandolin, fiddle or guitar."],
     [["Chords"], `: suggested accompaniment for guitar, piano or harp (${withChords} tunes so far).`],
     [[link("?page=sets", "Sets")], ": gather tunes to play together, in your keys, and share them as a link or a QR code."],
   ];
@@ -2420,9 +2420,11 @@ function sessionReport(session, place) {
     el("input", { type: "radio", name, value, checked: i === 0 }), ` ${label}`));
   const message = el("textarea", { rows: 3 });
   const choice = () => choices.find(([value]) => value === radios.map((r) => r.querySelector("input")).find((r) => r.checked)?.value);
+  // One quiet line: when it was last confirmed, and the way to tell us it's changed.
+  const confirmed = dateLabel(dateOf(session.confirmed), { day: "numeric", month: "short", year: "numeric" });
   return el("details", { class: "session-report" },
-    el("summary", {}, tr("Been lately? Tell us if it's still on, or if something's changed",
-      "Wedi bod yn ddiweddar? Rhowch wybod a yw'n dal i gael ei chynnal, neu a oes rhywbeth wedi newid")),
+    el("summary", {}, el("span", { class: "confirmed" }, tr(`Confirmed ${confirmed}`, `Cadarnhawyd ${confirmed}`)), " · ",
+      el("span", { class: "tell" }, tr("Been lately? Tell us", "Wedi bod yn ddiweddar? Rhowch wybod"))),
     emailForm([el("fieldset", {}, el("legend", { class: "visually-hidden" }, tr("This session", "Y sesiwn hon")), radios),
       field(tr("Details (optional): the new time, say, or when you went", "Manylion (dewisol): yr amser newydd, er enghraifft, neu pryd aethoch chi"), message)], {
       subject: () => `Y Sesiwn: ${tr("session", "sesiwn")}, ${place} (${choice()[0]})`,
@@ -2513,8 +2515,6 @@ function sessionCard(session) {
       session.link ? [el("a", { href: session.link, target: "_blank", rel: "noopener" }, tr("More about it", "Rhagor amdani")), " · "] : null,
       next ? el("button", { type: "button", class: "link-button", onclick: () => download(`${session.id}.ics`, "text/calendar", sessionCalendar(session, next)) },
         tr("Add to calendar", "Ychwanegu at y calendr")) : null),
-    el("p", { class: "caption confirmed" }, tr(`Last confirmed ${dateLabel(dateOf(session.confirmed), { day: "numeric", month: "long", year: "numeric" })}.`,
-      `Cadarnhawyd ddiwethaf ${dateLabel(dateOf(session.confirmed), { day: "numeric", month: "long", year: "numeric" })}.`)),
     sessionReport(session, place));
 }
 
@@ -2589,7 +2589,7 @@ function upcomingSessions() {
     box.replaceChildren(...[
       el("h2", { class: "section-heading" }, tr("Upcoming sessions", "Sesiynau i ddod")),
       first.length ? el("ul", {}, first.map((x) => soonItem(x))) : null,
-      also.length ? el("p", { class: "also" }, tr("Also coming up:", "Hefyd i ddod:")) : null,
+      also.length ? el("p", { class: "also" }, tr("One-off dates:", "Dyddiadau arbennig:")) : null,
       also.length ? el("ul", {}, also.map((x) => soonItem(x))) : null,
       el("p", {}, el("a", { href: "sesiynau/", "data-route": true }, more
         ? tr(`And ${more} more in the next seven days: all sessions, on a map`, `A ${more} arall yn y saith diwrnod nesaf: pob sesiwn, ar fap`)
@@ -2726,7 +2726,7 @@ async function renderSessions(main) {
           town.county !== town.name ? el("span", { class: "caption" }, ` · ${tr(town.county, town.sessions[0].county_cy)}`) : null),
         town.sessions.filter((s) => fits(s)).map(sessionCard))));
   };
-  for (const day of DAYS) {
+  for (const day of DAYS.filter((d) => sessions.some((s) => s.day === d))) {  // only days with a session
     dayPills.append(el("button", { type: "button", "data-day": day, onclick: () => { chosenDay = chosenDay === day ? null : day; show(); } },
       `${tr(day, CY_DAYS[day])} ·\u00a0`, el("span", {})));
   }
@@ -2874,9 +2874,9 @@ function fillOfflineCard(card) {
       + "works offline in this browser too. For an app with its own window, open it in Chrome, Edge or Safari.",
       "Ni all Firefox osod gwefannau fel apiau, ond does dim angen: unwaith y bydd wedi llwytho, mae Y Sesiwn yn "
       + "gweithio all-lein yn y porwr hwn hefyd. Am ap yn ei ffenest ei hun, agorwch hi yn Chrome, Edge neu Safari."));
-  } else {
+  } else if (!full) {
     // Chrome or Edge on a computer when the browser doesn't offer our button (e.g. it's
-    // already installed, or hasn't decided yet).
+    // already installed, or hasn't decided yet). The offline page's list says the same.
     how = el("p", {}, tr("Click the install icon at the right-hand end of the address bar, or open the browser's menu and look for ",
       "Cliciwch yr eicon gosod ym mhen draw'r bar cyfeiriad ar y dde, neu agorwch ddewislen y porwr a chwiliwch am "),
       ui("Install Y Sesiwn"), tr(" (in Chrome under ", " (yn Chrome o dan "), ui("Cast, save and share"),
@@ -2886,12 +2886,12 @@ function fillOfflineCard(card) {
   card.replaceChildren(...[
     el("h2", {}, tr("Take it to the session", "Ewch â hi i'r sesiwn")),
     el("p", {}, isPhone() || isInstalled()
-      ? tr("Add Y Sesiwn to your home screen and it opens like an app, with every tune saved on your phone: it works in the pub even with no signal.",
-        "Ychwanegwch Y Sesiwn at eich sgrin gartref ac mae'n agor fel ap, gyda phob alaw wedi'i chadw ar eich ffôn: mae'n gweithio yn y dafarn hyd yn oed heb signal.")
-      : tr("Install Y Sesiwn on this computer and it opens like an app, in its own window, with every tune saved: it works even with no internet. (On a phone, add it to your home screen.)",
-        "Gosodwch Y Sesiwn ar y cyfrifiadur hwn ac mae'n agor fel ap, yn ei ffenest ei hun, gyda phob alaw wedi'i chadw: mae'n gweithio hyd yn oed heb y rhyngrwyd. (Ar ffôn, ychwanegwch hi at eich sgrin gartref.)")),
+      ? tr("Add it to your home screen and every tune works in the pub, even with no signal.",
+        "Ychwanegwch hi at eich sgrin gartref ac mae pob alaw'n gweithio yn y dafarn, hyd yn oed heb signal.")
+      : tr("Install it and every tune works with no internet, like an app. On a phone, add it to your home screen.",
+        "Gosodwch hi ac mae pob alaw'n gweithio heb y rhyngrwyd, fel ap. Ar ffôn, ychwanegwch hi at eich sgrin gartref.")),
     // The home page's card keeps to the browser's own install button; the steps are on the offline page.
-    full || installPrompt ? how : null, status,
+    (full || installPrompt) && how ? how : null, status,
     full ? null : el("p", { class: "more" }, el("a", { href: "?page=offline", "data-route": true },
       tr("How to install it and use it offline", "Sut i'w gosod a'i defnyddio all-lein"))),
   ].filter(Boolean));
@@ -3538,9 +3538,11 @@ async function renderGuide(main, key) {
   guide.querySelectorAll('a[href^="?"]').forEach((a) => a.setAttribute("data-route", ""));
   // Code examples scroll sideways on a phone; focusable, so the keyboard can scroll them too.
   guide.querySelectorAll("pre").forEach((pre) => pre.setAttribute("tabindex", "0"));
-  if (key === "add") {  // the easy way first; the GitHub steps follow
+  if (key === "add") {  // the easy way first; the GitHub steps follow, folded away
+    const steps = [...guide.children].slice(1);  // everything under the page's heading
     guide.querySelector("h1").after(sendTuneForm(),
-      el("h2", {}, tr("Or add it yourself on GitHub", "Neu ei hychwanegu eich hun ar GitHub")));
+      el("details", { class: "github-way" },
+        el("summary", {}, el("h2", {}, tr("Or add it yourself on GitHub", "Neu ei hychwanegu eich hun ar GitHub"))), steps));
   }
   // Only show it if we're still on this page (the fetch may finish after leaving).
   if (new URLSearchParams(location.search).get("page") === key) main.replaceChildren(guide);

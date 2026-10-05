@@ -9,12 +9,6 @@ Mae'n brosiect addysgol, anfasnachol, i unrhyw un sydd â diddordeb yng
 ngherddoriaeth a diwylliant traddodiadol Cymru: chwaraewyr, dysgwyr, athrawon,
 a'r rhai chwilfrydig. Does dim yn cael ei werthu yma, a does dim hysbysebion.
 
-## Mewn sesiwn
-
-Unwaith y byddwch wedi agor y wefan mae'n gweithio heb signal (gweler
-[Defnyddio'r Sesiwn all-lein](?page=offline)), ac mae'r botwm **Argraffu** ar
-bob alaw yn rhoi sgôr glân yn y cywair rydych chi wedi'i ddewis.
-
 ## Y sesiwn
 
 Mae *sesiwn* yn gyfarfod anffurfiol o gerddorion yn chwarae alawon

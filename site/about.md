@@ -9,12 +9,6 @@ It's an educational, non-commercial project, for anyone interested in Welsh
 traditional music and culture: players, learners, teachers, and the simply
 curious. Nothing here is sold, and there are no adverts.
 
-## At a session
-
-Once you've opened the site it works without a signal (see
-[Use Y Sesiwn offline](?page=offline)), and the **Print** button on each tune
-gives clean sheet music in the key you've chosen.
-
 ## The sesiwn
 
 A *sesiwn* (session) is an informal gathering of musicians playing traditional

@@ -2253,12 +2253,13 @@ def test_player_stays_in_reach(browser, site):
         page.evaluate("window.scrollTo(0, 600)")
         box = start.bounding_box()
         assert 0 <= box["y"] and box["y"] + box["height"] <= args["viewport"]["height"]
-        bar = page.locator(".abcjs-midi-progress-background")
-        assert bar.get_attribute("role") == "slider"
+        seek = page.locator(".score .seek")  # a real slider over abcjs's position bar (a button)
+        assert seek.get_attribute("type") == "range" and seek.get_attribute("aria-label") == "Position in the tune"
         start.click()  # pause
-        bar.focus()
+        seek.focus()
         page.keyboard.press("End")
-        assert int(bar.get_attribute("aria-valuenow")) > 90
+        assert int(seek.input_value()) == 100 and page.evaluate("state.synth.percent") > .9
+        assert seek.get_attribute("aria-valuetext").endswith("%)")
         context.close()
 
 
@@ -2297,18 +2298,24 @@ def test_copy_link_where_there_is_no_share_sheet(page):
 
 
 def test_sound_note_under_the_player(browser, site):
-    # On a phone, once playback is used, the tune page says how to have every piano note
-    # for no signal, and says nothing once they're saved.
+    # On a phone, the tune page says under the player how to have every piano note for no
+    # signal, before anything is played (that's too late at the session), with the same
+    # button as the home page; with no signal, what will still sound; nothing once saved.
     context = browser.new_context(**PHONE)
     page = context.new_page()
     page.goto(site + "?tune=glandyfi")
     page.wait_for_function("state.offlineReady && state.sounds", timeout=30000)
-    assert page.locator(".sound-note").is_hidden()  # nothing played yet
-    page.evaluate("soundPlayed()")
-    assert "save the piano sounds" in page.inner_text(".sound-note")
-    page.click(".sound-note button")
+    note = page.locator(".sound-note")
+    assert "Save the piano sounds for no signal" in note.inner_text()
+    assert note.bounding_box()["y"] < page.locator(".score .abcjs-staff").first.bounding_box()["y"]  # above the music
+    context.set_offline(True)
+    page.evaluate("dispatchEvent(new Event('offline'))")
+    assert "notes you've played before will sound" in note.inner_text()
+    context.set_offline(False)
+    page.evaluate("dispatchEvent(new Event('online'))")
+    page.click(".sound-note button.save-sounds")
     page.wait_for_function("state.sounds.saved === state.sounds.total", timeout=30000)
-    assert page.locator(".sound-note").is_hidden()
+    assert note.is_hidden()
     context.close()
 
 
@@ -2633,16 +2640,19 @@ def test_tune_page_before_the_other_tunes(page, site):
 
 def test_music_stand_on_a_phone(browser, site):
     # Full screen on a phone is a music stand: the key and tempo folded into their line even
-    # if they were open, the player pinned at the top, and the playing line kept in view.
+    # if they were open, the player pinned at the top, and the playing line kept in view
+    # (when the tune is longer than the screen: a short one stays put).
     context = browser.new_context(service_workers="block", **PHONE)
     page = context.new_page()
-    page.goto(site + "alaw/abaty-waltham/?tempo=200")
+    page.goto(site + "alaw/walts-dinefwr/?tempo=200")  # a long tune: more than a screen, even on the stand
     page.wait_for_selector(".score .abcjs-inline-audio")
     page.click(".controls-summary")
     page.click(".practice-toggle")
     assert not page.locator("#key-select").is_visible()
     assert page.locator(".score").bounding_box()["y"] < 200
     page.click(".score .abcjs-midi-start")
+    page.wait_for_function("document.querySelector('.abcjs-note_playing')")
+    page.evaluate("state.synth.seek(.6)")  # on to the lines further down
     page.wait_for_function("scrollY > 100", timeout=30000)  # followed the music down
     assert page.locator(".score > .audio").bounding_box()["y"] < 5  # pinned
     context.close()

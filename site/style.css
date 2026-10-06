@@ -228,7 +228,11 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .offline-card .steps li { margin-bottom: .25rem; }
 .offline-card .status { color: var(--muted); font-size: .9rem; margin: .7rem 0 0; }
 /* Saving the piano sounds: the one thing to do before a session with no signal */
-.offline-card .save-sounds { display: block; margin-top: .5rem; }
+.offline-card .save-sounds { display: block; margin-top: .5rem; color: var(--text); font-size: 1rem; }  /* not the status line's muted grey */
+/* Under a tune's player (on the cream paper): the words, then the same button, small */
+.score > .sound-note { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .75rem; }
+.score > .sound-note[hidden] { display: none; }
+.score > .sound-note .save-sounds { padding: .3rem .7rem; font-size: .85rem; background: #fff; color: #262b31; border-color: #dcdfe3; }
 .offline-card .more { font-size: .9rem; margin: .3rem 0 0; }
 .offline-card.full { margin-top: 0; }
 .share-icon { width: 1.15em; height: 1.15em; vertical-align: -.2em; color: var(--link); }
@@ -437,6 +441,12 @@ details[open] > summary::before { transform: rotate(90deg); }
   top: 3px; width: var(--handle); height: var(--handle); margin-left: calc(var(--handle) / -2);
   border-radius: 50%; background-color: var(--ivory); box-shadow: inset 0 0 0 1px var(--key-edge), 0 1px 3px var(--shadow-float);
 }
+/* The slider over the bar (app.js): unseen, but it's what's pressed and dragged; the bar
+   under it shows the position, and its outline shows keyboard focus. */
+.score .seek-track { position: relative; flex: 1; display: flex; align-items: center; min-width: 0; }
+.score .seek-track .abcjs-midi-progress-background { flex: 1; }
+.score .seek-track .seek { position: absolute; inset: 0 8px 0 15px; width: auto; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.score .seek-track:has(.seek:focus-visible) .abcjs-midi-progress-background { outline: 2px solid var(--ivory); outline-offset: 2px; border-radius: 4px; }
 .score .abcjs-note_playing { fill: var(--accent); }
 .score .abcjs-note { cursor: pointer; }  /* a tap plays from that note (playFrom in app.js) */
 .score .abcjs-note_selected { fill: currentColor; }  /* …without leaving it marked */
@@ -542,8 +552,7 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .chart .repeat-end::after { content: ":" / ""; color: var(--accent-ink); font-weight: 700; margin-left: auto; }
 .chart sup { font-size: .65rem; color: var(--muted); font-weight: 400; }
 .chord-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1.5rem; margin: 1rem 0 .6rem; font-size: .9rem; }
-.score > .sound-note { margin: .75rem 0 0; color: #505963; --link: #1a67c2; }  /* on the cream paper in both themes, as below */
-.score > .sound-note .link-button { margin: 0; font-size: inherit; }
+.score > .sound-note { margin: .5rem 0 0; color: #505963; }  /* on the cream paper in both themes, as below */
 .score > .playback { margin: .5rem 0 .8rem; font-size: .9rem;
   /* on the cream paper, so in its light-mode colours even in dark mode */
   --text: #262b31; --muted: #505963; --card-bg: #ffffff; --border: #dcdfe3; --accent-ink: #C8102E; color: var(--text); }  /* muted: 4.5:1 on either paper */
@@ -639,6 +648,10 @@ body.practice :is(.versions, .tune-actions) { display: none; }
 .score > .audio { position: sticky; top: var(--topbar-h, 0px); z-index: 3; margin: -.5rem -.5rem 0; padding: .5rem;
   background: var(--paper); border-radius: var(--radius) var(--radius) 0 0; }
 body.practice .score > .audio { top: 0; }
+/* Under the pinned player, the music fades out rather than being cut off (paper on paper,
+   so at rest it can't be seen) */
+.score > .audio::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: .9rem; pointer-events: none;
+  background: linear-gradient(var(--paper), transparent); }
 @media (max-width: 800px) {
   /* A phone on a music stand: the name and the one line of key and tempo, then the music,
      edge to edge */

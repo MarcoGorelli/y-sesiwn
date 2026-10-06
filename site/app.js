@@ -47,6 +47,7 @@ const state = {
   printing: false,      // between "beforeprint" and "afterprint" on a phone: the score keeps the tune's name
   controlsOpen: false,  // on a phone, a tune's key, tempo and size unfolded (see renderTune)
   offlineReady: false,  // the offline copy (sw.js) is saved
+  offlineFailed: false,  // …or saving it failed this visit
   sounds: null,         // how many piano notes it keeps: { saved, total }
   played: savedPlayed(),  // anything has been played on this device (see saveAllSounds)
   savingSounds: false,  // while it saves the rest, asked for on the offline card
@@ -1558,6 +1559,9 @@ function followMusic(note) {
   if (Date.now() - handsOnPage < 4000) return;
   const box = note.getBoundingClientRect();
   if (!box.height) return;
+  // The whole tune already in sight (a short one, on a big screen): nothing to follow.
+  const score = note.closest("svg")?.getBoundingClientRect();
+  if (score && score.top >= 0 && score.bottom <= window.innerHeight) return;
   // What stays at the top of the screen over the music: the bar pinned on a phone, and the
   // player pinned under it (on a phone, and in full screen).
   const pinned = [...document.querySelectorAll(".topbar, .score > .audio")]
@@ -1670,28 +1674,28 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
     audio.querySelector(`.abcjs-midi-${button}`)?.setAttribute("aria-label", title);
   }
   // For screen readers and keyboards: Play says whether it's playing (abcjs marks it
-  // "pushed" while it is), and the position bar is a slider, moved with the arrow keys,
-  // that says where in the tune it is.
+  // "pushed" while it is). abcjs's position bar is a button, so a real slider (a range
+  // input, unseen) lies over it: pressed, dragged or moved with the arrow keys, Home and End,
+  // it moves playback, and it says where in the tune it is. The bar itself only shows it.
   const start = audio.querySelector(".abcjs-midi-start");
   const bar = audio.querySelector(".abcjs-midi-progress-background");
   const clock = audio.querySelector(".abcjs-midi-clock");
+  const seek = el("input", { type: "range", class: "seek", min: 0, max: 100, step: 1, value: 0,
+    "aria-label": tr("Position in the tune", "Lle yn yr alaw"),
+    oninput: (e) => { controller.seek(Math.min(.999, +e.target.value / 100)); showState(); } });
   const showState = () => {
     const playing = start?.classList.contains("abcjs-pushed");
     start?.setAttribute("aria-label", playing ? tr("Pause (space bar)", "Oedi (bylchwr)") : tr("Play (space bar)", "Chwarae (bylchwr)"));
-    if (!bar) return;
     const percent = Math.round((controller.percent ?? 0) * 100);
-    bar.setAttribute("aria-valuenow", percent);
-    bar.setAttribute("aria-valuetext", `${clock?.textContent.trim() || "0:00"} (${percent}%)`);
+    if (document.activeElement !== seek) seek.value = percent;
+    seek.setAttribute("aria-valuetext", `${clock?.textContent.trim() || "0:00"} (${percent}%)`);
   };
   if (bar) {
-    Object.entries({ role: "slider", "aria-valuemin": 0, "aria-valuemax": 100 }).forEach(([name, value]) => bar.setAttribute(name, value));
-    bar.addEventListener("keydown", (e) => {
-      const step = { ArrowRight: .05, ArrowUp: .05, ArrowLeft: -.05, ArrowDown: -.05, Home: -1, End: 1 }[e.key];
-      if (step === undefined) return;
-      e.preventDefault();
-      controller.seek(Math.min(.999, Math.max(0, (controller.percent ?? 0) + step)));
-      showState();
-    });
+    bar.tabIndex = -1;
+    bar.setAttribute("aria-hidden", "true");
+    const track = el("span", { class: "seek-track" });
+    bar.replaceWith(track);
+    track.append(bar, seek);  // moved, not copied: abcjs keeps its hold on the bar
   }
   for (const node of [start, clock].filter(Boolean)) {
     new MutationObserver(showState).observe(node, { attributes: true, attributeFilter: ["class"], childList: true, characterData: true, subtree: true });
@@ -1870,7 +1874,7 @@ function chordPlayback(tune, redraw) {
         el("input", { type: "radio", name: "chord-playback", value, checked: state.chords.play === value,
           onchange: () => { state.chords.play = value; redraw(); } }),
         el("span", {}, el("span", { class: "full" }, label), el("span", { class: "short", "aria-hidden": "true" }, short)))));
-  return el("div", { class: "playback" }, el("span", { class: "label", id: "chord-playback-label" }, tr("Play", "Chwarae")), playback);
+  return el("div", { class: "playback" }, el("span", { class: "label", id: "chord-playback-label" }, tr("Hear", "Clywed")), playback);
 }
 
 // Printing: the sheet music, in the key chosen on the page. A tune with chords
@@ -2169,7 +2173,7 @@ function renderTune(main, group, tune) {
     versions,
     controls,
     el("div", { class: "tune-layout" },
-      el("div", { class: "tune-main" }, el("div", { class: "score" }, audio, chordPlayback(tune, () => redraw()), paper, soundNote()),
+      el("div", { class: "tune-main" }, el("div", { class: "score" }, audio, soundNote(), chordPlayback(tune, () => redraw()), paper),
         practiceTools, actions, chords),
       el("div", { class: "tune-side" },
         el("section", { class: "card" }, el("h2", {}, tr("Details", "Manylion")), details, gloss || null),
@@ -3028,21 +3032,27 @@ function soundNote() {
   return note;
 }
 
+// "Save them now": all the piano's notes, for playing with no signal. The same quiet
+// bordered button on the home page's card, the offline page and under a tune's player.
+function saveSoundsButton(label = tr("Save them now", "Eu cadw nawr")) {
+  return el("button", { type: "button", class: "save-sounds", onclick: () => {
+    state.savingSounds = true;
+    askWorker("save-sounds");
+    refreshOfflineCards();
+  } }, label);
+}
+
 function fillSoundNote(note) {
   const { saved, total } = state.sounds ?? {};
-  const missing = state.offlineReady && saved < total && !saveAllSounds();
+  // Missing where they won't be saved by themselves: on a phone (a computer saves them
+  // all once something is played there), or with the browser saving data.
+  const missing = state.offlineReady && saved < total && !saveAllSounds() && (isPhone() || state.played);
   if (missing && !navigator.onLine) {
-    note.replaceChildren(tr("No signal: notes you haven't played before may be silent.",
-      "Dim signal: efallai bydd nodau nad ydych chi wedi'u chwarae o'r blaen yn dawel."));
-  } else if (missing && (state.played || (isPhone() && document.body.classList.contains("practice")))) {  // or on the music stand, before the session
-    note.replaceChildren(tr("To play tunes with no signal, save the piano sounds (2 MB): ",
-      "I chwarae alawon heb signal, cadwch synau'r piano (2 MB): "),
-      state.savingSounds ? tr("saving…", "wrthi'n cadw…")
-        : el("button", { type: "button", class: "link-button", onclick: () => {
-          state.savingSounds = true;
-          askWorker("save-sounds");
-          refreshOfflineCards();
-        } }, tr("Save them now", "Eu cadw nawr")));
+    note.replaceChildren(tr("No signal: notes you've played before will sound. Save the rest next time you have signal.",
+      "Dim signal: bydd y nodau rydych chi wedi'u chwarae o'r blaen yn canu. Cadwch y gweddill y tro nesaf y bydd gennych signal."));
+  } else if (missing) {  // one line: the button says it all
+    note.replaceChildren(state.savingSounds ? tr("Saving the piano sounds…", "Wrthi'n cadw synau'r piano…")
+      : saveSoundsButton(tr("Save the piano sounds for no signal (2 MB)", "Cadw synau'r piano i chwarae heb signal (2 MB)")));
   } else note.replaceChildren();
   note.hidden = !note.childNodes.length;
 }
@@ -3053,16 +3063,14 @@ function fillOfflineCard(card) {
   const full = card.classList.contains("full");
   const { saved, total } = state.sounds ?? {};
   const status = !("serviceWorker" in navigator) ? null
+    : state.offlineFailed ? el("p", { class: "status" }, tr("Couldn't save a copy for offline use this time: it will try again the next time you open the site with a signal.",
+      "Methu cadw copi i'w ddefnyddio all-lein y tro hwn: bydd yn rhoi cynnig arall arni y tro nesaf y byddwch chi'n agor y wefan gyda signal."))
     : !state.offlineReady ? el("p", { class: "status" }, tr("Saving a copy for offline use…", "Wrthi'n cadw copi i'w ddefnyddio all-lein…"))
     : saved < total ? el("p", { class: "status" },
       doneText(tr("Every tune is saved on this device. To play them back with no signal, save the piano sounds too (2 MB): ",
         "Mae pob alaw wedi'i chadw ar y ddyfais hon. I'w chwarae heb signal, cadwch synau'r piano hefyd (2 MB): ")),
       state.savingSounds ? tr("saving…", "wrthi'n cadw…")
-        : el("button", { type: "button", class: "primary save-sounds", onclick: () => {
-          state.savingSounds = true;
-          askWorker("save-sounds");
-          refreshOfflineCards();
-        } }, tr("Save them now", "Eu cadw nawr")))
+        : saveSoundsButton())
     : el("p", { class: "status" }, doneText(tr("Saved on this device: works without a signal", "Wedi'i chadw ar y ddyfais hon: mae'n gweithio heb signal")));
   // Already opened as an app: nothing to advertise on the home page.
   card.hidden = isInstalled() && !full;
@@ -4010,13 +4018,20 @@ function soundPlayed() {
 }
 
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+  // If the copy can't be saved (no signal part-way through, storage refused), say so
+  // rather than "Saving…" for ever: the worker is then dropped ("redundant").
+  const failed = () => { if (!state.offlineReady) { state.offlineFailed = true; refreshOfflineCards(); } };
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").then((registration) => {
+    const worker = registration.installing;
+    worker?.addEventListener("statechange", () => { if (worker.state === "redundant") failed(); });
+  }).catch(failed));
   navigator.serviceWorker.addEventListener("message", (event) => {
     if (event.data?.sounds) { state.sounds = event.data.sounds; state.savingSounds = false; refreshOfflineCards(); }
   });
   // The worker only becomes active once every file is saved.
   navigator.serviceWorker.ready.then(() => {
     state.offlineReady = true;
+    state.offlineFailed = false;
     askWorker(saveAllSounds() ? "save-sounds" : "sounds?");
     refreshOfflineCards();
   });

@@ -50,9 +50,9 @@ original score. The credits are in Welsh: *trefniant* means arrangement,
 shared these tunes.
 
 If you composed or arranged one of these tunes and would like its credit
-changed, or the tune taken down, please
-[open an issue](https://github.com/MarcoGorelli/y-sesiwn/issues/new) and
-we'll put it right.
+changed, or the tune taken down, please [write to us](?page=contact) or
+[open an issue](https://github.com/MarcoGorelli/y-sesiwn/issues/new) on
+GitHub and we'll put it right.
 
 ## Adding to the collection
 

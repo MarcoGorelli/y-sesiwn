@@ -94,7 +94,7 @@ chysylltnod yn lle unrhyw beth nad yw'n llythyren nac yn rhif.
 ## Beth sy'n digwydd nesaf
 
 Mae eich pull request yn cael ei brofi'n awtomatig: mae GitHub yn gwirio bod
-pob alaw (gan gynnwys eich un chi) yn dal i gael ei thynnu a'i chwarae, a bod
+pob alaw (gan gynnwys eich un chi) yn dal i gael ei dangos a'i chwarae, a bod
 y wefan yn gweithio. Os yw gwiriad yn methu, mae'r pull request yn dweud pa un
 a pham.
 

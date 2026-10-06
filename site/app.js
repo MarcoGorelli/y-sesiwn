@@ -1190,7 +1190,7 @@ function renderBrowse(main) {
   main.replaceChildren(
     el("h1", {}, tr("Browse by type and key", "Pori yn ôl math a chywair")),
     el("p", { class: "lead" }, tr("Pick any types and keys: the jigs and reels in D, say.",
-      "Dewiswch unrhyw fathau a chyweiriau: y jigiau yn D, dyweder.")),
+      "Dewiswch unrhyw fathau a chyweiriau: y jigiau a'r riliau yn D, dyweder.")),
     el("p", { class: "pills-label" }, tr("Type", "Math")), pills,
     el("p", { class: "pills-label" }, tr("Key", "Cywair")), keyPills, caption, list,
   );
@@ -2899,11 +2899,11 @@ function fillOfflineCard(card) {
   } else if (isMacSafari()) {
     how = el("p", {}, tr("In Safari's menu bar, choose ", "Ym mar dewislen Safari, dewiswch "), ui("File → Add to Dock"),
       tr(" (macOS Sonoma or later). Y Sesiwn then opens from the Dock in its own window.",
-        " (macOS Sonoma neu'n hwyrach). Wedyn mae Y Sesiwn yn agor o'r Doc yn ei ffenest ei hun."));
+        " (macOS Sonoma neu'n hwyrach). Wedyn mae'r Sesiwn yn agor o'r Doc yn ei ffenest ei hun."));
   } else if (isFirefox()) {
     how = el("p", {}, tr("Firefox can't install websites as apps, but you don't need to: once it's loaded, Y Sesiwn "
       + "works offline in this browser too. For an app with its own window, open it in Chrome, Edge or Safari.",
-      "Ni all Firefox osod gwefannau fel apiau, ond does dim angen: unwaith y bydd wedi llwytho, mae Y Sesiwn yn "
+      "Ni all Firefox osod gwefannau fel apiau, ond does dim angen: unwaith y bydd wedi llwytho, mae'r Sesiwn yn "
       + "gweithio all-lein yn y porwr hwn hefyd. Am ap yn ei ffenest ei hun, agorwch hi yn Chrome, Edge neu Safari."));
   } else if (!full) {
     // Chrome or Edge on a computer when the browser doesn't offer our button (e.g. it's
@@ -2949,7 +2949,7 @@ function renderOffline(main) {
           el("li", {}, b("Safari ar Mac"), ": ", ui("File → Add to Dock"), " (macOS Sonoma neu'n hwyrach)."),
           el("li", {}, b("Firefox"), ": all e ddim gosod gwefannau fel apiau, ond mae'r Sesiwn yn dal i weithio all-lein yn y porwr unwaith y bydd wedi llwytho.")),
         el("h2", {}, "Sut mae'n gweithio"),
-        el("p", {}, "Mae'ch porwr yn cadw copi o'r wefan, fel y mae'n ei wneud i dudalennau rydych chi wedi ymweld â nhw, ",
+        el("p", {}, "Mae'ch porwr yn cadw copi o'r wefan, fel y mae'n ei wneud gyda thudalennau rydych chi wedi ymweld â nhw, ",
           "felly mae'r alawon, y map a'r tudalennau hyn yn dal i agor pan fyddwch chi all-lein. Pan fydd alawon yn cael ",
           "eu hychwanegu neu eu cywiro, fe'u cewch chi y tro nesaf y byddwch chi ar-lein."),
         el("p", {}, "Mae'n cymryd tua 1 MB. Ar gyfrifiadur, unwaith y byddwch chi wedi chwarae rhywbeth, mae synau'r piano'n ",

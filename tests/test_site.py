@@ -945,15 +945,13 @@ SAVED_SOUNDS = """async () => (await Promise.all((await caches.keys()).filter((k
 
 
 @pytest.mark.parametrize("phone", [False, True])
-@pytest.mark.parametrize("sound", ["piano", "harp"])
-def test_sounds_offline(browser, site, phone, sound):
-    # On a computer every note of the chosen sound is saved for offline playback once
-    # something has been played; on a phone's data, only when asked (the offline card's
-    # Save them now). The other sound's notes aren't saved.
+def test_piano_sounds_offline(browser, site, phone):
+    # On a computer every piano note is saved for offline playback once something has
+    # been played (none for someone who only reads the music); on a phone's data, only
+    # when asked (the offline card's Save them now).
     android = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Mobile Safari/537.36"
     context = browser.new_context(**({"user_agent": android, "is_mobile": True, "has_touch": True,
                                        "viewport": {"width": 390, "height": 844}} if phone else {}))
-    context.add_init_script(f"localStorage.setItem('sound', '{sound}')")
     page = context.new_page()
     page.goto(site + "?page=offline")
     page.wait_for_function("state.sounds !== null", timeout=30000)
@@ -961,36 +959,14 @@ def test_sounds_offline(browser, site, phone, sound):
     page.wait_for_timeout(1000)
     assert not page.evaluate(SAVED_SOUNDS)  # nothing played yet: no sounds
     if phone:
-        assert f"save the {sound} sounds too" in page.inner_text(".offline-card")
         page.click("button.save-sounds")
     else:
         page.goto(site + "?page=notes")
         page.click(".piano [data-midi='67']")  # a key of the keyboard
         page.goto(site + "?page=offline")
-    page.wait_for_function("state.sounds !== null", timeout=30000)
+        page.wait_for_function("state.sounds !== null", timeout=30000)
     page.wait_for_function(all_saved, timeout=30000)
     assert "✓ Saved on this device" in page.inner_text(".offline-card")
-    saved = page.evaluate(SAVED_SOUNDS)
-    other = "acoustic_grand_piano" if sound == "harp" else "orchestral_harp"
-    assert len(saved) == 90 and not [u for u in saved if other in u]
-    context.close()
-
-
-def test_changing_sound_lets_the_other_go(browser, site):
-    # A harp player whose computer saved the piano first ends up with just the harp.
-    context = browser.new_context()
-    context.add_init_script("localStorage.setItem('played', '1')")
-    page = context.new_page()
-    page.goto(site + "?tune=glandyfi")
-    page.wait_for_function("state.sounds?.sound === 'piano' && state.sounds.saved === state.sounds.total", timeout=30000)
-    page.click(".playback label:has-text('Harp')")
-    page.wait_for_function("state.sounds?.sound === 'harp' && state.sounds.saved === state.sounds.total", timeout=30000)
-    for _ in range(50):  # (wait_for_function doesn't wait for a promise)
-        saved = page.evaluate(SAVED_SOUNDS)
-        if not [u for u in saved if "acoustic_grand_piano" in u]:
-            break
-        page.wait_for_timeout(200)
-    assert len(saved) == 90 and all("orchestral_harp" in u or "percussion" in u for u in saved)
     context.close()
 
 
@@ -1396,7 +1372,7 @@ def test_speed_up_the_whole_tune(browser, site):
 def test_count_in_and_click(page):
     page.goto_site("?tune=glandyfi")
     page.wait_for_selector(".score .abcjs-staff")
-    drum = """() => { const p = { ...audioParams(), ...clickParams(state.synth.visualObj, state.bySlug.get('glandyfi')) };
+    drum = """() => { const p = { ...AUDIO_PARAMS, ...clickParams(state.synth.visualObj, state.bySlug.get('glandyfi')) };
       const [melody, , drums] = state.synth.visualObj.setUpAudio(p).tracks.map((t) => t.filter((e) => e.cmd === 'note'));
       return { melodyStarts: melody[0].start, drums: drums ? drums.length : 0 }; }"""
     assert page.evaluate(drum)["drums"] == 0
@@ -2245,37 +2221,9 @@ def test_chord_playback_next_to_the_player(page):
     score = page.locator(".score .abcjs-staff").first.bounding_box()
     assert player["y"] < choice["y"] < score["y"]
     assert page.locator(".card.chords .segmented").count() == 0
-    page.goto_site("?tune=cawl-cennin")  # no chords, no choice of parts: just the sound
+    page.goto_site("?tune=cawl-cennin")  # no chords, no choice
     page.wait_for_selector(".score .abcjs-inline-audio")
-    assert page.locator(".score > .playback input[name=chord-playback]").count() == 0
-    assert page.locator(".score > .playback input[name=sound]").count() == 2
-
-
-def test_harp(page):
-    # The harp, for anyone who chooses it: the tune, chords and bass all on it, only its
-    # notes fetched (no one else's download gets heavier), and kept for every tune.
-    fetched = []
-    page.on("request", lambda r: fetched.append(r.url) if "/soundfont/" in r.url else None)
-    page.goto_site("?tune=glandyfi")
-    page.wait_for_selector(".score .abcjs-inline-audio")
-    page.wait_for_timeout(500)
-    assert fetched and not [u for u in fetched if "orchestral_harp" in u]
-    page.click(".playback label:has-text('Tune and chords')")
-    page.wait_for_timeout(500)
-    fetched.clear()
-    page.click(".playback label:has-text('Harp')")
-    page.wait_for_function("document.querySelector('.score .abcjs-inline-audio')")
-    page.wait_for_timeout(1000)
-    assert fetched and all("orchestral_harp" in u for u in fetched)
-    programs = page.evaluate("""() => {
-      const abc = accompaniment(state.data.tunes.find((t) => t.slug === "glandyfi").abc, true);
-      const { tracks } = ABCJS.renderAbc("*", abc)[0].setUpAudio(audioParams());
-      return [...new Set(tracks.flat().filter((e) => e.cmd === "program").map((e) => e.instrument))];
-    }""")
-    assert programs == [46]
-    page.goto_site("?tune=cawl-cennin")
-    page.wait_for_selector(".score .abcjs-inline-audio")
-    assert page.locator("input[name=sound][value=harp]").is_checked()
+    assert page.locator(".score > .playback").count() == 0
 
 
 def test_damaged_storage_and_backing_up_sets(browser, site):

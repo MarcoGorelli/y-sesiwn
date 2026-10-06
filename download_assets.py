@@ -11,8 +11,7 @@ from pathlib import Path
 STATIC = Path(__file__).parent / "static"
 ABCJS = "https://cdn.jsdelivr.net/npm/abcjs@6.4.4"
 SOUNDFONT = "https://paulrosen.github.io/midi-js-soundfonts/FluidR3_GM"
-# The piano, and the harp for anyone who chooses it (General MIDI 0 and 46).
-INSTRUMENTS = ["acoustic_grand_piano", "orchestral_harp"]
+INSTRUMENT = "acoustic_grand_piano"
 PERCUSSION = "https://paulrosen.github.io/midi-js-soundfonts/abcjs"
 
 # abcjs names notes like this, for MIDI pitches 21 (A0) to 108 (C8).
@@ -25,8 +24,8 @@ FILES = {
     # Markdown renderer for the static site's guide pages (CONTRIBUTING.md).
     "marked/marked.min.js": "https://cdn.jsdelivr.net/npm/marked@15.0.12/marked.min.js",
     **{
-        f"soundfont/{instrument}-mp3/{note}.mp3": f"{SOUNDFONT}/{instrument}-mp3/{note}.mp3"
-        for instrument in INSTRUMENTS for note in NOTES
+        f"soundfont/{INSTRUMENT}-mp3/{note}.mp3": f"{SOUNDFONT}/{INSTRUMENT}-mp3/{note}.mp3"
+        for note in NOTES
     },
     # The metronome and count-in: General MIDI percussion 76 and 77 (high and low
     # woodblock), which abcjs names E5 and F5. From abcjs's own sound set, whose

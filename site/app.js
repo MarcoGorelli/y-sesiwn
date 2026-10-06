@@ -4,21 +4,11 @@
 // (guides), ?page=contact, … Every address is relative to <base href> in index.html.
 
 const NOTES = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
-// The sounds playback can use (build_site.py's SOUNDS): the piano, or the harp for
-// anyone who chooses it. General MIDI instruments from the FluidR3 set (static/soundfont/),
-// the chords and bass played on the same one; only the chosen one's notes are fetched.
-const SOUNDS = {
-  piano: { program: 0, size: "2 MB", label: () => tr("Piano", "Piano"), notes: () => tr("the piano sounds", "synau'r piano") },
-  harp: { program: 46, size: "1.6 MB", label: () => tr("Harp", "Telyn"), notes: () => tr("the harp sounds", "synau'r delyn") },
-};
-const audioParams = () => {
-  const { program } = SOUNDS[state.sound];
-  return {
-    program, chordprog: program, bassprog: program,
-    soundFontUrl: "static/soundfont/",
-    // abcjs only applies this boost automatically for its default online soundfont.
-    soundFontVolumeMultiplier: 3.0,
-  };
+const AUDIO_PARAMS = {
+  program: 0,
+  soundFontUrl: "static/soundfont/",
+  // abcjs only applies this boost automatically for its default online soundfont.
+  soundFontVolumeMultiplier: 3.0,
 };
 // On iPhone/iPad, web audio is muted by the silent switch unless the page says
 // its sound is "playback" (like a music app). Ours only plays when someone presses
@@ -54,8 +44,7 @@ const state = {
   lang: savedLang(),    // "cy" or "en", for the whole site (tune names and the tunes' own notes stay as written)
   musicSize: savedSize(),  // the music's size, an index into SIZES (1: as drawn)
   offlineReady: false,  // the offline copy (sw.js) is saved
-  sound: savedSound(),  // what playback sounds like: a key of SOUNDS
-  sounds: null,         // how many of that sound's notes it keeps: { sound, saved, total }
+  sounds: null,         // how many piano notes it keeps: { saved, total }
   played: savedPlayed(),  // anything has been played on this device (see saveAllSounds)
   savingSounds: false,  // while it saves the rest, asked for on the offline card
 };
@@ -76,14 +65,6 @@ function savedSize() {
     if (Number.isInteger(size) && size >= 0 && size <= 4) return size;
   } catch {}
   return 1;
-}
-
-function savedSound() {
-  try {
-    const sound = localStorage.getItem("sound");
-    if (sound in SOUNDS) return sound;
-  } catch {}
-  return "piano";
 }
 
 function savedPlayed() {
@@ -407,18 +388,18 @@ function matchText({ how, off, nearStart }) {
 }
 
 function playNote(midi) {
-  // Sound one keyboard note with the same instrument (and volume) as the player: short
+  // Sound one keyboard note with the same piano (and volume) as the player: short
   // (1/8 of a 2 s bar = 250 ms) with a quick 60 ms fade instead of abcjs's 200 ms,
   // and stopping the previous key's note, so taps don't ring into each other.
   state.keyNote?.stop();
   soundPlayed();
   const sequence = new ABCJS.synth.SynthSequence();
   const track = sequence.addTrack();
-  sequence.setInstrument(track, SOUNDS[state.sound].program);
+  sequence.setInstrument(track, 0);
   sequence.appendNote(track, midi, 1 / 8, 100);
   const synth = new ABCJS.synth.CreateSynth();
   state.keyNote = synth;
-  synth.init({ sequence, millisecondsPerMeasure: 2000, options: { ...audioParams(), fadeLength: 60 } })
+  synth.init({ sequence, millisecondsPerMeasure: 2000, options: { ...AUDIO_PARAMS, fadeLength: 60 } })
     .then(() => synth.prime())
     .then(() => { if (state.keyNote === synth) synth.start(); })  // skip if another key came first
     .catch(() => {});
@@ -644,7 +625,7 @@ function tunePreview(tune) {
       button.replaceChildren(stopIcon());
       button.dataset.playing = "true";
       button.setAttribute("aria-label", tr(`Stop the opening of ${tune.base}`, `Stopio dechrau ${tune.base}`));
-      synth.init({ visualObj, options: audioParams() }).then(() => synth.prime()).then(({ duration }) => {
+      synth.init({ visualObj, options: AUDIO_PARAMS }).then(() => synth.prime()).then(({ duration }) => {
         if (state.keyNote !== preview || playing !== preview) return;
         synth.start();
         timer = setTimeout(() => { if (playing === preview) done(); }, duration * 1000 + 200);
@@ -1573,7 +1554,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
       chart.parentElement.querySelector(".print-key").textContent = `${tr("Key", "Cywair")}: ${NOTES[(pitch + transpose + 12) % 12]} ${modeName(tune.key.modeName)}`;
     }
   }
-  const params = { ...audioParams(), chordsOff: state.chords.play === "tune", voicesOff: state.chords.play === "chords",
+  const audioParams = { ...AUDIO_PARAMS, chordsOff: state.chords.play === "tune", voicesOff: state.chords.play === "chords",
     ...(state.settings.get(tune.slug).swing ? { swing: SWING } : {}),
     ...clickParams(visualObj, tune) };
   const settings = state.settings.get(tune.slug);
@@ -1597,7 +1578,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
     audio.querySelector(`.abcjs-midi-${button}`)?.setAttribute("title", title);
     audio.querySelector(`.abcjs-midi-${button}`)?.setAttribute("aria-label", title);
   }
-  controller.setTune(visualObj, false, params);
+  controller.setTune(visualObj, false, audioParams);
   state.synth = controller;
   // setWarp (the speed-up) also updates abcjs's own tempo box, which isn't shown.
   if (controller.control) controller.control.setWarp = () => {};
@@ -1608,7 +1589,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   }
   // Fetch and decode this tune's notes now, so pressing play doesn't wait. The
   // audio stays paused until play is clicked; abcjs shares the decoded notes.
-  new ABCJS.synth.CreateSynth().init({ visualObj, options: params }).catch(() => {});
+  new ABCJS.synth.CreateSynth().init({ visualObj, options: audioParams }).catch(() => {});
   return { parts };
 }
 
@@ -1758,30 +1739,16 @@ function chordCard(tune, redraw) {
 }
 
 // What the player plays, for a tune with chords: under the player, where it's used.
-// Under the player: which parts it plays (a tune with chords), and on what instrument.
-function playbackChoices(tune, redraw) {
-  const choice = (name, label, options, current, onchange) => el("div", { class: "choice" },
-    el("span", { class: "label", id: `${name}-label` }, label),
-    el("div", { class: "segmented", role: "radiogroup", "aria-labelledby": `${name}-label` },
-      options.map(([value, text]) => el("label", {},
-        el("input", { type: "radio", name, value, checked: current === value, onchange: () => { onchange(value); redraw(); } }),
-        el("span", {}, text)))));
-  return el("div", { class: "playback" },
-    tune.chords == null ? null : choice("chord-playback", tr("Play", "Chwarae"),
-      [["tune", tr("Tune only", "Yr alaw yn unig")], ["both", tr("Tune and chords", "Alaw a chordiau")],
-        ["chords", tr("Chords only", "Cordiau yn unig")]], state.chords.play, (value) => { state.chords.play = value; }),
-    choice("sound", tr("Sound", "Sain"), Object.entries(SOUNDS).map(([value, s]) => [value, s.label()]), state.sound, chooseSound));
-}
-
-// The piano or the harp, for every tune, kept on this device. Its notes are fetched as
-// they're played, and saved for offline use as the piano's would be (saveAllSounds); the
-// other sound's notes are let go.
-function chooseSound(sound) {
-  state.sound = sound;
-  try { localStorage.setItem("sound", sound); } catch {}
-  state.sounds = null;
-  state.savingSounds = false;
-  if (state.offlineReady) askWorker({ [saveAllSounds() ? "saveSounds" : "sounds"]: sound });
+function chordPlayback(tune, redraw) {
+  if (tune.chords == null) return null;
+  const playback = el("div", { class: "segmented", role: "radiogroup", "aria-label": tr("Playback", "Chwarae") },
+    [["tune", tr("Tune only", "Yr alaw yn unig")], ["both", tr("Tune and chords", "Alaw a chordiau")],
+      ["chords", tr("Chords only", "Cordiau yn unig")]].map(([value, label]) =>
+      el("label", {},
+        el("input", { type: "radio", name: "chord-playback", value, checked: state.chords.play === value,
+          onchange: () => { state.chords.play = value; redraw(); } }),
+        el("span", {}, label))));
+  return el("div", { class: "playback" }, el("span", { class: "label" }, tr("Play", "Chwarae")), playback);
 }
 
 // Printing: the sheet music, in the key chosen on the page. A tune with chords
@@ -1821,7 +1788,7 @@ function printButton(tune, paper, settings) {
   const saveMidi = () => {
     const abc = transposed(setTempo(stripFields(tune.abc, "SZBNAH"), tune.beat, settings.bpm));
     const [bytes] = ABCJS.synth.getMidiFile(accompaniment(abc, state.chords.play === "both"), {
-      midiOutputType: "binary", ...audioParams(),
+      midiOutputType: "binary", ...AUDIO_PARAMS,
       chordsOff: tune.chords == null || state.chords.play === "tune", voicesOff: tune.chords != null && state.chords.play === "chords" });
     download(fileName("mid"), "audio/midi", bytes);
   };
@@ -2061,7 +2028,7 @@ function renderTune(main, group, tune) {
     versions,
     controls,
     el("div", { class: "tune-layout" },
-      el("div", { class: "tune-main" }, el("div", { class: "score" }, audio, playbackChoices(tune, () => redraw()), paper),
+      el("div", { class: "tune-main" }, el("div", { class: "score" }, audio, chordPlayback(tune, () => redraw()), paper),
         practiceTools, actions, chords),
       el("div", { class: "tune-side" },
         el("section", { class: "card" }, el("h2", {}, tr("Details", "Manylion")), details, gloss || null),
@@ -2859,7 +2826,7 @@ window.addEventListener("beforeinstallprompt", (event) => {
   installPrompt = event;
   refreshOfflineCards();
 });
-window.addEventListener("appinstalled", () => { installPrompt = null; askWorker({ saveSounds: state.sound }); refreshOfflineCards(); });
+window.addEventListener("appinstalled", () => { installPrompt = null; askWorker("save-sounds"); refreshOfflineCards(); });
 
 // A message for the service worker (sw.js), once it's running.
 function askWorker(message) {
@@ -2897,12 +2864,12 @@ function fillOfflineCard(card) {
   const status = !("serviceWorker" in navigator) ? null
     : !state.offlineReady ? el("p", { class: "status" }, tr("Saving a copy for offline use…", "Wrthi'n cadw copi i'w ddefnyddio all-lein…"))
     : saved < total ? el("p", { class: "status" },
-      tr(`✓ Every tune is saved on this device. To play them back with no signal, save ${SOUNDS[state.sound].notes()} too (${SOUNDS[state.sound].size}): `,
-        `✓ Mae pob alaw wedi'i chadw ar y ddyfais hon. I'w chwarae heb signal, cadwch ${SOUNDS[state.sound].notes()} hefyd (${SOUNDS[state.sound].size}): `),
+      tr("✓ Every tune is saved on this device. To play them back with no signal, save the piano sounds too (2 MB): ",
+        "✓ Mae pob alaw wedi'i chadw ar y ddyfais hon. I'w chwarae heb signal, cadwch synau'r piano hefyd (2 MB): "),
       state.savingSounds ? tr("saving…", "wrthi'n cadw…")
         : el("button", { type: "button", class: "save-sounds", onclick: () => {
           state.savingSounds = true;
-          askWorker({ saveSounds: state.sound });
+          askWorker("save-sounds");
           refreshOfflineCards();
         } }, tr("Save them now", "Eu cadw nawr")))
     : el("p", { class: "status" }, tr("✓ Saved on this device: works without a signal", "✓ Wedi'i chadw ar y ddyfais hon: mae'n gweithio heb signal"));
@@ -2986,8 +2953,8 @@ function renderOffline(main) {
           "felly mae'r alawon, y map a'r tudalennau hyn yn dal i agor pan fyddwch chi all-lein. Pan fydd alawon yn cael ",
           "eu hychwanegu neu eu cywiro, fe'u cewch chi y tro nesaf y byddwch chi ar-lein."),
         el("p", {}, "Mae'n cymryd tua 1 MB. Ar gyfrifiadur, unwaith y byddwch chi wedi chwarae rhywbeth, mae synau'r piano'n ",
-          "cael eu cadw hefyd (2 MB, neu 1.6 MB i'r delyn os dewiswch chi hi). ",
-          "Ar ffôn, dim ond y nodau rydych chi wedi'u chwarae sy'n cael eu cadw, nes i chi bwyso ", b("Eu cadw nawr"), " uchod."),
+          "cael eu cadw hefyd (2 MB). Ar ffôn, dim ond y nodau rydych chi wedi'u chwarae sy'n cael eu cadw, nes i chi bwyso ",
+          b("Eu cadw nawr"), " uchod."),
         el("p", {}, "I'w dynnu, cliriwch ddata'r wefan hon yn eich porwr, fel y byddech chi'n clirio'i chwcis: cliciwch yr eicon ",
           "ar ochr chwith y bar cyfeiriad, neu edrychwch yng ngosodiadau preifatrwydd eich porwr.")));
     return;
@@ -3013,7 +2980,7 @@ function renderOffline(main) {
         "map and these pages still open when you're offline. When tunes are added or corrected, you get them ",
         "next time you're online."),
       el("p", {}, "It takes about 1 MB. On a computer, once you've played something, the piano sounds are kept ",
-        "too (2 MB, or 1.6 MB for the harp if you choose it). On a phone, only the notes ",
+        "too (2 MB). On a phone, only the notes ",
         "you've played are kept, until you press ", b("Save them now"), " above."),
       el("p", {}, "To remove it, clear this site's data in your browser, as you would its cookies: click the icon ",
         "at the left of the address bar, or look in your browser's privacy settings.")));
@@ -3816,33 +3783,29 @@ async function start() {
 }
 // Offline use (sw.js): once the page has loaded, keep a copy of the whole site, so it
 // works in a pub with no signal and can be added to the home screen as an app.
-// The notes for playback (the piano's 2 MB, or the harp's) are kept as they're played; all
-// of them are saved at once in the installed app, or on a computer once something has been
-// played there (no sounds for someone who only reads the music), and not on a phone's data
-// unless asked. Only the chosen sound's notes are kept (sw.js).
+// The piano notes for playback (2 MB) are kept as they're played; all of them are saved
+// at once in the installed app, or on a computer once something has been played there (no
+// sounds for someone who only reads the music), and not on a phone's data unless asked.
 const saveAllSounds = () => (isInstalled() || (!isPhone() && state.played)) && !navigator.connection?.saveData;
 
 // A tune, a preview or a key has been played: on a computer, that's the go-ahead to save
-// the rest of the sound's notes, on this visit and the next.
+// the rest of the piano's notes, on this visit and the next.
 function soundPlayed() {
   if (state.played) return;
   state.played = true;
   try { localStorage.setItem("played", "1"); } catch {}
-  if (state.offlineReady && saveAllSounds()) askWorker({ saveSounds: state.sound });
+  if (state.offlineReady && saveAllSounds()) askWorker("save-sounds");
 }
+
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
   navigator.serviceWorker.addEventListener("message", (event) => {
-    const { sounds } = event.data ?? {};
-    if (sounds?.sound !== state.sound) return;  // an answer about the sound chosen before
-    state.sounds = sounds;
-    state.savingSounds = false;
-    refreshOfflineCards();
+    if (event.data?.sounds) { state.sounds = event.data.sounds; state.savingSounds = false; refreshOfflineCards(); }
   });
   // The worker only becomes active once every file is saved.
   navigator.serviceWorker.ready.then(() => {
     state.offlineReady = true;
-    askWorker({ [saveAllSounds() ? "saveSounds" : "sounds"]: state.sound });
+    askWorker(saveAllSounds() ? "save-sounds" : "sounds?");
     refreshOfflineCards();
   });
 }

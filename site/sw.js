@@ -4,9 +4,9 @@
 // and uses them from the next visit.
 const VERSION = "__VERSION__";
 const SITE = `site-${VERSION}`;
-const SOUNDS = "sounds-__SOUNDS_VERSION__";  // the instruments' notes change rarely: cached apart
+const SOUNDS = "sounds-__SOUNDS_VERSION__";  // the piano notes (2 MB) change rarely: cached apart
 const SITE_FILES = __SITE_FILES__;
-const SOUND_FILES = __SOUND_FILES__;  // by sound ("piano", "harp"), each with the click
+const SOUND_FILES = __SOUND_FILES__;
 
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
@@ -19,38 +19,24 @@ self.addEventListener("install", (event) => {
   })());
 });
 
-// The notes of a sound (the piano, or the harp for anyone who chooses it) aren't all
-// fetched at first (2 MB, on a phone's data): each is kept the first time it's played
-// (see "fetch"), and the app asks for the rest of the chosen sound, { saveSounds: "piano" },
-// where data is cheap or the site is installed, or when the reader asks. { sounds: "piano" }
-// asks how many are kept; either way the answer is { sounds: { sound, saved, total } }.
-async function soundsMissing(sound) {
+// The piano notes aren't all fetched at first (2 MB, on a phone's data): each is kept
+// the first time it's played (see "fetch"), and the app asks for the rest, "save-sounds",
+// where data is cheap or the site is installed, or when the reader asks. "sounds?" asks
+// how many are kept; either way the answer is { sounds: { saved, total } }.
+async function soundsMissing() {
   const have = new Set((await (await caches.open(SOUNDS)).keys()).map((r) => r.url));
-  return (SOUND_FILES[sound] ?? []).filter((f) => !have.has(new URL(f, location).href));
-}
-
-// Only the chosen sound is kept: someone who changes from the piano to the harp doesn't
-// keep the piano's notes as well.
-async function dropOtherSounds(sound) {
-  const keep = new Set(SOUND_FILES[sound].map((f) => new URL(f, location).href));
-  const cache = await caches.open(SOUNDS);
-  for (const request of await cache.keys()) if (!keep.has(request.url)) await cache.delete(request);
+  return SOUND_FILES.filter((f) => !have.has(new URL(f, location).href));
 }
 
 self.addEventListener("message", (event) => {
-  const { sounds: asked, saveSounds: save } = event.data ?? {};
-  const sound = save ?? asked;
-  if (!SOUND_FILES[sound]) return;
-  event.waitUntil(dropOtherSounds(sound));
   const answer = async () => {
-    const missing = await soundsMissing(sound);
-    const total = SOUND_FILES[sound].length;
-    event.source?.postMessage({ sounds: { sound, saved: total - missing.length, total } });
+    const missing = await soundsMissing();
+    event.source?.postMessage({ sounds: { saved: SOUND_FILES.length - missing.length, total: SOUND_FILES.length } });
   };
-  if (asked) event.waitUntil(answer());
-  if (save) {
+  if (event.data === "sounds?") event.waitUntil(answer());
+  if (event.data === "save-sounds") {
     event.waitUntil((async () => {
-      const missing = await soundsMissing(sound);
+      const missing = await soundsMissing();
       await (await caches.open(SOUNDS)).addAll(missing.map((f) => new Request(f, { cache: "reload" }))).catch(() => {});
       await answer();
     })());

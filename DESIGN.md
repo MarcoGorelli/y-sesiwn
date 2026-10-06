@@ -302,7 +302,7 @@ Drawn, never typed: the search magnifier, microphone, share, play and stop are i
 - **Version tabs:** bordered boxes in a row; the active one has a red border and a 3px red underline.
 
 ### Sheet Music (signature)
-The score sits on cream paper in an 8px bordered panel with a resting shadow; notes are black and the playing note turns red. The abcjs player bar is slate with red pressed buttons; its position bar is a slim groove with a round red handle ringed in ivory. Tapping a note plays from it. Chord symbols are drawn but hidden unless switched on.
+The score sits on cream paper in an 8px bordered panel with a resting shadow; notes are black and the playing note turns red. The abcjs player bar is slate, with Play as the one red disc; its position bar is a slim groove with a round ivory handle, like a piano key. The player stays pinned at the top of the screen (under the top bar on a phone) while the page follows the music, and on a phone the score leaves out the tune's name, which is the heading just above (printed, it keeps it). Tapping a note plays from it. Chord symbols are drawn but hidden unless switched on.
 
 ### Carthen Band (signature)
 A repeating woven strip in Welsh red, slate and cream: 14px across the top of the page and footer, 7px under section headings (as long as the heading), along the top of the offline card, and beneath empty-state art.

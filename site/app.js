@@ -43,6 +43,8 @@ const state = {
   practice: { countIn: false, click: false, tab: "none", open: null },  // the practice tools, for every tune (open: folded or not)
   lang: savedLang(),    // "cy" or "en", for the whole site (tune names and the tunes' own notes stay as written)
   musicSize: savedSize(),  // the music's size, an index into SIZES (1: as drawn)
+  redrawScore: null,    // draws the open tune's score again (for printing, see "beforeprint")
+  printing: false,      // between "beforeprint" and "afterprint" on a phone: the score keeps the tune's name
   controlsOpen: false,  // on a phone, a tune's key, tempo and size unfolded (see renderTune)
   offlineReady: false,  // the offline copy (sw.js) is saved
   sounds: null,         // how many piano notes it keeps: { saved, total }
@@ -1548,12 +1550,16 @@ let handsOnPage = 0;
 for (const type of ["wheel", "touchmove"]) {
   window.addEventListener(type, () => { handsOnPage = Date.now(); }, { passive: true });
 }
+// …or with the keyboard (space is play/pause), or the scrollbar (a press on the page itself).
+const SCROLL_KEYS = new Set(["PageUp", "PageDown", "ArrowUp", "ArrowDown", "Home", "End"]);
+window.addEventListener("keydown", (e) => { if (SCROLL_KEYS.has(e.key) && !e.target.closest?.("input, select, textarea, [role=slider]")) handsOnPage = Date.now(); });
+window.addEventListener("pointerdown", (e) => { if (e.target === document.documentElement) handsOnPage = Date.now(); });
 function followMusic(note) {
   if (Date.now() - handsOnPage < 4000) return;
   const box = note.getBoundingClientRect();
   if (!box.height) return;
-  // What stays at the top of the screen over the music: the bar pinned on a phone, the
-  // player pinned in full screen.
+  // What stays at the top of the screen over the music: the bar pinned on a phone, and the
+  // player pinned under it (on a phone, and in full screen).
   const pinned = [...document.querySelectorAll(".topbar, .score > .audio")]
     .filter((x) => ["sticky", "fixed"].includes(getComputedStyle(x).position))
     .reduce((bottom, x) => Math.max(bottom, x.getBoundingClientRect().bottom), 0);
@@ -1611,6 +1617,9 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   const tab = TABS[state.practice.tab];
   const whistle = WHISTLES[state.practice.tab];
   if (whistle) abc = withFingerings(abc, whistle);
+  // On a phone the tune's name is the page's heading, just above: the score leaves it out,
+  // so the music starts higher. Printed, it keeps it (the heading isn't printed).
+  if (matchMedia("(max-width: 800px)").matches && !state.printing) abc = abc.replace(/^T:.*\n/gm, "");
   paper.dataset.bars = ownBarsPerLine(tune.abc);
   const layout = scoreLayout(paper);
   paper.dataset.layout = JSON.stringify(layout);
@@ -1660,6 +1669,34 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
     audio.querySelector(`.abcjs-midi-${button}`)?.setAttribute("title", title);
     audio.querySelector(`.abcjs-midi-${button}`)?.setAttribute("aria-label", title);
   }
+  // For screen readers and keyboards: Play says whether it's playing (abcjs marks it
+  // "pushed" while it is), and the position bar is a slider, moved with the arrow keys,
+  // that says where in the tune it is.
+  const start = audio.querySelector(".abcjs-midi-start");
+  const bar = audio.querySelector(".abcjs-midi-progress-background");
+  const clock = audio.querySelector(".abcjs-midi-clock");
+  const showState = () => {
+    const playing = start?.classList.contains("abcjs-pushed");
+    start?.setAttribute("aria-label", playing ? tr("Pause (space bar)", "Oedi (bylchwr)") : tr("Play (space bar)", "Chwarae (bylchwr)"));
+    if (!bar) return;
+    const percent = Math.round((controller.percent ?? 0) * 100);
+    bar.setAttribute("aria-valuenow", percent);
+    bar.setAttribute("aria-valuetext", `${clock?.textContent.trim() || "0:00"} (${percent}%)`);
+  };
+  if (bar) {
+    Object.entries({ role: "slider", "aria-valuemin": 0, "aria-valuemax": 100 }).forEach(([name, value]) => bar.setAttribute(name, value));
+    bar.addEventListener("keydown", (e) => {
+      const step = { ArrowRight: .05, ArrowUp: .05, ArrowLeft: -.05, ArrowDown: -.05, Home: -1, End: 1 }[e.key];
+      if (step === undefined) return;
+      e.preventDefault();
+      controller.seek(Math.min(.999, Math.max(0, (controller.percent ?? 0) + step)));
+      showState();
+    });
+  }
+  for (const node of [start, clock].filter(Boolean)) {
+    new MutationObserver(showState).observe(node, { attributes: true, attributeFilter: ["class"], childList: true, characterData: true, subtree: true });
+  }
+  showState();
   controller.setTune(visualObj, false, audioParams);
   state.synth = controller;
   // setWarp (the speed-up) also updates abcjs's own tempo box, which isn't shown.
@@ -1823,14 +1860,17 @@ function chordCard(tune, redraw) {
 // What the player plays, for a tune with chords: under the player, where it's used.
 function chordPlayback(tune, redraw) {
   if (tune.chords == null) return null;
-  const playback = el("div", { class: "segmented", role: "radiogroup", "aria-label": tr("Playback", "Chwarae") },
-    [["tune", tr("Tune only", "Yr alaw yn unig")], ["both", tr("Tune and chords", "Alaw a chordiau")],
-      ["chords", tr("Chords only", "Cordiau yn unig")]].map(([value, label]) =>
+  // Each choice in full, and in short for a phone ("Tune · With chords · Chords"), so the three
+  // stay on one line there; screen readers hear the full words either way.
+  const playback = el("div", { class: "segmented", role: "radiogroup", "aria-labelledby": "chord-playback-label" },
+    [["tune", tr("Tune only", "Yr alaw yn unig"), tr("Tune", "Alaw")],
+      ["both", tr("Tune and chords", "Alaw a chordiau"), tr("With chords", "Gyda chordiau")],
+      ["chords", tr("Chords only", "Cordiau yn unig"), tr("Chords", "Cordiau")]].map(([value, label, short]) =>
       el("label", {},
         el("input", { type: "radio", name: "chord-playback", value, checked: state.chords.play === value,
           onchange: () => { state.chords.play = value; redraw(); } }),
-        el("span", {}, label))));
-  return el("div", { class: "playback" }, el("span", { class: "label" }, tr("Play", "Chwarae")), playback);
+        el("span", {}, el("span", { class: "full" }, label), el("span", { class: "short", "aria-hidden": "true" }, short)))));
+  return el("div", { class: "playback" }, el("span", { class: "label", id: "chord-playback-label" }, tr("Play", "Chwarae")), playback);
 }
 
 // Printing: the sheet music, in the key chosen on the page. A tune with chords
@@ -1987,6 +2027,7 @@ function renderTune(main, group, tune) {
       player.play().then(() => { if (state.synth === player && player.isStarted) player.seek(playingAt); }).catch(() => {});
     }
   };
+  state.redrawScore = () => { if (paper.isConnected) redraw(); };  // for printing (see "beforeprint")
 
   const controls = el("div", { class: "controls", id: "tune-controls" });
   // On a phone the key, tempo and size fold into one line ("G major · Tempo 100 · Change"),
@@ -2128,7 +2169,7 @@ function renderTune(main, group, tune) {
     versions,
     controls,
     el("div", { class: "tune-layout" },
-      el("div", { class: "tune-main" }, el("div", { class: "score" }, audio, soundNote(), chordPlayback(tune, () => redraw()), paper),
+      el("div", { class: "tune-main" }, el("div", { class: "score" }, audio, chordPlayback(tune, () => redraw()), paper, soundNote()),
         practiceTools, actions, chords),
       el("div", { class: "tune-side" },
         el("section", { class: "card" }, el("h2", {}, tr("Details", "Manylion")), details, gloss || null),
@@ -3017,7 +3058,7 @@ function fillOfflineCard(card) {
       doneText(tr("Every tune is saved on this device. To play them back with no signal, save the piano sounds too (2 MB): ",
         "Mae pob alaw wedi'i chadw ar y ddyfais hon. I'w chwarae heb signal, cadwch synau'r piano hefyd (2 MB): ")),
       state.savingSounds ? tr("saving…", "wrthi'n cadw…")
-        : el("button", { type: "button", class: "save-sounds", onclick: () => {
+        : el("button", { type: "button", class: "primary save-sounds", onclick: () => {
           state.savingSounds = true;
           askWorker("save-sounds");
           refreshOfflineCards();
@@ -3979,6 +4020,27 @@ if ("serviceWorker" in navigator) {
     askWorker(saveAllSounds() ? "save-sounds" : "sounds?");
     refreshOfflineCards();
   });
+}
+
+// Printing from a phone: the score is drawn again with the tune's name, which it leaves
+// out on screen (drawScore), and without it again afterwards.
+window.addEventListener("beforeprint", () => {
+  if (!matchMedia("(max-width: 800px)").matches) return;
+  state.printing = true;
+  state.redrawScore?.();
+});
+window.addEventListener("afterprint", () => {
+  if (!state.printing) return;
+  state.printing = false;
+  state.redrawScore?.();
+});
+
+// The bar pinned to the top on a phone: its height, so the player can pin just under it
+// (0 on a wider screen, where it isn't pinned).
+const topbar = document.querySelector(".topbar");
+if (topbar && "ResizeObserver" in window) {
+  new ResizeObserver(() => document.documentElement.style.setProperty("--topbar-h",
+    `${getComputedStyle(topbar).position === "sticky" ? topbar.offsetHeight : 0}px`)).observe(topbar);
 }
 
 start().catch((error) => {

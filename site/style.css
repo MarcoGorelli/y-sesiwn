@@ -227,6 +227,8 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .offline-card .steps { margin: 0 0 .7rem; padding-left: 1.3rem; }
 .offline-card .steps li { margin-bottom: .25rem; }
 .offline-card .status { color: var(--muted); font-size: .9rem; margin: .7rem 0 0; }
+/* Saving the piano sounds: the one thing to do before a session with no signal */
+.offline-card .save-sounds { display: block; margin-top: .5rem; }
 .offline-card .more { font-size: .9rem; margin: .3rem 0 0; }
 .offline-card.full { margin-top: 0; }
 .share-icon { width: 1.15em; height: 1.15em; vertical-align: -.2em; color: var(--link); }
@@ -425,14 +427,15 @@ details[open] > summary::before { transform: rotate(90deg); }
 }
 .score .abcjs-inline-audio { background-color: var(--slate); border-radius: 6px; }
 /* The position bar: a slim groove in a taller strip (the strip is what's pressed, so it's
-   easy to hit), and a round red handle with a light rim, clear on the slate. */
+   easy to hit), and a round ivory handle, like a piano key, clear on the slate: red on the
+   player is kept for Play alone. */
 .score .abcjs-inline-audio .abcjs-midi-progress-background {
   --groove: 6px; --handle: 18px; height: calc(var(--handle) + 6px); border: 0; border-radius: 0;
   background: linear-gradient(var(--player-track), var(--player-track)) center / 100% var(--groove) no-repeat;
 }
 .score .abcjs-inline-audio .abcjs-midi-progress-indicator {
   top: 3px; width: var(--handle); height: var(--handle); margin-left: calc(var(--handle) / -2);
-  border-radius: 50%; background-color: var(--accent); box-shadow: 0 0 0 2px var(--ivory), 0 1px 3px var(--shadow-float);
+  border-radius: 50%; background-color: var(--ivory); box-shadow: inset 0 0 0 1px var(--key-edge), 0 1px 3px var(--shadow-float);
 }
 .score .abcjs-note_playing { fill: var(--accent); }
 .score .abcjs-note { cursor: pointer; }  /* a tap plays from that note (playFrom in app.js) */
@@ -539,7 +542,7 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .chart .repeat-end::after { content: ":" / ""; color: var(--accent-ink); font-weight: 700; margin-left: auto; }
 .chart sup { font-size: .65rem; color: var(--muted); font-weight: 400; }
 .chord-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1.5rem; margin: 1rem 0 .6rem; font-size: .9rem; }
-.score > .sound-note { margin: .4rem 0 0; color: #505963; --link: #1a67c2; }  /* on the cream paper in both themes, as below */
+.score > .sound-note { margin: .75rem 0 0; color: #505963; --link: #1a67c2; }  /* on the cream paper in both themes, as below */
 .score > .sound-note .link-button { margin: 0; font-size: inherit; }
 .score > .playback { margin: .5rem 0 .8rem; font-size: .9rem;
   /* on the cream paper, so in its light-mode colours even in dark mode */
@@ -552,7 +555,13 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .segmented label + label { border-left: 1px solid var(--border); }
 .segmented input { position: absolute; opacity: 0; pointer-events: none; }
 .segmented span { display: block; padding: .3rem .7rem; background: var(--card-bg); white-space: nowrap; transition: background-color .15s; }
+/* The full and short words inside a choice: just text, not segments of their own */
+.segmented span span { display: inline; padding: 0; background: none; min-height: 0; flex: none; }
+.segmented .short { display: none; }
 @media (max-width: 420px) {
+  .playback .segmented .full { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .playback .segmented .short { display: inline; }
+  .playback .segmented label { flex: 1 1 auto; }  /* each as wide as its words */
   .segmented span { padding: .3rem .45rem; font-size: .85rem; }
   /* Longer labels (in Welsh, say) wrap inside equal columns instead of widening the page */
   .segmented { max-width: 100%; }
@@ -625,9 +634,11 @@ body.practice .controls { margin: .5rem 0 1rem; }
 body.practice .tune-layout { grid-template-columns: 1fr; }
 body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 1rem 1.5rem 1.5rem; }
 body.practice :is(.versions, .tune-actions) { display: none; }
-/* The player stays at the top of the screen as the music goes by under it */
-body.practice .score > .audio { position: sticky; top: 0; z-index: 3; margin: -.5rem -.5rem 0; padding: .5rem; background: var(--paper);
-  border-radius: var(--radius) var(--radius) 0 0; }
+/* The player stays in reach as the page follows the music: pinned at the top of the screen,
+   or on a phone just under the pinned top bar (whose height app.js keeps in --topbar-h) */
+.score > .audio { position: sticky; top: var(--topbar-h, 0px); z-index: 3; margin: -.5rem -.5rem 0; padding: .5rem;
+  background: var(--paper); border-radius: var(--radius) var(--radius) 0 0; }
+body.practice .score > .audio { top: 0; }
 @media (max-width: 800px) {
   /* A phone on a music stand: the name and the one line of key and tempo, then the music,
      edge to edge */
@@ -820,7 +831,9 @@ body.practice .set-list, body.practice .set-count, body.practice .set-actions > 
 /* Home page: the last few tunes opened on this device */
 .recent { margin: .9rem 0 1.5rem; font-size: .9rem; }
 .recent-label { color: var(--muted); }
-.print-menu .menu-sep { border-top: 1px solid var(--border); }
+/* A straight hairline above the saving items (a border on the rounded button would curve) */
+.print-menu .menu-sep { position: relative; margin-top: .5rem; }
+.print-menu .menu-sep::before { content: ""; position: absolute; left: .4rem; right: .4rem; top: -.3rem; border-top: 1px solid var(--border); }
 .whistle-key { flex-basis: 100%; }
 .whistle-key[hidden] { display: none; }
 .score .abcjs-lyric { fill: #262b31; }

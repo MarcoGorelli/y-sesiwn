@@ -1970,7 +1970,7 @@ def test_score_and_player_names(page):
     assert not page.evaluate("state.synth.isLooping")
     page.select_option("#loop-select", "-1")
     page.wait_for_function("state.synth.isLooping")
-    assert page.get_attribute(".abcjs-midi-start", "aria-label") == "Play / pause (space bar)"
+    assert page.get_attribute(".abcjs-midi-start", "aria-label") == "Play (space bar)"  # "Pause (space bar)" while playing
     page.click(".lang-switch [data-lang=cy]")
     page.wait_for_function("document.querySelector('label[for=loop-select]').textContent === 'Ailadrodd'")
     assert label().startswith('Sgôr "Glandyfi": A fwyaf')
@@ -2234,6 +2234,45 @@ def test_phone_controls_fold_into_one_line(browser, site):
     assert page.locator(".music-size .label").is_visible()  # "Size", so − and + aren't taken for the key
     page.select_option("#key-select", "2")
     assert summary.inner_text().startswith("A major · Tempo 112")
+    context.close()
+
+
+def test_player_stays_in_reach(browser, site):
+    # While the page follows the music, the player stays on screen (pinned under the top bar
+    # on a phone), and says whether it's playing; its position bar is a slider for the keyboard.
+    for args in [PHONE, {"viewport": {"width": 1280, "height": 800}}]:
+        context = browser.new_context(service_workers="block", **args)
+        page = context.new_page()
+        page.goto(site + "?tune=glandyfi")
+        page.wait_for_selector(".score .abcjs-inline-audio")
+        start = page.locator(".abcjs-midi-start")
+        assert start.get_attribute("aria-label") == "Play (space bar)"
+        start.click()
+        page.wait_for_function("document.querySelector('.abcjs-note_playing')")
+        assert start.get_attribute("aria-label") == "Pause (space bar)"
+        page.evaluate("window.scrollTo(0, 600)")
+        box = start.bounding_box()
+        assert 0 <= box["y"] and box["y"] + box["height"] <= args["viewport"]["height"]
+        bar = page.locator(".abcjs-midi-progress-background")
+        assert bar.get_attribute("role") == "slider"
+        start.click()  # pause
+        bar.focus()
+        page.keyboard.press("End")
+        assert int(bar.get_attribute("aria-valuenow")) > 90
+        context.close()
+
+
+def test_phone_score_leaves_out_the_name(browser, site):
+    # On a phone the heading names the tune: the score doesn't repeat it, except printed.
+    context = browser.new_context(service_workers="block", **PHONE)
+    page = context.new_page()
+    page.goto(site + "?tune=glandyfi")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.locator(".score .abcjs-title").count() == 0
+    page.evaluate("dispatchEvent(new Event('beforeprint'))")
+    assert page.locator(".score .abcjs-title").text_content() == "Glandyfi"
+    page.evaluate("dispatchEvent(new Event('afterprint'))")
+    assert page.locator(".score .abcjs-title").count() == 0
     context.close()
 
 

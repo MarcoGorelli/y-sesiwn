@@ -1643,7 +1643,9 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   // Chords are always drawn (so playback has them), and hidden unless asked for.
   paper.classList.toggle("hide-chords", !state.chords.onScore);
   if (chart) {
-    chart.replaceChildren(chordChart(visualObj));
+    const grid = chordChart(visualObj);
+    grid.setAttribute("aria-hidden", "true");  // read as words instead (chartWords)
+    chart.replaceChildren(grid, chartWords(grid));
     if (tune.key) {  // printed above the chart (print-only)
       const { pitch } = tune.key;
       chart.parentElement.querySelector(".print-key").textContent = `${tr("Key", "Cywair")}: ${NOTES[(pitch + transpose + 12) % 12]} ${modeName(tune.key.modeName)}`;
@@ -1697,6 +1699,8 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
     bar.replaceWith(track);
     track.append(bar, seek);  // moved, not copied: abcjs keeps its hold on the bar
   }
+  // A new player: Play waits for a signal if there are no sounds to play (fillSoundNote).
+  queueMicrotask(() => paper.closest(".score")?.querySelectorAll(".sound-note").forEach(fillSoundNote));
   for (const node of [start, clock].filter(Boolean)) {
     new MutationObserver(showState).observe(node, { attributes: true, attributeFilter: ["class"], childList: true, characterData: true, subtree: true });
   }
@@ -1712,7 +1716,12 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   }
   // Fetch and decode this tune's notes now, so pressing play doesn't wait. The
   // audio stays paused until play is clicked; abcjs shares the decoded notes.
-  new ABCJS.synth.CreateSynth().init({ visualObj, options: audioParams }).catch(() => {});
+  // Not on a phone's browser until something has been played there: at the session the
+  // music is mostly read, not played, so a phone downloads no piano notes until Play is
+  // pressed (the first press waits a moment for them). Kept so by a test.
+  if (!isPhone() || isInstalled() || state.played) {
+    new ABCJS.synth.CreateSynth().init({ visualObj, options: audioParams }).catch(() => {});
+  }
   return { parts };
 }
 
@@ -1749,6 +1758,24 @@ function accompaniment(abc, withTune) {
   if (strum && !has("gchord")) lines.push(`%%MIDI gchord ${strum}`);
   // Nothing to add: leave it as it is (an empty line before K: would end the tune).
   return lines.length ? abc.replace(/^K:/m, `${lines.join("\n")}\nK:`) : abc;
+}
+
+// For screen readers, the chord chart in words, bar by bar (a grid of names alone, "G Em
+// Am G D…", says nothing of bars, repeats or chords held over): "Bar 1: repeat from here,
+// G. Bar 2: Em, then D. Bar 3: ending 1, D still; repeat."
+function chartWords(grid) {
+  let n = 0;
+  const bars = [...grid.querySelectorAll(".bar:not(.spacer)")].map((cell) => {
+    const chords = [...cell.querySelectorAll(".beats > span")].filter((c) => c.textContent)
+      .map((c) => (c.classList.contains("held") ? tr(`${c.textContent} still`, `${c.textContent} o hyd`) : c.textContent));
+    n += 1;
+    return [tr(`Bar ${n}:`, `Bar ${n}:`),
+      cell.classList.contains("repeat-start") ? tr("repeat from here,", "ailadrodd o fan hyn,") : null,
+      cell.ending ? tr(`ending ${cell.ending},`, `diweddglo ${cell.ending},`) : null,
+      chords.join(tr(", then ", ", yna ")) + (cell.classList.contains("repeat-end") ? tr("; repeat.", "; ailadrodd.") : ".")]
+      .filter(Boolean).join(" ");
+  });
+  return el("p", { class: "visually-hidden" }, bars.join(" "));
 }
 
 function chordChart(visualObj) {
@@ -1924,24 +1951,27 @@ function printButton(tune, paper, settings) {
   if (tune.chords != null) {
     items.push(["with-chords", tr("Print with chords", "Argraffu gyda chordiau")], ["chart", tr("Print the chord chart", "Argraffu'r siart cordiau")]);
   }
-  const menu = el("div", { class: "print-menu", role: "menu", hidden: true },
+  // A plain list of buttons that the toggle shows and hides (not an ARIA menu: Tab moves
+  // through it like any buttons). Esc, or a click or Tab elsewhere, closes it.
+  const show = (open) => { menu.hidden = !open; toggle.setAttribute("aria-expanded", String(open)); };
+  const menu = el("div", { class: "print-menu", id: `print-menu-${tune.slug}`, hidden: true },
     items.map(([mode, label]) =>
-      el("button", { type: "button", role: "menuitem", onclick: () => { menu.hidden = true; printAs(mode, paper); } }, label)),
-    el("button", { type: "button", role: "menuitem", class: "menu-sep", onclick: () => { menu.hidden = true; saveAbc(); } },
+      el("button", { type: "button", onclick: () => { show(false); printAs(mode, paper); } }, label)),
+    el("button", { type: "button", class: "menu-sep", onclick: () => { show(false); saveAbc(); } },
       tr("Save as ABC", "Cadw fel ABC")),
-    el("button", { type: "button", role: "menuitem", onclick: () => { menu.hidden = true; saveMidi(); } },
+    el("button", { type: "button", onclick: () => { show(false); saveMidi(); } },
       tr("Save as MIDI", "Cadw fel MIDI")));
-  const toggle = el("button", { type: "button", "aria-haspopup": "menu", "aria-expanded": "false", onclick: () => {
-    menu.hidden = !menu.hidden;
-    toggle.setAttribute("aria-expanded", String(!menu.hidden));
-  } }, tr("Print / save", "Argraffu / cadw"), el("span", { class: "chevron", "aria-hidden": "true" }));
+  const toggle = el("button", { type: "button", "aria-expanded": "false", "aria-controls": menu.id, onclick: () => show(menu.hidden) },
+    tr("Print / save", "Argraffu / cadw"), el("span", { class: "chevron", "aria-hidden": "true" }));
   // Clicking anywhere else closes it (and once the page has gone, stop listening).
   const close = (e) => {
     if (!wrap.isConnected) document.removeEventListener("pointerdown", close);
-    else if (!wrap.contains(e.target)) { menu.hidden = true; toggle.setAttribute("aria-expanded", "false"); }
+    else if (!wrap.contains(e.target)) show(false);
   };
   document.addEventListener("pointerdown", close);
-  const wrap = el("div", { class: "print-wrap" }, toggle, menu);
+  const wrap = el("div", { class: "print-wrap",
+    onkeydown: (e) => { if (e.key === "Escape" && !menu.hidden) { e.stopPropagation(); show(false); toggle.focus(); } },
+    onfocusout: (e) => { if (!wrap.contains(e.relatedTarget)) show(false); } }, toggle, menu);
   return wrap;
 }
 
@@ -1955,10 +1985,21 @@ function detailValue(label, value) {
   if (label === "Tune type") return value.charAt(0).toUpperCase() + value.slice(1);  // "jig" -> "Jig", as on Browse
   // A source that's a web address is a link, and any words after it (who added the tune
   // there) stay text; other sources (a recording, a book) are just text.
+  // The link is named for the site it's on ("Alawon Cymru (alawoncymru.com)"), not the
+  // whole address, which wraps mid-word in the narrow Details box.
   const url = label === "Source" && value.match(/^(https?:\/\/\S+)(.*)$/);
-  if (url) return [el("a", { href: url[1], target: "_blank", rel: "noopener" }, url[1]), url[2]];
+  if (url) {
+    let host = url[1];
+    try { host = new URL(url[1]).hostname.replace(/^www\./, ""); } catch {}
+    const name = SOURCE_SITES[host]?.();
+    return [el("a", { href: url[1], target: "_blank", rel: "noopener" }, name ? `${name} (${host})` : host), url[2]];
+  }
   return value;
 }
+
+// Where the tunes come from, by the address of the page: its name, for the link.
+const SOURCE_SITES = { "alawoncymru.com": () => "Alawon Cymru", "trillian.mit.edu": () => tr("John Chambers' ABC archive", "archif ABC John Chambers"),
+  "thesession.org": () => "The Session", "youtu.be": () => "YouTube" };
 
 // The key someone plays each tune in, kept on this device (a whistle player who always
 // plays Glandyfi in A): { tune folder: semitones from the written key }.
@@ -2044,8 +2085,12 @@ function renderTune(main, group, tune) {
       controls.classList.toggle("open", state.controlsOpen);
       summary.setAttribute("aria-expanded", String(state.controlsOpen));
     } });
+  // A key change part-way through (a K: after the tune's first one) is said too, as the
+  // summary names only the key it starts in.
+  const changesKey = /^K:|\[K:/m.test(tune.abc.slice(tune.abc.search(/^K:/m) + 2));
   const showSummary = () => summary.replaceChildren(
-    el("span", { class: "now" }, [tune.key && `${NOTES[(tune.key.pitch + settings.transpose + 12) % 12]} ${modeName(tune.key.modeName)}`,
+    el("span", { class: "now" }, [tune.key && `${NOTES[(tune.key.pitch + settings.transpose + 12) % 12]} ${modeName(tune.key.modeName)}`
+      + (changesKey ? tr(", changes key", ", yn newid cywair") : ""),
       `Tempo ${settings.bpm}`].filter(Boolean).join(" · ")),
     el("span", { class: "change" }, tr("Change", "Newid")));
   controls.classList.toggle("open", state.controlsOpen);
@@ -3049,7 +3094,19 @@ function saveSoundsButton(label = tr("Save them now", "Eu cadw nawr")) {
 
 function fillSoundNote(note) {
   const { saved, total } = state.sounds ?? {};
-  if (state.offlineReady && saved < total && !navigator.onLine) {
+  const offline = state.offlineReady && !navigator.onLine;
+  // No signal and not one note saved: playing would be silent, so Play waits for a signal
+  // and says why, rather than running with no sound.
+  const silent = offline && saved === 0;
+  const play = note.closest(".score")?.querySelector(".abcjs-midi-start");
+  if (play && !play.classList.contains("abcjs-pushed")) {
+    play.disabled = silent;
+    play.title = silent ? tr("Needs a signal the first time", "Angen signal y tro cyntaf") : tr("Play / pause (space bar)", "Chwarae / oedi (bylchwr)");
+  }
+  if (silent) {
+    note.replaceChildren(tr("No signal, and no piano sounds on this device yet: playing needs a signal the first time. After that, every tune plays anywhere.",
+      "Dim signal, a dim synau piano ar y ddyfais hon eto: mae angen signal i chwarae y tro cyntaf. Wedi hynny, mae pob alaw'n chwarae yn unrhyw le."));
+  } else if (offline && saved < total) {
     note.replaceChildren(tr("No signal: notes you've played before will sound. The rest are saved next time you play with a signal.",
       "Dim signal: bydd y nodau rydych chi wedi'u chwarae o'r blaen yn canu. Caiff y gweddill eu cadw y tro nesaf y byddwch chi'n chwarae gyda signal."));
   } else note.replaceChildren();

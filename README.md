@@ -334,7 +334,10 @@ scheduled runs after 60 days without a commit).
   (a tune, a preview or a key; remembered in `localStorage`), but not while the
   browser saves data, unless the reader presses *Save them now* on the offline
   page. With no signal and some notes not saved, a tune page says which will
-  still sound. The worker saves its copy with `cache: "no-cache"`: the server says
+  still sound.
+  On a phone (not the installed app) no piano note is downloaded at all until
+  Play is pressed: at the session the music is mostly read, so a tune page
+  doesn't preload its notes there (`test_phone_downloads_no_piano_notes_until_play`). The worker saves its copy with `cache: "no-cache"`: the server says
   whether each file has changed, so nothing stale is kept, and a first visit
   doesn't download again what the page has just loaded. A short **"Take it to the session"** card on the home page (just the
   browser's install button where there is one, and a link) and the full one on the *Use

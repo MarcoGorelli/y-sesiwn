@@ -331,7 +331,8 @@ def test_source_as_text_or_link(page):
     assert source.count() == 1 and source.locator("a").count() == 0
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-staff")
-    assert page.inner_text(".tune-side .card dd a").startswith("http://alawoncymru.com/")
+    assert page.inner_text(".tune-side .card dd a") == "Alawon Cymru (alawoncymru.com)"  # named, not the whole address
+    assert page.get_attribute(".tune-side .card dd a", "href").startswith("http://alawoncymru.com/")
 
 
 def test_tunes_from_the_session(page):
@@ -339,7 +340,7 @@ def test_tunes_from_the_session(page):
     page.goto_site("alaw/y-drochfa/")
     page.wait_for_selector(".score .abcjs-staff")
     source = page.locator(".tune-side .card dd").filter(has_text="thesession.org")
-    assert source.inner_text() == "https://thesession.org/tunes/17046#setting32566 (added by Rowan Folk)"
+    assert source.inner_text() == "The Session (thesession.org) (added by Rowan Folk)"
     assert source.locator("a").get_attribute("href") == "https://thesession.org/tunes/17046#setting32566"
     assert "From the setting on The Session" in page.inner_text("main")  # where its chords come from
     page.click(".lang-switch [data-lang=cy]")
@@ -1415,7 +1416,8 @@ def test_tune_details(page):
     page.wait_for_selector(".score .abcjs-staff")
     labels = page.locator(".tune-side .card dt").all_inner_texts()
     assert "Key" not in labels and "Composer / arranger" not in labels
-    assert page.inner_text(".tune-side .card dd a") == "http://alawoncymru.com/alawon/Tunes/SetyDwr/SetYDwr.html"
+    assert page.inner_text(".tune-side .card dd a") == "Alawon Cymru (alawoncymru.com)"
+    assert page.get_attribute(".tune-side .card dd a", "href") == "http://alawoncymru.com/alawon/Tunes/SetyDwr/SetYDwr.html"
 
 
 # ---- Sending a tune, the contact page ---------------------------------------------------
@@ -2228,7 +2230,7 @@ def test_phone_controls_fold_into_one_line(browser, site):
     assert summary.inner_text().startswith("G major · Tempo 112")
     assert not page.locator("#key-select").is_visible() and not page.locator(".music-size").is_visible()
     assert abs(summary.bounding_box()["y"] - page.locator(".practice-toggle").bounding_box()["y"]) < 5  # one line
-    assert page.locator(".score").bounding_box()["y"] < 420
+    assert page.locator(".score").bounding_box()["y"] < 480  # under the one line, and the folded practice tools
     summary.click()
     assert summary.get_attribute("aria-expanded") == "true"
     assert page.locator(".music-size .label").is_visible()  # "Size", so − and + aren't taken for the key
@@ -2297,10 +2299,33 @@ def test_copy_link_where_there_is_no_share_sheet(page):
     assert link.startswith("https://ysesiwn.cymru/alaw/glandyfi/")
 
 
+def test_phone_downloads_no_piano_notes_until_play(browser, site):
+    # On a phone (not the installed app), reading the music downloads no piano notes, on
+    # any page, until Play is pressed: at the session the music is mostly read. Then that
+    # tune's notes come, and the rest of the piano's in the background.
+    context = browser.new_context(**PHONE)
+    fetched = []
+    context.on("request", lambda r: fetched.append(r.url) if "/soundfont/" in r.url else None)
+    page = context.new_page()
+    for path in ["", "?page=browse", "?page=notes", "?page=sets", "alaw/glandyfi/", "alaw/walts-dinefwr/?v=1", "?set=5A3V~h&n=Nos%20Iau"]:
+        page.goto(site + path)
+        page.wait_for_timeout(1500)
+    page.goto(site + "alaw/glandyfi/")
+    page.wait_for_function("state.offlineReady && state.sounds", timeout=30000)
+    page.click(".controls-summary")  # changing the key or tempo doesn't play either
+    page.select_option("#key-select", "2")
+    page.wait_for_timeout(1000)
+    assert fetched == []
+    page.click(".score .abcjs-midi-start")
+    page.wait_for_function("document.querySelector('.abcjs-note_playing')", timeout=30000)
+    assert fetched
+    context.close()
+
+
 def test_sound_note_under_the_player(browser, site):
-    # On a phone, once a tune is played, every piano note is saved by itself (no button to
-    # remember before the session); with no signal before that, the tune page says which
-    # notes will still sound, under the player.
+    # On a phone, once a tune is played, every piano note is saved by itself. Before that,
+    # with no signal, Play waits for a signal and says why (rather than playing silence);
+    # with some notes saved, it says which will still sound.
     context = browser.new_context(**PHONE)
     page = context.new_page()
     page.goto(site + "?tune=glandyfi")
@@ -2309,13 +2334,48 @@ def test_sound_note_under_the_player(browser, site):
     assert note.is_hidden() and page.locator(".score .save-sounds").count() == 0
     context.set_offline(True)
     page.evaluate("dispatchEvent(new Event('offline'))")
-    assert "notes you've played before will sound" in note.inner_text()
+    assert "no piano sounds on this device yet" in note.inner_text()
+    assert page.locator(".abcjs-midi-start").is_disabled()
     assert note.bounding_box()["y"] < page.locator(".score .abcjs-staff").first.bounding_box()["y"]  # above the music
+    page.evaluate("state.sounds = { saved: 5, total: 90 }; refreshOfflineCards()")  # a few notes played before
+    assert "notes you've played before will sound" in note.inner_text()
+    assert page.locator(".abcjs-midi-start").is_enabled()
     context.set_offline(False)
     page.evaluate("dispatchEvent(new Event('online'))")
     page.evaluate("soundPlayed()")
     page.wait_for_function("state.sounds.saved === state.sounds.total", timeout=30000)
     assert note.is_hidden()
+    context.close()
+
+
+def test_print_list_and_chart_words(page):
+    # Print / save is a plain list of buttons (no menu roles promised): Esc closes it and
+    # puts focus back on its button. The chord chart is read bar by bar, in words.
+    page.goto_site("?tune=glandyfi")
+    page.wait_for_selector(".score .abcjs-staff")
+    toggle = page.locator(".print-wrap > button")
+    assert toggle.get_attribute("aria-haspopup") is None and page.locator("[role=menu], [role=menuitem]").count() == 0
+    toggle.click()
+    assert page.locator(".print-menu").is_visible() and toggle.get_attribute("aria-expanded") == "true"
+    page.locator(".print-menu button").first.focus()
+    page.keyboard.press("Escape")
+    assert page.locator(".print-menu").is_hidden()
+    assert page.evaluate("document.activeElement === document.querySelector('.print-wrap > button')")
+    words = page.text_content(".chart-box .visually-hidden")
+    assert words.startswith("Bar 1: repeat from here, G.") and "; repeat." in words
+    assert page.get_attribute(".chart-box .chart", "aria-hidden") == "true"
+
+
+def test_summary_says_the_key_changes(browser, site):
+    # Walts Dinefwr goes from G to D and back: the phone's one line says the key changes.
+    context = browser.new_context(service_workers="block", **PHONE)
+    page = context.new_page()
+    page.goto(site + "alaw/walts-dinefwr/")
+    page.wait_for_selector(".score .abcjs-inline-audio")
+    assert page.inner_text(".controls-summary .now").startswith("G major, changes key ·")
+    page.goto(site + "alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-inline-audio")
+    assert "changes key" not in page.inner_text(".controls-summary .now")
     context.close()
 
 

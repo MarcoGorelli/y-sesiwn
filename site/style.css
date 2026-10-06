@@ -118,7 +118,7 @@ body[data-page="home"] #surprise-sidebar { display: none; }  /* and its own Surp
 .lang-switch { display: flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; align-self: flex-start; font-size: .85rem; }
 .lang-switch button { border: 0; border-radius: 0; padding: .25rem .7rem; }
 .lang-switch button + button { border-left: 1px solid var(--border); }
-.lang-switch button[aria-pressed="true"], .lang-switch button[aria-pressed="true"]:hover:not(:disabled) { background: var(--accent); color: #fff; font-weight: 600; }
+.lang-switch button[aria-pressed="true"], .lang-switch button[aria-pressed="true"]:hover:not(:disabled) { background: var(--chosen); color: var(--on-chosen); font-weight: 600; }
 .sidebar-links { display: grid; gap: .35rem; border-top: 1px solid var(--border); padding-top: 1rem; }
 .sidebar-links a { text-decoration: none; }
 .sidebar-links a:hover { color: var(--accent-ink); text-decoration: underline; }
@@ -429,7 +429,7 @@ details[open] > summary::before { transform: rotate(90deg); }
   padding: .75rem 1rem 1rem;
   box-shadow: 0 1px 3px #0000000f;
 }
-.score .abcjs-inline-audio { background-color: var(--slate); border-radius: 6px; }
+.score .abcjs-inline-audio { background-color: var(--slate); border-radius: 6px; height: 42px; }
 /* The position bar: a slim groove in a taller strip (the strip is what's pressed, so it's
    easy to hit), and a round ivory handle, like a piano key, clear on the slate: red on the
    player is kept for Play alone. */
@@ -449,6 +449,7 @@ details[open] > summary::before { transform: rotate(90deg); }
 .score .seek-track:has(.seek:focus-visible) .abcjs-midi-progress-background { outline: 2px solid var(--ivory); outline-offset: 2px; border-radius: 4px; }
 /* Keyboard focus on the player in ivory, like the slider's: the page's red ring is too faint
    on the slate bar, and lost on the red Play disc */
+.score .abcjs-inline-audio .abcjs-midi-start:disabled { opacity: .45; cursor: not-allowed; }  /* no signal, no sounds yet */
 .score .abcjs-inline-audio .abcjs-btn:focus-visible { outline: 2px solid var(--ivory); outline-offset: 2px; }
 .score .abcjs-note_playing { fill: var(--accent); }
 .score .abcjs-note { cursor: pointer; }  /* a tap plays from that note (playFrom in app.js) */
@@ -576,7 +577,7 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
   .chart .beats { column-gap: .25rem; }
 }
 @media (hover: hover) { .segmented label:hover span { color: var(--accent-ink); } }
-.segmented input:checked + span { background: var(--accent); color: #fff; }
+.segmented input:checked + span { background: var(--chosen); color: var(--on-chosen); }  /* chosen: as a chosen pill; red is for Play */
 .segmented input:focus-visible + span { outline: 2px solid var(--accent-ink); outline-offset: -2px; }
 .switch { display: flex; align-items: center; gap: .45rem; cursor: pointer; }
 .switch input { accent-color: var(--accent-ink); width: 1.5rem; height: 1.5rem; margin: 0; flex: none; }
@@ -648,6 +649,11 @@ body.practice .score > .audio { top: 0; }
 .score > .audio::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: .9rem; pointer-events: none;
   background: linear-gradient(var(--paper), transparent); }
 @media (max-width: 800px) {
+  /* The practice tools (repeat, chords, count-in…) just above the player, folded, rather
+     than a whole score below it; on the music stand the music comes first */
+  .tune-main { display: flex; flex-direction: column; }
+  .tune-main > .practice-tools { order: -1; margin: 0 0 .75rem; }
+  body.practice .tune-main > .practice-tools { order: 0; margin: .75rem 0 0; }
   /* A phone on a music stand: the name and the one line of key and tempo, then the music,
      edge to edge */
   body.practice main { padding: .5rem .5rem 2rem; }
@@ -658,6 +664,7 @@ body.practice .score > .audio { top: 0; }
 
 /* Guide pages (CONTRIBUTING.md) */
 .guide { max-width: 50rem; }
+.guide :is(p, li) { max-width: 68ch; }  /* a comfortable measure; tables and cards keep the width */
 .guide table { border-collapse: collapse; margin: 1rem 0; }
 .guide th, .guide td { border: 1px solid var(--border); padding: .35rem .6rem; text-align: left; vertical-align: top; }
 .guide pre { background: var(--sidebar-bg); padding: .75rem 1rem; border-radius: var(--radius); overflow-x: auto; }
@@ -882,6 +889,7 @@ body.practice .say { display: none; }
   .music-size button { min-width: 44px; }
   .set-item-controls button { min-width: 44px; }
   .switch input { width: 1.75rem; height: 1.75rem; }
+  .switch { min-height: 44px; }  /* the whole label is the target */
   .session-links .action, .session-report > summary, .email-form .check { min-height: 44px; }
   .session-report > summary { display: flex; flex-wrap: wrap; align-items: center; column-gap: .3em; }
   .email-form .check { display: flex; align-items: center; }

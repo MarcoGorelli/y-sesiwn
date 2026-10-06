@@ -171,12 +171,12 @@ The system is built for a phone at a session as much as a laptop at home, so eve
 A warm off-white room framed in Welsh slate, with Welsh flag red used sparingly and a family of carthen dye colours to tell tune types apart.
 
 ### Primary
-- **Welsh Flag Red** (`welsh-red`): the accent. As a **fill** (`--accent`, the same in both themes, always with white text): primary buttons, the player's Play disc (the only red on the paper; 44px on touch screens, with restart a 44px target apart from it), the chosen language and segment, the skip link, the heard piano key, selection highlight. As **ink** (`--accent-ink`): focus outlines (on the slate player they're ivory instead: red is too faint there), hover text and borders, fold chevrons, the chord chart's repeat signs, lit map dots.
+- **Welsh Flag Red** (`welsh-red`): the accent. As a **fill** (`--accent`, the same in both themes, always with white text): primary buttons, the player's Play disc (the only red on the paper; 44px on touch screens, with restart a 44px target apart from it), the skip link, the heard piano key, selection highlight. As **ink** (`--accent-ink`): focus outlines (on the slate player they're ivory instead: red is too faint there), hover text and borders, fold chevrons, the chord chart's repeat signs, lit map dots.
 - **Night Red** (`brand-red-night`, `accent-ink-night`): the ink and the site name in dark mode, 4.5:1 or more on every dark surface. Fills stay Welsh Flag Red, because white on Night Red is only 3.6:1. Inside the score's cream paper the ink stays Welsh Flag Red in both themes.
 - **Red Wash** (`welsh-red-soft`): a 10% tint of the red for hovered/selected suggestions, places and the search focus ring.
 
 ### Secondary
-- **Welsh Slate** (`slate`): structure and the "chosen" state. A chosen key or filter pill is filled slate with white text; the audio player bar is slate; map dots are slate. In dark mode the chosen fill flips to pale grey with near-black text.
+- **Welsh Slate** (`slate`): structure and the "chosen" state. A chosen key or filter pill, segment (Hear: Tune / Tune and chords / Chords) or language is filled slate with white text (red is for doing: Play and primary buttons); the audio player bar is slate; map dots are slate. In dark mode the chosen fill flips to pale grey with near-black text.
 
 ### Tertiary
 - **Carthen Colourways** (`type-*`): one dye colour per tune type: Welsh red (jig), indigo (polca), mustard (walts), bottle green (rîl), plum (pibddawns), teal (ymdaith), rust (dawns), slate blue (alaw), rose (cân), olive (carol), slate grey (other). Used only as type swatches and as the border/tint of a chosen type pill.

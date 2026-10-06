@@ -447,6 +447,9 @@ details[open] > summary::before { transform: rotate(90deg); }
 .score .seek-track .abcjs-midi-progress-background { flex: 1; }
 .score .seek-track .seek { position: absolute; inset: 0 8px 0 15px; width: auto; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
 .score .seek-track:has(.seek:focus-visible) .abcjs-midi-progress-background { outline: 2px solid var(--ivory); outline-offset: 2px; border-radius: 4px; }
+/* Keyboard focus on the player in ivory, like the slider's: the page's red ring is too faint
+   on the slate bar, and lost on the red Play disc */
+.score .abcjs-inline-audio .abcjs-btn:focus-visible { outline: 2px solid var(--ivory); outline-offset: 2px; }
 .score .abcjs-note_playing { fill: var(--accent); }
 .score .abcjs-note { cursor: pointer; }  /* a tap plays from that note (playFrom in app.js) */
 .score .abcjs-note_selected { fill: currentColor; }  /* …without leaving it marked */
@@ -456,10 +459,6 @@ details[open] > summary::before { transform: rotate(90deg); }
    Painted with an inset shadow, as abcjs's own CSS clears its buttons' backgrounds. */
 .score .abcjs-inline-audio .abcjs-midi-start { width: 34px; height: 34px; margin: 0 10px 0 2px; padding: 8px 7px 8px 9px; border-radius: 50%;
   box-shadow: inset 0 0 0 20px var(--accent); }
-.score .abcjs-large .abcjs-midi-start { width: 44px; height: 44px; padding: 10px 9px 10px 12px; }
-/* The chosen way of playing (tune, chords) in slate, the system's colour for a choice
-   made: red on the paper is kept for Play and the notes as they sound. */
-.score .playback .segmented input:checked + span { background: var(--slate); }
 .card { border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.1rem; background: var(--card-bg); }
 .card h2 { margin: 0 0 .6rem; font-size: 1.15rem; }
 .card dl { margin: 0; }
@@ -551,11 +550,7 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .chart .repeat-start::before { content: ":" / ""; color: var(--accent-ink); font-weight: 700; margin-right: .1rem; }
 .chart .repeat-end::after { content: ":" / ""; color: var(--accent-ink); font-weight: 700; margin-left: auto; }
 .chart sup { font-size: .65rem; color: var(--muted); font-weight: 400; }
-.chord-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1.5rem; margin: 1rem 0 .6rem; font-size: .9rem; }
 .score > .sound-note { margin: .5rem 0 0; color: #505963; }  /* on the cream paper in both themes, as below */
-.score > .playback { margin: .5rem 0 .8rem; font-size: .9rem;
-  /* on the cream paper, so in its light-mode colours even in dark mode */
-  --text: #262b31; --muted: #505963; --card-bg: #ffffff; --border: #dcdfe3; --accent-ink: #C8102E; color: var(--text); }  /* muted: 4.5:1 on either paper */
 .playback { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .5rem; min-width: 0; }
 .playback .label { color: var(--muted); }
 /* Three buttons in a row, one pressed: which parts playback plays */
@@ -743,7 +738,7 @@ body.practice .score > .audio { top: 0; }
 /* Printing a tune: just the sheet music (in the key chosen on the page), full width. */
 @media print {
   body { display: block; padding: 0; background: none; color: #000; }
-  .nav, .site-footer, .controls, .practice-tools, .tune-actions, .versions, .aka, .tune-side, .audio, .score > .playback, .card.chords, main > h1 { display: none !important; }
+  .nav, .site-footer, .controls, .practice-tools, .tune-actions, .versions, .aka, .tune-side, .audio, .card.chords, main > h1 { display: none !important; }
   main { padding: 0; max-width: none; animation: none; }
   .tune-layout { display: block; }
   .score { border: none; box-shadow: none; background: none; padding: 0; }
@@ -752,7 +747,7 @@ body.practice .score > .audio { top: 0; }
   body[data-print="chart"] .score { display: none !important; }
   body[data-print="chart"] main > h1 { display: block !important; font-size: 1.8rem; }
   body[data-print="chart"] .card.chords { display: block !important; border: none; padding: 0; margin: 0; background: none; }
-  body[data-print="chart"] .card.chords > h2, body[data-print="chart"] .chord-controls { display: none; }
+  body[data-print="chart"] .card.chords > h2 { display: none; }
   body[data-print="chart"] .print-key { display: block; margin: 0 0 1rem; font-size: 1.1rem; }
   body[data-print="chart"] .chart { font-size: 1.5rem; max-width: none; gap: .6rem; }
   body[data-print="chart"] .chart .bar { min-height: 2.6rem; border-color: #000; }
@@ -866,6 +861,11 @@ body.practice .say { display: none; }
 /* Touch screens: everything big enough to hit with a finger (WCAG 2.5.8 asks 24px; most
    are nearer 40). The player's position bar is a 44px strip, with a bigger handle. */
 @media (pointer: coarse) {
+  /* Play a 44px disc, the most-pressed thing on a phone, and restart a 44px target well
+     apart from it (a slip of the thumb mustn't start the tune again); the bar grows to fit */
+  .score .abcjs-inline-audio { height: auto; min-height: 52px; padding: 4px 6px; }
+  .score .abcjs-inline-audio .abcjs-midi-reset { width: 44px; height: 44px; padding: 12px; margin: 0; }
+  .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height: 44px; padding: 12px 11px 12px 14px; margin: 0 10px 0 10px; }
   .score .abcjs-inline-audio .abcjs-midi-progress-background { --groove: 8px; --handle: 26px; height: 44px; }
   .score .abcjs-inline-audio .abcjs-midi-progress-indicator { top: 9px; }
   .set-item-controls button { min-width: 2.5rem; min-height: 2.5rem; }

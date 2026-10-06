@@ -209,9 +209,11 @@ scheduled runs after 60 days without a commit).
   bar that doesn't start with a chord of its own begins with the one still
   sounding, faintly. It's
   built from abcjs's parsed tune (`chordChart()` in `app.js`), so it follows
-  the key drop-down. A switch shows the chords on the sheet music (always
-  drawn, hidden by CSS unless on), and **Play** chooses *Tune only*, *Tune
-  and chords* or *Chords only* (abcjs's `chordsOff` / `voicesOff`). Jigs
+  the key drop-down. Both chord settings are among the practice tools (the
+  paper is just the player and the music): a switch shows the chords on the
+  sheet music (always drawn, hidden by CSS unless on), and **Hear** chooses
+  *Tune only*, *Tune and chords* or *Chords only* (abcjs's `chordsOff` /
+  `voicesOff`). Jigs
   (6/8, and 9/8, 12/8) are accompanied like a guitar or bodhrán, on every
   quaver, "Down up down, Down up down" (`%%MIDI gchord bIcbIc`), instead of abcjs's
   "boom · chick" default. With *Tune and chords*, the chords and bass are played more quietly than
@@ -328,10 +330,11 @@ scheduled runs after 60 days without a commit).
   as the page, so it never mixes two deploys.
   The piano notes (2 MB) are cached separately, so a deploy doesn't download them
   again: each is kept the first time it's played, and the app asks for all of
-  them in the installed app, and on a computer once something has been played
-  there (a tune, a preview or a key; remembered in `localStorage`), but not on
-  a phone's data, unless the reader presses *Save them now* on the offline
-  card. The worker saves its copy with `cache: "no-cache"`: the server says
+  them in the installed app, and once something has been played on the device
+  (a tune, a preview or a key; remembered in `localStorage`), but not while the
+  browser saves data, unless the reader presses *Save them now* on the offline
+  page. With no signal and some notes not saved, a tune page says which will
+  still sound. The worker saves its copy with `cache: "no-cache"`: the server says
   whether each file has changed, so nothing stale is kept, and a first visit
   doesn't download again what the page has just loaded. A short **"Take it to the session"** card on the home page (just the
   browser's install button where there is one, and a link) and the full one on the *Use

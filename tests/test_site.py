@@ -168,7 +168,7 @@ def test_chord_chart(page):
     assert page.locator(".chart .repeat-start").count() == 2 and page.locator(".chart .repeat-end").count() == 2
     # Chords on the score only when asked for; playback options set abcjs's switches.
     assert page.locator(".score .hide-chords").count() == 1
-    page.check("text=Show on the sheet music")
+    page.check("text=Show chords on the sheet music")
     page.wait_for_function("!document.querySelector('.score .hide-chords')")
     page.click("text=Chords only")
     volumes = page.evaluate("""() => { const [melody, chords] = state.synth.visualObj.setUpAudio({ voicesOff: true }).tracks
@@ -2298,40 +2298,40 @@ def test_copy_link_where_there_is_no_share_sheet(page):
 
 
 def test_sound_note_under_the_player(browser, site):
-    # On a phone, the tune page says under the player how to have every piano note for no
-    # signal, before anything is played (that's too late at the session), with the same
-    # button as the home page; with no signal, what will still sound; nothing once saved.
+    # On a phone, once a tune is played, every piano note is saved by itself (no button to
+    # remember before the session); with no signal before that, the tune page says which
+    # notes will still sound, under the player.
     context = browser.new_context(**PHONE)
     page = context.new_page()
     page.goto(site + "?tune=glandyfi")
     page.wait_for_function("state.offlineReady && state.sounds", timeout=30000)
     note = page.locator(".sound-note")
-    assert "Save the piano sounds for no signal" in note.inner_text()
-    assert note.bounding_box()["y"] < page.locator(".score .abcjs-staff").first.bounding_box()["y"]  # above the music
+    assert note.is_hidden() and page.locator(".score .save-sounds").count() == 0
     context.set_offline(True)
     page.evaluate("dispatchEvent(new Event('offline'))")
     assert "notes you've played before will sound" in note.inner_text()
+    assert note.bounding_box()["y"] < page.locator(".score .abcjs-staff").first.bounding_box()["y"]  # above the music
     context.set_offline(False)
     page.evaluate("dispatchEvent(new Event('online'))")
-    page.click(".sound-note button.save-sounds")
+    page.evaluate("soundPlayed()")
     page.wait_for_function("state.sounds.saved === state.sounds.total", timeout=30000)
     assert note.is_hidden()
     context.close()
 
 
-def test_chord_playback_next_to_the_player(page):
-    # "Play: Tune only / Tune and chords / Chords only" is just under the player (issue #9).
+def test_chord_settings_with_the_practice_tools(page):
+    # The paper is the player and the music; a tune's chord settings (what's heard, shown on
+    # the sheet music or not) are together among the practice tools.
     page.goto_site("?tune=glandyfi")
     page.wait_for_selector(".score .abcjs-inline-audio")
-    assert page.locator(".score > .playback").count() == 1
-    player = page.locator(".score .audio").bounding_box()
-    choice = page.locator(".score > .playback").bounding_box()
-    score = page.locator(".score .abcjs-staff").first.bounding_box()
-    assert player["y"] < choice["y"] < score["y"]
-    assert page.locator(".card.chords .segmented").count() == 0
-    page.goto_site("?tune=cawl-cennin")  # no chords, no choice
+    assert page.locator(".score .playback").count() == 0
+    settings = page.locator(".practice-tools .chord-settings")
+    assert settings.locator("input[name=chord-playback]").count() == 3
+    assert settings.locator("text=Show chords on the sheet music").count() == 1
+    assert page.locator(".card.chords input[type=checkbox]").count() == 0
+    page.goto_site("?tune=cawl-cennin")  # no chords, no chord settings
     page.wait_for_selector(".score .abcjs-inline-audio")
-    assert page.locator(".score > .playback").count() == 0
+    assert page.locator(".chord-settings").count() == 0
 
 
 def test_damaged_storage_and_backing_up_sets(browser, site):

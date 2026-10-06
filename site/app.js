@@ -1846,23 +1846,20 @@ function chordChart(visualObj) {
 const CY_CHORD_SOURCES = { "From the Alawon Cymru score": "O sgôr Alawon Cymru",
   "From the setting on The Session": "O'r gosodiad ar The Session", "Supplied by Neil Browning": "Gan Neil Browning" };
 
-function chordCard(tune, redraw) {
+function chordCard(tune) {
   if (tune.chords == null) return null;
-  const showOnScore = el("label", { class: "switch" },
-    el("input", { type: "checkbox", checked: state.chords.onScore,
-      onchange: (e) => { state.chords.onScore = e.target.checked; redraw(); } }), tr("Show on the sheet music", "Dangos ar y sgôr"));
   return el("section", { class: "card chords" },
     el("h2", {}, tr("Suggested chords", "Cordiau awgrymedig")),
     el("p", { class: "print-key" }),
     el("div", { class: "chart-box" }),
-    el("div", { class: "chord-controls" }, showOnScore),
     el("p", { class: "caption" },
       tune.chords ? `${tr(tune.chords, CY_CHORD_SOURCES[tune.chords] ?? tune.chords)}. ` : "",
       tr("One way of accompanying it: use your ear, and your own.", "Un ffordd o gyfeilio iddi: defnyddiwch eich clust, a'ch syniadau eich hun.")));
 }
 
-// What the player plays, for a tune with chords: under the player, where it's used.
-function chordPlayback(tune, redraw) {
+// A tune's chords, among the practice tools (the paper is the player and the music): what
+// the player plays, and whether they're shown on the sheet music. Both together.
+function chordSettings(tune, redraw) {
   if (tune.chords == null) return null;
   // Each choice in full, and in short for a phone ("Tune · With chords · Chords"), so the three
   // stay on one line there; screen readers hear the full words either way.
@@ -1874,7 +1871,12 @@ function chordPlayback(tune, redraw) {
         el("input", { type: "radio", name: "chord-playback", value, checked: state.chords.play === value,
           onchange: () => { state.chords.play = value; redraw(); } }),
         el("span", {}, el("span", { class: "full" }, label), el("span", { class: "short", "aria-hidden": "true" }, short)))));
-  return el("div", { class: "playback" }, el("span", { class: "label", id: "chord-playback-label" }, tr("Hear", "Clywed")), playback);
+  const showOnScore = el("label", { class: "switch" },
+    el("input", { type: "checkbox", checked: state.chords.onScore,
+      onchange: (e) => { state.chords.onScore = e.target.checked; redraw(); } }), tr("Show chords on the sheet music", "Dangos y cordiau ar y sgôr"));
+  return el("div", { class: "practice-line chord-settings" },
+    el("div", { class: "playback" }, el("span", { class: "label", id: "chord-playback-label" }, tr("Hear", "Clywed")), playback),
+    showOnScore);
 }
 
 // Printing: the sheet music, in the key chosen on the page. A tune with chords
@@ -1999,7 +2001,7 @@ function renderTune(main, group, tune) {
 
   const paper = el("div");
   const audio = el("div", { class: "audio" });
-  const chords = chordCard(tune, () => redraw());
+  const chords = chordCard(tune);
   const speedNote = el("span", { class: "caption speed-note", "aria-live": "polite" });
   // Speeding up: how far there is to go, then a "da iawn" (well done) when the tune or
   // part has been worked up to speed, with a strip of carthen woven in under it.
@@ -2138,6 +2140,7 @@ function renderTune(main, group, tune) {
       ...Object.entries(WHISTLES).map(([value, w]) => [value, tr(`Whistle in ${w.name}`, `Chwisl ${w.name}`)])].map(([value, label]) =>
       el("option", { value, selected: state.practice.tab === value }, label)));
   const practiceRow = el("div", { class: "practice-row" },
+    chordSettings(tune, () => redraw()),
     el("div", { class: "practice-line" },
       el("div", { class: "control" }, el("label", { for: "loop-select" }, tr("Repeat", "Ailadrodd")), loopSelect), speedUp),
     speedNote,
@@ -2152,7 +2155,9 @@ function renderTune(main, group, tune) {
   const practiceTools = el("details", { class: "practice-tools fold", open: state.practice.open ?? !matchMedia("(max-width: 800px)").matches,
     ontoggle: (e) => { state.practice.open = e.target.open; } },
     el("summary", {}, el("span", {}, tr("Practice tools", "Offer ymarfer"),
-      el("span", { class: "caption" }, tr(" · repeat, speed up, count-in, click, tablature", " · ailadrodd, cyflymu, cyfrif i mewn, clic, tablatur")))),
+      el("span", { class: "caption" }, tune.chords == null
+        ? tr(" · repeat, speed up, count-in, click, tablature", " · ailadrodd, cyflymu, cyfrif i mewn, clic, tablatur")
+        : tr(" · chords, repeat, speed up, count-in, click, tablature", " · cordiau, ailadrodd, cyflymu, cyfrif i mewn, clic, tablatur")))),
     practiceRow);
   const fillLoops = () => {
     loopSelect.replaceChildren(el("option", { value: -2 }, tr("Off", "Dim")),
@@ -2173,7 +2178,7 @@ function renderTune(main, group, tune) {
     versions,
     controls,
     el("div", { class: "tune-layout" },
-      el("div", { class: "tune-main" }, el("div", { class: "score" }, audio, soundNote(), chordPlayback(tune, () => redraw()), paper),
+      el("div", { class: "tune-main" }, el("div", { class: "score" }, audio, soundNote(), paper),
         practiceTools, actions, chords),
       el("div", { class: "tune-side" },
         el("section", { class: "card" }, el("h2", {}, tr("Details", "Manylion")), details, gloss || null),
@@ -3022,18 +3027,18 @@ function refreshOfflineCards() {
   document.querySelectorAll(".sound-note").forEach(fillSoundNote);
 }
 
-// Under a tune's player, where it matters at the session: on a phone the piano's notes are
-// kept only as they're played, so once someone uses playback, puts the music full screen
-// (or has no signal), a quiet line says how to have all of them. Nothing once they're all
-// saved, or where they will be.
+// Under a tune's player, where it matters at the session: with no signal and the piano's
+// notes not all saved yet (nothing played on this device before, or the browser saving
+// data), a quiet line says what will still sound. Otherwise nothing: once something has
+// been played, every note is saved by itself (saveAllSounds).
 function soundNote() {
   const note = el("p", { class: "caption sound-note", "aria-live": "polite" });
   fillSoundNote(note);
   return note;
 }
 
-// "Save them now": all the piano's notes, for playing with no signal. The same quiet
-// bordered button on the home page's card, the offline page and under a tune's player.
+// "Save them now": all the piano's notes, for playing with no signal, on the offline page
+// (for someone who hasn't played anything yet, or whose browser is saving data).
 function saveSoundsButton(label = tr("Save them now", "Eu cadw nawr")) {
   return el("button", { type: "button", class: "save-sounds", onclick: () => {
     state.savingSounds = true;
@@ -3044,15 +3049,9 @@ function saveSoundsButton(label = tr("Save them now", "Eu cadw nawr")) {
 
 function fillSoundNote(note) {
   const { saved, total } = state.sounds ?? {};
-  // Missing where they won't be saved by themselves: on a phone (a computer saves them
-  // all once something is played there), or with the browser saving data.
-  const missing = state.offlineReady && saved < total && !saveAllSounds() && (isPhone() || state.played);
-  if (missing && !navigator.onLine) {
-    note.replaceChildren(tr("No signal: notes you've played before will sound. Save the rest next time you have signal.",
-      "Dim signal: bydd y nodau rydych chi wedi'u chwarae o'r blaen yn canu. Cadwch y gweddill y tro nesaf y bydd gennych signal."));
-  } else if (missing) {  // one line: the button says it all
-    note.replaceChildren(state.savingSounds ? tr("Saving the piano sounds…", "Wrthi'n cadw synau'r piano…")
-      : saveSoundsButton(tr("Save the piano sounds for no signal (2 MB)", "Cadw synau'r piano i chwarae heb signal (2 MB)")));
+  if (state.offlineReady && saved < total && !navigator.onLine) {
+    note.replaceChildren(tr("No signal: notes you've played before will sound. The rest are saved next time you play with a signal.",
+      "Dim signal: bydd y nodau rydych chi wedi'u chwarae o'r blaen yn canu. Caiff y gweddill eu cadw y tro nesaf y byddwch chi'n chwarae gyda signal."));
   } else note.replaceChildren();
   note.hidden = !note.childNodes.length;
 }
@@ -3066,11 +3065,18 @@ function fillOfflineCard(card) {
     : state.offlineFailed ? el("p", { class: "status" }, tr("Couldn't save a copy for offline use this time: it will try again the next time you open the site with a signal.",
       "Methu cadw copi i'w ddefnyddio all-lein y tro hwn: bydd yn rhoi cynnig arall arni y tro nesaf y byddwch chi'n agor y wefan gyda signal."))
     : !state.offlineReady ? el("p", { class: "status" }, tr("Saving a copy for offline use…", "Wrthi'n cadw copi i'w ddefnyddio all-lein…"))
-    : saved < total ? el("p", { class: "status" },
+    // The piano sounds are saved by themselves once something is played; the offline page
+    // can save them now (nothing played yet, or the browser saving data).
+    : saved < total && state.savingSounds ? el("p", { class: "status" },
+      doneText(tr("Every tune is saved on this device. Saving the piano sounds too (2 MB)…",
+        "Mae pob alaw wedi'i chadw ar y ddyfais hon. Wrthi'n cadw synau'r piano hefyd (2 MB)…")))
+    : saved < total && full ? el("p", { class: "status" },
       doneText(tr("Every tune is saved on this device. To play them back with no signal, save the piano sounds too (2 MB): ",
         "Mae pob alaw wedi'i chadw ar y ddyfais hon. I'w chwarae heb signal, cadwch synau'r piano hefyd (2 MB): ")),
-      state.savingSounds ? tr("saving…", "wrthi'n cadw…")
-        : saveSoundsButton())
+      saveSoundsButton())
+    : saved < total ? el("p", { class: "status" },
+      doneText(tr("Every tune is saved on this device. The piano sounds for playing them are saved too once you've played one.",
+        "Mae pob alaw wedi'i chadw ar y ddyfais hon. Caiff synau'r piano eu cadw hefyd unwaith y byddwch chi wedi chwarae un.")))
     : el("p", { class: "status" }, doneText(tr("Saved on this device: works without a signal", "Wedi'i chadw ar y ddyfais hon: mae'n gweithio heb signal")));
   // Already opened as an app: nothing to advertise on the home page.
   card.hidden = isInstalled() && !full;
@@ -3149,9 +3155,8 @@ function renderOffline(main) {
         el("p", {}, "Mae'ch porwr yn cadw copi o'r wefan, fel y mae'n ei wneud gyda thudalennau rydych chi wedi ymweld â nhw, ",
           "felly mae'r alawon, y map a'r tudalennau hyn yn dal i agor pan fyddwch chi all-lein. Pan fydd alawon yn cael ",
           "eu hychwanegu neu eu cywiro, fe'u cewch chi y tro nesaf y byddwch chi ar-lein."),
-        el("p", {}, "Mae'n cymryd tua 1 MB. Ar gyfrifiadur, unwaith y byddwch chi wedi chwarae rhywbeth, mae synau'r piano'n ",
-          "cael eu cadw hefyd (2 MB). Ar ffôn, dim ond y nodau rydych chi wedi'u chwarae sy'n cael eu cadw, nes i chi bwyso ",
-          b("Eu cadw nawr"), " uchod."),
+        el("p", {}, "Mae'n cymryd tua 1 MB. Unwaith y byddwch chi wedi chwarae rhywbeth, mae synau'r piano'n cael eu cadw hefyd ",
+          "(2 MB), oni bai bod eich porwr yn arbed data: yna pwyswch ", b("Eu cadw nawr"), " uchod."),
         el("p", {}, "I'w dynnu, cliriwch ddata'r wefan hon yn eich porwr, fel y byddech chi'n clirio'i chwcis: cliciwch yr eicon ",
           "ar ochr chwith y bar cyfeiriad, neu edrychwch yng ngosodiadau preifatrwydd eich porwr.")));
     return;
@@ -3174,9 +3179,8 @@ function renderOffline(main) {
       el("p", {}, "Your browser keeps a copy of the site, as it does for pages you've visited, so the tunes, the ",
         "map and these pages still open when you're offline. When tunes are added or corrected, you get them ",
         "next time you're online."),
-      el("p", {}, "It takes about 1 MB. On a computer, once you've played something, the piano sounds are kept ",
-        "too (2 MB). On a phone, only the notes ",
-        "you've played are kept, until you press ", b("Save them now"), " above."),
+      el("p", {}, "It takes about 1 MB. Once you've played something, the piano sounds are kept too (2 MB), ",
+        "unless your browser is saving data: then press ", b("Save them now"), " above."),
       el("p", {}, "To remove it, clear this site's data in your browser, as you would its cookies: click the icon ",
         "at the left of the address bar, or look in your browser's privacy settings.")));
 }
@@ -4003,9 +4007,10 @@ async function start() {
 // Offline use (sw.js): once the page has loaded, keep a copy of the whole site, so it
 // works in a pub with no signal and can be added to the home screen as an app.
 // The piano notes for playback (2 MB) are kept as they're played; all of them are saved
-// at once in the installed app, or on a computer once something has been played there (no
-// sounds for someone who only reads the music), and not on a phone's data unless asked.
-const saveAllSounds = () => (isInstalled() || (!isPhone() && state.played)) && !navigator.connection?.saveData;
+// at once in the installed app, or once something has been played on this device (no
+// sounds for someone who only reads the music), but not while the browser saves data,
+// unless asked (the offline page's Save them now).
+const saveAllSounds = () => (isInstalled() || state.played) && !navigator.connection?.saveData;
 
 // A tune, a preview or a key has been played: on a computer, that's the go-ahead to save
 // the rest of the piano's notes, on this visit and the next.

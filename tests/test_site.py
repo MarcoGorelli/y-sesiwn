@@ -405,11 +405,12 @@ def test_no_chord_box_without_chords(page):
     ("mon", "Môn"),                                    # the exact name first, not "harMONi"
     ("helfa'r sgwarnog", "Hel y Sgwarnog"),            # y / yr / 'r
     ("risiart annwyl", "Rhisiart Annwyl"),             # another spelling
+    ("pont", "Pont Cleddau"),                          # a name that starts with it, before another name of a tune ("The Pontnewydd Quickstep")
 ])
 def test_search_by_name(page, query, expected):
     page.goto_site()
     page.fill("#hero-search", query)
-    first = page.locator("#hero-suggestions li").first.inner_text()
+    first = page.locator("#hero-suggestions li > span[lang]").first.inner_text()
     if expected:
         assert first == expected
     else:
@@ -421,7 +422,7 @@ def test_tunes_sharing_a_name(page):
     # searching the name finds them all.
     page.goto_site()
     page.fill("#hero-search", "Morfa Rhuddlan")
-    found = page.locator("#hero-suggestions li").all_inner_texts()
+    found = page.locator("#hero-suggestions li > span[lang]").all_inner_texts()
     assert {"Morfa Rhuddlan", "Morfa Rhuddlan (Mary Richards)", "Morfa Rhuddlan (Robin Huw Bowen)"} <= set(found)
     versions = page.evaluate("state.groups.get('morfa-rhuddlan').versions.map((v) => v.source)")
     assert versions == ["Alawon Cymru", "51 Welsh Airs"]
@@ -966,7 +967,7 @@ def test_piano_sounds_offline(browser, site, phone):
         page.goto(site + "?page=offline")
         page.wait_for_function("state.sounds !== null", timeout=30000)
     page.wait_for_function(all_saved, timeout=30000)
-    assert "✓ Saved on this device" in page.inner_text(".offline-card")
+    assert "Saved on this device" in page.inner_text(".offline-card")
     context.close()
 
 
@@ -1073,7 +1074,8 @@ def test_not_found_page_takes_junk_off(page, site):
 
 def test_share_in_a_key(page, site):
     # ?key=A opens the tune in A; changing the key changes the address (and so the link
-    # that Share and the QR code give). The tempo isn't in the link.
+    # that Share and the QR code give). So does a tempo other than the tune's own, so
+    # "learn it at 70" can be sent too.
     page.goto_site("alaw/glandyfi/?key=A")  # Glandyfi is in G
     page.wait_for_selector(".score .abcjs-staff")
     assert page.input_value("#key-select") == "2"
@@ -1081,13 +1083,13 @@ def test_share_in_a_key(page, site):
     assert page.url == site + "alaw/glandyfi/?key=F"
     page.fill("#tempo", "150")
     page.dispatch_event("#tempo", "change")
-    assert page.url == site + "alaw/glandyfi/?key=F"
+    assert page.url == site + "alaw/glandyfi/?key=F&tempo=150"
     page.select_option("#key-select", "0")
-    assert page.url == site + "alaw/glandyfi/"
-    page.goto_site("alaw/glandyfi/?v=2&key=Bb&bpm=120")  # a tempo in the address is ignored
+    assert page.url == site + "alaw/glandyfi/?tempo=150"
+    page.goto_site("alaw/glandyfi/?v=2&key=Bb&tempo=70&bpm=120")  # ?tempo= opens it at that tempo; anything else is ignored
     page.wait_for_selector(".score .abcjs-staff")
-    assert page.input_value("#key-select") == "3" and page.input_value("#tempo") != "120"
-    assert page.url == site + "alaw/glandyfi/?v=2&key=Bb"
+    assert page.input_value("#key-select") == "3" and page.input_value("#tempo") == "70"
+    assert page.url == site + "alaw/glandyfi/?v=2&key=Bb&tempo=70"
     page.goto_site("?tune=glandyfi&key=D")  # an older link: moves to the tune's address, key kept
     page.wait_for_selector(".score .abcjs-staff")
     assert page.url == site + "alaw/glandyfi/?key=D"
@@ -1767,7 +1769,7 @@ def test_add_to_set_by_search(page):
     page.keyboard.press("Enter")
     page.keyboard.type("nyth y gog")
     page.wait_for_selector("#set-add-list li")
-    second = page.locator("#set-add-list li").nth(1).inner_text()
+    second = page.locator("#set-add-list li > span[lang]").nth(1).inner_text()
     page.keyboard.press("ArrowDown")
     page.keyboard.press("Enter")
     assert page.locator(".set-list li > a").all_inner_texts() == ["Llancesau Trefaldwyn", "Machynlleth", second]
@@ -1812,7 +1814,7 @@ def test_copy_set_as_a_list(browser, site):
         "• Glandyfi (version 2): A major\n"
         "• Llancesau Trefaldwyn (version 1): D major\n"
         "https://ysesiwn.cymru/?set=3V~h5A&n=Nos%20Iau")
-    assert page.inner_text(".set-actions") .count("✓ List copied") == 1
+    assert page.inner_text(".set-actions") .count("List copied") == 1
     page.click(".lang-switch [data-lang=cy]")
     page.wait_for_selector(".set-list li")
     page.click("text=Copïo fel rhestr")
@@ -2247,11 +2249,11 @@ def test_copy_link_where_there_is_no_share_sheet(page):
     page.on("dialog", lambda d: (offered.append(d.default_value), d.dismiss()))
     page.click(".tune-actions .share")
     for _ in range(50):
-        if offered or page.inner_text(".tune-actions .share") == "✓ Link copied":
+        if offered or page.inner_text(".tune-actions .share") == "Link copied":
             break
         page.wait_for_timeout(100)
     link = offered[0] if offered else page.evaluate("navigator.clipboard.readText()")
-    assert offered or page.inner_text(".tune-actions .share") == "✓ Link copied"
+    assert offered or page.inner_text(".tune-actions .share") == "Link copied"
     assert link.startswith("https://ysesiwn.cymru/alaw/glandyfi/")
 
 
@@ -2304,7 +2306,7 @@ def test_damaged_storage_and_backing_up_sets(browser, site):
     page.click(".copy-all-sets")
     copied = page.evaluate("navigator.clipboard.readText()")
     assert "My set\nhttps://ysesiwn.cymru/?set=5A&n=My%20set" in copied
-    assert page.inner_text(".copy-all-sets") == "✓ Links copied"
+    assert page.inner_text(".copy-all-sets") == "Links copied"
     page.evaluate("localStorage.setItem('sets', '{\"not\": \"a list\"}')")
     page.goto(site + "?page=sets")
     page.wait_for_selector("text=No sets yet")
@@ -2588,3 +2590,29 @@ def test_tune_page_before_the_other_tunes(page, site):
     held[0].continue_()
     page.wait_for_selector(".pills")
     assert page.evaluate("state.groupList.length") > 500
+
+
+def test_music_stand_on_a_phone(browser, site):
+    # Full screen on a phone is a music stand: the key and tempo folded into their line even
+    # if they were open, the player pinned at the top, and the playing line kept in view.
+    context = browser.new_context(service_workers="block", **PHONE)
+    page = context.new_page()
+    page.goto(site + "alaw/abaty-waltham/?tempo=200")
+    page.wait_for_selector(".score .abcjs-inline-audio")
+    page.click(".controls-summary")
+    page.click(".practice-toggle")
+    assert not page.locator("#key-select").is_visible()
+    assert page.locator(".score").bounding_box()["y"] < 200
+    page.click(".score .abcjs-midi-start")
+    page.wait_for_function("scrollY > 100", timeout=30000)  # followed the music down
+    assert page.locator(".score > .audio").bounding_box()["y"] < 5  # pinned
+    context.close()
+
+
+def test_tempo_and_key_shortcuts(page):
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.keyboard.press("]")
+    page.keyboard.press(".")
+    assert page.input_value("#tempo") == "117" and page.input_value("#key-select") == "1"
+    assert page.url.endswith("alaw/glandyfi/?key=Ab&tempo=117")

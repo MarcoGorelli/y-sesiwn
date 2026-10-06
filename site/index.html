@@ -73,14 +73,15 @@
         <button type="button" id="menu-button" class="menu-button" aria-expanded="false" aria-controls="sidebar-links" data-cy="Dewislen">Menu</button>
       </div>
       <nav class="sidebar-links" id="sidebar-links">
+        <!-- Finding and playing tunes first; then, quieter, the pages about the site. -->
         <a href="?page=browse" data-route data-cy="Pori yn ôl math a chywair">Browse by type and key</a>
         <a href="?page=notes" data-route data-cy="Canfod alaw o'i nodau">Find a tune by its notes</a>
         <a href="?page=sets" data-route data-cy="Fy setiau">My sets</a>
-        <a href="?page=add" data-route data-cy="Ychwanegu alaw">Add a tune</a>
-        <a href="?page=map" data-route data-cy="Alawon ar y map">Tunes on the map</a>
         <a href="sesiynau/" data-route data-cy="Sesiynau cyfredol">Active sessions</a>
-        <a href="?page=contact" data-route data-cy="Cysylltu">Contact</a>
-        <a href="?page=about" data-route data-cy="Am Y Sesiwn">About Y Sesiwn</a>
+        <a href="?page=map" data-route data-cy="Alawon ar y map">Tunes on the map</a>
+        <a href="?page=add" data-route class="more" data-cy="Ychwanegu alaw">Add a tune</a>
+        <a href="?page=contact" data-route class="more" data-cy="Cysylltu">Contact</a>
+        <a href="?page=about" data-route class="more" data-cy="Am Y Sesiwn">About Y Sesiwn</a>
       </nav>
     </aside>
   </div>

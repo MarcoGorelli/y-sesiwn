@@ -236,12 +236,12 @@ A two-column app shell: a sticky 300px pale-slate sidebar (name, language switch
 Tune pages split the main column 3:1: score on the left, details card on the right (min 14rem). Lists of tunes flow into newspaper columns (3 × min 14rem); feature lists into 2 columns of 22rem.
 
 Breakpoints:
-- **Home page picture:** the instruments on the quilt sit between the welcome and the search box (300px wide); on phones (≤800px) they move near the end of the page, just before "Take it to the session", so the search stays near the top.
+- **Home page picture:** on wide screens (over 1100px) the instruments on the quilt (320px) sit beside the welcome, search and Surprise me; narrower, between the welcome and the search box (300px wide); on phones (≤800px) they move near the end of the page, just before "Take it to the session", so the search stays near the top.
 - **≤800px (phone):** the sidebar becomes a sticky top bar (name + search) with a row underneath (language, Surprise me, Menu); links fold under Menu. Single column, main padding 1.5rem/1rem; the tune's controls reorder so the music starts on the first screen.
 - **≤420px / ≤380px:** tighter button padding so language, Surprise me and Menu stay on one row.
-- **Touch screens (`pointer: coarse`):** every button, select, input, segment, version tab and fold heading is at least 44px tall (preview play and map zoom 44 × 44px); the player uses abcjs's large size; the piano widens to at least 36rem (black keys about 25px wide) and scrolls sideways within its own strip.
+- **Touch screens (`pointer: coarse`):** every button, select, input, segment, version tab and fold heading is at least 44px tall (preview play and map zoom 44 × 44px); the player's position bar is a 44px strip with a 26px handle; the piano widens to at least 36rem (black keys about 25px wide) and scrolls sideways within its own strip.
 
-Practice mode drops the sidebar, side card and footer for a full-width score (up to 1400px), for a tablet on a music stand. Nothing ever scrolls sideways at phone width except the piano keyboard, which scrolls within itself.
+Practice mode (Full screen) drops the sidebar, side card, footer, version tabs and the Take it with you row for a full-width score (up to 1400px), for a tablet on a music stand; the player bar stays pinned to the top of the screen. On a phone it's a music stand too: the key and tempo fold back into their one line, the page's padding shrinks and the music runs nearly edge to edge. While a tune plays, the page keeps the line being played in view (in the top part of the screen), except for a few seconds after the reader scrolls themselves. Nothing ever scrolls sideways at phone width except the piano keyboard, which scrolls within itself.
 
 ## Elevation & Depth
 
@@ -250,7 +250,7 @@ Mostly flat: surfaces are separated by hairline borders and tonal steps (off-whi
 ### Shadow Vocabulary
 - **Resting** (`box-shadow: 0 1px 3px #0000000f`): score paper, offline card.
 - **Search** (`box-shadow: 0 1px 2px #0000000d`; hero search `0 2px 10px #0000000f`): the search fields.
-- **Floating** (`box-shadow: 0 10px 30px var(--shadow-float)`, map popup and menus `0 8px 24px`; `--shadow-float` is `#00000026`): search suggestions, map popups, menus. Small floating controls (map zoom, the set's previous/next bar) use `--shadow-soft` (`#0000001f`).
+- **Floating** (`box-shadow: 0 4px 14px var(--shadow-float)`; `--shadow-float` is `#00000026`): search suggestions, map popups, menus. Small floating controls (map zoom, the set's previous/next bar) use `--shadow-soft` (`#0000001f`).
 - **Scrim** (`--scrim`, `#0006`): behind dialogs.
 - **Top bar** (`box-shadow: 0 2px 8px #0000000f`): the sticky phone top bar.
 - **Focus ring** (`0 0 0 3px` red wash): focused search inputs.
@@ -276,7 +276,7 @@ Plain and sturdy throughout: thin borders, gentle corners, red only on hover and
 
 ### Chips / Pills
 - **Style:** fully rounded white pills with a hairline border, in wrapping rows.
-- **Type pills:** a small woven swatch in the type's colourway; chosen = border in the colourway, 14% tint fill, bold.
+- **Type pills:** a small woven swatch in the type's colourway, the Welsh name (in English, glossed where it isn't obvious: "Pibddawns (hornpipe)"); chosen = border in the colourway, 14% tint fill, bold. Under the key pills, one caption says what Dorian and Mixolydian are.
 - **Key / plain pills:** chosen = filled slate, white text, bold.
 - **All chosen pills** get a drawn tick before the label, so the state is never colour alone.
 
@@ -288,30 +288,30 @@ Plain and sturdy throughout: thin borders, gentle corners, red only on hover and
 - **Variants:** the offline card has a thin carthen strip along its top (the one card that does); folding panels (practice tools) use a red chevron that turns when open.
 
 ### Inputs / Fields
-- **Search:** full pill, 1.5px hairline border, magnifier icon inset left, `/` keycap hint right (hidden on touch). Focus: red border plus a 3px red-wash ring. Suggestions drop below in a floating card; the one Enter opens has a red bar down its left side.
+- **Search:** full pill, 1.5px hairline border, magnifier icon inset left, `/` keycap hint right (hidden on touch). Focus: red border plus a 3px red-wash ring. Suggestions drop below in a floating card, each with its type's swatch, its name, and what it is at the end in muted text ("jig · G major"); the one Enter opens has a red bar down its left side. Names that start with the query come first, then a later word, then a match on one of the tune's other names. Nothing found offers the other ways in: by its notes, or Browse.
 - **Selects:** 8px corners, hairline border, white.
-- **Range / checkbox:** native, tinted with `accent-color` Welsh red.
+- **Range / checkbox:** native. The tempo slider is tinted slate (`--chosen`: a setting, not an accent); checkboxes with `accent-color` Welsh red (`--accent-ink`).
 - **Segmented control:** joined buttons in one bordered group; the chosen one fills red with white text.
 
 ### Icons
-Drawn, never typed: the search magnifier, microphone, share, play and stop are inline SVGs in a 1.8 rounded stroke or solid fill; the chevron (on every `summary`, the Menu button and the Print menu) and the pill tick are SVG masks (`--chevron`, `--tick`) in the text's colour, so they follow the theme. A chevron points right when closed and turns down when open. Unicode stays for content only: the whistle fingering charts (● ○ ◐), "·" separators, and the "✓" in short confirmations ("✓ Link copied").
+Drawn, never typed: the search magnifier, microphone, share, play and stop are inline SVGs in a 1.8 rounded stroke or solid fill; the chevron (on every `summary`, the Menu button and the Print menu) and the pill tick are SVG masks (`--chevron`, `--tick`) in the text's colour, so they follow the theme. A chevron points right when closed and turns down when open. Short confirmations ("Link copied", "Saved on this device") start with the same drawn tick (`.tick-icon`). Unicode stays for content only: the whistle fingering charts (● ○ ◐) and "·" separators.
 
 ### Navigation
-- **Sidebar:** pale slate, sticky, the name in red at top, a two-button language switch (chosen = red), then search, actions, and a list of links separated by a hairline. Links go red with underline on hover.
+- **Sidebar:** pale slate, sticky, the name in red at top, a two-button language switch (chosen = red), then search, actions, and a list of links separated by a hairline: first the ways to find and play tunes, then, a little smaller after a gap, Add a tune, Contact and About. Links go red with underline on hover. The sidebar's colour and edge are also painted down the page behind it, so no strip of page shows below it once it's pinned.
 - **Phone:** sticky top bar (name + search) and a row with language, Surprise me and a Menu button (a drawn chevron) that unfolds the links.
 - **Version tabs:** bordered boxes in a row; the active one has a red border and a 3px red underline.
 
 ### Sheet Music (signature)
-The score sits on cream paper in an 8px bordered panel with a resting shadow; notes are black and the playing note turns red. The abcjs player bar is slate with a red progress knob and red pressed buttons. Tapping a note plays from it. Chord symbols are drawn but hidden unless switched on.
+The score sits on cream paper in an 8px bordered panel with a resting shadow; notes are black and the playing note turns red. The abcjs player bar is slate with red pressed buttons; its position bar is a slim groove with a round red handle ringed in ivory. Tapping a note plays from it. Chord symbols are drawn but hidden unless switched on.
 
 ### Carthen Band (signature)
 A repeating woven strip in Welsh red, slate and cream: 14px across the top of the page and footer, 7px under section headings (as long as the heading), along the top of the offline card, and beneath empty-state art.
 
 ### Tune Page Controls
 Grouped by what you're doing, not by how they were built:
-- **Listen** (always visible): Key and Tempo above the music; the player bar (restart, play, position) and the Tune / chords choice on the paper. At the end of the Key and Tempo row, apart from them, **how the music is shown**: Size − / + and Full screen. On a phone that row becomes two: Key with Size, then Tempo with Full screen, so the music starts on the first screen.
+- **Listen** (always visible): Key and Tempo above the music; the player bar (restart, play, position) and the Tune / chords choice on the paper. At the end of the Key and Tempo row, apart from them, **how the music is shown**: Size − / + and Full screen. On a phone it folds into one line ("G major · Tempo 100 · Change", with Full screen beside it), so the music starts on the first screen; opened, it's a fixed grid (Key with Size, then Tempo with Full screen) that doesn't move when the "your usual key" caption appears. Keyboard: `[` `]` slower or faster, `,` `.` a semitone lower or higher. A shared link carries the key and the tempo (`?key=A&tempo=80`).
 - **Practise** (folding, open on wide screens, folded on phones), three lines: Repeat (Off / The whole tune / Part A…) with Speed up *from* the tempo *to* a bpm box; Count-in, Click, Swing; Tablature. There is one way to repeat: the player's own repeat button is hidden.
-- **Take it with you** (a quiet row under the practise tools): Share, Print / save, QR code, Add to set.
+- **Take it with you** (a quiet row under the practise tools): Share, Print / save, QR code, Add to set (with a choice of set once there's more than one, or a new one).
 - **Reference** (side column): Details, On the map, ABC notation, Report a problem.
 
 ### Practice Tools: "Da iawn"

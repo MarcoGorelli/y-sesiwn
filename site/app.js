@@ -113,6 +113,12 @@ const keyLabel = (text) => tr(text, text.replace(/\b(major|minor|Dorian|Phrygian
 const CY_TYPE = { Jig: "jig", Polca: "polca", Walts: "walts", "Rîl": "rîl", Pibddawns: "pibddawns", Ymdaith: "ymdaith",
   Dawns: "dawns", Alaw: "alaw", "Cân": "cân", Carol: "carol", Other: "alaw arall" };
 const typeName = (name) => (name === "Other" ? tr("Other", "Arall") : name);
+// One tune of a type, in words: "hornpipe" in English, "pibddawns" in Welsh (build_site.py's TYPE_SINGULAR).
+const EN_TYPE = { Jig: "jig", Polca: "polka", Walts: "waltz", "Rîl": "reel", Pibddawns: "hornpipe", Ymdaith: "march",
+  Dawns: "dance", Alaw: "air", "Cân": "song", Carol: "carol", Other: "tune" };
+const typeWord = (name) => tr(EN_TYPE[name] ?? name.toLowerCase(), CY_TYPE[name] ?? name.toLowerCase());
+// The Welsh type names an English speaker may not know, glossed on Browse ("Pibddawns · hornpipe").
+const GLOSSED = new Set(["Pibddawns", "Ymdaith", "Dawns", "Alaw", "Cân"]);
 
 // ---- Small DOM helper ----------------------------------------------------
 
@@ -165,11 +171,17 @@ function score(query, tune) {
   // 2 for the exact name, 1 if the title has the query at the start of a word ("mon" finds "Mwynen Môn",
   // not "harmoni"), otherwise the average word-by-word similarity, so small typos
   // and other spellings ("trefalwdyn", "Risiart") still match.
+  // Among those, the tune's own name before its other names, and a name that starts with
+  // the query before one with a later word that does: "pont" lists "Pont Cleddau" before
+  // "Cwicstep y Bontnewydd" (found by its other name, "The Pontnewydd Quickstep").
   let best = 0;
   const queryWords = words(query);
-  for (const title of tune.search) {
+  for (const [i, title] of tune.search.entries()) {
     if (title === query) return 2;  // the exact name comes first
-    if (` ${title}`.includes(` ${query}`)) { best = 1; continue; }
+    if (` ${title}`.includes(` ${query}`)) {
+      best = Math.max(best, 1 + (i ? 0 : 0.2) + (title.startsWith(query) ? 0.1 : 0));
+      continue;
+    }
     const titleWords = words(title);
     const scores = queryWords.map((q) => Math.max(0, ...titleWords.map((t) => ratio(q, t))));
     best = Math.max(best, (0.99 * scores.reduce((s, x) => s + x, 0)) / scores.length);
@@ -792,12 +804,13 @@ function tuneUrl(group, version = 1) {
   return `alaw/${encodeURIComponent(group)}/${version > 1 ? `?v=${version}` : ""}`;
 }
 
-// A tune's link with the key chosen on its page, so "the jig in A" can be shared:
-// alaw/glandyfi/?key=A (the key by name, in the tune's own mode).
+// A tune's link with the key and tempo chosen on its page, so "the jig in A, slowly" can
+// be shared: alaw/glandyfi/?key=A&tempo=80 (the key by name, in the tune's own mode).
 function tuneLink(group, tune, settings) {
   const query = new URLSearchParams();
   if (tune.version > 1) query.set("v", tune.version);
   if (settings?.transpose && tune.key) query.set("key", NOTES[(tune.key.pitch + settings.transpose + 12) % 12]);
+  if (settings?.bpm && settings.bpm !== tune.bpm) query.set("tempo", settings.bpm);  // "learn it at 70"
   return `alaw/${encodeURIComponent(group.slug)}/${query.size ? `?${query}` : ""}`;
 }
 
@@ -895,6 +908,8 @@ function showShortcuts() {
   const rows = [
     [keys("/"), tr("Search for a tune by name", "Chwilio am alaw yn ôl ei henw")],
     [keys(tr("Space", "Bylchwr")), tr("Play or pause the tune (on a tune's page)", "Chwarae neu oedi'r alaw (ar dudalen alaw)")],
+    [keys("[", "]"), tr("Slower or faster, 5 bpm at a time (on a tune's page)", "Arafach neu gyflymach, 5 curiad y funud ar y tro (ar dudalen alaw)")],
+    [keys(",", "."), tr("A semitone lower or higher (on a tune's page)", "Hanner tôn yn is neu'n uwch (ar dudalen alaw)")],
     [keys("←", "→"), tr("The tune before or after (in a set)", "Yr alaw o'r blaen neu nesaf (mewn set)")],
     [keys("+", "−", "0"), tr("Zoom in, out, or show all of Wales (on a map; the arrow keys move it)", "Chwyddo i mewn, allan, neu ddangos Cymru gyfan (ar fap; mae'r bysellau saeth yn ei symud)")],
     [keys("Esc"), tr("Close a list or this box; leave full screen", "Cau rhestr neu'r blwch hwn; gadael y sgrin lawn")],
@@ -939,6 +954,23 @@ document.addEventListener("keydown", (event) => {
   play.click();
 });
 
+// On a tune's page, hands on the instrument: [ and ] make it slower or faster (5 bpm),
+// , and . a semitone lower or higher (the < and > keys).
+document.addEventListener("keydown", (event) => {
+  const step = { "[": ["tempo", -5], "]": ["tempo", 5], ",": ["key-select", -1], ".": ["key-select", 1] }[event.key];
+  if (!step || event.ctrlKey || event.metaKey || event.altKey) return;
+  if (event.target.closest("input, textarea, select, [contenteditable]")) return;
+  const control = document.getElementById(step[0]);
+  if (!control) return;
+  event.preventDefault();
+  const values = control.tagName === "SELECT" ? [...control.options].map((o) => Number(o.value)) : [Number(control.min), Number(control.max)];
+  const next = Math.min(Math.max(Number(control.value) + step[1], Math.min(...values)), Math.max(...values));
+  if (next === Number(control.value)) return;
+  control.value = next;
+  control.dispatchEvent(new Event("input"));
+  control.dispatchEvent(new Event("change"));
+});
+
 function render() {
   // Something stuck to the end of the address (see sitePath): take it off.
   if (rawPath() !== sitePath()) history.replaceState(null, "", (encodeURI(sitePath()) || "./") + location.search);
@@ -961,7 +993,7 @@ function render() {
   // Older links (?tune=…) and a version's folder move to the tune's own address; an
   // unknown tune (removed, renamed, mistyped) gets a page saying so.
   if (group && (params.has("tune") || !location.pathname.endsWith(`/alaw/${group.slug}/`))) {
-    const keep = new URLSearchParams([...params].filter(([name]) => name === "key"));
+    const keep = new URLSearchParams([...params].filter(([name]) => name === "key" || name === "tempo"));
     history.replaceState(null, "", tuneUrl(group.slug, version) + (keep.size ? `${version > 1 ? "&" : "?"}${keep}` : ""));
   }
   const lost = slug && !group;
@@ -1067,17 +1099,18 @@ function renderHome(main) {
   document.title = "Y Sesiwn";
   const count = state.groupList.length;  // one entry per tune, whatever its number of versions
   main.replaceChildren(...[
+    // The welcome and the ways in, with the instruments beside them on a wide screen.
     el("div", { class: "home-intro" },
       el("h1", {}, tr("Croeso! Welcome to Y Sesiwn", "Croeso i'r Sesiwn!")),
       el("p", { class: "lead" }, ...tr(
         [el("strong", {}, "Free and open source"), `: sheet music for ${count} Welsh folk tunes, to learn, play and share.`],
         [el("strong", {}, "Am ddim a chod agored"), `: sgorau ${count} o alawon gwerin Cymru, i'w dysgu, eu chwarae a'u rhannu.`])),
+      heroSearch(count),
+      el("div", { class: "home-actions" },
+        el("button", { type: "button", onclick: openRandomTune }, tr("Surprise me", "Alaw ar hap")),  // the search comes first
+        el("a", { href: "?page=browse", "data-route": true, class: "button-link" },
+          tr(`Browse all ${count} tunes`, `Pori'r ${count} alaw`))),
       instruments(" at-top")),
-    heroSearch(count),
-    el("div", { class: "home-actions" },
-      el("button", { type: "button", onclick: openRandomTune }, tr("Surprise me", "Alaw ar hap")),  // the search comes first
-      el("a", { href: "?page=browse", "data-route": true, class: "button-link" },
-        tr(`Browse all ${count} tunes`, `Pori'r ${count} alaw`))),
     recentTunes(),  // nothing yet on a first visit
     notesInvite(),
     upcomingSessions(),
@@ -1180,8 +1213,17 @@ function renderBrowse(main) {
     pills.append(el("button", {
       type: "button", "data-type": type.name, style: `--c: ${type.colour}`,
       onclick: () => toggle(chosenTypes, type.name),
-    }, el("span", { class: "swatch" }), `${typeName(type.name)} · ${type.count}`));
+    }, el("span", { class: "swatch" }), type.name === "Other" ? typeName(type.name) : el("span", { lang: "cy" }, type.name),
+      // In English, what the Welsh names mean: "Pibddawns (hornpipe)"
+      state.lang !== "cy" && GLOSSED.has(type.name) ? el("span", { class: "gloss" }, ` (${EN_TYPE[type.name]})`) : null,
+      ` · ${type.count}`));
   }
+  // The modes that aren't major or minor, for anyone who hasn't met them.
+  const modal = keyOrder.some((k) => /Dorian|Mixolydian/.test(k))
+    ? el("p", { class: "caption modes" }, tr(
+      "Dorian and Mixolydian are older modes, common in folk music: Dorian sounds like minor with a brighter sixth note, Mixolydian like major with a lower seventh.",
+      "Moddau hŷn, cyffredin mewn cerddoriaeth werin, yw Doriaidd a Mixolydaidd: mae Doriaidd yn swnio fel cywair lleiaf gyda chweched nodyn mwy llachar, a Mixolydaidd fel cywair mwyaf gyda seithfed nodyn is."))
+    : null;
   for (const key of keyOrder) {
     keyPills.append(el("button", {
       type: "button", "data-key": key, onclick: () => toggle(chosenKeys, key),
@@ -1193,7 +1235,7 @@ function renderBrowse(main) {
     el("p", { class: "lead" }, tr("Pick any types and keys: the jigs and reels in D, say.",
       "Dewiswch unrhyw fathau a chyweiriau: y jigiau a'r riliau yn D, dyweder.")),
     el("p", { class: "pills-label" }, tr("Type", "Math")), pills,
-    el("p", { class: "pills-label" }, tr("Key", "Cywair")), keyPills, caption, list,
+    el("p", { class: "pills-label" }, tr("Key", "Cywair")), keyPills, modal, caption, list,
   );
   show(true);
 }
@@ -1315,10 +1357,12 @@ class Cursor {  // highlights the notes as they play, and keeps playback inside 
   onEvent(event) {
     document.querySelectorAll(".abcjs-note_playing").forEach((n) => n.classList.remove("abcjs-note_playing"));
     if (event) event.elements.flat().forEach((n) => n.classList.add("abcjs-note_playing"));
+    // A new line of music: keep it in view.
+    if (event && event.line !== this.line) { this.line = event.line; const note = event.elements.flat()[0]; if (note) followMusic(note); }
     if (event && this.loop) this.loop.onEvent(event);
   }
   onStart() { soundPlayed(); }
-  onFinished() { this.onEvent(null); }
+  onFinished() { this.onEvent(null); this.line = undefined; }
 }
 
 // ---- Practice: loop a part, speed up, count-in, click, tablature -------------------------
@@ -1481,7 +1525,43 @@ function scoreLayout(paper) {
   const zoom = SIZES[state.musicSize];
   if (!width || (own >= 0.6 && zoom === 1)) return {};
   const staffwidth = Math.round(width / ((own >= 0.6 ? own : READABLE) * zoom) / 20) * 20;
-  return { staffwidth, wrap: { minSpacing: 1.8, maxSpacing: 2.7, preferredMeasuresPerLine: Math.max(1, Math.round(staffwidth / 200)) } };
+  // As many bars as the tune's own lines would fit in that width: short bars (a polka's
+  // 2/4) come more to a line than long ones, so a phone isn't left with two bars a line.
+  const bars = Math.max(1, Math.round((Number(paper.dataset.bars) || 4) * staffwidth / 740));
+  return { staffwidth, wrap: { minSpacing: 1.8, maxSpacing: 2.7, preferredMeasuresPerLine: bars } };
+}
+
+// The bars on a line of the tune as written (the middle one of its lines, so a short
+// last line doesn't count): what scoreLayout scales down for a narrow screen.
+function ownBarsPerLine(abc) {
+  const body = abc.slice(abc.search(/^K:/m)).split("\n").slice(1)
+    .filter((line) => line.trim() && !/^([A-Za-z]:|%)/.test(line));
+  const counts = body.map((line) => line.replace(/"[^"]*"|![^!]*!|\[[A-Za-z]:[^\]]*\]/g, "")
+    .split(/\|+\]?|::|:\||\|:/).filter((bar) => /[A-Ga-gz]/.test(bar)).length).filter(Boolean).sort((a, b) => a - b);
+  return counts.length ? counts[Math.floor(counts.length / 2)] : 4;
+}
+
+// Playing along: the page keeps the line being played in view, near the top, so hands can
+// stay on the instrument. Not while the reader is scrolling themselves (for a few seconds
+// after), nor when they've gone elsewhere on the page.
+let handsOnPage = 0;
+for (const type of ["wheel", "touchmove"]) {
+  window.addEventListener(type, () => { handsOnPage = Date.now(); }, { passive: true });
+}
+function followMusic(note) {
+  if (Date.now() - handsOnPage < 4000) return;
+  const box = note.getBoundingClientRect();
+  if (!box.height) return;
+  // What stays at the top of the screen over the music: the bar pinned on a phone, the
+  // player pinned in full screen.
+  const pinned = [...document.querySelectorAll(".topbar, .score > .audio")]
+    .filter((x) => ["sticky", "fixed"].includes(getComputedStyle(x).position))
+    .reduce((bottom, x) => Math.max(bottom, x.getBoundingClientRect().bottom), 0);
+  const top = pinned + 8, bottom = window.innerHeight * 0.7;
+  const seen = box.bottom > top - 150 && box.top < window.innerHeight + 150;  // the music, or just past it
+  if (!seen || (box.top >= top && box.bottom <= bottom)) return;
+  window.scrollTo({ top: window.scrollY + box.top - top - 48,
+    behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
 }
 
 // − and + for the music's size: for reading at a distance (a tablet on a music stand)
@@ -1531,6 +1611,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   const tab = TABS[state.practice.tab];
   const whistle = WHISTLES[state.practice.tab];
   if (whistle) abc = withFingerings(abc, whistle);
+  paper.dataset.bars = ownBarsPerLine(tune.abc);
   const layout = scoreLayout(paper);
   paper.dataset.layout = JSON.stringify(layout);
   abc = shortCredits(abc, layout);
@@ -1866,6 +1947,8 @@ function renderTune(main, group, tune) {
   // A shared link's key (?key=A)…
   const shift = keyShift(tune, new URLSearchParams(location.search).get("key"));
   if (shift !== null) settings.transpose = shift;
+  const tempo = Math.round(Number(new URLSearchParams(location.search).get("tempo")));  // …and its tempo (?tempo=80)
+  if (tempo >= 30 && tempo <= 200) settings.bpm = tempo;
   // …and the address follows the page's key, so it can be copied as it is.
   const showInAddress = () => history.replaceState(null, "", tuneLink(group, tune, settings));
   showInAddress();  // a key chosen earlier (this visit) shows in the address too
@@ -1955,7 +2038,7 @@ function renderTune(main, group, tune) {
     el("input", {
       id: "tempo", type: "range", min: 30, max: 200, value: settings.bpm,
       oninput: (e) => { settings.bpm = +e.target.value; showTempo(); },
-      onchange: redraw,
+      onchange: () => { showInAddress(); redraw(); },
     })),
     // How the music is shown, at the end of the row: its size, and full screen.
     el("div", { class: "view-tools" }, musicSize(redraw), practice)]);
@@ -2112,7 +2195,7 @@ function shareButton(title, link) {
       tr("Share", "Rhannu"));
   }
   return el("button", { type: "button", class: "share", onclick: async (e) => {
-    try { await navigator.clipboard.writeText(link()); e.target.textContent = tr("✓ Link copied", "✓ Dolen wedi'i chopïo"); }
+    try { await navigator.clipboard.writeText(link()); e.target.closest("button").replaceChildren(...doneText(tr("Link copied", "Dolen wedi'i chopïo"))); }
     catch { prompt(tr("Copy this link:", "Copïwch y ddolen hon:"), link()); }
   } }, tr("Copy link", "Copïo'r ddolen"));
 }
@@ -2145,6 +2228,15 @@ function setPractice(on) {
   const button = document.querySelector(".practice-toggle");
   if (button) button.textContent = practiceLabel(on);
   if (on) document.querySelector(".practice-tools")?.setAttribute("open", "");
+  // On a phone it's a music stand: the key and tempo folded back into their one line, and
+  // the music from the top of the screen.
+  if (on && matchMedia("(max-width: 800px)").matches) {
+    state.controlsOpen = false;
+    document.getElementById("tune-controls")?.classList.remove("open");
+    document.querySelector(".controls-summary")?.setAttribute("aria-expanded", "false");
+  }
+  if (on) window.scrollTo(0, 0);
+  refreshOfflineCards();  // in full screen, the piano sounds for no signal are offered at once (fillSoundNote)
   if (on && document.fullscreenEnabled) document.documentElement.requestFullscreen().catch(() => {});
   if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {});
 }
@@ -2867,6 +2959,9 @@ const isMacSafari = () => /Macintosh/.test(navigator.userAgent) && /Version\/[\d
 // Browsers' own menus are rarely in Welsh, so their names stay in English.
 const ui = (text) => el("strong", { lang: "en" }, text);
 
+// Something done ("Link copied"): the drawn tick (style.css), then the words.
+const doneText = (text) => [el("span", { class: "tick-icon", "aria-hidden": "true" }), text];
+
 const SHARE_ICON = () => svg("svg", { viewBox: "0 0 24 24", class: "share-icon", "aria-label": "Share" },
   svg("path", { d: "M12 3v12M7.5 7.5 12 3l4.5 4.5M7 10.5H5.5v10h13v-10H17", fill: "none",
     stroke: "currentColor", "stroke-width": 1.8, "stroke-linecap": "round", "stroke-linejoin": "round" }));
@@ -2883,8 +2978,9 @@ function refreshOfflineCards() {
 }
 
 // Under a tune's player, where it matters at the session: on a phone the piano's notes are
-// kept only as they're played, so once someone uses playback (or has no signal), a quiet
-// line says how to have all of them. Nothing once they're all saved, or where they will be.
+// kept only as they're played, so once someone uses playback, puts the music full screen
+// (or has no signal), a quiet line says how to have all of them. Nothing once they're all
+// saved, or where they will be.
 function soundNote() {
   const note = el("p", { class: "caption sound-note", "aria-live": "polite" });
   fillSoundNote(note);
@@ -2897,7 +2993,7 @@ function fillSoundNote(note) {
   if (missing && !navigator.onLine) {
     note.replaceChildren(tr("No signal: notes you haven't played before may be silent.",
       "Dim signal: efallai bydd nodau nad ydych chi wedi'u chwarae o'r blaen yn dawel."));
-  } else if (missing && state.played) {
+  } else if (missing && (state.played || (isPhone() && document.body.classList.contains("practice")))) {  // or on the music stand, before the session
     note.replaceChildren(tr("To play tunes with no signal, save the piano sounds (2 MB): ",
       "I chwarae alawon heb signal, cadwch synau'r piano (2 MB): "),
       state.savingSounds ? tr("saving…", "wrthi'n cadw…")
@@ -2918,15 +3014,15 @@ function fillOfflineCard(card) {
   const status = !("serviceWorker" in navigator) ? null
     : !state.offlineReady ? el("p", { class: "status" }, tr("Saving a copy for offline use…", "Wrthi'n cadw copi i'w ddefnyddio all-lein…"))
     : saved < total ? el("p", { class: "status" },
-      tr("✓ Every tune is saved on this device. To play them back with no signal, save the piano sounds too (2 MB): ",
-        "✓ Mae pob alaw wedi'i chadw ar y ddyfais hon. I'w chwarae heb signal, cadwch synau'r piano hefyd (2 MB): "),
+      doneText(tr("Every tune is saved on this device. To play them back with no signal, save the piano sounds too (2 MB): ",
+        "Mae pob alaw wedi'i chadw ar y ddyfais hon. I'w chwarae heb signal, cadwch synau'r piano hefyd (2 MB): ")),
       state.savingSounds ? tr("saving…", "wrthi'n cadw…")
         : el("button", { type: "button", class: "save-sounds", onclick: () => {
           state.savingSounds = true;
           askWorker("save-sounds");
           refreshOfflineCards();
         } }, tr("Save them now", "Eu cadw nawr")))
-    : el("p", { class: "status" }, tr("✓ Saved on this device: works without a signal", "✓ Wedi'i chadw ar y ddyfais hon: mae'n gweithio heb signal"));
+    : el("p", { class: "status" }, doneText(tr("Saved on this device: works without a signal", "Wedi'i chadw ar y ddyfais hon: mae'n gweithio heb signal")));
   // Already opened as an app: nothing to advertise on the home page.
   card.hidden = isInstalled() && !full;
   let how;
@@ -3122,14 +3218,21 @@ const tuneCount = (n) => tr(`${n} tune${n === 1 ? "" : "s"}`, `${n} alaw`);
 // The tune page's button: adds this version, in the key chosen, to the set you're building.
 function addToSetButton(tune, settings) {
   const status = el("span", { class: "caption add-status", "aria-live": "polite" });
+  // With more than one set (a teacher's, one per class), which one: the last added to, unless changed.
+  const kept = loadSets();
+  const which = kept.length > 1 ? el("select", { class: "which-set", "aria-label": tr("Which set", "Pa set") },
+    kept.map((x) => el("option", { value: x.id, selected: x.id === currentSetId() }, x.name || defaultSetName())),
+    el("option", { value: "new" }, tr("A new set", "Set newydd"))) : null;
   const button = el("button", { type: "button", class: "add-to-set", onclick: () => {
     const sets = loadSets();
-    let set = sets.find((x) => x.id === currentSetId());
+    let set = sets.find((x) => x.id === (which ? which.value : currentSetId()));
     if (!set) {
-      set = { id: newSetId(), name: defaultSetName(), c: "" };
+      set = { id: newSetId(), name: sets.length ? `${defaultSetName()} ${sets.length + 1}` : defaultSetName(), c: "" };
       sets.push(set);
-      setCurrentSet(set.id);
+      if (which) which.insertBefore(el("option", { value: set.id }, set.name), which.lastChild);
     }
+    setCurrentSet(set.id);
+    if (which) which.value = set.id;
     const { items } = decodeSet(set.c);
     items.push({ tune, key: settings.transpose });
     set.c = encodeSet(items);
@@ -3138,7 +3241,7 @@ function addToSetButton(tune, settings) {
     status.replaceChildren(tr(`Added to ${set.name} (${tuneCount(items.length)}) · `, `Wedi'i hychwanegu at ${set.name} (${tuneCount(items.length)}) · `),
       el("a", { href: setUrl(items, set.name, set.id), "data-route": true }, tr("see the set", "gweld y set")));
   } }, tr("Add to set", "Ychwanegu at set"));
-  return el("span", { class: "add-to-set-wrap" }, button, status);
+  return el("span", { class: "add-to-set-wrap" }, button, which, status);
 }
 
 // ?page=sets: the sets kept in this browser.
@@ -3177,7 +3280,7 @@ function renderSets(main) {
         + "ar y ddyfais hon. Cadwch gopi o'u dolenni yn rhywle diogel: agorwch un i'w chael yn ôl. "),
         el("button", { type: "button", class: "copy-all-sets", onclick: async (e) => {
           const text = loadSets().map((set) => `${set.name}\nhttps://ysesiwn.cymru/${setUrl(decodeSet(set.c).items, set.name)}`).join("\n\n");
-          try { await navigator.clipboard.writeText(text); e.target.textContent = tr("✓ Links copied", "✓ Dolenni wedi'u copïo"); }
+          try { await navigator.clipboard.writeText(text); e.target.closest("button").replaceChildren(...doneText(tr("Links copied", "Dolenni wedi'u copïo"))); }
           catch { prompt(tr("Copy these links:", "Copïwch y dolenni hyn:"), text); }
         } }, tr("Copy all their links", "Copïo'u holl ddolenni"))) : null,
       el("p", {}, el("button", { type: "button", class: "primary", onclick: () => {
@@ -3201,6 +3304,7 @@ function setScore(tune, key) {
     // The numbered heading above says which tune it is, so no title (T:) on the music.
     let abc = setTempo(stripFields(tune.abc, "SZBNAHTR"), tune.beat, tune.bpm);
     if (key) abc = ABCJS.strTranspose(abc, ABCJS.renderAbc("*", abc), semitones(tune, key));
+    paper.dataset.bars = ownBarsPerLine(tune.abc);
     const layout = scoreLayout(paper);
     ABCJS.renderAbc(paper, shortCredits(abc, layout), { responsive: "resize", add_classes: true, paddingtop: 0, ...layout });
     hideMeasuring();
@@ -3360,7 +3464,7 @@ function renderSet(main) {
         onchange: (e) => { name = e.target.value.trim() || defaultSetName(); save(); } })
     : el("h1", {}, name);
   const copy = el("button", { type: "button", onclick: async (e) => {
-    try { await navigator.clipboard.writeText(shareLink()); e.target.textContent = tr("✓ Link copied", "✓ Dolen wedi'i chopïo"); }
+    try { await navigator.clipboard.writeText(shareLink()); e.target.closest("button").replaceChildren(...doneText(tr("Link copied", "Dolen wedi'i chopïo"))); }
     catch { prompt(tr("Copy this link:", "Copïwch y ddolen hon:"), shareLink()); }
   } }, tr("Copy link", "Copïo'r ddolen"));
   // The set as text to paste into a message or notes: its name, a bullet for each tune
@@ -3372,7 +3476,7 @@ function renderSet(main) {
     return `• ${tune.base}${version}${keyName}`;
   }), shareLink()].join("\n");
   const copyList = el("button", { type: "button", onclick: async (e) => {
-    try { await navigator.clipboard.writeText(asList()); e.target.textContent = tr("✓ List copied", "✓ Rhestr wedi'i chopïo"); }
+    try { await navigator.clipboard.writeText(asList()); e.target.closest("button").replaceChildren(...doneText(tr("List copied", "Rhestr wedi'i chopïo"))); }
     catch { prompt(tr("Copy this list:", "Copïwch y rhestr hon:"), asList()); }
   } }, tr("Copy as a list", "Copïo fel rhestr"));
   const printAll = () => { for (const paper of music.querySelectorAll(".set-paper")) paper.draw(); window.print(); };
@@ -3430,7 +3534,7 @@ function openMail(url) {  // its own function, so the tests can catch the email 
 function emailForm(fields, { subject, body, send = tr("Write the email", "Ysgrifennu'r e-bost") }) {
   const after = el("div", { class: "email-sent", role: "status" });
   const copyButton = (label, text) => el("button", { type: "button", onclick: async (e) => {
-    try { await navigator.clipboard.writeText(text()); e.target.textContent = tr("✓ Copied", "✓ Wedi copïo"); }
+    try { await navigator.clipboard.writeText(text()); e.target.closest("button").replaceChildren(...doneText(tr("Copied", "Wedi copïo"))); }
     catch { e.target.textContent = tr("Couldn't copy", "Methu copïo"); }
   } }, label);
   const form = el("form", { class: "email-form", onsubmit: (e) => {
@@ -3649,6 +3753,16 @@ function noteMiss(query, found) {
   }, 1500);
 }
 
+// A tune in the search's list: its type's colour, its name, and what it is ("jig · G major"),
+// so two tunes of the same name, or a half-remembered one, can be told apart.
+function suggestion(group) {
+  const type = state.data.types?.find((t) => t.name === group.type);
+  const key = group.versions[0].key;
+  const what = [group.type !== "Other" && typeWord(group.type), key && `${key.root} ${modeName(key.modeName)}`].filter(Boolean).join(" · ");
+  return [el("span", { class: "swatch", style: type ? `--c: ${type.colour}` : null, "aria-hidden": "true" }),
+    tuneName(group.slug, group.title), what ? el("span", { class: "what" }, what) : null];
+}
+
 function attachSearch(input, list, { showAllOnFocus = true, onPick = null } = {}) {
   let results = [];
   let active = 0;
@@ -3689,13 +3803,19 @@ function attachSearch(input, list, { showAllOnFocus = true, onPick = null } = {}
     noteMiss(query, results.length);
     say(query);
     active = 0;
+    // Nothing by that name: the other ways of finding it (a link pressed here keeps the list open till it's followed).
+    const elsewhere = (href, text) => el("a", { href, "data-route": true, onmousedown: (e) => e.preventDefault(),
+      onclick: (e) => { e.preventDefault(); input.value = ""; close(); input.blur(); navigate(href); } }, text);
     list.replaceChildren(...(results.length
       ? results.map((tune, i) => el("li", {
           role: "option", id: `${input.id}-option-${i}`, "aria-selected": String(i === active),
           onmousedown: (e) => { e.preventDefault(); open(tune); },
-        }, tuneName(tune.slug, tune.title)))
-      : [el("li", { class: "empty" }, state.complete ? tr("No tunes match that name.", "Does dim alaw â'r enw hwnnw.")
-        : tr("Loading tunes…", "Yn llwytho'r alawon…"))]));
+        }, suggestion(tune)))
+      : [el("li", { class: "empty" }, ...(state.complete
+        ? [tr("No tunes match that name.", "Does dim alaw â'r enw hwnnw."), el("span", { class: "try" },
+            elsewhere("?page=notes", tr("Find it by its notes", "Ei chanfod o'i nodau")), " · ",
+            elsewhere("?page=browse", tr("Browse by type and key", "Pori yn ôl math a chywair")))]
+        : [tr("Loading tunes…", "Yn llwytho'r alawon…")]))]));
     list.hidden = false;
     input.setAttribute("aria-expanded", "true");
     // The first is picked already (Enter opens it), so a screen reader says it, and ↓ goes on to the second.

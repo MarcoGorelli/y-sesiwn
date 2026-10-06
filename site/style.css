@@ -96,12 +96,21 @@ main:focus { outline: none; }  /* focused only by the skip link, not something t
   flex-direction: column;
   gap: 1.25rem;
 }
+/* The sidebar's colour and edge also run down the page behind it, so no strip of page
+   shows under it once it's pinned (it's 14px shorter than the screen: the carthen band) */
+@media (min-width: 801px) {
+  body:not(.practice) { background: url("carthen.svg") repeat-x top left / auto 14px,
+    linear-gradient(to right, var(--sidebar-bg) 299px, var(--border) 299px) left 14px / 300px 100% no-repeat, var(--bg); }
+}
 .topbar { display: grid; gap: 1rem; }
 .sidebar { display: flex; flex-direction: column; gap: 1.25rem; }
 .brand {
   display: flex; align-items: center; gap: .6rem;
   font-size: 1.75rem; font-weight: 700; color: var(--brand); text-decoration: none;
 }
+/* At night the harp's dark wood would sink into the sidebar: it sits on a scrap of the
+   score's paper instead */
+@media (prefers-color-scheme: dark) { .brand img { background: var(--paper); border-radius: 6px; padding: 2px; } }
 .sidebar-actions { display: grid; gap: .5rem; }
 .menu-button { display: none; }  /* phones only */
 body[data-page="home"] .topbar .search { display: none; }  /* the home page has its own, bigger one */
@@ -113,6 +122,8 @@ body[data-page="home"] #surprise-sidebar { display: none; }  /* and its own Surp
 .sidebar-links { display: grid; gap: .35rem; border-top: 1px solid var(--border); padding-top: 1rem; }
 .sidebar-links a { text-decoration: none; }
 .sidebar-links a:hover { color: var(--accent-ink); text-decoration: underline; }
+.sidebar-links a.more { font-size: .9rem; }
+.sidebar-links a:not(.more) + a.more { margin-top: .6rem; }
 
 button {
   border: 1px solid var(--border);
@@ -158,9 +169,14 @@ button.primary:hover { color: #fff; filter: brightness(1.1); }
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: 0 10px 30px var(--shadow-float);
+  box-shadow: 0 4px 14px var(--shadow-float);
 }
 .suggestions li { padding: .45rem 1rem; cursor: pointer; }
+/* Each tune: its type's colour, its name, and what it is ("jig · G major") at the end */
+.suggestions li[role="option"] { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: .75rem; }
+.suggestions .swatch { width: .75em; height: .75em; margin-right: -.25rem; transform: translateY(.05em); }
+.suggestions .what { margin-left: auto; color: var(--muted); font-size: .85rem; white-space: nowrap; }
+.suggestions .try { display: block; margin-top: .3rem; font-size: .9rem; }
 @media (hover: hover) { .suggestions li:not(.empty):hover { background: var(--accent-soft); } }
 /* The one Enter opens: a clear bar down its side as well as the tint. */
 .suggestions li[aria-selected="true"] { background: var(--accent-soft); box-shadow: inset 4px 0 var(--accent-ink); }
@@ -224,7 +240,13 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
   background: url("static/quilt.svg") center / 100% 100% no-repeat;
 }
 .instruments img { width: 30%; height: auto; }
-.instruments.at-top { margin: 1.25rem 0 0; }
+.home-intro { display: grid; grid-template-columns: minmax(0, 40rem) auto; column-gap: 3rem; align-items: start; }
+.home-intro > :not(.instruments) { grid-column: 1; }
+.instruments.at-top { grid-column: 2; grid-row: 1 / span 4; align-self: center; width: 320px; }
+@media (max-width: 1100px) {  /* not enough room beside it: under the welcome, before the search */
+  .home-intro { grid-template-columns: minmax(0, 1fr); }
+  .instruments.at-top { grid-column: 1; grid-row: 3; align-self: start; width: min(100%, 300px); margin: 0 0 .25rem; }
+}
 .instruments.at-end { display: none; margin: 2rem 0 0; }
 @media (max-width: 800px) {
   .instruments.at-top { display: none; }
@@ -232,7 +254,7 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 }
 
 /* Home page: the way into the notes page */
-.home-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+.home-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; }
 .notes-invite { margin: 1.1rem 0 .5rem; }
 .notes-invite .link-button { margin: 0; font-size: inherit; }
 .notes-invite .mic-icon { margin-right: .2em; }
@@ -326,7 +348,7 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .control label { display: block; font-size: .9rem; margin-bottom: .3rem; }
 .control select { padding: .4rem .6rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); }
 .control.tempo { flex: 1 1 18rem; max-width: 32rem; }
-.control input[type="range"] { width: 100%; height: 2rem; accent-color: var(--accent-ink); }
+.control input[type="range"] { width: 100%; height: 2rem; accent-color: var(--chosen); }  /* slate: a setting, not an accent */
 /* How the music is shown (size, full screen): at the end of the row, apart from the rest */
 .view-tools { display: flex; align-items: center; gap: .75rem; margin-left: auto; }
 .view-tools .music-size { margin-left: 0; }
@@ -402,12 +424,20 @@ details[open] > summary::before { transform: rotate(90deg); }
   box-shadow: 0 1px 3px #0000000f;
 }
 .score .abcjs-inline-audio { background-color: var(--slate); border-radius: 6px; }
-.score .abcjs-inline-audio .abcjs-midi-progress-background { background-color: var(--player-track); }
+/* The position bar: a slim groove in a taller strip (the strip is what's pressed, so it's
+   easy to hit), and a round red handle with a light rim, clear on the slate. */
+.score .abcjs-inline-audio .abcjs-midi-progress-background {
+  --groove: 6px; --handle: 18px; height: calc(var(--handle) + 6px); border: 0; border-radius: 0;
+  background: linear-gradient(var(--player-track), var(--player-track)) center / 100% var(--groove) no-repeat;
+}
+.score .abcjs-inline-audio .abcjs-midi-progress-indicator {
+  top: 3px; width: var(--handle); height: var(--handle); margin-left: calc(var(--handle) / -2);
+  border-radius: 50%; background-color: var(--accent); box-shadow: 0 0 0 2px var(--ivory), 0 1px 3px var(--shadow-float);
+}
 .score .abcjs-note_playing { fill: var(--accent); }
 .score .abcjs-note { cursor: pointer; }  /* a tap plays from that note (playFrom in app.js) */
 .score .abcjs-note_selected { fill: currentColor; }  /* …without leaving it marked */
-/* Player: red progress knob, and play/loop in red while they're on. */
-.score .abcjs-inline-audio .abcjs-midi-progress-indicator { background-color: var(--accent); }
+/* Player: play/loop in red while they're on. */
 .score .abcjs-inline-audio .abcjs-btn.abcjs-pushed { background-color: var(--accent); }
 /* Play is the page's main action: a red disc on the slate bar (white on Welsh red, 5.9:1).
    Painted with an inset shadow, as abcjs's own CSS clears its buttons' backgrounds. */
@@ -475,7 +505,7 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
   position: absolute; z-index: 5; width: max-content; max-width: 16rem;
   padding: .55rem .8rem; font-size: .9rem; line-height: 1.4;
   background: var(--card-bg); border: 1px solid var(--border);
-  border-radius: var(--radius); box-shadow: 0 8px 24px var(--shadow-float);
+  border-radius: var(--radius); box-shadow: 0 4px 14px var(--shadow-float);
   --dx: -50%; --dy: calc(-100% - 10px);
   transform: translate(var(--dx), var(--dy));
 }
@@ -594,6 +624,18 @@ body.practice h1 { font-size: 1.35rem; }
 body.practice .controls { margin: .5rem 0 1rem; }
 body.practice .tune-layout { grid-template-columns: 1fr; }
 body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 1rem 1.5rem 1.5rem; }
+body.practice :is(.versions, .tune-actions) { display: none; }
+/* The player stays at the top of the screen as the music goes by under it */
+body.practice .score > .audio { position: sticky; top: 0; z-index: 3; margin: -.5rem -.5rem 0; padding: .5rem; background: var(--paper);
+  border-radius: var(--radius) var(--radius) 0 0; }
+@media (max-width: 800px) {
+  /* A phone on a music stand: the name and the one line of key and tempo, then the music,
+     edge to edge */
+  body.practice main { padding: .5rem .5rem 2rem; }
+  body.practice h1 { font-size: 1.1rem; margin: 0 .25rem .4rem; }
+  body.practice .controls { margin: 0 0 .5rem; }
+  body.practice .score { padding: .5rem .5rem 1rem; border-radius: 6px; }
+}
 
 /* Guide pages (CONTRIBUTING.md) */
 .guide { max-width: 50rem; }
@@ -629,6 +671,7 @@ body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 
   .sidebar.menu-open .menu-button::after { transform: rotate(-90deg); }
   .sidebar-links { display: none; flex: 1 0 100%; flex-wrap: wrap; gap: .35rem 1rem; padding-top: .5rem; font-size: .9rem; }
   .sidebar.menu-open .sidebar-links { display: flex; }
+  .sidebar-links a:not(.more) + a.more { margin-top: 0; }
   /* One line, so the music starts high on the first screen: the key and tempo, to tap
      and change them, and full screen. Opened: key and size; then tempo and full screen. */
   .controls { gap: .75rem 1.25rem; margin-bottom: 1rem; align-items: center; }
@@ -641,12 +684,18 @@ body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 
     mask: var(--chevron) center / contain no-repeat; transform: rotate(90deg); transition: transform .15s; }
   .controls-summary[aria-expanded="true"] .change::after { transform: rotate(-90deg); }
   .controls:not(.open) > .control, .controls:not(.open) .music-size { display: none; }
-  .controls.open .controls-summary { flex-basis: 100%; }
   .controls .view-tools { display: contents; }
-  .controls .music-size { margin-left: auto; }
-  .controls > .tempo { order: 1; }
-  .controls .practice-toggle { order: 2; }
-  .control.tempo { flex: 1 1 12rem; }
+  /* Opened: a fixed grid, so nothing moves when a caption appears ("your usual key") */
+  .controls.open { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end;
+    grid-template-areas: "summary summary" "key size" "tempo full"; }
+  .controls.open .controls-summary { grid-area: summary; }
+  .controls.open > .control:not(.tempo) { grid-area: key; }
+  .controls.open > .control.tempo { grid-area: tempo; max-width: none; }
+  .controls.open .music-size { grid-area: size; margin-left: 0; }
+  .controls.open .practice-toggle { grid-area: full; }
+  /* On the music stand the one line has less room: the chevron says it opens */
+  body.practice .controls-summary .change { font-size: 0; gap: 0; }
+  body.practice .controls-summary .change::after { font-size: .9rem; }
   main { padding: 1.5rem 1rem 3rem; }
   .site-footer { padding: 22px 1rem 1.25rem; }
   .tune-layout, .map-layout { grid-template-columns: 1fr; }
@@ -692,7 +741,7 @@ body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 
 .print-menu {
   position: absolute; right: 0; top: calc(100% + .3rem); z-index: 10; display: grid; min-width: 14rem;
   background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius);
-  box-shadow: 0 8px 24px var(--shadow-float); padding: .3rem;
+  box-shadow: 0 4px 14px var(--shadow-float); padding: .3rem;
 }
 .print-menu[hidden] { display: none; }
 .print-menu button { border: none; background: none; text-align: left; padding: .45rem .7rem; border-radius: 6px; white-space: nowrap; }
@@ -769,7 +818,7 @@ body.practice .set-list, body.practice .set-count, body.practice .set-actions > 
 }
 
 /* Home page: the last few tunes opened on this device */
-.recent { margin: -.25rem 0 1.5rem; font-size: .9rem; }
+.recent { margin: .9rem 0 1.5rem; font-size: .9rem; }
 .recent-label { color: var(--muted); }
 .print-menu .menu-sep { border-top: 1px solid var(--border); }
 .whistle-key { flex-basis: 100%; }
@@ -789,10 +838,10 @@ body.practice .say { display: none; }
 .set-added { margin: 0 0 .8rem; min-height: 1.2em; }
 
 /* Touch screens: everything big enough to hit with a finger (WCAG 2.5.8 asks 24px; most
-   are nearer 40). The player's position bar is abcjs's own large size. */
+   are nearer 40). The player's position bar is a 44px strip, with a bigger handle. */
 @media (pointer: coarse) {
-  .abcjs-inline-audio .abcjs-midi-progress-background { height: 24px; border-width: 4px; border-radius: 8px; }
-  .abcjs-inline-audio .abcjs-midi-progress-indicator { height: 32px; top: -8px; width: 28px; margin-left: -14px; }
+  .score .abcjs-inline-audio .abcjs-midi-progress-background { --groove: 8px; --handle: 26px; height: 44px; }
+  .score .abcjs-inline-audio .abcjs-midi-progress-indicator { top: 9px; }
   .set-item-controls button { min-width: 2.5rem; min-height: 2.5rem; }
   .set-item-controls select { min-height: 2.5rem; }
   .link-button { padding: .5rem 0; }
@@ -865,3 +914,9 @@ dialog.shortcuts kbd { display: inline-block; min-width: 1.6em; padding: .05rem 
 .github-way > summary { display: flex; align-items: baseline; }
 .github-way > summary h2 { display: inline; margin: 0; }
 .github-way > summary::before { width: .9em; height: .9em; }
+
+/* Something done ("Link copied", "Saved on this device"): the drawn tick before the words */
+.tick-icon { display: inline-block; width: .9em; height: .9em; margin-right: .35em; vertical-align: -.1em;
+  background: currentColor; mask: var(--tick) center / contain no-repeat; }
+@media (forced-colors: active) { .tick-icon { forced-color-adjust: none; background: CanvasText; } }
+.which-set { padding: .4rem .5rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); max-width: 12rem; }

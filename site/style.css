@@ -179,7 +179,7 @@ button.primary:hover { color: #fff; filter: brightness(1.1); }
 .suggestions .try { display: block; margin-top: .3rem; font-size: .9rem; }
 @media (hover: hover) { .suggestions li:not(.empty):hover { background: var(--accent-soft); } }
 /* The one Enter opens: a clear bar down its side as well as the tint. */
-.suggestions li[aria-selected="true"] { background: var(--accent-soft); box-shadow: inset 4px 0 var(--accent-ink); }
+.suggestions li[aria-selected="true"] { background: var(--accent-soft); }  /* a wash, not a bar on one edge */
 .suggestions li.empty { color: var(--muted); cursor: default; }
 
 .hero-search { max-width: 40rem; margin: 1.5rem 0 1rem; }
@@ -196,7 +196,7 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .js main > .loading { animation: loading-shows .3s ease-in .6s both; }
 @keyframes loading-shows { from { opacity: 0; } }
 .caption { font-size: .9rem; }
-.lead { font-size: 1.1rem; max-width: 50rem; }
+.lead { font-size: 1.1rem; max-width: 40rem; }  /* about 70 characters a line */
 
 .pills { display: flex; flex-wrap: wrap; gap: .5rem; }
 .pills button { border-radius: 999px; }
@@ -361,6 +361,12 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 /* On a phone: the key, tempo and size as one line, which opens to change them */
 .controls-summary { display: none; }
 .tune-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+@media (max-width: 800px) {  /* on a phone, two by two, rather than three and one left over */
+  .tune-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .tune-actions > *, .tune-actions .print-wrap > button, .tune-actions .add-to-set { width: 100%; }
+  .tune-actions .add-to-set-wrap { display: grid; }
+}
+.held-key { color: var(--muted); }
 /* − and + for the music's size, at the end of the row */
 .music-size { display: flex; align-items: center; gap: .3rem; margin-left: auto; }
 .music-size .label { color: var(--muted); font-size: .9rem; margin-right: .2rem; }
@@ -449,7 +455,8 @@ details[open] > summary::before { transform: rotate(90deg); }
 .score .seek-track:has(.seek:focus-visible) .abcjs-midi-progress-background { outline: 2px solid var(--ivory); outline-offset: 2px; border-radius: 4px; }
 /* Keyboard focus on the player in ivory, like the slider's: the page's red ring is too faint
    on the slate bar, and lost on the red Play disc */
-.score .abcjs-inline-audio .abcjs-midi-start:disabled { opacity: .45; cursor: not-allowed; }  /* no signal, no sounds yet */
+/* No signal, no sounds yet: Play greyed, plainly not ready (not a dimmed red that looks pressable) */
+.score .abcjs-inline-audio .abcjs-midi-start:disabled { box-shadow: inset 0 0 0 30px var(--muted-on-slate, #6b737c); opacity: .7; cursor: not-allowed; }
 .score .abcjs-inline-audio .abcjs-btn:focus-visible { outline: 2px solid var(--ivory); outline-offset: 2px; }
 .score .abcjs-note_playing { fill: var(--accent); }
 .score .abcjs-note { cursor: pointer; }  /* a tap plays from that note (playFrom in app.js) */
@@ -553,7 +560,7 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .chart sup { font-size: .65rem; color: var(--muted); font-weight: 400; }
 .score > .sound-note { margin: .5rem 0 0; color: #505963; }  /* on the cream paper in both themes, as below */
 .playback { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .5rem; min-width: 0; }
-.playback .label { color: var(--muted); }
+.playback .label { color: inherit; }  /* a label like Repeat's and Tablature's */
 /* Three buttons in a row, one pressed: which parts playback plays */
 .segmented { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 .segmented label { position: relative; cursor: pointer; }
@@ -583,7 +590,7 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .switch input { accent-color: var(--accent-ink); width: 1.5rem; height: 1.5rem; margin: 0; flex: none; }
 .card.chords .caption { margin: 0; }
 .hide-chords .abcjs-chord { display: none; }
-.card.place .wales-map { max-width: 14rem; margin: .25rem auto .5rem; }
+.card.place .wales-map { max-width: 10rem; margin: .25rem auto .5rem; }
 .card.place .caption { margin: 0; }
 .map-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2rem; align-items: start; }
 .map-layout figure { margin: 0; position: sticky; top: 1.5rem; }
@@ -664,7 +671,7 @@ body.practice .score > .audio { top: 0; }
 
 /* Guide pages (CONTRIBUTING.md) */
 .guide { max-width: 50rem; }
-.guide :is(p, li) { max-width: 68ch; }  /* a comfortable measure; tables and cards keep the width */
+.guide :is(p, li) { max-width: 36rem; }  /* a comfortable measure; tables and cards keep the width */
 .guide table { border-collapse: collapse; margin: 1rem 0; }
 .guide th, .guide td { border: 1px solid var(--border); padding: .35rem .6rem; text-align: left; vertical-align: top; }
 .guide pre { background: var(--sidebar-bg); padding: .75rem 1rem; border-radius: var(--radius); overflow-x: auto; }
@@ -705,7 +712,7 @@ body.practice .score > .audio { top: 0; }
   .controls-summary { display: flex; flex: 1 1 0; min-width: 0; align-items: center; justify-content: space-between; gap: .5rem; text-align: left; padding-inline: .75rem; }
   .controls-summary .now { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .controls:not(.open) .practice-toggle { flex: none; padding-inline: .75rem; }
-  .controls-summary .change { display: flex; align-items: center; gap: .3em; color: var(--accent-ink); font-size: .9rem; }
+  .controls-summary .change { display: flex; align-items: center; gap: .3em; color: var(--muted); font-size: .9rem; }  /* red is for Play */
   .controls-summary .change::after { content: ""; width: .7em; height: .7em; background: currentColor;
     mask: var(--chevron) center / contain no-repeat; transform: rotate(90deg); transition: transform .15s; }
   .controls-summary[aria-expanded="true"] .change::after { transform: rotate(-90deg); }
@@ -890,6 +897,7 @@ body.practice .say { display: none; }
   .set-item-controls button { min-width: 44px; }
   .switch input { width: 1.75rem; height: 1.75rem; }
   .switch { min-height: 44px; }  /* the whole label is the target */
+  .control input[type="range"] { height: 44px; }
   .session-links .action, .session-report > summary, .email-form .check { min-height: 44px; }
   .session-report > summary { display: flex; flex-wrap: wrap; align-items: center; column-gap: .3em; }
   .email-form .check { display: flex; align-items: center; }

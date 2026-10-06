@@ -111,6 +111,20 @@ const CY_MODES = { major: "fwyaf", minor: "leiaf", Dorian: "Doriaidd", Phrygian:
   Mixolydian: "Mixolydaidd", Locrian: "Locriaidd" };
 const CY_BEATS = { "dotted crotchet": "crosiet dotiog", minim: "minim", crotchet: "crosiet", quaver: "cwafer" };
 const modeName = (name) => tr(name, CY_MODES[name] ?? name);
+// A key in short, for the phone's one line: "D" (major), "E min", "A dor", "G mix".
+const SHORT_MODES = { major: "", minor: " min", Dorian: " dor", Mixolydian: " mix", Lydian: " lyd", Phrygian: " phr", Locrian: " loc" };
+const shortKey = (pitch, mode) => `${NOTES[((pitch % 12) + 12) % 12]}${SHORT_MODES[mode] ?? ""}`;
+// The key a tune changes to part-way through (its first K: after the header's), or null.
+const ABC_MODES = { "": "major", maj: "major", ion: "major", m: "minor", min: "minor", aeo: "minor", dor: "Dorian",
+  mix: "Mixolydian", lyd: "Lydian", phr: "Phrygian", loc: "Locrian" };
+function keyChange(tune) {
+  const body = tune.abc.slice(tune.abc.search(/^K:/m) + 2);
+  const k = body.match(/(?:^K:|\[K:)\s*([A-G])([#b]?)\s*([A-Za-z]*)/m);
+  if (!k) return null;
+  const pitch = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[k[1]] + (k[2] === "#" ? 1 : k[2] === "b" ? -1 : 0);
+  const modeName = ABC_MODES[k[3].toLowerCase().slice(0, 3)] ?? (k[3].toLowerCase() === "m" ? "minor" : "major");
+  return { pitch, modeName };
+}
 const keyLabel = (text) => tr(text, text.replace(/\b(major|minor|Dorian|Phrygian|Lydian|Mixolydian|Locrian)\b/g, (m) => CY_MODES[m]));
 // A type of tune after a number, in Welsh ("96 jig"); in English the type's plural ("96 jigs").
 const CY_TYPE = { Jig: "jig", Polca: "polca", Walts: "walts", "Rîl": "rîl", Pibddawns: "pibddawns", Ymdaith: "ymdaith",
@@ -1104,7 +1118,7 @@ function renderHome(main) {
   main.replaceChildren(...[
     // The welcome and the ways in, with the instruments beside them on a wide screen.
     el("div", { class: "home-intro" },
-      el("h1", {}, tr("Croeso! Welcome to Y Sesiwn", "Croeso i'r Sesiwn!")),
+      el("h1", {}, tr("Croeso! Welcome to Y\u00a0Sesiwn", "Croeso i'r Sesiwn!")),
       el("p", { class: "lead" }, ...tr(
         [el("strong", {}, "Free and open source"), `: sheet music for ${count} Welsh folk tunes, to learn, play and share.`],
         [el("strong", {}, "Am ddim a chod agored"), `: sgorau ${count} o alawon gwerin Cymru, i'w dysgu, eu chwarae a'u rhannu.`])),
@@ -1487,7 +1501,7 @@ function withFingerings(abc, whistle) {
 // first), as hornpipes are played. abcjs's player does it (its swing option), for
 // time signatures counted in crotchets only (2/4, 3/4, 4/4, C); not the MIDI file.
 const SWING = 62;
-const canSwing = (tune) => /^M:\s*(C(?!\|)|[234]\/4)\s*$/m.test(tune.abc);
+const canSwing = (tune) => /^M:\s*(C(?!\|)|[24]\/4)\s*$/m.test(tune.abc);  // not 3/4: waltzes aren't swung
 
 // Tablature under the stave. Mandolin and fiddle share their tuning (GDAE; the numbers
 // are frets, or semitones above the open string).
@@ -1623,7 +1637,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   if (whistle) abc = withFingerings(abc, whistle);
   // On a phone the tune's name is the page's heading, just above: the score leaves it out,
   // so the music starts higher. Printed, it keeps it (the heading isn't printed).
-  if (matchMedia("(max-width: 800px)").matches && !state.printing) abc = abc.replace(/^T:.*\n/gm, "");
+  if ((matchMedia("(max-width: 800px)").matches || document.body.classList.contains("practice")) && !state.printing) abc = abc.replace(/^T:.*\n/gm, "");
   paper.dataset.bars = ownBarsPerLine(tune.abc);
   const layout = scoreLayout(paper);
   paper.dataset.layout = JSON.stringify(layout);
@@ -1775,7 +1789,15 @@ function chartWords(grid) {
       chords.join(tr(", then ", ", yna ")) + (cell.classList.contains("repeat-end") ? tr("; repeat.", "; ailadrodd.") : ".")]
       .filter(Boolean).join(" ");
   });
-  return el("p", { class: "visually-hidden" }, bars.join(" "));
+  // A list item for each line of the chart (a phrase), so a screen reader can move by phrase.
+  const lines = [];
+  let at = 0;
+  for (const row of grid.querySelectorAll(".chart-row")) {
+    const count = row.querySelectorAll(".bar:not(.spacer)").length;
+    lines.push(el("li", {}, bars.slice(at, at + count).join(" ")));
+    at += count;
+  }
+  return el("ul", { class: "visually-hidden" }, lines);
 }
 
 function chordChart(visualObj) {
@@ -1881,7 +1903,8 @@ function chordCard(tune) {
     el("div", { class: "chart-box" }),
     el("p", { class: "caption" },
       tune.chords ? `${tr(tune.chords, CY_CHORD_SOURCES[tune.chords] ?? tune.chords)}. ` : "",
-      tr("One way of accompanying it: use your ear, and your own.", "Un ffordd o gyfeilio iddi: defnyddiwch eich clust, a'ch syniadau eich hun.")));
+      tr("One way of accompanying it: use your ear, and your own.", "Un ffordd o gyfeilio iddi: defnyddiwch eich clust, a'ch syniadau eich hun."),
+      " ", el("span", { class: "held-key" }, tr("A chord in grey carries on from the bar before.", "Mae cord mewn llwyd yn parhau o'r bar blaenorol."))));
 }
 
 // A tune's chords, among the practice tools (the paper is the player and the music): what
@@ -2085,12 +2108,12 @@ function renderTune(main, group, tune) {
       controls.classList.toggle("open", state.controlsOpen);
       summary.setAttribute("aria-expanded", String(state.controlsOpen));
     } });
-  // A key change part-way through (a K: after the tune's first one) is said too, as the
-  // summary names only the key it starts in.
-  const changesKey = /^K:|\[K:/m.test(tune.abc.slice(tune.abc.search(/^K:/m) + 2));
+  // In short, so it fits a phone's width: "D", "E min", "A dor"; and a key change part-way
+  // through (the first K: after the tune's own) as "G → D".
+  const nextKey = keyChange(tune);
   const showSummary = () => summary.replaceChildren(
-    el("span", { class: "now" }, [tune.key && `${NOTES[(tune.key.pitch + settings.transpose + 12) % 12]} ${modeName(tune.key.modeName)}`
-      + (changesKey ? tr(", changes key", ", yn newid cywair") : ""),
+    el("span", { class: "now" }, [tune.key && shortKey(tune.key.pitch + settings.transpose, tune.key.modeName)
+      + (nextKey ? ` → ${shortKey(nextKey.pitch + settings.transpose, nextKey.modeName)}` : ""),
       `Tempo ${settings.bpm}`].filter(Boolean).join(" · ")),
     el("span", { class: "change" }, tr("Change", "Newid")));
   controls.classList.toggle("open", state.controlsOpen);
@@ -2170,8 +2193,23 @@ function renderTune(main, group, tune) {
       speedHint();
     } });
   const speedUp = el("div", { class: "speed-up" },
-    toggle(tr("Speed up each time", "Cyflymu bob tro"), settings.speedUp, (on) => { settings.speedUp = on; }),
+    toggle(tr("Speed up each time", "Cyflymu bob tro"), settings.speedUp, (on) => { settings.speedUp = on; if (on) startSpeedUp(); }),
     el("span", { class: "speed-range" }, tr("from ", "o "), speedFrom, tr(" to ", " i "), speedTo, tr(" bpm", " curiad y funud")));
+  // Ticking Speed up works at once: it repeats the whole tune if nothing is repeating yet,
+  // and, if the tempo is already the goal, starts from 70% of it ("from 78 to 112").
+  const startSpeedUp = () => {
+    if (settings.loop < -1) { settings.loop = -1; fillLoops(); }
+    const goal = Math.max(settings.speedTo, tune.bpm);
+    if (settings.bpm >= goal) {
+      settings.bpm = Math.max(30, Math.round(goal * .7));
+      const tempo = controls.querySelector("#tempo");
+      if (tempo) tempo.value = settings.bpm;
+      showTempo();
+      showInAddress();
+    }
+    settings.speedTo = goal;
+    speedTo.value = goal;
+  };
   const whistleKey = el("span", { class: "caption whistle-key", hidden: !WHISTLES[state.practice.tab] },
     tr("● covered · ○ open · ◐ half-covered · + blow harder · ? not on this whistle",
       "● ar gau · ○ ar agor · ◐ hanner ar gau · + chwythu'n galetach · ? ddim ar y chwisl hon"));
@@ -2198,7 +2236,7 @@ function renderTune(main, group, tune) {
       el("div", { class: "control" }, el("label", { for: "tab-select" }, tr("Tablature", "Tablatur")), tabSelect), whistleKey));
   // Folded away on a phone (the music comes first), open on wider screens; then as left.
   const practiceTools = el("details", { class: "practice-tools fold", open: state.practice.open ?? !matchMedia("(max-width: 800px)").matches,
-    ontoggle: (e) => { state.practice.open = e.target.open; } },
+    ontoggle: (e) => { if (!document.body.classList.contains("practice")) state.practice.open = e.target.open; } },
     el("summary", {}, el("span", {}, tr("Practice tools", "Offer ymarfer"),
       el("span", { class: "caption" }, tune.chords == null
         ? tr(" · repeat, speed up, count-in, click, tablature", " · ailadrodd, cyflymu, cyfrif i mewn, clic, tablatur")
@@ -2209,7 +2247,6 @@ function renderTune(main, group, tune) {
       el("option", { value: -1, selected: settings.loop === -1 }, tr("The whole tune", "Yr alaw gyfan")),
       ...(drawn.parts.length > 1 ? drawn.parts : []).map((p, i) =>
         el("option", { value: i, selected: settings.loop === i }, tr(`Part ${p.label}`, `Rhan ${p.label}`))));
-    speedUp.hidden = settings.loop < -1;
   };
   loopSelect.addEventListener("change", fillLoops);
 
@@ -2322,7 +2359,11 @@ function setPractice(on) {
   document.body.classList.toggle("practice", on);
   const button = document.querySelector(".practice-toggle");
   if (button) button.textContent = practiceLabel(on);
-  if (on) document.querySelector(".practice-tools")?.setAttribute("open", "");
+  // Open on the music stand, without counting as the reader's choice: leaving puts them
+  // back as they were (and the next tune opens them as the reader left them).
+  const tools = document.querySelector(".practice-tools");
+  if (tools) tools.open = on || (state.practice.open ?? !matchMedia("(max-width: 800px)").matches);
+  state.redrawScore?.();  // in full screen the score leaves out the name, as on a phone
   // On a phone it's a music stand: the key and tempo folded back into their one line, and
   // the music from the top of the screen.
   if (on && matchMedia("(max-width: 800px)").matches) {
@@ -3131,9 +3172,11 @@ function fillOfflineCard(card) {
       doneText(tr("Every tune is saved on this device. To play them back with no signal, save the piano sounds too (2 MB): ",
         "Mae pob alaw wedi'i chadw ar y ddyfais hon. I'w chwarae heb signal, cadwch synau'r piano hefyd (2 MB): ")),
       saveSoundsButton())
+    // …and before a session, they can be had now, if asked for (nothing is downloaded unasked)
     : saved < total ? el("p", { class: "status" },
-      doneText(tr("Every tune is saved on this device. The piano sounds for playing them are saved too once you've played one.",
-        "Mae pob alaw wedi'i chadw ar y ddyfais hon. Caiff synau'r piano eu cadw hefyd unwaith y byddwch chi wedi chwarae un.")))
+      doneText(tr("Every tune is saved on this device. The piano sounds for playing them are saved once you've played one, or now, before a session (2 MB): ",
+        "Mae pob alaw wedi'i chadw ar y ddyfais hon. Caiff synau'r piano eu cadw unwaith y byddwch chi wedi chwarae un, neu nawr, cyn sesiwn (2 MB): ")),
+      saveSoundsButton())
     : el("p", { class: "status" }, doneText(tr("Saved on this device: works without a signal", "Wedi'i chadw ar y ddyfais hon: mae'n gweithio heb signal")));
   // Already opened as an app: nothing to advertise on the home page.
   card.hidden = isInstalled() && !full;

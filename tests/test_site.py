@@ -827,7 +827,7 @@ def test_welsh_home_page(page):
     assert page.inner_text("main h1") == "Pori yn ôl math a chywair"
     page.click(".brand")
     page.click(".lang-switch [data-lang=en]")
-    assert page.inner_text("h1") == "Croeso! Welcome to Y Sesiwn"
+    assert page.inner_text("h1").replace("\u00a0", " ") == "Croeso! Welcome to Y Sesiwn"
     assert page.inner_text("#surprise-sidebar") == "Surprise me"
     assert page.evaluate(VISIBLE_TEXT) == english
 
@@ -861,7 +861,9 @@ def test_every_page_in_welsh(page, path):
     welsh = page.evaluate(VISIBLE_TEXT)
     fragments = {f.strip() for f in re.split(r"[.:;?!()\n]", english) if len(f.strip()) >= 12}
     tune_words = lambda f: re.sub(r" · \d+$", "", f) in data  # e.g. a type, "Pibddawns · 29"
-    left = [f for f in fragments if f in welsh and not tune_words(f) and f not in ENGLISH_ON_PURPOSE]
+    # The phone's one line, a key in short and the tempo, reads the same in Welsh ("G · Tempo 112")
+    key_line = lambda f: re.fullmatch(r"[A-G][#b]?( [a-z]{3})?( → [A-G][#b]?( [a-z]{3})?)? · Tempo \d+", f)
+    left = [f for f in fragments if f in welsh and not tune_words(f) and not key_line(f) and f not in ENGLISH_ON_PURPOSE]
     assert len(fragments) > 5 and not left, left
 
 
@@ -1287,7 +1289,6 @@ def test_loop_parts(page, slug, parts):
     page.wait_for_selector(".score .abcjs-staff")
     options = page.eval_on_selector_all("#loop-select option", "os => os.map((o) => o.textContent)")
     assert options == ["Off", "The whole tune"] + [f"Part {chr(65 + i)}" for i in range(parts)]
-    assert not page.locator(".speed-up").is_visible()  # only when repeating
     page.select_option("#loop-select", "-1")
     assert page.locator(".speed-up").is_visible()
     page.select_option("#loop-select", "0")
@@ -1351,9 +1352,14 @@ def test_speed_up_the_whole_tune(browser, site):
     page = context.new_page()
     page.goto(site + "?tune=glandyfi")
     page.wait_for_selector(".score .abcjs-staff")
-    page.select_option("#loop-select", "-1")
+    # Ticked with nothing repeating and the tempo at the tune's own: it works at once, the
+    # whole tune from 70% of the tempo up to it.
     page.check("text=Speed up each time")
-    assert " ".join(page.text_content(".speed-range").split()) == "from 112 to bpm" and page.input_value("#speed-to") == "112"
+    assert page.input_value("#loop-select") == "-1"
+    assert " ".join(page.text_content(".speed-range").split()) == "from 78 to bpm" and page.input_value("#speed-to") == "112"
+    assert page.input_value("#tempo") == "78" and page.inner_text(".speed-note") == ""
+    page.fill("#tempo", "120")  # faster than the goal: says what to do
+    page.dispatch_event("#tempo", "change")
     assert page.inner_text(".speed-note").startswith("To speed up, start slower")
     page.fill("#tempo", "90")
     page.dispatch_event("#tempo", "change")
@@ -2227,7 +2233,7 @@ def test_phone_controls_fold_into_one_line(browser, site):
     page.goto(site + "?tune=glandyfi")
     page.wait_for_selector(".score .abcjs-inline-audio")
     summary = page.locator(".controls-summary")
-    assert summary.inner_text().startswith("G major · Tempo 112")
+    assert summary.inner_text().startswith("G · Tempo 112")  # the key in short
     assert not page.locator("#key-select").is_visible() and not page.locator(".music-size").is_visible()
     assert abs(summary.bounding_box()["y"] - page.locator(".practice-toggle").bounding_box()["y"]) < 5  # one line
     assert page.locator(".score").bounding_box()["y"] < 480  # under the one line, and the folded practice tools
@@ -2235,7 +2241,7 @@ def test_phone_controls_fold_into_one_line(browser, site):
     assert summary.get_attribute("aria-expanded") == "true"
     assert page.locator(".music-size .label").is_visible()  # "Size", so − and + aren't taken for the key
     page.select_option("#key-select", "2")
-    assert summary.inner_text().startswith("A major · Tempo 112")
+    assert summary.inner_text().startswith("A · Tempo 112")
     context.close()
 
 
@@ -2366,16 +2372,36 @@ def test_print_list_and_chart_words(page):
     assert page.get_attribute(".chart-box .chart", "aria-hidden") == "true"
 
 
+def test_full_screen_leaves_practice_tools_as_they_were(browser, site):
+    # The music stand opens the practice tools; leaving it puts them back as the reader had
+    # them (folded on a phone), for this tune and the next.
+    context = browser.new_context(service_workers="block", **PHONE)
+    page = context.new_page()
+    page.goto(site + "alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-inline-audio")
+    tools = page.locator(".practice-tools")
+    assert tools.get_attribute("open") is None
+    page.click(".practice-toggle")
+    assert tools.get_attribute("open") is not None
+    page.click(".practice-toggle")
+    assert tools.get_attribute("open") is None
+    page.evaluate("navigate('?tune=cawl-cennin')")  # the next tune, in the same visit
+    page.wait_for_function("document.querySelector('main h1')?.textContent === 'Cawl Cennin'")
+    page.wait_for_selector(".score .abcjs-inline-audio")
+    assert page.locator(".practice-tools").get_attribute("open") is None
+    context.close()
+
+
 def test_summary_says_the_key_changes(browser, site):
     # Walts Dinefwr goes from G to D and back: the phone's one line says the key changes.
     context = browser.new_context(service_workers="block", **PHONE)
     page = context.new_page()
     page.goto(site + "alaw/walts-dinefwr/")
     page.wait_for_selector(".score .abcjs-inline-audio")
-    assert page.inner_text(".controls-summary .now").startswith("G major, changes key ·")
+    assert page.inner_text(".controls-summary .now") == "G → D · Tempo 100"
     page.goto(site + "alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-inline-audio")
-    assert "changes key" not in page.inner_text(".controls-summary .now")
+    assert "→" not in page.inner_text(".controls-summary .now")
     context.close()
 
 

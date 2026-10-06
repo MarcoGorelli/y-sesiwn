@@ -70,6 +70,21 @@
       "confirmed": "2026-10-02"
     },
     {
+      "venue": "Hoogah",
+      "address": "68 Brynymor Road, Swansea SA1 4JJ",
+      "town": "Swansea",
+      "town_cy": "Abertawe",
+      "county": "Swansea",
+      "lat": 51.6163,
+      "lon": -3.9595,
+      "day": "Wednesday",
+      "repeat": "monthly",
+      "nth": -1,
+      "start": "20:00",
+      "end": "22:30",
+      "confirmed": "2026-10-06"
+    },
+    {
       "kind": "tune club",
       "name": "Aberystwyth Tune Club",
       "venue": "Llanbadarn Village Hall",

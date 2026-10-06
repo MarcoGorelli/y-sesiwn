@@ -536,6 +536,8 @@ def main() -> None:
     print(f"built {OUT.name}/ with {len(tunes)} tunes")
 
 
+# The sounds playback can use (app.js's SOUNDS), by their folder in static/soundfont/.
+SOUNDS = {"piano": "acoustic_grand_piano", "harp": "orchestral_harp"}
 # Not needed offline: link-preview images, the source of the service worker itself, and
 # GitHub Pages' "not found" page (offline, sw.js answers every address with the app).
 NOT_OFFLINE = {"sw.js", "og-image.png", "CNAME", "sitemap.xml", "robots.txt", "404.html"}
@@ -874,13 +876,17 @@ def write_service_worker() -> None:
     sounds = [f for f in files if f.is_relative_to(OUT / "static" / "soundfont")]
     site = [f for f in files if f not in sounds]
     urls = lambda fs: json.dumps([f.relative_to(OUT).as_posix() for f in fs])
+    # Each sound the reader can choose, with the click: only the chosen one is saved.
+    click = [f for f in sounds if f.parent.name == "percussion-mp3"]
+    by_sound = {name: [f for f in sounds if f.parent.name == f"{folder}-mp3"] + click
+                for name, folder in SOUNDS.items()}
     sw = OUT / "sw.js"
     sw.write_text(
         sw.read_text(encoding="utf-8")
         .replace("__VERSION__", digest(site))
         .replace("__SOUNDS_VERSION__", digest(sounds))
         .replace("__SITE_FILES__", '["./", ' + urls(site)[1:])
-        .replace("__SOUND_FILES__", urls(sounds)),
+        .replace("__SOUND_FILES__", "{" + ", ".join(f'"{name}": {urls(fs)}' for name, fs in by_sound.items()) + "}"),
         encoding="utf-8",
     )
 

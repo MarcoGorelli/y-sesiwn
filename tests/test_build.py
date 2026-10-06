@@ -95,10 +95,15 @@ def test_built_site(site):
     for placeholder in ["__VERSION__", "__SOUNDS_VERSION__", "__SITE_FILES__", "__SOUND_FILES__"]:
         assert placeholder not in sw, f"sw.js: {placeholder} not filled in"
     files = json.loads(re.search(r"const SITE_FILES = (\[.*?\]);", sw).group(1))
-    sounds = json.loads(re.search(r"const SOUND_FILES = (\[.*?\]);", sw).group(1))
+    by_sound = json.loads(re.search(r"const SOUND_FILES = (\{.*?\});", sw).group(1))
     assert {"./", "index.html", "tunes.json", "app.js", "style.css", "wales.svg"} <= set(files)
-    assert sum("acoustic_grand_piano" in f for f in sounds) == 88  # the piano, A0 to C8
-    assert {"static/soundfont/percussion-mp3/E5.mp3", "static/soundfont/percussion-mp3/F5.mp3"} <= set(sounds)  # the click
+    assert set(by_sound) == {"piano", "harp"}
+    click = {"static/soundfont/percussion-mp3/E5.mp3", "static/soundfont/percussion-mp3/F5.mp3"}
+    for sound, folder in [("piano", "acoustic_grand_piano"), ("harp", "orchestral_harp")]:
+        # Each sound's own notes, A0 to C8, and the click: nothing of the other's.
+        assert set(by_sound[sound]) - click == {f for f in set(by_sound[sound]) if f"/{folder}-mp3/" in f}
+        assert len(set(by_sound[sound]) - click) == 88 and click <= set(by_sound[sound])
+    sounds = sorted(set(by_sound["piano"] + by_sound["harp"]))
     for f in files[1:] + sounds:
         assert (out / f).is_file(), f"sw.js would cache a missing file: {f}"
     # The tunes' own pages aren't in the offline copy (the app stands in for them).

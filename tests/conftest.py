@@ -19,11 +19,17 @@ sys.path.insert(0, str(ROOT))
 import build_site  # noqa: E402
 
 
+SERVED = []  # every answer the test server gives: (path, status), for tests that count them
+
+
 @pytest.fixture(scope="session")
 def site():
     """Build _site/ and serve it on a free local port; yields the base URL."""
     build_site.main()
     class Quiet(http.server.SimpleHTTPRequestHandler):
+        def log_request(self, code="-", size="-"):
+            SERVED.append((self.path, int(code)))
+
         def log_message(self, *args):
             pass
 

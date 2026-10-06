@@ -12,7 +12,7 @@ No MIDI files or score images are used by the site.
 
 It's a **static site**: plain HTML, CSS and JavaScript with no server, so it
 never sleeps and loads almost instantly. Everything it needs (the tunes, abcjs
-and the piano sounds) is in this repo; the only other website it contacts is
+and the piano and harp sounds) is in this repo; the only other website it contacts is
 [GoatCounter](https://www.goatcounter.com), on the live site, to count visits
 without cookies (see the About page). After
 the first visit it also **works offline**, and can be added to a phone's home
@@ -219,7 +219,12 @@ scheduled runs after 60 days without a commit).
   `BASS_VOLUME` in `app.js`), so the tune stays on top. They're not moved an
   octave down: abcjs already voices them below most melodies (about A2–D4),
   and an octave lower (A1–D3) sits on the bass and sounds muddy.
-  `accompaniment()` in `app.js` adds these lines unless the tune sets its own. A `%%chords <text>` line says where they come from; the build
+  `accompaniment()` in `app.js` adds these lines unless the tune sets its own.
+  Beside it, **Sound** chooses *Piano* or *Harp* (FluidR3's orchestral harp,
+  General MIDI 46; there's no triple harp in General MIDI), for every tune and
+  the notes page's keyboard, kept in `localStorage`. The tune, chords and bass
+  all play on it (abcjs's `program`, `chordprog`, `bassprog`; `SOUNDS` in
+  `app.js`, `SOUNDS` in `build_site.py`). A `%%chords <text>` line says where they come from; the build
   passes it on as `chords` (`null` when a tune has no chords). The first
   chords were copied from the Alawon Cymru score images.
 - **Print:** a button on the tune page; the print styles leave just the
@@ -328,8 +333,12 @@ scheduled runs after 60 days without a commit).
   as the page, so it never mixes two deploys.
   The piano notes (2 MB) are cached separately, so a deploy doesn't download them
   again: each is kept the first time it's played, and the app asks for all of
-  them on a computer and in the installed app (not on a phone's data, unless
-  the reader presses *Save them now* on the offline card). A short **"Take it to the session"** card on the home page (just the
+  them in the installed app, and on a computer once something has been played
+  there (a tune, a preview or a key; remembered in `localStorage`), but not on
+  a phone's data, unless the reader presses *Save them now* on the offline
+  card. Only the chosen sound's notes are fetched and kept: the harp's (1.6 MB)
+  only for someone who picks it, and changing sound lets the other's go
+  (`SOUND_FILES` in `sw.js` is per sound). A short **"Take it to the session"** card on the home page (just the
   browser's install button where there is one, and a link) and the full one on the *Use
   it offline* page (`?page=offline`) advertise it: on Chrome/Edge it's an
   **Install the app** button (from the `beforeinstallprompt` event), on
@@ -394,7 +403,7 @@ scheduled runs after 60 days without a commit).
 | `site/og-image.png`, `site/apple-touch-icon.png` | The link-preview card (1200×630, used by the `og:`/`twitter:` tags in `index.html`) and the home-screen icon. Made from `design/og-card.html` and `design/apple-touch-icon.html`: open one in a browser at that size and screenshot it to regenerate. |
 | `CONTRIBUTING.md` | How to add a tune, and how to submit corrections. Each `# ` section is one page on the site, and GitHub shows the whole file, so edit it in one place. Keep the two `# ` headings as they are: the site finds the sections by them. |
 | `static/abcjs/` | [abcjs](https://www.abcjs.net/) 6.4.4 (`abcjs-basic-min.js`, `abcjs-audio.css`): draws and plays the music. |
-| `static/soundfont/acoustic_grand_piano-mp3/` | The 88 piano notes (A0–C8) from the FluidR3_GM soundfont, one MP3 each; a tune loads only the notes it uses. |
+| `static/soundfont/acoustic_grand_piano-mp3/`, `static/soundfont/orchestral_harp-mp3/` | The 88 piano notes and 88 harp notes (A0–C8) from the FluidR3_GM soundfont, one MP3 each; a tune loads only the notes it uses, of the chosen sound. |
 | `static/marked/`, `static/qrcode/`, `static/harp.svg`, `static/crwth.svg`, `static/pibgorn.svg`, `static/lovespoon.svg`, `static/quilt.svg` | [marked](https://marked.js.org/) 15 (Markdown pages); [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 1.4.4 (MIT, the QR code, loaded when first used); the icon, a Welsh triple harp drawn by `design/triple-harp.py` (the PNG icons and link-preview card are screenshots of it, see above); a crwth and a pibgorn, drawn by hand after 18th-century museum examples, shown with the harp on the home page and on empty pages; a lovespoon, for an empty My sets page; and a scrap of Welsh quilt behind the instruments on the home page and in the link-preview card, drawn by `design/quilt.py`. |
 | `download_assets.py` | Re-downloads everything in `static/` (skips files that exist). Only needed if `static/` is lost or you want to change version. |
 | `tunes/<folder>/tune.abc` | One tune (or version) per folder; the site reads only these. |
@@ -419,7 +428,7 @@ and `info.json`, and `.venv/`.
   abcjs-audio.css".
 - abcjs boosts the volume (×3) only for its default online soundfont. With a
   local `soundFontUrl` the boost must be set explicitly
-  (`soundFontVolumeMultiplier: 3.0` in `AUDIO_PARAMS`), or playback is quiet;
+  (`soundFontVolumeMultiplier: 3.0` in `audioParams()`), or playback is quiet;
   `ABCJS.synth.playEvent` ignores it, so the keyboard builds its own
   `SynthSequence` instead.
 - Keep URLs relative (`static/...`, no leading slash), so the site works

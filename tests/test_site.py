@@ -1310,7 +1310,7 @@ def test_loop_part_and_speed_up(browser, site):
         # Jump to just before the end of the tune and wait to come back round.
         page.evaluate("() => { const e = state.synth.timer.noteTimings.filter((e) => e.type === 'event'); "
                       "state.synth.seek((e.at(-1).milliseconds - 800) / 1000, 'seconds'); }")
-        page.wait_for_function(f"document.querySelector('.speed-note').textContent === 'now {bpm} of 100 bpm'", timeout=15000)
+        page.wait_for_function(f"document.querySelector('.speed-note').textContent === 'now {bpm} of 112 bpm'", timeout=15000)
         # Back in part B (not part A), still playing.
         page.wait_for_function(f"(() => {{ const n = document.querySelector('.abcjs-note_playing'); "
                                f"return n && state.synth.isStarted && "
@@ -1321,12 +1321,12 @@ def test_loop_part_and_speed_up(browser, site):
 
 
 def test_speed_up_arrives(browser, site):
-    # Sped up to the tune's usual tempo (100 bpm, from 95), the note says so: "da iawn".
+    # Sped up to the tune's usual tempo (112 bpm, a jig's, from 107), the note says so: "da iawn".
     context = browser.new_context(service_workers="block")
     page = context.new_page()
     page.goto(site + "?tune=glandyfi")
     page.wait_for_selector(".score .abcjs-staff")
-    page.fill("#tempo", "95")
+    page.fill("#tempo", "107")
     page.dispatch_event("#tempo", "change")
     page.select_option("#loop-select", "1")
     page.check("text=Speed up each time")
@@ -1335,7 +1335,7 @@ def test_speed_up_arrives(browser, site):
     page.evaluate("() => { const e = state.synth.timer.noteTimings.filter((e) => e.type === 'event'); "
                   "state.synth.seek((e.at(-1).milliseconds - 800) / 1000, 'seconds'); }")
     page.wait_for_function("document.querySelector('.speed-note.arrived')", timeout=15000)
-    assert page.inner_text(".speed-note") == "Reached 100 bpm. Da iawn!"
+    assert page.inner_text(".speed-note") == "Reached 112 bpm. Da iawn!"
     assert page.get_attribute(".speed-note strong", "lang") == "cy"
     page.click(".abcjs-midi-start")  # pause
     context.close()
@@ -1350,7 +1350,7 @@ def test_speed_up_the_whole_tune(browser, site):
     page.wait_for_selector(".score .abcjs-staff")
     page.select_option("#loop-select", "-1")
     page.check("text=Speed up each time")
-    assert " ".join(page.text_content(".speed-range").split()) == "from 100 to bpm" and page.input_value("#speed-to") == "100"
+    assert " ".join(page.text_content(".speed-range").split()) == "from 112 to bpm" and page.input_value("#speed-to") == "112"
     assert page.inner_text(".speed-note").startswith("To speed up, start slower")
     page.fill("#tempo", "90")
     page.dispatch_event("#tempo", "change")
@@ -2223,7 +2223,7 @@ def test_phone_controls_fold_into_one_line(browser, site):
     page.goto(site + "?tune=glandyfi")
     page.wait_for_selector(".score .abcjs-inline-audio")
     summary = page.locator(".controls-summary")
-    assert summary.inner_text().startswith("G major · Tempo 100")
+    assert summary.inner_text().startswith("G major · Tempo 112")
     assert not page.locator("#key-select").is_visible() and not page.locator(".music-size").is_visible()
     assert abs(summary.bounding_box()["y"] - page.locator(".practice-toggle").bounding_box()["y"]) < 5  # one line
     assert page.locator(".score").bounding_box()["y"] < 420
@@ -2231,7 +2231,7 @@ def test_phone_controls_fold_into_one_line(browser, site):
     assert summary.get_attribute("aria-expanded") == "true"
     assert page.locator(".music-size .label").is_visible()  # "Size", so − and + aren't taken for the key
     page.select_option("#key-select", "2")
-    assert summary.inner_text().startswith("A major · Tempo 100")
+    assert summary.inner_text().startswith("A major · Tempo 112")
     context.close()
 
 

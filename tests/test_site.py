@@ -2242,9 +2242,17 @@ def test_copy_link_where_there_is_no_share_sheet(page):
     if page.evaluate("'share' in navigator"):
         pytest.skip("this browser has a share sheet")
     page.context.grant_permissions(["clipboard-read", "clipboard-write"])
+    # Copied (asynchronously: wait for it), or, where the clipboard is refused, offered to copy by hand.
+    offered = []
+    page.on("dialog", lambda d: (offered.append(d.default_value), d.dismiss()))
     page.click(".tune-actions .share")
-    assert page.inner_text(".tune-actions .share") == "✓ Link copied"
-    assert page.evaluate("navigator.clipboard.readText()").startswith("https://ysesiwn.cymru/alaw/glandyfi/")
+    for _ in range(50):
+        if offered or page.inner_text(".tune-actions .share") == "✓ Link copied":
+            break
+        page.wait_for_timeout(100)
+    link = offered[0] if offered else page.evaluate("navigator.clipboard.readText()")
+    assert offered or page.inner_text(".tune-actions .share") == "✓ Link copied"
+    assert link.startswith("https://ysesiwn.cymru/alaw/glandyfi/")
 
 
 def test_sound_note_under_the_player(browser, site):

@@ -2211,6 +2211,58 @@ def test_browse_groups_are_labelled(page):
     assert keys["y"] - (types["y"] + types["height"]) > 30
 
 
+ANDROID = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Mobile Safari/537.36"
+PHONE = {"user_agent": ANDROID, "is_mobile": True, "has_touch": True, "viewport": {"width": 390, "height": 844}}
+
+
+def test_phone_controls_fold_into_one_line(browser, site):
+    # On a phone the key, tempo and size are one line ("G major · Tempo 100 · Change"), with
+    # full screen beside it, so the music starts high on the first screen; it opens to change them.
+    context = browser.new_context(service_workers="block", **PHONE)
+    page = context.new_page()
+    page.goto(site + "?tune=glandyfi")
+    page.wait_for_selector(".score .abcjs-inline-audio")
+    summary = page.locator(".controls-summary")
+    assert summary.inner_text().startswith("G major · Tempo 100")
+    assert not page.locator("#key-select").is_visible() and not page.locator(".music-size").is_visible()
+    assert abs(summary.bounding_box()["y"] - page.locator(".practice-toggle").bounding_box()["y"]) < 5  # one line
+    assert page.locator(".score").bounding_box()["y"] < 420
+    summary.click()
+    assert summary.get_attribute("aria-expanded") == "true"
+    assert page.locator(".music-size .label").is_visible()  # "Size", so − and + aren't taken for the key
+    page.select_option("#key-select", "2")
+    assert summary.inner_text().startswith("A major · Tempo 100")
+    context.close()
+
+
+def test_copy_link_where_there_is_no_share_sheet(page):
+    # Most computers have no share sheet: the tune's link is copied instead.
+    page.goto_site("?tune=glandyfi")
+    page.wait_for_selector(".score .abcjs-inline-audio")
+    if page.evaluate("'share' in navigator"):
+        pytest.skip("this browser has a share sheet")
+    page.context.grant_permissions(["clipboard-read", "clipboard-write"])
+    page.click(".tune-actions .share")
+    assert page.inner_text(".tune-actions .share") == "✓ Link copied"
+    assert page.evaluate("navigator.clipboard.readText()").startswith("https://ysesiwn.cymru/alaw/glandyfi/")
+
+
+def test_sound_note_under_the_player(browser, site):
+    # On a phone, once playback is used, the tune page says how to have every piano note
+    # for no signal, and says nothing once they're saved.
+    context = browser.new_context(**PHONE)
+    page = context.new_page()
+    page.goto(site + "?tune=glandyfi")
+    page.wait_for_function("state.offlineReady && state.sounds", timeout=30000)
+    assert page.locator(".sound-note").is_hidden()  # nothing played yet
+    page.evaluate("soundPlayed()")
+    assert "save the piano sounds" in page.inner_text(".sound-note")
+    page.click(".sound-note button")
+    page.wait_for_function("state.sounds.saved === state.sounds.total", timeout=30000)
+    assert page.locator(".sound-note").is_hidden()
+    context.close()
+
+
 def test_chord_playback_next_to_the_player(page):
     # "Play: Tune only / Tune and chords / Chords only" is just under the player (issue #9).
     page.goto_site("?tune=glandyfi")

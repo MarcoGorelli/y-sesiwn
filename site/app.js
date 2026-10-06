@@ -43,6 +43,7 @@ const state = {
   practice: { countIn: false, click: false, tab: "none", open: null },  // the practice tools, for every tune (open: folded or not)
   lang: savedLang(),    // "cy" or "en", for the whole site (tune names and the tunes' own notes stay as written)
   musicSize: savedSize(),  // the music's size, an index into SIZES (1: as drawn)
+  controlsOpen: false,  // on a phone, a tune's key, tempo and size unfolded (see renderTune)
   offlineReady: false,  // the offline copy (sw.js) is saved
   sounds: null,         // how many piano notes it keeps: { saved, total }
   played: savedPlayed(),  // anything has been played on this device (see saveAllSounds)
@@ -1824,6 +1825,7 @@ const CY_DETAILS = { "Tune type": "Math o alaw", Key: "Cywair", "Time signature"
 
 function detailValue(label, value) {
   if (label === "Key") return keyLabel(value);
+  if (label === "Tune type") return value.charAt(0).toUpperCase() + value.slice(1);  // "jig" -> "Jig", as on Browse
   // A source that's a web address is a link, and any words after it (who added the tune
   // there) stay text; other sources (a recording, a book) are just text.
   const url = label === "Source" && value.match(/^(https?:\/\/\S+)(.*)$/);
@@ -1903,7 +1905,21 @@ function renderTune(main, group, tune) {
     }
   };
 
-  const controls = el("div", { class: "controls" });
+  const controls = el("div", { class: "controls", id: "tune-controls" });
+  // On a phone the key, tempo and size fold into one line ("G major · Tempo 100 · Change"),
+  // so the music comes first; it opens to change them. On a wider screen they're all shown.
+  const summary = el("button", { type: "button", class: "controls-summary", "aria-controls": "tune-controls",
+    "aria-expanded": String(state.controlsOpen), onclick: () => {
+      state.controlsOpen = !state.controlsOpen;
+      controls.classList.toggle("open", state.controlsOpen);
+      summary.setAttribute("aria-expanded", String(state.controlsOpen));
+    } });
+  const showSummary = () => summary.replaceChildren(
+    el("span", { class: "now" }, [tune.key && `${NOTES[(tune.key.pitch + settings.transpose + 12) % 12]} ${modeName(tune.key.modeName)}`,
+      `Tempo ${settings.bpm}`].filter(Boolean).join(" · ")),
+    el("span", { class: "change" }, tr("Change", "Newid")));
+  controls.classList.toggle("open", state.controlsOpen);
+  controls.append(summary);
   if (tune.key) {
     const { pitch, root } = tune.key;
     const mode = modeName(tune.key.modeName);
@@ -1915,7 +1931,7 @@ function renderTune(main, group, tune) {
     const select = el("select", { id: "key-select", onchange: (e) => {
       settings.transpose = +e.target.value;
       saveKey(tune.slug, settings.transpose);
-      showUsual(); showInAddress(); redraw();
+      showUsual(); showInAddress(); showSummary(); redraw();
     } });
     for (let shift = -5; shift <= 6; shift++) {  // semitones, nearest direction
       const label = shift === 0 ? `${root} ${mode} ${tr("(original)", "(gwreiddiol)")}` : `${NOTES[(pitch + shift + 12) % 12]} ${mode}`;
@@ -1930,6 +1946,7 @@ function renderTune(main, group, tune) {
     tempoLabel.textContent = tr(`Tempo: ${settings.bpm} bpm (${tune.beatName} beats)`,
       `Tempo: ${settings.bpm} curiad y funud (curiad ${CY_BEATS[tune.beatName] ?? tune.beatName})`);
     speedFrom.textContent = String(settings.bpm);
+    showSummary();
   };
   showTempo();
   const practice = el("button", { type: "button", class: "practice-toggle", onclick: () => setPractice(!document.body.classList.contains("practice")) });
@@ -2028,7 +2045,7 @@ function renderTune(main, group, tune) {
     versions,
     controls,
     el("div", { class: "tune-layout" },
-      el("div", { class: "tune-main" }, el("div", { class: "score" }, audio, chordPlayback(tune, () => redraw()), paper),
+      el("div", { class: "tune-main" }, el("div", { class: "score" }, audio, soundNote(), chordPlayback(tune, () => redraw()), paper),
         practiceTools, actions, chords),
       el("div", { class: "tune-side" },
         el("section", { class: "card" }, el("h2", {}, tr("Details", "Manylion")), details, gloss || null),
@@ -2088,10 +2105,16 @@ async function showQr(title, link, caption) {
 
 // The device's own share sheet (WhatsApp, Messages, email, …), where it has one: most
 // phones, and some computers. Elsewhere there's Copy link and the QR code.
+// The phone's own share sheet; where there's none (most computers), Copy link, as on a set.
 function shareButton(title, link) {
-  if (!navigator.share) return null;
-  return el("button", { type: "button", class: "share", onclick: () => navigator.share({ title, url: link() }).catch(() => {}) },
-    tr("Share", "Rhannu"));
+  if (navigator.share) {
+    return el("button", { type: "button", class: "share", onclick: () => navigator.share({ title, url: link() }).catch(() => {}) },
+      tr("Share", "Rhannu"));
+  }
+  return el("button", { type: "button", class: "share", onclick: async (e) => {
+    try { await navigator.clipboard.writeText(link()); e.target.textContent = tr("✓ Link copied", "✓ Dolen wedi'i chopïo"); }
+    catch { prompt(tr("Copy this link:", "Copïwch y ddolen hon:"), link()); }
+  } }, tr("Copy link", "Copïo'r ddolen"));
 }
 
 function qrButton(group, tune, settings) {
@@ -2856,7 +2879,38 @@ function offlineCard({ full = false } = {}) {
 
 function refreshOfflineCards() {
   document.querySelectorAll(".offline-card").forEach(fillOfflineCard);
+  document.querySelectorAll(".sound-note").forEach(fillSoundNote);
 }
+
+// Under a tune's player, where it matters at the session: on a phone the piano's notes are
+// kept only as they're played, so once someone uses playback (or has no signal), a quiet
+// line says how to have all of them. Nothing once they're all saved, or where they will be.
+function soundNote() {
+  const note = el("p", { class: "caption sound-note", "aria-live": "polite" });
+  fillSoundNote(note);
+  return note;
+}
+
+function fillSoundNote(note) {
+  const { saved, total } = state.sounds ?? {};
+  const missing = state.offlineReady && saved < total && !saveAllSounds();
+  if (missing && !navigator.onLine) {
+    note.replaceChildren(tr("No signal: notes you haven't played before may be silent.",
+      "Dim signal: efallai bydd nodau nad ydych chi wedi'u chwarae o'r blaen yn dawel."));
+  } else if (missing && state.played) {
+    note.replaceChildren(tr("To play tunes with no signal, save the piano sounds (2 MB): ",
+      "I chwarae alawon heb signal, cadwch synau'r piano (2 MB): "),
+      state.savingSounds ? tr("saving…", "wrthi'n cadw…")
+        : el("button", { type: "button", class: "link-button", onclick: () => {
+          state.savingSounds = true;
+          askWorker("save-sounds");
+          refreshOfflineCards();
+        } }, tr("Save them now", "Eu cadw nawr")));
+  } else note.replaceChildren();
+  note.hidden = !note.childNodes.length;
+}
+window.addEventListener("online", refreshOfflineCards);
+window.addEventListener("offline", refreshOfflineCards);
 
 function fillOfflineCard(card) {
   const full = card.classList.contains("full");
@@ -2940,12 +2994,10 @@ function renderOffline(main) {
         el("ul", {},
           el("li", {}, b("iPhone neu iPad"), ": yn Safari (neu Chrome), ", ui("Share → Add to Home Screen"),
             "; yna agorwch hi o'r sgrin gartref unwaith tra bod gennych signal, i gadw ei chopi ei hun."),
-          el("li", {}, b("Android"), ": y botwm ", b("Gosod yr ap"), " uchod, neu ddewislen y porwr (⋮) → ",
-            ui("Install app"), " neu ", ui("Add to Home screen"), ".")),
+          el("li", {}, b("Android"), ": dewislen y porwr (⋮) → ", ui("Install app"), " neu ", ui("Add to Home screen"), ".")),
         el("h2", {}, "Ar gyfrifiadur"),
         el("ul", {},
-          el("li", {}, b("Chrome neu Edge"), " (Windows, Mac, Linux): y botwm ", b("Gosod yr ap"),
-            " uchod, neu'r eicon gosod ym mhen draw'r bar cyfeiriad ar y dde."),
+          el("li", {}, b("Chrome neu Edge"), " (Windows, Mac, Linux): yr eicon gosod ym mhen draw'r bar cyfeiriad ar y dde."),
           el("li", {}, b("Safari ar Mac"), ": ", ui("File → Add to Dock"), " (macOS Sonoma neu'n hwyrach)."),
           el("li", {}, b("Firefox"), ": all e ddim gosod gwefannau fel apiau, ond mae'r Sesiwn yn dal i weithio all-lein yn y porwr unwaith y bydd wedi llwytho.")),
         el("h2", {}, "Sut mae'n gweithio"),
@@ -2967,12 +3019,10 @@ function renderOffline(main) {
       el("ul", {},
         el("li", {}, b("iPhone or iPad"), ": in Safari (or Chrome), ", b("Share → Add to Home Screen"),
           "; then open it from your home screen once while you have signal, so it keeps its own copy."),
-        el("li", {}, b("Android"), ": the ", b("Install the app"), " button above, or the browser's menu (⋮) → ",
-          b("Install app"), " or ", b("Add to Home screen"), ".")),
+        el("li", {}, b("Android"), ": the browser's menu (⋮) → ", b("Install app"), " or ", b("Add to Home screen"), ".")),
       el("h2", {}, "On a computer"),
       el("ul", {},
-        el("li", {}, b("Chrome or Edge"), " (Windows, Mac, Linux): the ", b("Install the app"),
-          " button above, or the install icon at the right-hand end of the address bar."),
+        el("li", {}, b("Chrome or Edge"), " (Windows, Mac, Linux): the install icon at the right-hand end of the address bar."),
         el("li", {}, b("Safari on a Mac"), ": ", b("File → Add to Dock"), " (macOS Sonoma or later)."),
         el("li", {}, b("Firefox"), ": it can't install websites as apps, but Y Sesiwn still works offline in the browser once it's loaded.")),
       el("h2", {}, "How it works"),
@@ -3345,7 +3395,7 @@ function renderSet(main) {
     missing ? el("p", { class: "caption" }, tr(missing === 1 ? "1 tune in this set isn't on the site any more."
       : `${missing} tunes in this set aren't on the site any more.`,
       `Dyw ${tuneCount(missing)} yn y set hon ddim ar y wefan bellach.`)) : null,
-    el("div", { class: "set-actions" }, saveButton, shareButton(name, shareLink), copy, copyList,
+    el("div", { class: "set-actions" }, saveButton, navigator.share ? shareButton(name, shareLink) : null, copy, copyList,
       el("button", { type: "button", onclick: () => showQr(name, shareLink(),
         tr("Scan with a phone's camera to open this set.", "Sganiwch gyda chamera ffôn i agor y set hon.")) }, tr("QR code", "Cod QR")),
       el("button", { type: "button", onclick: printAll }, tr("Print", "Argraffu")),
@@ -3795,6 +3845,7 @@ function soundPlayed() {
   state.played = true;
   try { localStorage.setItem("played", "1"); } catch {}
   if (state.offlineReady && saveAllSounds()) askWorker("save-sounds");
+  refreshOfflineCards();
 }
 
 if ("serviceWorker" in navigator) {

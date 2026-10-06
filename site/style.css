@@ -330,6 +330,8 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 /* How the music is shown (size, full screen): at the end of the row, apart from the rest */
 .view-tools { display: flex; align-items: center; gap: .75rem; margin-left: auto; }
 .view-tools .music-size { margin-left: 0; }
+/* On a phone: the key, tempo and size as one line, which opens to change them */
+.controls-summary { display: none; }
 .tune-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
 /* − and + for the music's size, at the end of the row */
 .music-size { display: flex; align-items: center; gap: .3rem; margin-left: auto; }
@@ -407,6 +409,14 @@ details[open] > summary::before { transform: rotate(90deg); }
 /* Player: red progress knob, and play/loop in red while they're on. */
 .score .abcjs-inline-audio .abcjs-midi-progress-indicator { background-color: var(--accent); }
 .score .abcjs-inline-audio .abcjs-btn.abcjs-pushed { background-color: var(--accent); }
+/* Play is the page's main action: a red disc on the slate bar (white on Welsh red, 5.9:1).
+   Painted with an inset shadow, as abcjs's own CSS clears its buttons' backgrounds. */
+.score .abcjs-inline-audio .abcjs-midi-start { width: 34px; height: 34px; margin: 0 10px 0 2px; padding: 8px 7px 8px 9px; border-radius: 50%;
+  box-shadow: inset 0 0 0 20px var(--accent); }
+.score .abcjs-large .abcjs-midi-start { width: 44px; height: 44px; padding: 10px 9px 10px 12px; }
+/* The chosen way of playing (tune, chords) in slate, the system's colour for a choice
+   made: red on the paper is kept for Play and the notes as they sound. */
+.score .playback .segmented input:checked + span { background: var(--slate); }
 .card { border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.1rem; background: var(--card-bg); }
 .card h2 { margin: 0 0 .6rem; font-size: 1.15rem; }
 .card dl { margin: 0; }
@@ -499,6 +509,8 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .chart .repeat-end::after { content: ":" / ""; color: var(--accent-ink); font-weight: 700; margin-left: auto; }
 .chart sup { font-size: .65rem; color: var(--muted); font-weight: 400; }
 .chord-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1.5rem; margin: 1rem 0 .6rem; font-size: .9rem; }
+.score > .sound-note { margin: .4rem 0 0; color: #505963; --link: #1a67c2; }  /* on the cream paper in both themes, as below */
+.score > .sound-note .link-button { margin: 0; font-size: inherit; }
 .score > .playback { margin: .5rem 0 .8rem; font-size: .9rem;
   /* on the cream paper, so in its light-mode colours even in dark mode */
   --text: #262b31; --muted: #505963; --card-bg: #ffffff; --border: #dcdfe3; --accent-ink: #C8102E; color: var(--text); }  /* muted: 4.5:1 on either paper */
@@ -617,11 +629,21 @@ body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 
   .sidebar.menu-open .menu-button::after { transform: rotate(-90deg); }
   .sidebar-links { display: none; flex: 1 0 100%; flex-wrap: wrap; gap: .35rem 1rem; padding-top: .5rem; font-size: .9rem; }
   .sidebar.menu-open .sidebar-links { display: flex; }
-  /* Two rows, so the music starts on the first screen. */
-  .controls { gap: .75rem 1.25rem; margin-bottom: 1rem; }
-  .controls .view-tools { display: contents; }  /* Key and size; then tempo and full screen */
+  /* One line, so the music starts high on the first screen: the key and tempo, to tap
+     and change them, and full screen. Opened: key and size; then tempo and full screen. */
+  .controls { gap: .75rem 1.25rem; margin-bottom: 1rem; align-items: center; }
+  .controls:not(.open) { flex-wrap: nowrap; gap: .5rem; }
+  .controls-summary { display: flex; flex: 1 1 0; min-width: 0; align-items: center; justify-content: space-between; gap: .5rem; text-align: left; padding-inline: .75rem; }
+  .controls-summary .now { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .controls:not(.open) .practice-toggle { flex: none; padding-inline: .75rem; }
+  .controls-summary .change { display: flex; align-items: center; gap: .3em; color: var(--accent-ink); font-size: .9rem; }
+  .controls-summary .change::after { content: ""; width: .7em; height: .7em; background: currentColor;
+    mask: var(--chevron) center / contain no-repeat; transform: rotate(90deg); transition: transform .15s; }
+  .controls-summary[aria-expanded="true"] .change::after { transform: rotate(-90deg); }
+  .controls:not(.open) > .control, .controls:not(.open) .music-size { display: none; }
+  .controls.open .controls-summary { flex-basis: 100%; }
+  .controls .view-tools { display: contents; }
   .controls .music-size { margin-left: auto; }
-  .controls .music-size .label { display: none; }  /* the group is named for screen readers */
   .controls > .tempo { order: 1; }
   .controls .practice-toggle { order: 2; }
   .control.tempo { flex: 1 1 12rem; }

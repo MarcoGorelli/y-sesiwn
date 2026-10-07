@@ -1,0 +1,17 @@
+X:1
+T:Hufen Melyn (version 2)
+T:Hufen Melyn 32 bar
+R:alaw
+S:http://alawoncymru.com/alawon/Tunes/StHufMel/StHufMel.html
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
+C:Trefniant Meurig Williams
+M:2/4
+L:1/8
+Q:1/4=80
+K:G
+|: D | "G"G>A BG | "D"A>B cA | "G"B d3- | "G"d3 D | "G"GB Bd | "D"cA GF | "G"G4- | "G"G2 z :| B |
+"C"c>B cd | "C"e/f/g fd | "C"e/f/ g3- | "C"g3 B | "C"c>B cd | "C"e/f/g fd | "C"e4- | "C"e2 z d |
+"G"gd dB | "C"ec "D"cA | "G"dB BG | "D"FE FD | "G"GB Bd | "D"cA GF | "G"G4- | "G"G4 |]

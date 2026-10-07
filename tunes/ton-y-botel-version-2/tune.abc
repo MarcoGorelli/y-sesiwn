@@ -1,0 +1,20 @@
+X:1
+T:Tôn y Botel (version 2)
+T:Jig y Botel
+R:jig
+S:http://alawoncymru.com/alawon/Tunes/YBotel/YBotel.html
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
+C:Trefniant Meurig Williams
+N:The score plays part A twice, part B, then part A again (D.C. al Fine).
+M:6/8
+L:1/8
+Q:3/8=67
+K:Em
+|: "Em"E3 EFG | "B"F3 "C"E3 | "B"F3 FGA | "Em"G2 F E3 | "G"B3 "D"ABc |
+"G"B2 A "Em"G3 | "Am"A2 G "B"F3 | "Em"E6 :| "G"B3 GAB | "D"A3 A3 | "Em"G3 EFG |
+"B"F3 F3 | "Em"E3 EFG | "Am"A3 A2 A | "C"G3 AGA | "B"B6 |
+"Em"E3 EFG | "B"F3 "C"E3 | "B"F3 FGA | "Em"G2 F E3 | "G"B3 "D"ABc |
+"G"B2 A "Em"G3 | "Am"A2 G "B"F3 | "Em"E6 |]

@@ -1,0 +1,17 @@
+X:1
+T:Si Hei Lwli (version 2)
+T:Si Hei Lwli 'Mabi
+S:http://alawoncymru.com/alawon/Tunes/ArHNoSt/ArHnoSt.htm
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
+C:Trefniant Meurig Williams
+M:4/4
+L:1/8
+Q:1/4=120
+K:G
+"G"G2 A2 B3 B | A2 G4 G2 | "G"B3 B A2 G2 | "D"A8 |
+"G"G2 A2 B3 B | "Em"A2 G4 GA | "C"B2 G2 "D"A3 B | "G"G6 z2 ||
+"G"G2 A2 B3 B | "G"d2 B2 "D"A4 | "G"G2 A2 "Em"B2 d2 | "Am"B2 G2 "D"A4 |
+"Em"G2 A2 B3 B | "C"A2 G4 G2 | "Am"B2 G2 "D"B3 A | "G"G6 z2 |]

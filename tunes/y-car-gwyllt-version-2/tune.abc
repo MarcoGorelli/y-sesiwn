@@ -1,0 +1,19 @@
+X:1
+T:Y Car Gwyllt (version 2)
+T:Jig y Car Gwyllt
+T:Jig y Botel
+R:jig
+S:http://alawoncymru.com/alawon/Tunes/SetRasys/SetRasys.html
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
+C:Addasiad Meurig Williams
+M:6/8
+L:1/8
+Q:3/8=53
+K:D
+|: AG | "D"FDA d2 d | "A"cef g2 g | "D"faf dfd | "A"c2 A AAG |
+"D"FDA d2 d | "A"cef g2 g | "D"fad "A"egc | "D"d2 d d :|
+|: fg | "D"afd afd | "A"gec gec | "D"afd afd | "A"e2 A AAG |
+"D"FDA d2 d | "A"cef g2 g | "D"fad "A"egc | "D"d2 d d :|

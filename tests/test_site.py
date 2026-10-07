@@ -48,7 +48,7 @@ EXPECTED_ODD_BARS = {
     # The same in Peter Dunk's transcription of Davidson's 250 Welsh Airs.
     "hew-wraig-llanallgo": "bar 18 is three quavers short",
     "hoffedd-howell": "bar 21 is two quavers short",
-    "sion-the-son-of-evan": "bar 6 is two quavers long",
+    "sion-ab-ifan-version-2": "bar 6 is two quavers long",
     "the-damsels-of-cardigan": "bar 9 is a quaver long",
     "the-tune-of-morvydd-s-pipes": "bar 31 is a quaver long",
     "the-vale-of-clwyd": "bar 5 is a quaver short",

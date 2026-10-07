@@ -1,0 +1,21 @@
+X:1
+T:Morwyn y Pentre (version 2)
+T:Morwyn y Pentre syml
+R:polca/ymdaith
+S:http://alawoncymru.com/alawon/Tunes/MorwynyPentre/MorwynPentre.html
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
+C:Trefniant Meurig Williams
+N:Transcribed from the score. The alawoncymru recording is of the full version, Morwyn y Pentre llawn, with parts C and D as well.
+M:2/4
+L:1/8
+Q:1/4=110
+K:Dm
+"Dm"D2 D>F | "Dm"ED DE | "Dm"F2 F>A | "Dm"GF F>G |
+"Dm"Ad Ad | "Dm"Ad (de) | "Am"(f>e) d^c | "Dm"d2 d2 :|
+"Dm"f>d dB | "C"e>c cA | "Bb"d>B GB | "Am"A2- A2 |
+"Dm"f>d Bd | "C"e>c Ac | "Bb"d>B GB | "Am"A2 A/G/F/E/ ||
+"Dm"D2 D>F | "Dm"ED DE | "Dm"F2 F>A | "Dm"GF F>G |
+"Dm"Ad Ae | "Dm"Af Ag | "Am"f>e d^c | "Dm"d2 d2 |]

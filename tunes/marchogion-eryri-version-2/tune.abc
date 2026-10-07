@@ -1,0 +1,19 @@
+X:1
+T:Marchogion Eryri (version 2)
+T:Marchogion Yr Wyddfa
+R:jig
+S:http://alawoncymru.com/alawon/Tunes/MarErSet/MarErSt.html
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
+C:Addasiad Meurig Williams
+M:6/8
+L:1/8
+Q:3/8=80
+K:D
+|: "D"f2 f fed | "A"c2 A A3 | "D"d2 d "G"def | "A"g2 e e2 d/e/ | "D"f2 f fed |
+"A"c2 A A2 c | "D"d2 d "A"ede | "D"f2 d d3 :| "A"e2 e e2 e | "A"efg gab |
+"A"bag fed | c2 A A3 | "A"efe e2 e | efg gab | "A"bag fed |
+"A"cBA GFE | "D"DEF F2 F | FGA A2 A | "G"d2 B d2 B | "A"A2 G F2 E |
+"D"DEF F2 F | FGA A2 A | "G"d2 B "A"A2 G | "D"F2 D D3 |]

@@ -1,0 +1,19 @@
+X:1
+T:Rhif Wyth (version 2)
+T:Rhif Wyth - amrywiad
+R:pibddawns/rîl
+S:http://alawoncymru.com/alawon/Tunes/GlanCaml/GlanCaml.htm
+Z:MIDI transcribed with alawon-abc
+C:Addasiad Meurig Williams
+%%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
+M:4/4
+L:1/8
+Q:1/4=120
+K:G
+|: BA | "G"GB dB cB AG | "C"cB cd c2 BA | "G"GB dB cB AG |
+"D"d^c de d=c BA | "G"GB dB cB AG | "C"cd ef g2 fe |
+"G"dB GB "D"cA FA | "G"G2 B2 G2 :: d2 | "G"gf ga gf ed |
+"C"cB cd ef ge | "A"a^g ab a=g fe | "D"d^c de de fd |
+"G"gf ga gf ed | "C"cB cd ef ge | "G"dB GB "D"cA FA | "G"G2 B2 G2 :|

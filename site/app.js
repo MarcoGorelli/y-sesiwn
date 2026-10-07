@@ -2216,7 +2216,10 @@ function renderTune(main, group, tune) {
   const showTempo = () => {
     // Which note is the beat, the score's own tempo mark shows (♩. = 112).
     tempoLabel.textContent = tr(`Tempo: ${settings.bpm} bpm`, `Tempo: ${settings.bpm} curiad y funud`);
-    speedFrom.textContent = String(settings.bpm);
+    // Before Speed up is ticked, "from" says where ticking it would start: the tempo, or,
+    // if that's already the goal, 70% of it (see startSpeedUp), never "from 100 to 100".
+    const goal = settings.speedTo;
+    speedFrom.textContent = String(!settings.speedUp && settings.bpm >= goal ? Math.max(30, Math.round(goal * .7)) : settings.bpm);
     showSummary();
   };
   showTempo();
@@ -2264,15 +2267,16 @@ function renderTune(main, group, tune) {
       settings.speedTo = Number.isFinite(to) && to >= 30 ? Math.min(240, to) : tune.bpm;
       e.target.value = settings.speedTo;
       speedHint();
+      showTempo();
     } });
   const speedUp = el("div", { class: "speed-up" },
-    toggle(tr("Speed up each time", "Cyflymu bob tro"), settings.speedUp, (on) => { settings.speedUp = on; if (on) startSpeedUp(); }),
+    toggle(tr("Speed up each time", "Cyflymu bob tro"), settings.speedUp, (on) => { settings.speedUp = on; if (on) startSpeedUp(); showTempo(); }),
     el("span", { class: "speed-range" }, tr("from ", "o "), speedFrom, tr(" to ", " i "), speedTo, tr(" bpm", " curiad y funud")));
   // Ticking Speed up works at once: it repeats the whole tune if nothing is repeating yet,
   // and, if the tempo is already the goal, starts from 70% of it ("from 78 to 112").
   const startSpeedUp = () => {
     if (settings.loop < -1) { settings.loop = -1; fillLoops(); }
-    const goal = Math.max(settings.speedTo, tune.bpm);
+    const goal = settings.speedTo;
     if (settings.bpm >= goal) {
       settings.bpm = Math.max(30, Math.round(goal * .7));
       const tempo = controls.querySelector("#tempo");
@@ -2280,8 +2284,6 @@ function renderTune(main, group, tune) {
       showTempo();
       showInAddress();
     }
-    settings.speedTo = goal;
-    speedTo.value = goal;
   };
   const whistleKey = el("span", { class: "caption whistle-key", hidden: !WHISTLES[state.practice.tab] },
     tr("● covered · ○ open · ◐ half-covered · + blow harder · ? not on this whistle",

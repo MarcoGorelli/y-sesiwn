@@ -45,6 +45,14 @@ EXPECTED_ODD_BARS = {
     "castell-aberystwyth": "bar 4 of part B is a quaver short",
     "megan-a-gollodd-ei-gardas-version-3": "two bars are a quaver short",
     "plygiad-y-bedol": "bar 8 is two quavers short",
+    # The same in Peter Dunk's transcription of Davidson's 250 Welsh Airs.
+    "hew-wraig-llanallgo": "bar 18 is three quavers short",
+    "hoffedd-howell": "bar 21 is two quavers short",
+    "sion-the-son-of-evan": "bar 6 is two quavers long",
+    "the-damsels-of-cardigan": "bar 9 is a quaver long",
+    "the-tune-of-morvydd-s-pipes": "bar 31 is a quaver long",
+    "the-vale-of-clwyd": "bar 5 is a quaver short",
+    "y-berllan": "bar 12 is a quaver long",
 }
 
 

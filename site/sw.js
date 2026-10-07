@@ -1,7 +1,7 @@
 // Service worker: keeps a copy of the whole site so it works offline (and as a
 // home-screen app). build_site.py fills in VERSION and the file lists; a new
 // deploy changes VERSION, so the browser fetches the new files in the background
-// and uses them from the next visit.
+// and uses them from the next visit (or, in a page left open, the next page: app.js).
 const VERSION = "__VERSION__";
 const SITE = `site-${VERSION}`;
 const SOUNDS = "sounds-__SOUNDS_VERSION__";  // the piano notes (2 MB) change rarely: cached apart
@@ -34,6 +34,10 @@ self.addEventListener("message", (event) => {
     event.source?.postMessage({ sounds: { saved: SOUND_FILES.length - missing.length, total: SOUND_FILES.length } });
   };
   if (event.data === "sounds?") event.waitUntil(answer());
+  if (event.data === "saved-next") {
+    savedNext = Date.now() + SAVED_NEXT_WAIT;
+    event.ports[0]?.postMessage("ok");
+  }
   if (event.data === "save-sounds") {
     event.waitUntil((async () => {
       const missing = await soundsMissing();
@@ -67,10 +71,17 @@ self.addEventListener("activate", (event) => {
 // saved copy gets the saved app files. (A page's answer is remembered by its client id
 // while this worker runs; if it was stopped in between, each file is fresh or saved on
 // its own, as for the page.)
+//
+// A page that has just seen this worker take over (a deploy) opens again from the saved
+// copy, which is then the new version, all of it: "saved-next" asks for that, for the
+// next page opened within SAVED_NEXT_WAIT ms. No waiting on a poor signal.
 const FRESH_WAIT = 2000;
 const PAGE_WAIT = 10000;
-const FRESH = new Set(["", "index.html", "app.js", "style.css", "tunes.json", "sessions.json"]);
+const SAVED_NEXT_WAIT = 5000;
+const FRESH = new Set(["", "index.html", "app.js", "style.css", "tunes.json", "sessions.json",
+  "about.md", "about.cy.md", "guides.cy.md", "CONTRIBUTING.md"]);
 const pageFrom = new Map();  // client id -> "network" or "saved"
+let savedNext = 0;  // until when the next page comes from the saved copy
 
 async function freshOrSaved(url, saved, wait = FRESH_WAIT, from = () => {}, keep = (answer) => answer.ok) {
   try {
@@ -119,12 +130,19 @@ self.addEventListener("fetch", (event) => {
       for (const id of pageFrom.keys()) if (!ids.has(id)) pageFrom.delete(id);
     });
   };
-  // An address with no page gets the site's own 404.html, as on a first visit: it says
-  // so, or opens a renamed tune; not the home page as if the address were right.
-  event.respondWith(freshOrSaved(request.url, async () => {
+  const saved = async () => {
     const app = await caches.match("./", { ignoreSearch: true });
     if (!app || !up) return app;
     const html = (await app.text()).replace('<base href="./">', `<base href="${up}">`);
     return new Response(html, { headers: app.headers });
-  }, FRESH_WAIT, from, (answer) => answer.ok || answer.status === 404));
+  };
+  if (Date.now() < savedNext) {
+    savedNext = 0;
+    from("saved");
+    event.respondWith((async () => (await saved()) ?? fetch(request))());
+    return;
+  }
+  // An address with no page gets the site's own 404.html, as on a first visit: it says
+  // so, or opens a renamed tune; not the home page as if the address were right.
+  event.respondWith(freshOrSaved(request.url, saved, FRESH_WAIT, from, (answer) => answer.ok || answer.status === 404));
 });

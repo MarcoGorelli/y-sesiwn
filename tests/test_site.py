@@ -1084,6 +1084,39 @@ def test_a_deploy_updates_the_offline_copy(browser, site):
         context.close()
 
 
+def test_a_page_left_open_gets_a_deploy(browser, site):
+    # A page left open (the app on a phone) picks up a deploy: not by reloading the page
+    # being read, but on the next page opened; that page comes from the new saved copy,
+    # even with no signal by then.
+    import time
+    from conftest import ROOT
+    out = ROOT / "_site"
+    originals = {name: (out / name).read_text(encoding="utf-8") for name in ["app.js", "sw.js"]}
+    context = browser.new_context()  # service worker allowed
+    page = context.new_page()
+    try:
+        page.goto(site + "?tune=glandyfi")
+        page.wait_for_function("navigator.serviceWorker.controller !== null", timeout=30000)
+        page.wait_for_selector(".score .abcjs-staff")
+        page.evaluate("window.oldPage = true")
+        time.sleep(1.1)  # the test server's "last modified" is to the second
+        (out / "app.js").write_text(originals["app.js"] + "\nwindow.deployed = 2;\n", encoding="utf-8")
+        (out / "sw.js").write_text(re.sub(r'const VERSION = "[^"]+"', 'const VERSION = "deployed"', originals["sw.js"]), encoding="utf-8")
+        # What coming back into view does, without its ten minutes' wait.
+        page.evaluate("navigator.serviceWorker.getRegistration().then((r) => r.update())")
+        page.wait_for_function("state.updated", timeout=30000)
+        assert page.evaluate("window.oldPage") is True  # still the same page
+        context.set_offline(True)
+        page.click(".sidebar-links a[href='?page=browse']")
+        page.wait_for_selector(".tune-list li", state="attached", timeout=10000)
+        assert page.evaluate("window.oldPage") is None
+        assert page.evaluate("window.deployed") == 2
+    finally:
+        for name, text in originals.items():
+            (out / name).write_text(text, encoding="utf-8")
+        context.close()
+
+
 @pytest.mark.parametrize("junk, opens, address", [
     ("alaw/glandyfi/%C2%A0", "Glandyfi", "alaw/glandyfi/"),      # a non-breaking space, pasted with the link
     ("alaw/glandyfi/%20", "Glandyfi", "alaw/glandyfi/"),

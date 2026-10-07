@@ -51,6 +51,7 @@ const state = {
   sounds: null,         // how many piano notes it keeps: { saved, total }
   played: savedPlayed(),  // anything has been played on this device (see saveAllSounds)
   savingSounds: false,  // while it saves the rest, asked for on the offline card
+  updated: false,       // a new version is saved (a deploy): the next page opens it (openUpdated)
 };
 
 // ---- Welsh or English --------------------------------------------------------------
@@ -880,6 +881,7 @@ function addressType() {
 // Moving to another page cross-fades the old one into the new (View Transitions, where
 // the browser has them), unless the reader's device asks for less motion.
 function navigate(url) {
+  if (state.updated) { openUpdated(url); return; }
   history.pushState(null, "", url);
   const change = () => { render(); window.scrollTo(0, 0); focusHeading(); };
   if (document.startViewTransition && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -907,7 +909,11 @@ document.addEventListener("click", (event) => {
   event.preventDefault();
   navigate(link.getAttribute("href"));
 });
-window.addEventListener("popstate", () => { render(); focusHeading(); });
+window.addEventListener("popstate", () => {
+  if (state.updated) { openUpdated(null); return; }  // the address is already the page's
+  render();
+  focusHeading();
+});
 
 // After moving to another page, focus goes to its heading, so a screen reader says where
 // you are (as it would on a new page) and Tab carries on from the top of it. Some pages
@@ -4274,6 +4280,24 @@ function soundPlayed() {
   refreshOfflineCards();
 }
 
+const UPDATE_EVERY = 10 * 60 * 1000;
+
+// Opens a page as a new visit, with the new version: from the saved copy, which is now
+// all of it, so a poor signal doesn't keep the reader waiting (sw.js, "saved-next").
+// (Without the worker's answer in half a second, it opens anyway, as any visit.)
+function openUpdated(url) {
+  let gone = false;
+  const go = () => {
+    if (gone) return;
+    gone = true;
+    if (url) location.assign(url); else location.reload();
+  };
+  const channel = new MessageChannel();
+  channel.port1.onmessage = go;
+  navigator.serviceWorker.controller?.postMessage("saved-next", [channel.port2]);
+  setTimeout(go, 500);
+}
+
 if ("serviceWorker" in navigator) {
   // If the copy can't be saved (no signal part-way through, storage refused), say so
   // rather than "Saving…" for ever: the worker is then dropped ("redundant").
@@ -4284,6 +4308,27 @@ if ("serviceWorker" in navigator) {
   }).catch(failed));
   navigator.serviceWorker.addEventListener("message", (event) => {
     if (event.data?.sounds) { state.sounds = event.data.sounds; state.savingSounds = false; refreshOfflineCards(); }
+  });
+  // A page left open (a tab, or the app on a phone, which carries on where it was rather
+  // than loading again) looks for a new version whenever it comes back into view, and
+  // every UPDATE_EVERY ms while in view. Offline, or if the download breaks off, nothing
+  // changes and it tries again later. Once the new version is saved in full, the worker
+  // takes over and the next page opened loads it (openUpdated): never the page being
+  // read or played from.
+  let checked = Date.now();
+  const checkForUpdate = () => {
+    if (document.hidden || !navigator.onLine || Date.now() - checked < UPDATE_EVERY) return;
+    checked = Date.now();
+    navigator.serviceWorker.getRegistration().then((registration) => registration?.update()).catch(() => {});
+  };
+  document.addEventListener("visibilitychange", checkForUpdate);
+  window.addEventListener("online", () => { checked = 0; checkForUpdate(); });
+  setInterval(checkForUpdate, UPDATE_EVERY);
+  // The first worker taking over (a first visit) isn't a new version.
+  let controlled = Boolean(navigator.serviceWorker.controller);
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (controlled) state.updated = true;
+    controlled = true;
   });
   // The worker only becomes active once every file is saved.
   navigator.serviceWorker.ready.then(() => {

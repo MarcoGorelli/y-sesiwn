@@ -33,6 +33,8 @@
   /* Drawn icons, used as masks so they take the text colour: a chevron (pointing right)
      and a tick, in the same 1.8 rounded stroke as the search, microphone and share icons */
   --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 5 7 7-7 7'/%3E%3C/svg%3E");
+  --arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 19V5m-6 6 6-6 6 6'/%3E%3C/svg%3E");
+  --cross: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='m6 6 12 12M18 6 6 18'/%3E%3C/svg%3E");
   --tick: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4.5 12.5 5 5 10-11'/%3E%3C/svg%3E");
   --search-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2366707a' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='m15.5 15.5 5 5'/%3E%3C/svg%3E");
   color-scheme: light dark;
@@ -202,6 +204,7 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .pills button { border-radius: 999px; }
 .pills button { display: inline-flex; align-items: center; }
 .pills button[hidden] { display: none; }
+.pills button .count { white-space: pre; }
 .pills .more-keys .chevron { transform: none; margin-right: -.1em; }  /* opens to the right, as a closed fold */
 @media (hover: hover) { .pills button:hover:not(:disabled) { border-color: var(--c); color: inherit; } }
 .pills button[aria-pressed="true"] { border-color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); font-weight: 600; }
@@ -348,11 +351,24 @@ details.type-group > summary h2 { margin: 0; }
 details.type-group[open] > .tune-list { margin: 0 0 1.25rem; }
 .type-group h2 :is(.gloss, .count) { color: var(--muted); font-weight: 400; white-space: pre; }
 .tune-key { flex: none; margin-left: .45em; color: var(--muted); font-size: .85rem; }
-.browse-count { margin: 1.25rem 0 0; font-weight: 600; color: var(--text); }
+.browse-count { margin: 1.25rem 0 0; font-weight: 600; color: var(--text); scroll-margin-top: 1rem; }
+.caption.modes[hidden] { display: none; }
+/* On a phone, along the bottom once something is chosen: down to the tunes ("156 jigs") */
+.browse-jump { display: none; }
+@media (max-width: 800px) {
+  .browse-jump:not([hidden]) {
+    position: fixed; bottom: .75rem; left: 50%; transform: translateX(-50%); z-index: 5;
+    display: inline-flex; align-items: center; gap: .45rem; max-width: calc(100vw - 2rem);
+    border-radius: 999px; font-weight: 600; box-shadow: 0 2px 8px var(--shadow-soft);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .browse-count { scroll-margin-top: 4.5rem; }  /* under the bar stuck at the top */
+}
 
 /* An empty page's picture (emptyArt in app.js): the harp over a strip of carthen */
 .empty-art { display: flex; flex-direction: column; align-items: flex-start; margin: 1.25rem 0 1rem; }
-.empty-art::after { content: ""; width: 6rem; height: 7px; margin-top: .5rem;
+.empty-art img { width: 7rem; height: 7rem; }
+.empty-art::after { content: ""; width: 7rem; height: 7px; margin-top: .5rem;
   background: url("carthen.svg") repeat-x left center / auto 7px; }
 .set-empty[hidden] { display: none; }
 
@@ -514,7 +530,7 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
   background: url("carthen.svg") repeat-x top left / auto 14px;
   color: var(--muted); font-size: .9rem;
 }
-.site-footer p { margin: 0; max-width: 1200px; }
+.site-footer p { margin: 0; max-width: 72ch; }
 .site-footer a { color: var(--muted); }
 .site-footer a:hover { color: var(--accent-ink); }
 
@@ -767,7 +783,7 @@ body.practice .score > .audio { top: 0; }
   body.practice .controls-summary .change::after { font-size: .9rem; }
   main { padding: 1.5rem 1rem 3rem; }
   .site-footer { padding: 22px 1rem 1.25rem; }
-  .tune-layout, .map-layout { grid-template-columns: 1fr; }
+  .tune-layout, .map-layout { grid-template-columns: minmax(0, 1fr); }  /* min 0: a long line of the ABC mustn't widen the page */
   .map-layout figure { position: static; max-width: 22rem; margin: 0 auto; }
   /* Sessions: the list first, right under the filters, so a filter's result is in sight; the map after it */
   .sessions-layout .session-list { order: -1; }
@@ -859,15 +875,31 @@ main { view-transition-name: page; }
   border-radius: var(--radius); padding: .2rem .5rem; width: 100%; max-width: 40rem; margin: 0 0 .4rem; }
 .set-name:focus { outline: none; border-color: var(--accent-ink); border-style: solid; }
 .set-count { margin: 0 0 1rem; }
-.set-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 0 1.25rem; }
-.set-list { padding-left: 1.6rem; margin: 0 0 2rem; max-width: 46rem; }
-.set-list li { padding: .35rem 0; border-bottom: 1px solid var(--border); }
-.set-item-controls { float: right; display: inline-flex; gap: .3rem; align-items: center; margin-left: .75rem; }
+.set-actions { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .5rem; margin: 0 0 1.25rem; }  /* the buttons level with Size's, under its label */
+/* The running order: number, the tune's woven swatch and name, its key and controls beside it */
+.set-list { list-style: none; counter-reset: set; padding: 0; margin: 0 0 2rem; max-width: 46rem; border-top: 1px solid var(--border); }
+.set-list li { counter-increment: set; display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .5rem; padding: .4rem 0; border-bottom: 1px solid var(--border); }
+.set-list li::before { content: counter(set) "."; min-width: 1.4rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.set-list li > a { font-weight: 600; }
+.set-list .swatch, .set-tune h2 .swatch { margin-right: 0; }
+.set-item-controls { display: inline-flex; gap: .3rem; align-items: center; margin-left: auto; }
 .set-item-controls select { padding: .25rem .4rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); max-width: 11rem; }
-.set-item-controls button { padding: .2rem .55rem; }
-.set-tune { margin: 0 0 1.5rem; }
-.set-tune h2 { font-size: 1.1rem; margin: 0 0 .4rem; }
-.set-paper { background: var(--paper); color: #000; border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .75rem; min-height: 8rem; }
+.set-item-controls button { padding: .2rem .55rem; display: inline-flex; align-items: center; justify-content: center; }
+.set-item-controls button:disabled { opacity: .55; }
+/* Drawn icons (masks, so they take the text colour) */
+.icon { display: inline-block; width: 1em; height: 1em; background: currentColor; mask: var(--arrow) center / contain no-repeat; }
+.icon.arrow-down { transform: rotate(180deg); }
+.icon.cross { mask-image: var(--cross); }
+.icon.chevron-right, .icon.chevron-left { mask-image: var(--chevron); }
+.icon.chevron-left { transform: rotate(180deg); }
+.browse-jump .icon { flex: none; }
+/* Each tune's music as on its own page: cream paper, under its number and colourway */
+.set-music { padding-top: .25rem; background: url("carthen.svg") repeat-x top left / auto 7px; }
+.set-tune { margin: 1.25rem 0 1.75rem; scroll-margin-bottom: 4.5rem; }
+.set-tune:last-child { margin-bottom: 1rem; }
+.set-tune h2 { display: flex; align-items: center; gap: .5rem; font-size: 1.15rem; margin: 0 0 .5rem; }
+.set-paper { background: var(--paper); color: #000; border: 1px solid var(--border); border-radius: var(--radius); padding: .75rem 1rem 1rem; min-height: 8rem; box-shadow: 0 1px 3px #0000000f; }
+.set-undo[hidden] { display: none; }
 .set-undo { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .6rem; max-width: 40rem; margin: .75rem 0 0; }
 .set-undo button { padding: .3rem .8rem; }
 .sets-backup { max-width: 40rem; margin-top: 1.5rem; }
@@ -880,12 +912,12 @@ main { view-transition-name: page; }
 .add-to-set-wrap { display: inline-flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
 .add-status:empty { display: none; }
 @media (max-width: 800px) {
-  .set-item-controls { float: none; display: flex; margin: .35rem 0 0; }
+  .set-item-controls { flex-basis: 100%; margin-left: 1.9rem; }  /* under the name, lined up with it */
 }
 /* Practice mode on a set: just the music */
 body.practice .set-list, body.practice .set-count, body.practice .set-actions > :not(.practice-toggle, .music-size), body.practice .set-name { display: none; }
 @media print {
-  .set-list, .set-count, .set-actions, .set-name, .add-to-set-wrap { display: none !important; }
+  .set-list, .set-count, .set-actions, .set-name, .add-to-set-wrap, .set-undo, .browse-jump { display: none !important; }
   .set-tune { break-inside: avoid; }
   .set-paper { border: none; background: none; padding: 0; }
 }
@@ -953,7 +985,8 @@ body.practice .tune-sub { display: none; }
   border-radius: 999px; background: var(--card-bg); box-shadow: 0 2px 8px var(--shadow-soft);
 }
 .set-nav[hidden] { display: none; }
-.set-nav button { min-width: 2.75rem; min-height: 2.75rem; border-radius: 999px; font-size: 1.35rem; line-height: 1; }
+.set-nav button { min-width: 2.75rem; min-height: 2.75rem; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; }
+.set-nav button .icon { width: 1.1rem; height: 1.1rem; }
 .set-nav-where { font-size: .9rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .not-found { font-size: 1.1rem; }
 @media print { .set-nav { display: none !important; } }
@@ -972,7 +1005,7 @@ main h1:focus { outline: none; }
   .segmented input:focus-visible + span { outline: 2px solid CanvasText; }
   .swatch { display: none; }
   /* Drawn icons are masked backgrounds, which forced colours would blank out */
-  summary::before, .chevron, .menu-button::after, .pills button[aria-pressed="true"]::before { forced-color-adjust: none; background: CanvasText; }
+  summary::before, .chevron, .icon, .menu-button::after, .pills button[aria-pressed="true"]::before { forced-color-adjust: none; background: CanvasText; }
   .pills button[aria-pressed="true"]::before { background: HighlightText; }
   .score .abcjs-note_playing { fill: Highlight; }
   .wales-map circle.here, .wales-map circle.lit { fill: Highlight; }

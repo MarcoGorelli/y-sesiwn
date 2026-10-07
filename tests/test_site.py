@@ -778,6 +778,19 @@ def test_fits_a_phone(browser, site, path, lang):
     context.close()
 
 
+@pytest.mark.parametrize("path", ["?tune=glandyfi", "?tune=llancesau-trefaldwyn"])
+def test_fits_a_phone_with_everything_open(browser, site, path):
+    # The folds (the ABC, how to say it, the practice tools) open: still no sideways scroll.
+    context = browser.new_context(viewport={"width": 360, "height": 800}, service_workers="block")
+    page = context.new_page()
+    page.goto(site + path)
+    page.wait_for_selector(".score .abcjs-staff")
+    page.evaluate("document.querySelectorAll('details').forEach((d) => { d.open = true; })")
+    page.wait_for_timeout(300)
+    assert page.evaluate("document.documentElement.scrollWidth") <= 360
+    context.close()
+
+
 def test_home_page(page):
     page.goto_site()
     features = page.locator(".features li").all_inner_texts()
@@ -1765,6 +1778,12 @@ def test_set_from_tune_pages(page):
     assert page.locator(".set-list li").nth(1).locator("select").input_value() == "2"
     page.locator(".set-list li").nth(1).locator("button[aria-label='Move up']").click()
     page.locator(".set-list li").nth(2).locator("button[aria-label^='Remove']").click()
+    # A tune taken out can be put back, in its place and key.
+    assert page.locator(".set-undo").inner_text().startswith("Removed Nyth y Gog.")
+    page.click(".set-undo button")
+    assert page.locator(".set-list li > a").all_inner_texts() == ["Glandyfi", "Llancesau Trefaldwyn", "Nyth y Gog"]
+    assert not page.locator(".set-undo").is_visible()
+    page.locator(".set-list li").nth(2).locator("button[aria-label^='Remove']").click()
     page.fill(".set-name", "Nos Iau")
     page.press(".set-name", "Tab")
     assert page.locator(".set-list li > a").all_inner_texts() == ["Glandyfi", "Llancesau Trefaldwyn"]
@@ -2061,6 +2080,17 @@ def test_chosen_key_stands_out(browser, site, scheme):
     assert chosen[0] != other[0] and chosen[1] != other[1]  # its own fill and text colour
     assert chosen[2] != "none" and other[2] == "none"  # the drawn tick
     context.close()
+
+
+def test_browse_type_counts_follow_the_key(page):
+    # Type counts follow the chosen key, as the key counts follow the type; a type with no
+    # tunes in it is greyed out.
+    page.goto_site("?page=browse")
+    page.click(".pills.keys button[data-key='D major']")
+    groups = page.evaluate("state.groupList.filter((g) => g.versions[0].key && `${g.versions[0].key.root} ${g.versions[0].key.modeName}` === 'D major').map((g) => g.type)")
+    assert page.locator(".pills [data-type='Jig']").inner_text().endswith(f"· {groups.count('Jig')}")
+    for t in page.evaluate("state.data.types.map((t) => t.name)"):
+        assert page.locator(f".pills [data-type='{t}']").is_disabled() == (groups.count(t) == 0)
 
 
 def test_browse_several_types_and_keys(page, site):

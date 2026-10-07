@@ -1208,7 +1208,14 @@ function renderBrowse(main) {
     if (!first) history.replaceState(null, "", `?${url}`);  // a type's own page keeps its address at first
     const typeOk = (t) => !chosenTypes.size || chosenTypes.has(t.type);
     const keyOk = (t) => !chosenKeys.size || chosenKeys.has(keyOf(t));
-    for (const pill of pills.children) pill.setAttribute("aria-pressed", chosenTypes.has(pill.dataset.type));
+    for (const pill of pills.children) {
+      // Each type's count among the tunes in the chosen keys, greyed out as the keys are.
+      const n = tunes.filter((t) => keyOk(t) && t.type === pill.dataset.type).length;
+      const on = chosenTypes.has(pill.dataset.type);
+      pill.setAttribute("aria-pressed", on);
+      pill.lastChild.textContent = ` · ${n}`;
+      pill.disabled = n === 0 && !on;
+    }
     for (const pill of keyPills.querySelectorAll("[data-key]")) {
       // Each key's count among the tunes of the chosen types; keys they have none in are greyed out.
       const n = tunes.filter((t) => typeOk(t) && keyOf(t) === pill.dataset.key).length;
@@ -1257,6 +1264,9 @@ function renderBrowse(main) {
     const folded = !keysOpen && !keyOrder.slice(COMMON_KEYS).some((k) => chosenKeys.has(k));
     moreKeys.hidden = !folded;
     for (const pill of keyPills.querySelectorAll("[data-key]")) pill.hidden = folded && keyOrder.indexOf(pill.dataset.key) >= COMMON_KEYS;
+    if (modal) modal.hidden = ![...keyPills.querySelectorAll("[data-key]:not([hidden])")].some((p) => /Dorian|Mixolydian/.test(p.dataset.key));
+    jump.lastChild.textContent = caption.textContent;
+    showJump();
   };
   const toggle = (set, item) => { if (!set.delete(item)) set.add(item); show(); };
   const openGroups = new Set();  // the types opened while nothing is chosen
@@ -1267,7 +1277,7 @@ function renderBrowse(main) {
     }, el("span", { class: "swatch" }), type.name === "Other" ? typeName(type.name) : el("span", { lang: "cy" }, type.name),
       // In English, what the Welsh names mean: "Pibddawns (hornpipe)"
       state.lang !== "cy" && GLOSSED.has(type.name) ? el("span", { class: "gloss" }, ` (${EN_TYPE[type.name]})`) : null,
-      ` · ${type.count}`));
+      el("span", { class: "count" }, ` · ${type.count}`)));  // its own span, so flex keeps the space
   }
   // The modes that aren't major or minor, for anyone who hasn't met them.
   const modal = keyOrder.some((k) => /Dorian|Mixolydian/.test(k))
@@ -1291,14 +1301,23 @@ function renderBrowse(main) {
     el("span", { class: "chevron", "aria-hidden": "true" }));
   if (keyOrder.length <= COMMON_KEYS) keysOpen = true;
   keyPills.append(moreKeys);
+  // On a phone the pills fill the screen: once something is chosen, a button along the
+  // bottom ("156 jigs") goes down to them, while their count is out of sight below.
+  let below = false;
+  const jump = el("button", { type: "button", class: "browse-jump", hidden: true, onclick: () => {
+    caption.scrollIntoView({ block: "start" });
+    list.querySelector("a")?.focus({ preventScroll: true });
+  } }, el("span", { class: "icon arrow-down", "aria-hidden": "true" }), "");
+  const showJump = () => { jump.hidden = !below || (!chosenTypes.size && !chosenKeys.size); };
+  new IntersectionObserver(([e]) => { below = !e.isIntersecting && e.boundingClientRect.top > 0; showJump(); }).observe(caption);
 
-  main.replaceChildren(
+  main.replaceChildren(...[
     el("h1", {}, tr("Browse by type and key", "Pori yn ôl math a chywair")),
     el("p", { class: "lead" }, tr("Pick any types and keys: the jigs and reels in D, say.",
       "Dewiswch unrhyw fathau a chyweiriau: y jigiau a'r riliau yn D, dyweder.")),
     el("p", { class: "pills-label" }, tr("Type", "Math")), pills,
-    el("p", { class: "pills-label" }, tr("Key", "Cywair")), keyPills, modal, caption, list,
-  );
+    el("p", { class: "pills-label" }, tr("Key", "Cywair")), keyPills, modal, caption, list, jump,
+  ].filter(Boolean));
   show(true);
 }
 
@@ -3612,27 +3631,50 @@ function renderSet(main) {
   const observer = new IntersectionObserver((entries) => {
     for (const e of entries) if (e.isIntersecting) { e.target.draw(); observer.unobserve(e.target); }
   }, { rootMargin: "800px" });
+  const colour = Object.fromEntries(state.data.types.map((t) => [t.name, t.colour]));
+  const swatch = (tune) => el("span", { class: "swatch", style: `--c: ${colour[state.groups.get(tune.group).type] ?? "var(--muted)"}` });
+  const icon = (name) => el("span", { class: `icon ${name}`, "aria-hidden": "true" });
+  // A tune taken out, until another is: "Removed Calon Lân. Undo", back in its place and key
+  let removed = null;
+  const undo = el("p", { class: "set-undo", role: "status", hidden: true });
   const draw = () => {
     const move = (i, by) => { const [item] = items.splice(i, 1); items.splice(i + by, 0, item); save(); draw(); };
+    const remove = (i) => {
+      removed = { item: items[i], i };
+      items.splice(i, 1);
+      save();
+      draw();
+      undo.querySelector("button").focus();
+    };
+    undo.hidden = !removed;
+    undo.replaceChildren(...removed ? [tr(`Removed ${removed.item.tune.base}. `, `Wedi tynnu ${removed.item.tune.base}. `),
+      el("button", { type: "button", onclick: () => {
+        const { item, i } = removed;
+        items.splice(Math.min(i, items.length), 0, item);
+        removed = null;
+        save();
+        draw();
+        list.children[Math.min(i, items.length - 1)]?.querySelector("a").focus();
+      } }, tr("Undo", "Dadwneud"))] : []);
     list.replaceChildren(...items.map((item, i) => {
       const group = state.groups.get(item.tune.group);
       const several = group.versions.length > 1;
       const keySelect = el("select", { "aria-label": tr(`Key for ${item.tune.base}`, `Cywair ${item.tune.base}`),
         onchange: (e) => { item.key = +e.target.value; save(); draw(); } }, keyOptions(item.tune, item.key));
-      return el("li", {},
+      return el("li", {}, swatch(item.tune),
         el("a", { href: tuneUrl(item.tune.group, item.tune.version), "data-route": true }, tuneName(item.tune.group, item.tune.base)),
         several ? el("span", { class: "caption" }, tr(` (version ${item.tune.version})`, ` (fersiwn ${item.tune.version})`)) : null,
         el("span", { class: "set-item-controls" }, keySelect,
-          el("button", { type: "button", "aria-label": tr("Move up", "Symud i fyny"), disabled: i === 0, onclick: () => move(i, -1) }, "↑"),
-          el("button", { type: "button", "aria-label": tr("Move down", "Symud i lawr"), disabled: i === items.length - 1, onclick: () => move(i, 1) }, "↓"),
+          el("button", { type: "button", "aria-label": tr("Move up", "Symud i fyny"), disabled: i === 0, onclick: () => move(i, -1) }, icon("arrow-up")),
+          el("button", { type: "button", "aria-label": tr("Move down", "Symud i lawr"), disabled: i === items.length - 1, onclick: () => move(i, 1) }, icon("arrow-down")),
           el("button", { type: "button", "aria-label": tr(`Remove ${item.tune.base}`, `Tynnu ${item.tune.base}`),
-            onclick: () => { items.splice(i, 1); save(); draw(); } }, "✕")));
+            onclick: () => remove(i) }, icon("cross"))));
     }));
     observer.disconnect();
     music.replaceChildren(...items.map((item, i) => {
       const paper = setScore(item.tune, item.key);
       observer.observe(paper);
-      return el("section", { class: "set-tune" }, el("h2", {}, `${i + 1}. `, tuneName(item.tune.group, item.tune.base)), paper);
+      return el("section", { class: "set-tune" }, el("h2", {}, swatch(item.tune), `${i + 1}. `, tuneName(item.tune.group, item.tune.base)), paper);
     }));
     count.textContent = tuneCount(items.length);
     empty.hidden = items.length > 0;
@@ -3669,8 +3711,8 @@ function renderSet(main) {
   };
   const turn = (by) => goTo(Math.min(Math.max(place() + by, 0), items.length - 1));
   const where = el("span", { class: "set-nav-where", "aria-live": "polite" });
-  const prev = el("button", { type: "button", "aria-label": tr("Previous tune", "Yr alaw flaenorol"), onclick: () => turn(-1) }, "‹");
-  const next = el("button", { type: "button", "aria-label": tr("Next tune", "Yr alaw nesaf"), onclick: () => turn(1) }, "›");
+  const prev = el("button", { type: "button", "aria-label": tr("Previous tune", "Yr alaw flaenorol"), onclick: () => turn(-1) }, icon("chevron-left"));
+  const next = el("button", { type: "button", "aria-label": tr("Next tune", "Yr alaw nesaf"), onclick: () => turn(1) }, icon("chevron-right"));
   const nav = el("nav", { class: "set-nav", "aria-label": tr("Tunes in the set", "Alawon y set") }, prev, where, next);
   function showPlace() {
     const i = place();
@@ -3769,7 +3811,7 @@ function renderSet(main) {
       musicSize(() => music.querySelectorAll(".set-paper").forEach((paper) => {
         if (paper.drawn) { paper.drawn = false; paper.draw(); }
       }))),
-    addBox, added, empty, list,
+    addBox, added, empty, list, undo,
     music, nav,
   ].filter(Boolean));
   if (mine) setCurrentSet(my);

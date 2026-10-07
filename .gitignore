@@ -32,3 +32,6 @@ sian-philip/
 .impeccable/critique/*
 !.impeccable/critique/ignore.md
 
+
+# Tunes waiting to be reviewed before they go in tunes/
+incoming/

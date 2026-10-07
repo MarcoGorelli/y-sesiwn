@@ -576,6 +576,7 @@ def test_practice_tools_folded_at_first(browser, site, page):
     assert not phone.locator("#loop-select").is_visible()
     context.close()
     page.click(".practice-tools summary")
+    page.wait_for_function("state.practice.open")  # the toggle event comes a moment after the click
     page.evaluate("navigate('alaw/abaty-waltham/')")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.locator("#loop-select").is_visible()
@@ -2296,7 +2297,9 @@ def test_phone_controls_fold_into_one_line(browser, site):
     assert summary.inner_text().startswith("G, 112 bpm")  # the key in short
     assert not page.locator("#key-select").is_visible() and not page.locator(".music-size").is_visible()
     assert abs(summary.bounding_box()["y"] - page.locator(".practice-toggle").bounding_box()["y"]) < 5  # one line
-    assert page.locator(".score").bounding_box()["y"] < 480  # under the one line, and the folded practice tools
+    # Under the one line, and the folded practice tools; the type and "Say it" line under the
+    # name may wrap to two, depending on the font (it does with Arial's widths, and on CI).
+    assert page.locator(".score").bounding_box()["y"] < 520
     summary.click()
     assert summary.get_attribute("aria-expanded") == "true"
     assert page.locator(".music-size .label").is_visible()  # "Size", so − and + aren't taken for the key

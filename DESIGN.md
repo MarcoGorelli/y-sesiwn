@@ -79,6 +79,23 @@ typography:
   fine:
     fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
     fontSize: "0.8rem"
+  brand-phone:
+    fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "1.25rem"
+    fontWeight: 700
+  key-label:
+    fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "0.72rem"
+  chord-sup:
+    fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "0.65rem"
+  print-chart-title:
+    fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "1.8rem"
+    fontWeight: 700
+  print-chart:
+    fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "1.5rem"
   label:
     fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
     fontSize: "0.9rem"
@@ -277,7 +294,8 @@ Plain and sturdy throughout: thin borders, gentle corners, red only on hover and
 ### Chips / Pills
 - **Style:** fully rounded white pills with a hairline border, in wrapping rows.
 - **Type pills:** a small woven swatch in the type's colourway, the Welsh name (in English, glossed where it isn't obvious: "Pibddawns (hornpipe)"); chosen = border in the colourway, 14% tint fill, bold. Under the key pills, one caption says what Dorian and Mixolydian are.
-- **Key / plain pills:** chosen = filled slate, white text, bold.
+- **Key / plain pills:** chosen = filled slate, white text, bold. Browse shows the six commonest keys, then a muted **More keys (n)** pill (always open if one of the rest is chosen).
+- **Browse list:** with more than one type showing, the tunes are grouped under their types (a 1.15rem heading with the type's swatch, gloss and count, in the types' order); each tune has its key in short, muted, after its name ("D", "E min"), left out when one key is chosen. One type chosen: a plain list.
 - **All chosen pills** get a drawn tick before the label, so the state is never colour alone.
 
 ### Cards / Containers
@@ -291,13 +309,13 @@ Plain and sturdy throughout: thin borders, gentle corners, red only on hover and
 - **Search:** full pill, 1.5px hairline border, magnifier icon inset left, `/` keycap hint right (hidden on touch). Focus: red border plus a 3px red-wash ring. Suggestions drop below in a floating card, each with its type's swatch, its name, and what it is at the end in muted text ("jig · G major"); the one Enter opens has a red bar down its left side. Names that start with the query come first, then a later word, then a match on one of the tune's other names. Nothing found offers the other ways in: by its notes, or Browse.
 - **Selects:** 8px corners, hairline border, white.
 - **Range / checkbox:** native. The tempo slider is tinted slate (`--chosen`: a setting, not an accent); checkboxes with `accent-color` Welsh red (`--accent-ink`).
-- **Segmented control:** joined buttons in one bordered group; the chosen one fills red with white text.
+- **Segmented control:** joined buttons in one bordered group; the chosen one fills slate (`--chosen`) with white text, as a chosen pill.
 
 ### Icons
 Drawn, never typed: the search magnifier, microphone, share, play and stop are inline SVGs in a 1.8 rounded stroke or solid fill; the chevron (on every `summary`, the Menu button and the Print menu) and the pill tick are SVG masks (`--chevron`, `--tick`) in the text's colour, so they follow the theme. A chevron points right when closed and turns down when open. Short confirmations ("Link copied", "Saved on this device") start with the same drawn tick (`.tick-icon`). Unicode stays for content only: the whistle fingering charts (● ○ ◐) and "·" separators.
 
 ### Navigation
-- **Sidebar:** pale slate, sticky, the name in red at top, a two-button language switch (chosen = red), then search, actions, and a list of links separated by a hairline: first the ways to find and play tunes, then, a little smaller after a gap, Add a tune, Contact and About. Links go red with underline on hover. The sidebar's colour and edge are also painted down the page behind it, so no strip of page shows below it once it's pinned.
+- **Sidebar:** pale slate, sticky, the name in red at top, a two-button language switch (chosen = slate fill), then search, actions, and a list of links separated by a hairline: first the ways to find and play tunes, then, a little smaller after a gap, Add a tune, Contact and About. Links go red with underline on hover. The sidebar's colour and edge are also painted down the page behind it, so no strip of page shows below it once it's pinned.
 - **Phone:** sticky top bar (name + search) and a row with language, Surprise me and a Menu button (a drawn chevron) that unfolds the links.
 - **Version tabs:** bordered boxes in a row; the active one has a red border and a 3px red underline.
 
@@ -309,9 +327,9 @@ A repeating woven strip in Welsh red, slate and cream: 14px across the top of th
 
 ### Tune Page Controls
 Grouped by what you're doing, not by how they were built:
-- **Listen** (always visible): Key and Tempo above the music; the player bar (restart, play, position) on the paper, which holds nothing else but the music (the chords' Hear and Show settings are among the practice tools, which sit just above the player on a phone). At the end of the Key and Tempo row, apart from them, **how the music is shown**: Size − / + and Full screen. On a phone it folds into one line, the key in short ("D · Tempo 100 · Change", "E min → G · Tempo 112"), with Full screen beside it, so the music starts on the first screen; opened, it's a fixed grid (Key with Size, then Tempo with Full screen) that doesn't move when the "your usual key" caption appears. Keyboard: `[` `]` slower or faster, `,` `.` a semitone lower or higher. A shared link carries the key and the tempo (`?key=A&tempo=80`).
-- **Practise** (folding, open on wide screens, folded on phones), three lines: Repeat (Off / The whole tune / Part A…) with Speed up *from* the tempo *to* a bpm box; Count-in, Click, Swing; Tablature. There is one way to repeat: the player's own repeat button is hidden.
-- **Take it with you** (a quiet row under the practise tools): Share, Print / save, QR code, Add to set (with a choice of set once there's more than one, or a new one).
+- **Listen** (always visible): Key and Tempo above the music; the player bar (restart, play, position) on the paper, which holds nothing else but the music (the chords' Hear and Show settings are among the practice tools, which sit just above the player on a phone). At the end of the Key and Tempo row, apart from them, **how the music is shown**: Size − / + and Full screen. On a phone it folds into one line, the key in short and the tempo ("D, 100 bpm · Change", "E dor, 112 bpm", "G → D, 100 bpm"), with Full screen beside it, so the music starts on the first screen; opened, it's a fixed grid (Key with Size, then Tempo with Full screen) that doesn't move when the "your usual key" caption appears. Keyboard: `[` `]` slower or faster, `,` `.` a semitone lower or higher. A shared link carries the key and the tempo (`?key=A&tempo=80`). A key moved from the written one always says so: "A (from G), 80 bpm" on the one line; the way back is the Key menu, where the written key is marked "(original)". No separate reset button: the row is full enough. With no signal, a quiet note under the player (`.sound-note`) says what will still sound; if no piano sounds are saved yet, Play is disabled and says it needs a signal the first time. Online it shows nothing.
+- **Practise** (folding, folded at first at every width so the score is the page; then left as the reader last had it), three lines: Repeat (Off / The whole tune / Part A…) with Speed up *from* the tempo *to* a bpm box; Count-in, Click, Swing; Tablature. There is one way to repeat: the player's own repeat button is hidden.
+- **Take it with you** (a quiet row under the practise tools): Share, Print / save, QR code, Add to set (with a choice of set once there's more than one, or a new one). What the link carries is said where it's sent: "Link copied, in A major, at 80 bpm", and under the QR code. On a phone the row is two by two, with the set choice and the "Added to…" line running across under it.
 - **Reference** (side column): Details, On the map, ABC notation, Report a problem.
 
 ### Practice Tools: "Da iawn"
@@ -326,7 +344,7 @@ One cell per bar in rows of 4 (3 or 5 where the part divides that way), bold 1.1
 G3–A5, ivory white keys (`#fffdf8`) with mid-grey borders and dark ink black keys; hover warms to carthen cream; a pressed or heard key flashes Welsh red. Scrolls horizontally inside itself on a phone.
 
 ### Session Cards
-A hairline card per session: name (with a Tune club badge), when and next date, address, what's played, then a row of quiet bordered buttons, **Map**, **Add to calendar**, **More about it** (44px tall on touch), and one muted closing line, "Confirmed 2 Oct 2026 · Been lately? Tell us", which opens the report form. Session lines elsewhere (home "Coming up", the sessions page's own list) link to their card. Filters: days as pills (only days that have a session), areas as a drop-down with counts. On phones the list comes before the map, so a filter's result is in sight.
+A hairline card per session: name (with a Tune club badge), when and next date, address, what's played, then a row of quiet bordered buttons, **Map**, **Add to calendar**, **More about it** (44px tall on touch), and one muted closing line, "Confirmed 2 Oct 2026 · Been lately? Tell us", which opens the report form. Session lines elsewhere (home "Coming up", the sessions page's own list) link to their card. Filters: days as pills (only days that have a session), areas as a drop-down with counts. On phones the list comes before the map, so a filter's result is in sight. The form for a missing session sits at the foot, folded under **Tell us about a session** (the introduction's link opens it and jumps there).
 
 **The Plain Primary Rule.** On the home page nothing is red but the search's focus: the search box is the way in, and Surprise me is a plain button beside Browse.
 
@@ -347,7 +365,7 @@ Land in land grey as a mask so it follows the theme; session towns as small slat
 - **Do** limit hover styles to `(hover: hover)` devices, and keep transitions short (.15s) and off under reduced motion.
 
 ### Don't:
-- **Don't** put a coloured bar on one edge of a card or popup, or a short accent bar under a heading: the carthen strip is the system's one heading mark.
+- **Don't** put a coloured bar on one edge of a card or popup, or a short accent bar under a heading: the carthen strip is the system's one heading mark. The one edge allowed is the woven flannel (`--flannel`) down a call-out (the "no ready-made sets" note, an email's confirmation): a material, not an accent bar.
 - **Don't** set labels in small tracked uppercase; use sentence case at .9rem, semibold.
 - **Don't** use Unicode glyphs (▶ ▸ ▾ ⌫ ■) as icons; draw them.
 - **Don't** add web fonts or a second typeface.
@@ -356,4 +374,5 @@ Land in land grey as a mask so it follows the theme; session towns as small slat
 - **Don't** reuse tune-type colourways for anything other than tune types.
 - **Don't** add glossy gradients, heavy shadows or glassy blur; the chrome stays plain and sturdy.
 - **Don't** let anything but the piano scroll sideways at phone width.
+- **Don't** suggest what to play next, related tunes or ready-made sets anywhere: players make their own sets.
 - **Don't** hard-code colours in rules; add a token in `:root` (the QR code's pure black on white is the one exception).

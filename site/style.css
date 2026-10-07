@@ -201,6 +201,8 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .pills { display: flex; flex-wrap: wrap; gap: .5rem; }
 .pills button { border-radius: 999px; }
 .pills button { display: inline-flex; align-items: center; }
+.pills button[hidden] { display: none; }
+.pills .more-keys { color: var(--muted); font-size: .9rem; }
 @media (hover: hover) { .pills button:hover:not(:disabled) { border-color: var(--c); color: inherit; } }
 .pills button[aria-pressed="true"] { border-color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); font-weight: 600; }
 
@@ -268,6 +270,11 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 
 /* The notes page: previews of the top matches */
 .notes-results .preview { display: flex; align-items: center; gap: .5rem; margin: .2rem 0 .6rem; max-width: 36rem; }
+@media (max-width: 800px) {
+  /* The list's numbers move in, so the opening has the width (about 3 bars a line, not 6) */
+  .notes-results { padding-left: 1.6rem; }
+  .notes-results .preview { margin-left: -1.6rem; }
+}
 .preview-score { flex: 1; min-width: 0; background: var(--paper); border-radius: 6px; padding: .2rem .4rem; color: #000; }
 .preview-score .abcjs-tempo { display: none; }  /* the tempo only sets playback speed */
 .preview-play { flex: none; width: 2.2rem; height: 2.2rem; padding: 0; border-radius: 50%; font-size: .9rem; display: grid; place-items: center; }
@@ -329,7 +336,13 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
   content: ""; position: absolute; inset: 21%; transform: rotate(45deg);
   background: linear-gradient(var(--c), var(--c)) center / 42% 42% no-repeat, var(--ivory-hover);
 }
-.tune-list .swatch { width: .75em; height: .75em; transform: translateY(.05em); }
+/* Browse: the tunes under their types, each type under its own woven swatch */
+.type-group { margin-top: 2rem; }
+.type-group h2 { display: flex; align-items: baseline; flex-wrap: wrap; font-size: 1.15rem; margin: 0 0 .25rem; }
+.type-group h2 .swatch { transform: translateY(.1em); }
+.type-group h2 :is(.gloss, .count) { color: var(--muted); font-weight: 400; white-space: pre; }
+.tune-key { flex: none; margin-left: .45em; color: var(--muted); font-size: .85rem; }
+.browse-count { margin: 1.25rem 0 0; font-weight: 600; color: var(--text); }
 
 /* An empty page's picture (emptyArt in app.js): the harp over a strip of carthen */
 .empty-art { display: flex; flex-direction: column; align-items: flex-start; margin: 1.25rem 0 1rem; }
@@ -362,9 +375,12 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .controls-summary { display: none; }
 .tune-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
 @media (max-width: 800px) {  /* on a phone, two by two, rather than three and one left over */
-  .tune-actions { display: grid; grid-template-columns: 1fr 1fr; }
-  .tune-actions > *, .tune-actions .print-wrap > button, .tune-actions .add-to-set { width: 100%; }
-  .tune-actions .add-to-set-wrap { display: grid; }
+  .tune-actions { display: grid; grid-template-columns: 1fr 1fr; align-items: start; }
+  .tune-actions > *, .tune-actions .print-wrap > button, .tune-actions .add-to-set, .tune-actions .which-set { width: 100%; max-width: none; }
+  /* Its parts sit in the grid themselves, and "Added to My set…" runs across under the buttons,
+     so it doesn't stretch the QR code beside it */
+  .tune-actions .add-to-set-wrap { display: contents; }
+  .tune-actions .which-set, .tune-actions .add-status { grid-column: 1 / -1; }
 }
 .held-key { color: var(--muted); }
 /* − and + for the music's size, at the end of the row */
@@ -631,6 +647,8 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .session-report .tell { color: var(--link); text-decoration: underline; }
 .session-report fieldset { border: none; margin: .5rem 0; padding: 0; display: grid; gap: .3rem; }
 .add-session { margin-top: 2.5rem; max-width: 40rem; }
+.add-session-form > summary { font-weight: 600; padding: .3rem 0; }
+.add-session-form[open] > summary { margin-bottom: .75rem; }
 /* Jumped to (from the introduction, or a town's dot): clear of the top bar pinned on phones */
 #add-session, .session-list h2, .card.session { scroll-margin-top: 5.5rem; }
 .place-list li { padding: .35rem .5rem; border-radius: 6px; }
@@ -703,7 +721,9 @@ body.practice .score > .audio { top: 0; }
     background: currentColor; mask: var(--chevron) center / contain no-repeat; transform: rotate(90deg); transition: transform .15s; }  /* aria-expanded says it */
   .sidebar.menu-open .menu-button::after { transform: rotate(-90deg); }
   .sidebar-links { display: none; flex: 1 0 100%; flex-wrap: wrap; gap: .35rem 1rem; padding-top: .5rem; font-size: .9rem; }
-  .sidebar.menu-open .sidebar-links { display: flex; }
+  /* Two columns of links, each a full 44px row, so a thumb doesn't catch the wrong one */
+  .sidebar.menu-open .sidebar-links { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem; }
+  .sidebar-links a { display: flex; align-items: center; min-height: 2.75rem; line-height: 1.25; }
   .sidebar-links a:not(.more) + a.more { margin-top: 0; }
   /* One line, so the music starts high on the first screen: the key and tempo, to tap
      and change them, and full screen. Opened: key and size; then tempo and full screen. */
@@ -832,6 +852,10 @@ main { view-transition-name: page; }
 .set-tune { margin: 0 0 1.5rem; }
 .set-tune h2 { font-size: 1.1rem; margin: 0 0 .4rem; }
 .set-paper { background: var(--paper); color: #000; border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .75rem; min-height: 8rem; }
+.set-undo { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .6rem; max-width: 40rem; margin: .75rem 0 0; }
+.set-undo button { padding: .3rem .8rem; }
+.sets-backup { max-width: 40rem; margin-top: 1.5rem; }
+.sets-backup .caption { margin: 0 0 .5rem; }
 .sets-own { max-width: 40rem; padding: .6rem .9rem .6rem calc(.9rem + 7px); background: var(--flannel), var(--card-bg); border-radius: 0 var(--radius) var(--radius) 0; }
 .set-list-mine { list-style: none; padding: 0; max-width: 40rem; }
 .set-list-mine li { padding: .5rem 0; border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: .3rem .6rem; align-items: baseline; }

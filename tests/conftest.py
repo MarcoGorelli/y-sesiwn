@@ -118,6 +118,9 @@ def page(browser, site):
     # abcjs comes after the first page (app.js loads it when the browser is idle).
     page.goto_site = lambda path="": (page.goto(site + path),
                                       page.wait_for_function("typeof state !== 'undefined' && state.data && window.ABCJS"))[0]
+    # The practice tools start folded: open them (now, and for the tunes opened after).
+    page.open_tools = lambda: page.evaluate(
+        "state.practice.open = true; document.querySelector('.practice-tools')?.setAttribute('open', '')")
     yield page
     context.close()
     assert not errors, f"JavaScript errors: {errors}"

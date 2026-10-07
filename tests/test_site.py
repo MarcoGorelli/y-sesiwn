@@ -160,6 +160,7 @@ def test_transposing_keeps_a_sensible_range(page):
 
 def test_chord_chart(page):
     page.goto_site("?tune=glandyfi")
+    page.open_tools()
     page.wait_for_selector(".chart .bar")
     # Two chords in a bar each get half of it (G on beat 1, D on beat 2 of 6/8).
     halves = page.evaluate("""() => [...document.querySelectorAll('.chart .beats')].filter((b) => b.children.length === 2)
@@ -263,6 +264,7 @@ SPY_SWING = """() => {
 def test_swing(page):
     # Hornpipes are played swung, with a switch; a polka in 2/4 can be; a jig in 6/8 can't.
     page.goto_site()
+    page.open_tools()
     page.evaluate(SPY_SWING)
     page.evaluate("navigate('alaw/pibddawns-abertawe/')")
     page.wait_for_selector(".score .abcjs-staff")
@@ -296,6 +298,7 @@ def test_whistle_fingerings(page):
 
 def test_whistle_on_a_tune(page):
     page.goto_site("alaw/llancesau-trefaldwyn/")
+    page.open_tools()
     page.wait_for_selector(".score .abcjs-staff")
     assert page.locator(".whistle-key").is_hidden()
     page.select_option("#tab-select", "whistle-D")
@@ -374,6 +377,7 @@ def test_save_abc_and_midi(page):
     # The tune as a file, in the key chosen on the page; the MIDI plays what the Play
     # choice says (the tune, or the tune and its chords).
     page.goto_site("alaw/glandyfi/")
+    page.open_tools()
     page.wait_for_selector(".score .abcjs-staff")
     page.select_option("#key-select", "2")  # G major -> A major
     page.click("text=Print / save")
@@ -541,9 +545,10 @@ def test_long_credit_on_a_phone(browser, site):
     context.close()
 
 
-def test_practice_tools_folded_on_a_phone(browser, site, page):
+def test_practice_tools_folded_at_first(browser, site, page):
     page.goto_site("?tune=glandyfi")
-    assert page.locator("#loop-select").is_visible()  # open on a wide screen
+    page.wait_for_selector(".score .abcjs-staff")
+    assert not page.locator("#loop-select").is_visible()  # folded on a wide screen too, so the music is the page
     context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True,
                                   service_workers="block")
     phone = context.new_page()
@@ -861,8 +866,8 @@ def test_every_page_in_welsh(page, path):
     welsh = page.evaluate(VISIBLE_TEXT)
     fragments = {f.strip() for f in re.split(r"[.:;?!()\n]", english) if len(f.strip()) >= 12}
     tune_words = lambda f: re.sub(r" · \d+$", "", f) in data  # e.g. a type, "Pibddawns · 29"
-    # The phone's one line, a key in short and the tempo, reads the same in Welsh ("G · Tempo 112")
-    key_line = lambda f: re.fullmatch(r"[A-G][#b]?( [a-z]{3})?( → [A-G][#b]?( [a-z]{3})?)? · Tempo \d+", f)
+    # The phone's one line, a key in short and the tempo, reads the same in Welsh ("G, 112 bpm")
+    key_line = lambda f: re.fullmatch(r"[A-G][#b]?( [a-z]{3})?( → [A-G][#b]?( [a-z]{3})?)?, \d+ bpm", f)
     left = [f for f in fragments if f in welsh and not tune_words(f) and not key_line(f) and f not in ENGLISH_ON_PURPOSE]
     assert len(fragments) > 5 and not left, left
 
@@ -1286,6 +1291,7 @@ def test_microphone_without_audio_worklet(playwright_instance, site, tmp_path):
 @pytest.mark.parametrize("slug, parts", [("glandyfi", 2), ("machynlleth", 4), ("ffaniglen", 2), ("morgawr", 3)])
 def test_loop_parts(page, slug, parts):
     page.goto_site(f"?tune={slug}")
+    page.open_tools()
     page.wait_for_selector(".score .abcjs-staff")
     options = page.eval_on_selector_all("#loop-select option", "os => os.map((o) => o.textContent)")
     assert options == ["Off", "The whole tune"] + [f"Part {chr(65 + i)}" for i in range(parts)]
@@ -1304,6 +1310,7 @@ def test_loop_part_and_speed_up(browser, site):
     page.on("pageerror", lambda e: errors.append(str(e)))
     page.goto(site + "?tune=glandyfi")
     page.wait_for_selector(".score .abcjs-staff")
+    page.click(".practice-tools summary")  # folded at first
     page.fill("#tempo", "60")
     page.dispatch_event("#tempo", "change")
     page.select_option("#loop-select", "1")
@@ -1330,6 +1337,7 @@ def test_speed_up_arrives(browser, site):
     page = context.new_page()
     page.goto(site + "?tune=glandyfi")
     page.wait_for_selector(".score .abcjs-staff")
+    page.click(".practice-tools summary")  # folded at first
     page.fill("#tempo", "107")
     page.dispatch_event("#tempo", "change")
     page.select_option("#loop-select", "1")
@@ -1352,6 +1360,7 @@ def test_speed_up_the_whole_tune(browser, site):
     page = context.new_page()
     page.goto(site + "?tune=glandyfi")
     page.wait_for_selector(".score .abcjs-staff")
+    page.click(".practice-tools summary")  # folded at first
     # Ticked with nothing repeating and the tempo at the tune's own: it works at once, the
     # whole tune from 70% of the tempo up to it.
     page.check("text=Speed up each time")
@@ -1380,6 +1389,7 @@ def test_speed_up_the_whole_tune(browser, site):
 
 def test_count_in_and_click(page):
     page.goto_site("?tune=glandyfi")
+    page.open_tools()
     page.wait_for_selector(".score .abcjs-staff")
     drum = """() => { const p = { ...AUDIO_PARAMS, ...clickParams(state.synth.visualObj, state.bySlug.get('glandyfi')) };
       const [melody, , drums] = state.synth.visualObj.setUpAudio(p).tracks.map((t) => t.filter((e) => e.cmd === 'note'));
@@ -1396,6 +1406,7 @@ def test_count_in_and_click(page):
 def test_tablature(page, tab, first):
     # Glandyfi starts on D above middle C: the open D string on a mandolin and on a guitar.
     page.goto_site("?tune=glandyfi")
+    page.open_tools()
     page.wait_for_selector(".score .abcjs-staff")
     page.select_option("#tab-select", tab)
     page.wait_for_function("document.querySelectorAll('.score .abcjs-tab-number, .score [data-name=\"tabNumber\"]').length > 50")
@@ -1595,7 +1606,8 @@ def test_session_report(page):
 
 def test_add_a_session(page, site):
     page.goto_site("sesiynau/")
-    page.wait_for_selector(".add-session form")
+    page.wait_for_selector(".add-session form", state="attached")
+    assert not page.locator(".add-session form").is_visible()  # folded at the foot until it's wanted
     # The introduction links down to the form, staying on the page.
     page.click(".lead a[href='#add-session']")
     assert page.evaluate("document.activeElement.id") == "add-session" and page.url == site + "sesiynau/"
@@ -1967,6 +1979,7 @@ def test_score_and_player_names(page):
     # A screen reader hears the score's key (as transposed) and time, and the player's own
     # names for its buttons, with the repeat button saying whether it's on.
     page.goto_site("?tune=glandyfi")
+    page.open_tools()
     page.wait_for_selector(".score .abcjs-staff")
     label = lambda: page.get_attribute(".score svg[role=img]", "aria-label")
     assert label() == 'Sheet Music for "Glandyfi": G major, 6/8 time'
@@ -2226,14 +2239,14 @@ PHONE = {"user_agent": ANDROID, "is_mobile": True, "has_touch": True, "viewport"
 
 
 def test_phone_controls_fold_into_one_line(browser, site):
-    # On a phone the key, tempo and size are one line ("G major · Tempo 100 · Change"), with
+    # On a phone the key, tempo and size are one line ("G, 112 bpm · Change"), with
     # full screen beside it, so the music starts high on the first screen; it opens to change them.
     context = browser.new_context(service_workers="block", **PHONE)
     page = context.new_page()
     page.goto(site + "?tune=glandyfi")
     page.wait_for_selector(".score .abcjs-inline-audio")
     summary = page.locator(".controls-summary")
-    assert summary.inner_text().startswith("G · Tempo 112")  # the key in short
+    assert summary.inner_text().startswith("G, 112 bpm")  # the key in short
     assert not page.locator("#key-select").is_visible() and not page.locator(".music-size").is_visible()
     assert abs(summary.bounding_box()["y"] - page.locator(".practice-toggle").bounding_box()["y"]) < 5  # one line
     assert page.locator(".score").bounding_box()["y"] < 480  # under the one line, and the folded practice tools
@@ -2241,7 +2254,9 @@ def test_phone_controls_fold_into_one_line(browser, site):
     assert summary.get_attribute("aria-expanded") == "true"
     assert page.locator(".music-size .label").is_visible()  # "Size", so − and + aren't taken for the key
     page.select_option("#key-select", "2")
-    assert summary.inner_text().startswith("A · Tempo 112")
+    assert summary.inner_text().startswith("A (from G), 112 bpm")  # moved, so it says from what
+    page.select_option("#key-select", "0")  # back to the written key, marked "(original)" in the menu
+    assert summary.inner_text().startswith("G, 112 bpm")
     context.close()
 
 
@@ -2398,7 +2413,7 @@ def test_summary_says_the_key_changes(browser, site):
     page = context.new_page()
     page.goto(site + "alaw/walts-dinefwr/")
     page.wait_for_selector(".score .abcjs-inline-audio")
-    assert page.inner_text(".controls-summary .now") == "G → D · Tempo 100"
+    assert page.inner_text(".controls-summary .now") == "G → D, 100 bpm"
     page.goto(site + "alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-inline-audio")
     assert "→" not in page.inner_text(".controls-summary .now")
@@ -2751,3 +2766,63 @@ def test_tempo_and_key_shortcuts(page):
     page.keyboard.press(".")
     assert page.input_value("#tempo") == "117" and page.input_value("#key-select") == "1"
     assert page.url.endswith("alaw/glandyfi/?key=Ab&tempo=117")
+
+
+def test_browse_grouped_by_type_with_keys(page):
+    # With nothing chosen, Browse lists the tunes under their types, each with its key; the
+    # less common keys wait behind "More keys"; one type chosen is a plain list.
+    page.goto_site("?page=browse")
+    page.wait_for_selector(".type-group")
+    types = page.evaluate("state.data.types.filter((t) => t.count).length")
+    assert page.locator(".type-group").count() == types
+    assert page.locator(".type-group h2").first.inner_text().startswith("Jig")
+    assert page.locator(".tune-list li").count() == len(page.evaluate("state.groupList"))
+    assert page.locator("a[href='alaw/glandyfi/'] + .tune-key").inner_text() == "G"
+    shown = lambda: page.locator(".pills.keys [data-key]:visible").count()
+    assert shown() == 6 and page.locator(".more-keys").is_visible()
+    page.click(".more-keys")
+    assert shown() > 6 and not page.locator(".more-keys").is_visible()
+    page.goto_site("?page=browse&type=Jig&key=D%20major")
+    page.wait_for_selector(".tune-list li")
+    assert page.locator(".type-group").count() == 0 and page.locator(".tune-key").count() == 0  # the key goes without saying
+    page.goto_site("?page=browse&key=A%20Dorian")  # a less common key, chosen: the keys stay open
+    page.wait_for_selector(".tune-list li")
+    assert not page.locator(".more-keys").is_visible()
+
+
+def test_a_moved_key_says_so_when_shared(browser, site):
+    # A shared link in another key: the page says where it's from, Copy link and the QR code
+    # say what the link carries.
+    context = browser.new_context(service_workers="block", permissions=["clipboard-read", "clipboard-write"])
+    page = context.new_page()
+    page.goto(site + "alaw/glandyfi/?key=A&tempo=80")
+    page.wait_for_selector(".score .abcjs-inline-audio")
+    page.click(".tune-actions .share")
+    page.wait_for_function("document.querySelector('.tune-actions .share').innerText.startsWith('Link copied')")  # once the clipboard has it
+    assert page.inner_text(".tune-actions .share") == "Link copied, in A major, at 80 bpm"
+    page.click(".qr-button")
+    assert "this tune, in A major, at 80 bpm." in page.inner_text(".qr-dialog .caption >> nth=0")
+    page.keyboard.press("Escape")
+    page.select_option("#key-select", "0")
+    assert "key=" not in page.url
+    context.close()
+
+
+def test_deleting_a_set_can_be_undone(page):
+    page.goto_site("?page=sets")
+    page.evaluate("saveSets([{ id: 'a', name: 'Workshop', c: '', updated: 1 }])")
+    page.goto_site("?page=sets")
+    page.wait_for_selector(".set-list-mine li")
+    page.click(".set-list-mine .link-button")  # no "are you sure?": it's undone instead
+    assert page.locator(".set-list-mine li").count() == 0
+    assert page.inner_text(".set-undo") .startswith("Deleted “Workshop”.")
+    page.click(".set-undo button")
+    assert page.inner_text(".set-list-mine li a") == "Workshop" and page.locator(".set-undo").count() == 0
+
+
+def test_notes_results_say_only_what_differs(page):
+    # The count says these start like this; each result only says so if it's different.
+    page.goto_site("?page=notes&q=G%20B%20D%20C%20B%20G%20A")
+    page.wait_for_selector(".notes-results li")
+    first = page.locator(".notes-results li").first.inner_text()
+    assert "starts like this" not in first

@@ -29,5 +29,6 @@ _data_report.md
 .claude/settings.local.json
 sian-philip/
 
-.impeccable/critique/
+.impeccable/critique/*
+!.impeccable/critique/ignore.md
 

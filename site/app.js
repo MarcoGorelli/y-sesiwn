@@ -712,8 +712,9 @@ function notesSearch({ autoListen = false } = {}) {
     placeholder: tr("e.g. D E F# G A (any key)", "e.e. D E F# G A (unrhyw gywair)"), "aria-describedby": "notes-help",
     value: new URLSearchParams(location.search).get("q") ?? "",
   });
-  const results = el("ol", { class: "notes-results", "aria-live": "polite" });
-  const help = el("p", { id: "notes-help", class: "caption" });
+  // Only the count is read out as the notes change, not the whole list each time.
+  const results = el("ol", { class: "notes-results" });
+  const help = el("p", { id: "notes-help", class: "caption", "aria-live": "polite" });
   const plural = (n) => `${n} tune${n > 1 ? "s" : ""}`;
   const update = () => {
     // The notes are kept in the address, so a search can be bookmarked or shared.
@@ -731,16 +732,21 @@ function notesSearch({ autoListen = false } = {}) {
     const exact = found.filter((r) => !r.close).length;
     const closeOnes = found.filter((r) => r.how === "close").length;
     const many = found.length > 12;
+    // More than 12 that match as well as each other (the same way, at the same place) aren't
+    // "the best 12": they're 12 of them, in alphabetical order, and it says so.
+    const tied = many && ["score", "where", "how"].every((k) => found[11][k] === found[12][k]);
     help.textContent = state.lang === "cy"
       ? exact
-        ? `${exact} alaw gyda'r nodau hyn${closeOnes ? `, yna ${closeOnes} sy'n agos atynt` : ""}${many ? " (yn dangos y 12 gorau; ychwanegwch nodau i gyfyngu)" : ""}.`
+        ? `${exact} alaw gyda'r nodau hyn${closeOnes ? `, yna ${closeOnes} sy'n agos atynt` : ""}${many ? tied
+          ? " (dyma 12 ohonynt, yn nhrefn yr wyddor; ychwanegwch nodau i gyfyngu)" : " (yn dangos y 12 gorau; ychwanegwch nodau i gyfyngu)" : ""}.`
         : closeOnes
-          ? `Dim alawon gyda'r union nodau hyn, ond ${closeOnes} sy'n agos atynt${many ? " (yn dangos y 12 agosaf)" : ""}.`
+          ? `Dim alawon gyda'r union nodau hyn, ond ${closeOnes} sy'n agos atynt${many ? tied ? " (dyma 12 ohonynt, yn nhrefn yr wyddor)" : " (yn dangos y 12 agosaf)" : ""}.`
           : "Dim alawon gyda'r nodau hyn, nac yn agos atynt. Dyma'r agosaf; gwiriwch nodyn neu ddau, neu rhowch gynnig ar lai o nodau."
       : exact
-        ? `${plural(exact)} with these notes${closeOnes ? `, then ${plural(closeOnes)} close to them` : ""}${many ? " (showing the best 12; add notes to narrow it down)" : ""}.`
+        ? `${plural(exact)} with these notes${closeOnes ? `, then ${plural(closeOnes)} close to them` : ""}${many ? tied
+          ? " (here are 12 of them, A to Z; add notes to narrow it down)" : " (showing the best 12; add notes to narrow it down)" : ""}.`
         : closeOnes
-          ? `No tunes with exactly these notes, but ${plural(closeOnes)} close to them${many ? " (showing the closest 12)" : ""}.`
+          ? `No tunes with exactly these notes, but ${plural(closeOnes)} close to them${many ? tied ? " (here are 12 of them, A to Z)" : " (showing the closest 12)" : ""}.`
           : "No tunes with these notes, or close to them. These are the nearest; check a note or two, or try fewer notes.";
     // No previews while listening: drawing them would hold up the listening and miss
     // notes. They're drawn when it stops.
@@ -1182,6 +1188,7 @@ function recentTunes() {
 // Every tune, narrowed down by types and keys. The choice is kept in the address
 // (?page=browse&type=Jig&type=Polca&key=D%20major), so "the jigs and polkas in D" can be shared.
 const COMMON_KEYS = 6;  // key pills shown before "More keys"
+const COMMON_TYPE = 25;  // type pills with fewer tunes than this (and Other) wait behind "More types"
 function renderBrowse(main) {
   document.title = tr("Browse · Y Sesiwn", "Pori · Y Sesiwn");
   const { types } = state.data;
@@ -1214,7 +1221,7 @@ function renderBrowse(main) {
     if (!first) history.replaceState(null, "", `?${url}`);  // a type's own page keeps its address at first
     const typeOk = (t) => !chosenTypes.size || chosenTypes.has(t.type);
     const keyOk = (t) => !chosenKeys.size || chosenKeys.has(keyOf(t));
-    for (const pill of pills.children) {
+    for (const pill of pills.querySelectorAll("[data-type]")) {
       // Each type's count among the tunes in the chosen keys, greyed out as the keys are.
       const n = tunes.filter((t) => keyOk(t) && t.type === pill.dataset.type).length;
       const on = chosenTypes.has(pill.dataset.type);
@@ -1266,7 +1273,10 @@ function renderBrowse(main) {
             el("summary", {}, heading(type, g)), el("ul", { class: "tune-list" }, g.map(item)))
         : el("section", { class: "type-group", style: `--c: ${type.colour}` }, heading(type, g),
             el("ul", { class: "tune-list" }, g.map(item)))));
-    // The less common keys stay folded unless one of them is chosen.
+    // The less common types and keys stay folded unless one of them is chosen.
+    const typesFolded = !typesOpen && !rareTypes.some((t) => chosenTypes.has(t));
+    moreTypes.hidden = !typesFolded;
+    for (const pill of pills.querySelectorAll("[data-type]")) pill.hidden = typesFolded && rareTypes.includes(pill.dataset.type);
     const folded = !keysOpen && !keyOrder.slice(COMMON_KEYS).some((k) => chosenKeys.has(k));
     moreKeys.hidden = !folded;
     for (const pill of keyPills.querySelectorAll("[data-key]")) pill.hidden = folded && keyOrder.indexOf(pill.dataset.key) >= COMMON_KEYS;
@@ -1285,6 +1295,17 @@ function renderBrowse(main) {
       state.lang !== "cy" && GLOSSED.has(type.name) ? el("span", { class: "gloss" }, ` (${EN_TYPE[type.name]})`) : null,
       el("span", { class: "count" }, ` · ${type.count}`)));  // its own span, so flex keeps the space
   }
+  // The commonest types first; the few-tune ones (and Other) behind "More types", as the keys
+  // are, so the tunes start sooner on a phone.
+  const rareTypes = types.filter((t) => t.count < COMMON_TYPE || t.name === "Other").map((t) => t.name);
+  let typesOpen = rareTypes.length < 2;
+  const moreTypes = el("button", { type: "button", class: "more-types", onclick: () => {
+    typesOpen = true;
+    show();
+    pills.querySelector(`[data-type="${CSS.escape(rareTypes[0])}"]`)?.focus();
+  } }, tr(`More types (${rareTypes.length})`, `Rhagor o fathau (${rareTypes.length})`),
+    el("span", { class: "chevron", "aria-hidden": "true" }));
+  pills.append(moreTypes);
   // The modes that aren't major or minor, for anyone who hasn't met them.
   const modal = keyOrder.some((k) => /Dorian|Mixolydian/.test(k))
     ? el("p", { class: "caption modes" }, tr(
@@ -1713,6 +1734,12 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   const layout = scoreLayout(paper);
   paper.dataset.layout = JSON.stringify(layout);
   abc = shortCredits(abc, layout);
+  // Full screen on a wide screen draws the music bigger, to fill it, and the credit and the
+  // tempo with it, until they outgrew the tune's name above: they're kept at their usual size.
+  const grow = paper.clientWidth / ((layout.staffwidth ?? 740) + 30);
+  if (document.body.classList.contains("practice") && !state.printing && grow > 1.1) {
+    abc = `%%composerfont * ${Math.round(9 / grow)}\n%%tempofont * ${Math.round(12 / grow)}\n${abc}`;
+  }
   const visualObj = ABCJS.renderAbc(paper, accompaniment(abc, state.chords.play === "both"),
     { responsive: "resize", add_classes: true, paddingtop: 0, ...layout, ...(tab ? { tablature: [{ ...tab, label: tab.label() }] } : {}),
       selectTypes: ["note"], clickListener: playFrom })[0];
@@ -2245,20 +2272,36 @@ function renderTune(main, group, tune) {
     printButton(tune, paper, settings), qrButton(group, tune, settings), addToSetButton(tune, settings));
 
   const shownElsewhere = new Set(["Key", "Composer / arranger", "Time signature"]);  // the key menu; the score's credit; under the name
-  const details = el("dl", {}, tune.details.filter(([label]) => !shownElsewhere.has(label)).map(([label, value]) =>
-    [el("dt", {}, tr(label, CY_DETAILS[label] ?? label)), el("dd", {}, detailValue(label, value))]));
+  // Its other names first (with the rest of what's known about it, not between the name and the music)
+  const details = el("dl", {},
+    group.titles.length > 1 ? [el("dt", {}, tr("Also known as", "Enwau eraill")), el("dd", {}, group.titles.slice(1).join(", "))] : null,
+    tune.details.filter(([label]) => !shownElsewhere.has(label)).map(([label, value]) =>
+      [el("dt", {}, tr(label, CY_DETAILS[label] ?? label)), el("dd", {}, detailValue(label, value))]));
   // What the Welsh credit words mean (trefniant = arranged by, …), for English readers.
   const gloss = tune.gloss.length && state.lang !== "cy"
     ? el("p", { class: "caption" }, tune.gloss.flatMap(([word, meaning], i) =>
         [i ? " · " : "", el("em", {}, word), ` = ${meaning}`]))
     : null;
 
+  // The versions: tabs on a wider screen; on a phone one line ("Version 1 of 4 · Alawon
+  // Cymru · G major") that opens to the list, so the music still starts on the first screen.
+  const versionNote = versionNotes(group);
+  const versionLink = (v) => el("a", {
+    href: tuneUrl(group.slug, v.version), "data-route": true,
+    class: v === tune ? "active" : null, "aria-current": v === tune ? "page" : null,
+  }, el("span", {}, tr(`Version ${v.version}`, `Fersiwn ${v.version}`)),
+  versionNote.get(v) ? el("small", {}, versionNote.get(v)) : null);
+  const whatVersions = () => el("span", { class: "caption versions-what" },
+    tr("The same tune from different books or arrangements", "Yr un alaw o lyfrau neu drefniannau gwahanol"));
   const versions = group.versions.length > 1
-    ? el("nav", { class: "versions", "aria-label": tr("Versions of this tune", "Fersiynau'r alaw hon") }, group.versions.map((v) =>
-        el("a", {
-          href: tuneUrl(group.slug, v.version), "data-route": true,
-          class: v === tune ? "active" : null, "aria-current": v === tune ? "page" : null,
-        }, el("span", {}, tr(`Version ${v.version}`, `Fersiwn ${v.version}`)), v.source ? el("small", {}, v.source) : null)))
+    ? [el("nav", { class: "versions", "aria-label": tr("Versions of this tune", "Fersiynau'r alaw hon") },
+        group.versions.map(versionLink), whatVersions()),
+      el("details", { class: "versions-fold" },
+        el("summary", {}, el("span", { class: "now" },
+          el("strong", {}, tr(`Version ${tune.version} of ${group.versions.length}`, `Fersiwn ${tune.version} o ${group.versions.length}`)),
+          versionNote.get(tune) ? ` · ${versionNote.get(tune)}` : "")),
+        el("nav", { class: "versions-list", "aria-label": tr("Versions of this tune", "Fersiynau'r alaw hon") },
+          whatVersions(), group.versions.map(versionLink)))]
     : null;
 
   // The practice tools, in three lines: repeat (and speed up each time round, from the
@@ -2318,8 +2361,9 @@ function renderTune(main, group, tune) {
   // Folded at first, so the music is the page (the summary says what's inside); then as left.
   const practiceTools = el("details", { class: "practice-tools fold", open: practiceToolsOpen(group.slug), "data-slug": group.slug,
     ontoggle: (e) => { if (!document.body.classList.contains("practice")) { state.practice.open = e.target.open; state.practice.openOn = group.slug; } } },
+    // What's inside, for the eye; a screen reader hears just the name, then the tools themselves.
     el("summary", {}, el("span", {}, tr("Practice tools", "Offer ymarfer"),
-      el("span", { class: "caption" }, tune.chords == null
+      el("span", { class: "caption", "aria-hidden": "true" }, tune.chords == null
         ? tr(" · repeat, speed up, count-in, click, tablature", " · ailadrodd, cyflymu, cyfrif i mewn, clic, tablatur")
         : tr(" · chords, repeat, speed up, count-in, click, tablature", " · cordiau, ailadrodd, cyflymu, cyfrif i mewn, clic, tablatur")))),
     practiceRow);
@@ -2337,7 +2381,6 @@ function renderTune(main, group, tune) {
   main.replaceChildren(...[
     el("h1", { lang: nameLang(group.slug) }, group.title),
     tuneSub(tune, group),
-    group.titles.length > 1 ? el("p", { class: "caption aka" }, `${tr("Also known as", "Enwau eraill")}: ${group.titles.slice(1).join(", ")}`) : null,
     versions,
     controls,
     el("div", { class: "tune-layout" },
@@ -2348,7 +2391,7 @@ function renderTune(main, group, tune) {
         placeCard(group),
         el("details", { class: "abc" }, el("summary", {}, tr("ABC notation", "Nodiant ABC")), el("pre", { tabindex: 0 }, stripFields(tune.abc, "Z"))),
         el("p", { class: "report-line" }, report))),
-  ].filter(Boolean));
+  ].flat().filter(Boolean));
   redraw();
   fillLoops();
   // A phone turned on its side, or a window made narrower: lay the music out again
@@ -2434,6 +2477,24 @@ function qrButton(group, tune, settings) {
       tr(`Scan with a phone's camera to open this tune${what ? `, ${what}` : ""}.`, `Sganiwch gyda chamera ffôn i agor yr alaw hon${what ? `, ${what}` : ""}.`));
   },
   }, tr("QR code", "Cod QR"));
+}
+
+// What tells a tune's versions apart, on their tabs: where each is from (the book, or the
+// site), then whatever else differs between them (the key, the time signature); and if two
+// would still read the same, a name of the version's own ("Merch Megan syml").
+function versionNotes(group) {
+  const versions = group.versions;
+  const keyOf = (v) => (v.key ? `${v.key.root} ${modeName(v.key.modeName)}` : "");
+  const meterOf = (v) => v.details.find(([label]) => label === "Time signature")?.[1] ?? "";
+  const varies = (trait) => new Set(versions.map(trait)).size > 1;
+  const traits = [(v) => v.source, ...[keyOf, meterOf].filter(varies)];
+  const notes = new Map(versions.map((v) => [v, traits.map((trait) => trait(v)).filter(Boolean)]));
+  const same = (v) => versions.some((w) => w !== v && notes.get(w).join() === notes.get(v).join());
+  for (const v of versions.filter(same)) {
+    const own = v.titles.slice(1).find((t) => !versions.some((w) => w !== v && w.titles.includes(t)));
+    if (own) notes.get(v).push(`“${own}”`);
+  }
+  return new Map([...notes].map(([v, parts]) => [v, parts.join(" · ")]));
 }
 
 // Under the tune's name: its type in its colourway, linked to the rest of that type, and
@@ -4234,6 +4295,7 @@ async function start() {
   // The sidebar works from the start: on a tune's page, before every other tune has come
   // (its search finds more as they arrive).
   document.getElementById("surprise-sidebar").addEventListener("click", openRandomTune);
+  document.getElementById("surprise-menu").addEventListener("click", openRandomTune);
   document.getElementById("shortcuts-button").addEventListener("click", showShortcuts);
   document.getElementById("menu-button").addEventListener("click", () =>
     setMenu(!document.querySelector(".sidebar").classList.contains("menu-open")));

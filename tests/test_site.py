@@ -35,6 +35,7 @@ def test_every_tune_draws(page):
 # the end of a part, are usually a slip (a bar line missing or one too many).
 EXPECTED_ODD_BARS = {
     "blwyddyn-newydd-dda": "changes to 6/8 for two bars",
+    "erddigan-caer-waen-version-2": "its third part is in 6/8",
     "llongau-caernarfon": "has one bar in 6/4",
     "bonheddwr-mawr-o-r-bala": "its second part starts with a lead-in, without a double bar",
     "merch-megan-version-2": "its third part starts with a lead-in, without a double bar",
@@ -438,7 +439,7 @@ def test_tunes_sharing_a_name(page):
     found = page.locator("#hero-suggestions li > span[lang]").all_inner_texts()
     assert {"Morfa Rhuddlan", "Morfa Rhuddlan (Mary Richards)", "Morfa Rhuddlan (Robin Huw Bowen)"} <= set(found)
     versions = page.evaluate("state.groups.get('morfa-rhuddlan').versions.map((v) => v.source)")
-    assert versions == ["Alawon Cymru", "51 Welsh Airs"]
+    assert versions == ["Alawon Cymru", "51 Welsh Airs", "Antient British Music (John Parry and Evan Williams, 1742)"]
 
 
 def test_search_keys(page):
@@ -899,7 +900,10 @@ def test_every_page_in_welsh(page, path):
     tune_words = lambda f: re.sub(r" · \d+$", "", f) in data  # e.g. a type, "Pibddawns · 29"
     # The phone's one line, a key in short and the tempo, reads the same in Welsh ("G, 112 bpm")
     key_line = lambda f: re.fullmatch(r"[A-G][#b]?( [a-z]{3})?( → [A-G][#b]?( [a-z]{3})?)?, \d+ bpm", f)
-    left = [f for f in fragments if f in welsh and not tune_words(f) and not key_line(f) and f not in ENGLISH_ON_PURPOSE]
+    # A version's note is its source and time signature (and keys, in Welsh): "Alawon Cymru · 4/4"
+    version_note = lambda f: all(p in data or re.fullmatch(r"\d+/\d+|C\|?", p) for p in f.strip("· ").split(" · "))
+    left = [f for f in fragments if f in welsh and not tune_words(f) and not key_line(f) and not version_note(f)
+            and f not in ENGLISH_ON_PURPOSE]
     assert len(fragments) > 5 and not left, left
 
 

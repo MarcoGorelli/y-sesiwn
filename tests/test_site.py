@@ -561,7 +561,16 @@ def test_practice_tools_folded_at_first(browser, site, page):
     phone.go_back()
     phone.wait_for_selector(".score .abcjs-staff")
     assert phone.locator("#loop-select").is_visible()  # left open
+    # Another tune starts folded on a phone, where the tools sit above the music, so its
+    # music is on the first screen; a wide screen leaves them as they were.
+    phone.evaluate("navigate('alaw/abaty-waltham/')")
+    phone.wait_for_selector(".score .abcjs-staff")
+    assert not phone.locator("#loop-select").is_visible()
     context.close()
+    page.click(".practice-tools summary")
+    page.evaluate("navigate('alaw/abaty-waltham/')")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.locator("#loop-select").is_visible()
 
 
 def test_upcoming_sessions(page):
@@ -785,7 +794,7 @@ def test_home_page(page):
     # Browsing every tune has its own page; the home page links to it.
     assert page.locator(".tune-list").count() == 0
     page.click("a.button-link:has-text('Browse all')")
-    page.wait_for_selector(".tune-list li")
+    page.wait_for_selector(".tune-list li", state="attached")
     assert page.locator(".tune-list li").count() == len(page.evaluate("state.groupList"))
 
 
@@ -827,7 +836,7 @@ def test_welsh_home_page(page):
     page.wait_for_function("typeof state !== 'undefined' && state.data")
     assert page.inner_text("h1") == "Croeso i'r Sesiwn!"
     page.click(".sidebar-links a[href='?page=browse']")
-    page.wait_for_selector(".tune-list li")
+    page.wait_for_selector(".tune-list li", state="attached")
     assert page.get_attribute("#main", "lang") == "cy"
     assert page.inner_text("main h1") == "Pori yn ôl math a chywair"
     page.click(".brand")
@@ -1140,7 +1149,7 @@ def test_tune_names_marked_welsh_or_english(page):
     page.wait_for_selector(".score .abcjs-staff")
     assert page.get_attribute("main h1", "lang") == "cy"
     page.goto_site("?page=browse")
-    page.wait_for_selector(".tune-list li")
+    page.wait_for_selector(".tune-list li", state="attached")
     assert page.get_attribute(".tune-list a[href='alaw/gower-reel/'] span", "lang") == "en"
     assert page.get_attribute(".tune-list a[href='alaw/glandyfi/'] span", "lang") == "cy"
 
@@ -1578,7 +1587,7 @@ def test_filter_unchosen_on_a_phone(browser, site, path, button):
     context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True, service_workers="block")
     page = context.new_page()
     page.goto(site + path)
-    page.wait_for_selector(".card.session, .tune-list li")
+    page.wait_for_selector(".card.session, .tune-list li", state="attached")
     page.add_style_tag(content="* { transition: none !important; }")
     look = "(b) => { const s = getComputedStyle(b); return [s.backgroundColor, s.borderColor, s.color]; }"
     plain = page.eval_on_selector(button, look)
@@ -2045,7 +2054,7 @@ def test_chosen_key_stands_out(browser, site, scheme):
     context = browser.new_context(color_scheme=scheme, service_workers="block")
     page = context.new_page()
     page.goto(site + "?page=browse&key=D%20major")
-    page.wait_for_selector(".tune-list li")
+    page.wait_for_selector(".tune-list li", state="attached")
     look = """(b) => { const s = getComputedStyle(b); return [s.backgroundColor, s.color, getComputedStyle(b, '::before').content]; }"""
     chosen = page.eval_on_selector(".pills.keys [aria-pressed=true]", look)
     other = page.eval_on_selector(".pills.keys [aria-pressed=false]", look)
@@ -2058,7 +2067,7 @@ def test_browse_several_types_and_keys(page, site):
     # Types add up (jigs and polkas), keys add up (D or G), and the two narrow each other
     # down; clicking a chosen one again takes just that one off.
     page.goto_site("?page=browse")
-    page.wait_for_selector(".tune-list li")
+    page.wait_for_selector(".tune-list li", state="attached")
     groups = page.evaluate("state.groupList.map((g) => [g.type, g.versions[0].key ? `${g.versions[0].key.root} ${g.versions[0].key.modeName}` : null])")
     count = lambda types=(), keys=(): sum((not types or t in types) and (not keys or k in keys) for t, k in groups)
     shown = lambda: page.locator(".tune-list li").count()
@@ -2075,7 +2084,7 @@ def test_browse_several_types_and_keys(page, site):
     assert page.get_attribute(".pills [data-type='Polca']", "aria-pressed") == "true"
     assert shown() == count({"Polca"}, {"D major", "G major"})
     page.reload()  # the choice is in the address
-    page.wait_for_selector(".tune-list li")
+    page.wait_for_selector(".tune-list li", state="attached")
     assert shown() == count({"Polca"}, {"D major", "G major"})
 
 
@@ -2083,7 +2092,7 @@ def test_type_page(page, site):
     # A type's own page (math/<type>/) opens the browse page with that type chosen, at
     # its own address; choosing another (as well) moves to the browse page's.
     page.goto_site("math/pibddawns/")
-    page.wait_for_selector(".tune-list li")
+    page.wait_for_selector(".tune-list li", state="attached")
     assert page.get_attribute(".pills [data-type='Pibddawns']", "aria-pressed") == "true"
     assert page.url == site + "math/pibddawns/"
     page.click(".pills [data-type='Jig']")
@@ -2777,16 +2786,26 @@ def test_browse_grouped_by_type_with_keys(page):
     assert page.locator(".type-group").count() == types
     assert page.locator(".type-group h2").first.inner_text().startswith("Jig")
     assert page.locator(".tune-list li").count() == len(page.evaluate("state.groupList"))
+    # Folded, so the page is the types, not 606 names; each opens on its own.
+    assert page.locator("details.type-group[open]").count() == 0 and not page.locator(".tune-list li").first.is_visible()
+    page.click("details.type-group >> nth=0 >> summary")
+    assert page.locator(".tune-list li").first.is_visible()
+    # In English, the Welsh type names say what they are, where the English word differs.
+    assert page.locator(".pills [data-type='Walts'] .gloss").inner_text().strip() == "(waltz)"
+    assert page.locator(".pills [data-type='Jig'] .gloss").count() == 0
     assert page.locator("a[href='alaw/glandyfi/'] + .tune-key").inner_text() == "G"
     shown = lambda: page.locator(".pills.keys [data-key]:visible").count()
     assert shown() == 6 and page.locator(".more-keys").is_visible()
     page.click(".more-keys")
     assert shown() > 6 and not page.locator(".more-keys").is_visible()
+    page.goto_site("?page=browse&key=D%20major")  # something chosen: every group open
+    page.wait_for_selector(".tune-list li", state="attached")
+    assert page.locator("details.type-group").count() == 0 and page.locator(".tune-list li").first.is_visible()
     page.goto_site("?page=browse&type=Jig&key=D%20major")
-    page.wait_for_selector(".tune-list li")
+    page.wait_for_selector(".tune-list li", state="attached")
     assert page.locator(".type-group").count() == 0 and page.locator(".tune-key").count() == 0  # the key goes without saying
     page.goto_site("?page=browse&key=A%20Dorian")  # a less common key, chosen: the keys stay open
-    page.wait_for_selector(".tune-list li")
+    page.wait_for_selector(".tune-list li", state="attached")
     assert not page.locator(".more-keys").is_visible()
 
 

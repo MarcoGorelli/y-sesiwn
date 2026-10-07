@@ -202,7 +202,7 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .pills button { border-radius: 999px; }
 .pills button { display: inline-flex; align-items: center; }
 .pills button[hidden] { display: none; }
-.pills .more-keys { color: var(--muted); font-size: .9rem; }
+.pills .more-keys .chevron { transform: none; margin-right: -.1em; }  /* opens to the right, as a closed fold */
 @media (hover: hover) { .pills button:hover:not(:disabled) { border-color: var(--c); color: inherit; } }
 .pills button[aria-pressed="true"] { border-color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); font-weight: 600; }
 
@@ -340,6 +340,12 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .type-group { margin-top: 2rem; }
 .type-group h2 { display: flex; align-items: baseline; flex-wrap: wrap; font-size: 1.15rem; margin: 0 0 .25rem; }
 .type-group h2 .swatch { transform: translateY(.1em); }
+/* With nothing chosen: one folding row per type, divided by hairlines */
+details.type-group { margin-top: 0; border-bottom: 1px solid var(--border); }
+details.type-group:first-of-type { margin-top: 1rem; border-top: 1px solid var(--border); }
+details.type-group > summary { padding: .55rem 0; }
+details.type-group > summary h2 { margin: 0; }
+details.type-group[open] > .tune-list { margin: 0 0 1.25rem; }
 .type-group h2 :is(.gloss, .count) { color: var(--muted); font-weight: 400; white-space: pre; }
 .tune-key { flex: none; margin-left: .45em; color: var(--muted); font-size: .85rem; }
 .browse-count { margin: 1.25rem 0 0; font-weight: 600; color: var(--text); }
@@ -369,7 +375,16 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .control.tempo { flex: 1 1 18rem; max-width: 32rem; }
 .control input[type="range"] { width: 100%; height: 2rem; accent-color: var(--chosen); }  /* slate: a setting, not an accent */
 /* How the music is shown (size, full screen): at the end of the row, apart from the rest */
-.view-tools { display: flex; align-items: center; gap: .75rem; margin-left: auto; }
+.view-tools { display: flex; align-items: end; gap: .75rem; margin-left: auto; }
+/* Under the tune's name: its type in its colourway, and its time signature */
+.tune-sub { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem 1.25rem; margin: -.3rem 0 .9rem; }
+.tune-sub > * { margin: 0; }
+@media (pointer: coarse) { .tune-sub { align-items: center; } }  /* "How to read this" is a 44px target there: baselines would push the line taller */
+.tune-kind { display: flex; align-items: baseline; }
+.tune-kind a { display: inline-flex; align-items: baseline; color: var(--text); font-weight: 600; text-decoration: none; }
+.tune-kind .swatch { transform: translateY(.1em); }
+@media (hover: hover) { .tune-kind a:hover { color: var(--accent-ink); text-decoration: underline; } }
+.tune-kind :is(.gloss, .meter) { color: var(--muted); font-weight: 400; white-space: pre; }
 .view-tools .music-size { margin-left: 0; }
 /* On a phone: the key, tempo and size as one line, which opens to change them */
 .controls-summary { display: none; }
@@ -384,8 +399,9 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 }
 .held-key { color: var(--muted); }
 /* − and + for the music's size, at the end of the row */
-.music-size { display: flex; align-items: center; gap: .3rem; margin-left: auto; }
-.music-size .label { color: var(--muted); font-size: .9rem; margin-right: .2rem; }
+.music-size { margin-left: auto; }
+.music-size .buttons { display: flex; gap: .3rem; }
+.music-size .label { display: block; font-size: .9rem; margin-bottom: .3rem; }  /* above its buttons, as Key and Tempo */
 .music-size button { min-width: 2.4rem; font-weight: 600; }
 /* Anything that folds open (details), and menus: a drawn chevron in the text's colour,
    turned to point the way it opens. Red on the folding sections under the music. */
@@ -891,8 +907,8 @@ body.practice .set-list, body.practice .set-count, body.practice .set-actions > 
 .say-key summary { cursor: pointer; color: var(--link); text-decoration: underline; }
 .say-key[open] { display: block; max-width: 40rem; }
 .say-key p { margin: .3rem 0 0; }
-@media print { .say { display: none; } }
-body.practice .say { display: none; }
+@media print { .tune-sub { display: none; } }
+body.practice .tune-sub { display: none; }
 .set-add { max-width: 34rem; margin: 0 0 .3rem; }
 .set-added { margin: 0 0 .8rem; min-height: 1.2em; }
 

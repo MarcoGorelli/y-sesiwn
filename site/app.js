@@ -40,7 +40,7 @@ const state = {
   autoListen: false,    // start listening when the notes page opens (from the home page)
   docs: new Map(),      // markdown files, fetched on first use
   chords: { onScore: false, play: "tune" },  // the chord box's settings, for every tune; play: tune, both or chords
-  practice: { countIn: false, click: false, tab: "none", open: null },  // the practice tools, for every tune (open: folded or not)
+  practice: { countIn: false, click: false, tab: "none", open: null, openOn: null },  // the practice tools, for every tune (open: folded or not; openOn: the tune where)
   lang: savedLang(),    // "cy" or "en", for the whole site (tune names and the tunes' own notes stay as written)
   musicSize: savedSize(),  // the music's size, an index into SIZES (1: as drawn)
   redrawScore: null,    // draws the open tune's score again (for printing, see "beforeprint")
@@ -106,10 +106,9 @@ function setLang(lang) {
   render();  // the page again, in the other language
 }
 
-// Musical names in Welsh: the key menu and details ("D major" -> "D fwyaf"), note values.
+// Musical names in Welsh: the key menu and details ("D major" -> "D fwyaf").
 const CY_MODES = { major: "fwyaf", minor: "leiaf", Dorian: "Doriaidd", Phrygian: "Phrygaidd", Lydian: "Lydaidd",
   Mixolydian: "Mixolydaidd", Locrian: "Locriaidd" };
-const CY_BEATS = { "dotted crotchet": "crosiet dotiog", minim: "minim", crotchet: "crosiet", quaver: "cwafer" };
 const modeName = (name) => tr(name, CY_MODES[name] ?? name);
 // A key in short, for the phone's one line: "D" (major), "E min", "A dor", "G mix".
 const SHORT_MODES = { major: "", minor: " min", Dorian: " dor", Mixolydian: " mix", Lydian: " lyd", Phrygian: " phr", Locrian: " loc" };
@@ -134,8 +133,9 @@ const typeName = (name) => (name === "Other" ? tr("Other", "Arall") : name);
 const EN_TYPE = { Jig: "jig", Polca: "polka", Walts: "waltz", "Rîl": "reel", Pibddawns: "hornpipe", Ymdaith: "march",
   Dawns: "dance", Alaw: "air", "Cân": "song", Carol: "carol", Other: "tune" };
 const typeWord = (name) => tr(EN_TYPE[name] ?? name.toLowerCase(), CY_TYPE[name] ?? name.toLowerCase());
-// The Welsh type names an English speaker may not know, glossed on Browse ("Pibddawns · hornpipe").
-const GLOSSED = new Set(["Pibddawns", "Ymdaith", "Dawns", "Alaw", "Cân"]);
+// The Welsh type names, glossed in English wherever the English word differs: "Walts (waltz)",
+// "Pibddawns (hornpipe)"; not Jig or Carol, which are the same.
+const GLOSSED = new Set(Object.keys(EN_TYPE).filter((name) => name !== "Other" && EN_TYPE[name] !== name.toLowerCase()));
 
 // ---- Small DOM helper ----------------------------------------------------
 
@@ -1238,21 +1238,28 @@ function renderBrowse(main) {
       t.versions[0].key && ks.length !== 1
         ? el("span", { class: "tune-key" }, shortKey(t.versions[0].key.pitch, t.versions[0].key.modeName)) : null);
     // Grouped by type, each under its own colourway (one type chosen: just its list, the count says which).
+    // With nothing chosen the types are folded, so the page is eleven headings, not 606 names.
     const groups = types.map((type) => [type, listed.filter((t) => t.type === type.name)]).filter(([, g]) => g.length);
+    const everything = !ts.length && !ks.length;
+    const heading = (type, g) => el("h2", {}, el("span", { class: "swatch" }),
+      type.name === "Other" ? typeName(type.name) : el("span", { lang: "cy" }, type.name),
+      state.lang !== "cy" && GLOSSED.has(type.name) ? el("span", { class: "gloss" }, ` (${EN_TYPE[type.name]})`) : null,
+      el("span", { class: "count" }, ` · ${g.length}`));
     list.replaceChildren(...groups.length === 1
       ? [el("ul", { class: "tune-list" }, groups[0][1].map(item))]
-      : groups.map(([type, g]) => el("section", { class: "type-group", style: `--c: ${type.colour}` },
-          el("h2", {}, el("span", { class: "swatch" }),
-            type.name === "Other" ? typeName(type.name) : el("span", { lang: "cy" }, type.name),
-            state.lang !== "cy" && GLOSSED.has(type.name) ? el("span", { class: "gloss" }, ` (${EN_TYPE[type.name]})`) : null,
-            el("span", { class: "count" }, ` · ${g.length}`)),
-          el("ul", { class: "tune-list" }, g.map(item)))));
+      : groups.map(([type, g]) => everything
+        ? el("details", { class: "type-group fold", style: `--c: ${type.colour}`, open: openGroups.has(type.name),
+            ontoggle: (e) => { if (e.target.open) openGroups.add(type.name); else openGroups.delete(type.name); } },
+            el("summary", {}, heading(type, g)), el("ul", { class: "tune-list" }, g.map(item)))
+        : el("section", { class: "type-group", style: `--c: ${type.colour}` }, heading(type, g),
+            el("ul", { class: "tune-list" }, g.map(item)))));
     // The less common keys stay folded unless one of them is chosen.
     const folded = !keysOpen && !keyOrder.slice(COMMON_KEYS).some((k) => chosenKeys.has(k));
     moreKeys.hidden = !folded;
     for (const pill of keyPills.querySelectorAll("[data-key]")) pill.hidden = folded && keyOrder.indexOf(pill.dataset.key) >= COMMON_KEYS;
   };
   const toggle = (set, item) => { if (!set.delete(item)) set.add(item); show(); };
+  const openGroups = new Set();  // the types opened while nothing is chosen
   for (const type of types) {
     pills.append(el("button", {
       type: "button", "data-type": type.name, style: `--c: ${type.colour}`,
@@ -1280,7 +1287,8 @@ function renderBrowse(main) {
     keysOpen = true;
     show();
     keyPills.querySelector(`[data-key="${CSS.escape(keyOrder[COMMON_KEYS])}"]`)?.focus();
-  } }, tr(`More keys (${Math.max(0, keyOrder.length - COMMON_KEYS)})`, `Rhagor o gyweiriau (${Math.max(0, keyOrder.length - COMMON_KEYS)})`));
+  } }, tr(`More keys (${Math.max(0, keyOrder.length - COMMON_KEYS)})`, `Rhagor o gyweiriau (${Math.max(0, keyOrder.length - COMMON_KEYS)})`),
+    el("span", { class: "chevron", "aria-hidden": "true" }));
   if (keyOrder.length <= COMMON_KEYS) keysOpen = true;
   keyPills.append(moreKeys);
 
@@ -1628,7 +1636,7 @@ function followMusic(note) {
 // − and + for the music's size: for reading at a distance (a tablet on a music stand)
 // or with poor sight. Kept on this device.
 function musicSize(redraw) {
-  const label = el("span", { class: "label", "aria-hidden": "true" }, tr("Size", "Maint"));
+  const label = el("span", { class: "label", "aria-hidden": "true" }, tr("Size", "Maint"));  // above the buttons, as Key and Tempo
   const button = (step, text, name) => el("button", { type: "button", "aria-label": name, onclick: () => {
     state.musicSize = Math.max(0, Math.min(SIZES.length - 1, state.musicSize + step));
     try { localStorage.setItem("musicSize", state.musicSize); } catch {}
@@ -1640,7 +1648,8 @@ function musicSize(redraw) {
   const bigger = button(1, "+", tr("Bigger music", "Cerddoriaeth fwy"));
   smaller.disabled = state.musicSize === 0;
   bigger.disabled = state.musicSize === SIZES.length - 1;
-  return el("div", { class: "music-size", role: "group", "aria-label": tr("Size of the music", "Maint y gerddoriaeth") }, label, smaller, bigger);
+  return el("div", { class: "music-size", role: "group", "aria-label": tr("Size of the music", "Maint y gerddoriaeth") },
+    label, el("div", { class: "buttons" }, smaller, bigger));
 }
 
 // Laying it out, abcjs measures the music in a 1px svg it leaves on the page, as an
@@ -2043,6 +2052,7 @@ const CY_DETAILS = { "Tune type": "Math o alaw", Key: "Cywair", "Time signature"
 function detailValue(label, value) {
   if (label === "Key") return keyLabel(value);
   if (label === "Tune type") return value.charAt(0).toUpperCase() + value.slice(1);  // "jig" -> "Jig", as on Browse
+  if (label === "Area" && state.lang === "cy") return value.replace("Gower Peninsula", "Penrhyn Gŵyr").replace(/\bWales\b/, "Cymru");
   // A source that's a web address is a link, and any words after it (who added the tune
   // there) stay text; other sources (a recording, a book) are just text.
   // The link is named for the site it's on ("Alawon Cymru (alawoncymru.com)"), not the
@@ -2082,6 +2092,10 @@ function saveKey(slug, shift) {
   } catch {}
 }
 
+// The practice tools as the reader left them; but on a phone, where they sit above the
+// music, only on the tune they were opened on: another tune starts with its music on the first screen.
+const practiceToolsOpen = (slug) => (state.practice.open ?? false)
+  && (!matchMedia("(max-width: 800px)").matches || state.practice.openOn === slug);
 function renderTune(main, group, tune) {
   document.title = `${group.title} · Y Sesiwn`;
   rememberTune(group, tune);
@@ -2181,8 +2195,8 @@ function renderTune(main, group, tune) {
   const tempoLabel = el("label", { for: "tempo" });
   const speedFrom = el("span");
   const showTempo = () => {
-    tempoLabel.textContent = tr(`Tempo: ${settings.bpm} bpm (${tune.beatName} beats)`,
-      `Tempo: ${settings.bpm} curiad y funud (curiad ${CY_BEATS[tune.beatName] ?? tune.beatName})`);
+    // Which note is the beat, the score's own tempo mark shows (♩. = 112).
+    tempoLabel.textContent = tr(`Tempo: ${settings.bpm} bpm`, `Tempo: ${settings.bpm} curiad y funud`);
     speedFrom.textContent = String(settings.bpm);
     showSummary();
   };
@@ -2202,7 +2216,7 @@ function renderTune(main, group, tune) {
     shareButton(group.title, () => `https://ysesiwn.cymru/${tuneLink(group, tune, settings)}`, () => linkCarries(tune, settings)),
     printButton(tune, paper, settings), qrButton(group, tune, settings), addToSetButton(tune, settings));
 
-  const shownElsewhere = new Set(["Key", "Composer / arranger"]);  // the key menu; the score's credit
+  const shownElsewhere = new Set(["Key", "Composer / arranger", "Time signature"]);  // the key menu; the score's credit; under the name
   const details = el("dl", {}, tune.details.filter(([label]) => !shownElsewhere.has(label)).map(([label, value]) =>
     [el("dt", {}, tr(label, CY_DETAILS[label] ?? label)), el("dd", {}, detailValue(label, value))]));
   // What the Welsh credit words mean (trefniant = arranged by, …), for English readers.
@@ -2275,8 +2289,8 @@ function renderTune(main, group, tune) {
     el("div", { class: "practice-line" },
       el("div", { class: "control" }, el("label", { for: "tab-select" }, tr("Tablature", "Tablatur")), tabSelect), whistleKey));
   // Folded at first, so the music is the page (the summary says what's inside); then as left.
-  const practiceTools = el("details", { class: "practice-tools fold", open: state.practice.open ?? false,
-    ontoggle: (e) => { if (!document.body.classList.contains("practice")) state.practice.open = e.target.open; } },
+  const practiceTools = el("details", { class: "practice-tools fold", open: practiceToolsOpen(group.slug), "data-slug": group.slug,
+    ontoggle: (e) => { if (!document.body.classList.contains("practice")) { state.practice.open = e.target.open; state.practice.openOn = group.slug; } } },
     el("summary", {}, el("span", {}, tr("Practice tools", "Offer ymarfer"),
       el("span", { class: "caption" }, tune.chords == null
         ? tr(" · repeat, speed up, count-in, click, tablature", " · ailadrodd, cyflymu, cyfrif i mewn, clic, tablatur")
@@ -2295,13 +2309,13 @@ function renderTune(main, group, tune) {
 
   main.replaceChildren(...[
     el("h1", { lang: nameLang(group.slug) }, group.title),
-    sayIt(group),
+    tuneSub(tune, group),
     group.titles.length > 1 ? el("p", { class: "caption aka" }, `${tr("Also known as", "Enwau eraill")}: ${group.titles.slice(1).join(", ")}`) : null,
     versions,
     controls,
     el("div", { class: "tune-layout" },
       el("div", { class: "tune-main" }, el("div", { class: "score" }, audio, soundNote(), paper),
-        practiceTools, actions, chords),
+        practiceTools, chords, actions),
       el("div", { class: "tune-side" },
         el("section", { class: "card" }, el("h2", {}, tr("Details", "Manylion")), details, gloss || null),
         placeCard(group),
@@ -2395,6 +2409,26 @@ function qrButton(group, tune, settings) {
   }, tr("QR code", "Cod QR"));
 }
 
+// Under the tune's name: its type in its colourway, linked to the rest of that type, and
+// its time signature ("Walts (waltz) · 3/4").
+function tuneKind(tune) {
+  const type = state.data.types.find((t) => t.name === tune.type);
+  if (!type) return null;
+  const meter = tune.details.find(([label]) => label === "Time signature")?.[1];
+  return el("p", { class: "tune-kind", style: `--c: ${type.colour}` },
+    el("a", { href: `math/${typeSlug(type.name)}/`, "data-route": true }, el("span", { class: "swatch" }),
+      type.name === "Other" ? typeName(type.name) : el("span", { lang: "cy" }, type.name),
+      state.lang !== "cy" && GLOSSED.has(type.name) ? el("span", { class: "gloss" }, ` (${EN_TYPE[type.name]})`) : null),
+    meter ? el("span", { class: "meter" }, ` · ${meter}`) : null);
+}
+
+// The line under the name: its type, and how to say it; on one line where they fit, so
+// the music still starts on a phone's first screen.
+function tuneSub(tune, group) {
+  const parts = [tuneKind(tune), sayIt(group)].filter(Boolean);
+  return parts.length ? el("div", { class: "tune-sub" }, parts) : null;
+}
+
 // Called Full screen on the page (what it does), so it isn't mixed up with the Practice tools.
 const practiceLabel = (on) => (on ? tr("Exit full screen", "Gadael y sgrin lawn") : tr("Full screen", "Sgrin lawn"));
 
@@ -2418,7 +2452,7 @@ function setPractice(on) {
   // Open on the music stand, without counting as the reader's choice: leaving puts them
   // back as they were (and the next tune opens them as the reader left them).
   const tools = document.querySelector(".practice-tools");
-  if (tools) tools.open = on || (state.practice.open ?? false);
+  if (tools) tools.open = on || practiceToolsOpen(tools.dataset.slug);
   state.redrawScore?.();  // in full screen the score leaves out the name, as on a phone
   // On a phone it's a music stand: the key and tempo folded back into their one line, and
   // the music from the top of the screen.

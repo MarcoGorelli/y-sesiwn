@@ -37,8 +37,6 @@
     "griffith-ap-cynan-s-delight": "diddanwch-gruffydd-ap-cynan-version-2",
     "ril-clawdd-offa": "clawdd-offa-version-3",
     "the-delight-of-the-men-of-dovey": "difyrrwch-gwyr-dyfi-version-4",
-    "nyth-y-gwcw": "nyth-y-gog-version-3",
-    "nyth-y-gwcw-version-2": "nyth-y-gog-version-4",
     "hufen-melyn-32-bar": "hufen-melyn-version-2",
     "jig-titrwm": "titrwm-tatrwm-version-2",
     "jig-y-wlad-honno": "roedd-yn-y-wlad-honno-version-2",
@@ -51,6 +49,8 @@
     "the-war-camp": "o-uchel-dras-oedd-siencyn-version-3",
     "melusgan": "mwynen-meirionydd-version-2",
     "glanbran": "gwreiddyn-y-pren-ffawydd-version-2",
-    "cynset-evan-glan-teifi": "rhuban-morfudd-version-3"
+    "cynset-evan-glan-teifi": "rhuban-morfudd-version-3",
+    "nyth-y-gog-version-3": "nyth-y-gwcw",
+    "nyth-y-gog-version-4": "nyth-y-gwcw-version-2"
   }
 }

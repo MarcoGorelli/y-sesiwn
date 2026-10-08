@@ -1236,15 +1236,20 @@ def test_keys_spelt_as_players_write_them(page):
 
 
 def test_usual_key_remembered(page, site):
-    # The key chosen for a tune is kept on the device and used next time (and said so);
-    # a shared link's key wins without replacing it.
+    # The key chosen for a tune is kept on the device and used next time (and said so, then,
+    # not as it's chosen); a shared link's key wins without replacing it.
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-staff")
     page.select_option("#key-select", "2")
-    assert page.inner_text(".usual-key") == "Last used on this device"
+    assert page.inner_text(".usual-key") == ""
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.input_value("#key-select") == "2" and page.url == site + "alaw/glandyfi/?key=A"
+    assert page.inner_text(".usual-key") == "Your key last time"
+    page.select_option("#key-select", "3")
+    assert page.inner_text(".usual-key") == ""
+    page.select_option("#key-select", "2")  # back to it: it is last time's key
+    assert page.inner_text(".usual-key") == "Your key last time"
     page.goto_site("alaw/glandyfi/?key=C")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.input_value("#key-select") == "5" and page.inner_text(".usual-key") == ""
@@ -1840,7 +1845,7 @@ def test_set_from_tune_pages(page):
         page.click(".add-to-set")
         if path != "alaw/llancesau-trefaldwyn/":  # the first makes the set; then it's in the list, with a new one
             menu = page.locator(".add-to-set-wrap .print-menu")
-            assert menu.locator("button").all_inner_texts() == [f"My set · {1 if key else 2} tune{'' if key else 's'}", "+ A new set"]
+            assert menu.locator("button").all_inner_texts() == [f"My set · {1 if key else 2} tune{'' if key else 's'}", "A new set"]
             menu.locator("button", has_text="My set").click()
     assert "(3 tunes)" in page.inner_text(".add-status")
     page.click(".add-status a")
@@ -1886,16 +1891,62 @@ def test_add_to_set_choosing_the_set(page):
     menu = page.locator(".add-to-set-wrap .print-menu")
     assert menu.is_hidden()
     page.click(".add-to-set")
-    assert menu.locator("button").all_inner_texts() == ["Nos Iau · 1 tune", "Class · 0 tunes", "+ A new set"]
+    assert menu.locator("button").all_inner_texts() == ["Nos Iau · 1 tune", "Class · 0 tunes", "A new set"]
     menu.locator("button", has_text="Class").click()
     assert "Added to Class (1 tune)" in page.inner_text(".add-status")
     assert menu.is_hidden()
-    page.click(".add-to-set")  # now Class is first
-    assert menu.locator("button").all_inner_texts()[:2] == ["Class · 1 tune", "Nos Iau · 1 tune"]
+    page.click(".add-to-set")  # now Class is first, ticked: it has the tune
+    assert menu.locator("button").all_inner_texts()[:2] == ["Class · 1 tune · take it out", "Nos Iau · 1 tune"]
     menu.locator("button", has_text="A new set").click()
     assert "Added to My set 3 (1 tune)" in page.inner_text(".add-status")
     kept = page.evaluate("JSON.parse(localStorage.getItem('sets'))")
     assert [(x["name"], len(x["c"])) for x in kept] == [("Nos Iau", 2), ("Class", 2), ("My set 3", 2)]
+
+
+def test_add_to_set_knows_its_sets(page):
+    # The tune page says which sets have the tune; in the menu they're ticked, and choosing
+    # one takes it out (with Undo), so a set never has it twice by mistake.
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    code = page.evaluate("state.groups.get('glandyfi').versions[0].code")
+    page.evaluate(f"""() => localStorage.setItem('sets', JSON.stringify([
+      {{ id: 'aaaaaa', name: 'Nos Iau', c: '5A{code}', updated: 2 }}, {{ id: 'bbbbbb', name: 'Class', c: '5A', updated: 1 }}]))""")
+    page.reload()
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.inner_text(".add-status") == "In your set Nos Iau"
+    page.click(".add-to-set")
+    menu = page.locator(".add-to-set-wrap .print-menu")
+    assert menu.locator("button").all_inner_texts() == ["Nos Iau · 2 tunes · take it out", "Class · 1 tune", "A new set"]
+    assert menu.locator("button.has-tune .tick-icon").count() == 1
+    # The menu opens on the side with room, never over the sidebar.
+    assert menu.bounding_box()["x"] >= page.locator("main").bounding_box()["x"]
+    menu.locator("button", has_text="Nos Iau").click()
+    assert page.inner_text(".add-status").startswith("Taken out of Nos Iau.")
+    assert page.evaluate("JSON.parse(localStorage.getItem('sets'))[0].c") == "5A"
+    page.click(".add-status button:text-is('Undo')")
+    assert page.evaluate("JSON.parse(localStorage.getItem('sets'))[0].c") == f"5A{code}"
+    assert page.inner_text(".add-status") == "In your set Nos Iau"
+    page.click(".add-to-set")
+    menu.locator("button", has_text="Class").click()
+    assert page.inner_text(".add-status").startswith("Added to Class (2 tunes)")
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.inner_text(".add-status") == "In your sets Nos Iau, Class"
+    page.click(".add-status a >> nth=0")
+    page.wait_for_selector(".set-list li")
+
+
+def test_current_page_marked(page):
+    # The page you're on is marked in the sidebar (and the phone's menu), for screen readers too.
+    page.goto_site("?page=browse")
+    page.wait_for_selector(".pills")
+    assert page.locator(".sidebar-links [aria-current='page']").all_inner_texts() == ["Browse by type and key"]
+    page.click(".sidebar-links a[href='?page=notes']")
+    page.wait_for_selector("#notes-search")
+    assert page.locator(".sidebar-links [aria-current='page']").all_inner_texts() == ["Find a tune by its notes"]
+    page.click(".brand")
+    page.wait_for_selector("#hero-search")
+    assert page.locator(".sidebar-links [aria-current]").count() == 0
 
 
 def test_add_to_set_by_search(page):

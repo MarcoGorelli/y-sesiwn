@@ -35,6 +35,9 @@
   --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 5 7 7-7 7'/%3E%3C/svg%3E");
   --arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 19V5m-6 6 6-6 6 6'/%3E%3C/svg%3E");
   --cross: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='m6 6 12 12M18 6 6 18'/%3E%3C/svg%3E");
+  --plus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M12 5v14M5 12h14'/%3E%3C/svg%3E");
+  --sharp: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 20' fill='none' stroke='%23000' stroke-linecap='round'%3E%3Cpath d='M3.6 2.5v16M6.6 1.5v16' stroke-width='1.3'/%3E%3Cpath d='m1.3 8.2 7.4-2.2M1.3 13.6l7.4-2.2' stroke-width='2.4'/%3E%3C/svg%3E");
+  --flat: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 20' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 1.5v17c3.5-1.6 6.2-3.6 5.6-6.2-.5-2.2-3.3-2-5.6.2' stroke-width='1.6'/%3E%3C/svg%3E");
   --tick: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4.5 12.5 5 5 10-11'/%3E%3C/svg%3E");
   --search-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2366707a' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='m15.5 15.5 5 5'/%3E%3C/svg%3E");
   color-scheme: light dark;
@@ -126,6 +129,9 @@ body[data-page="home"] :is(#surprise-sidebar, .menu-surprise) { display: none; }
 .sidebar-links a { text-decoration: none; }
 .sidebar-links a:hover { color: var(--accent-ink); text-decoration: underline; }
 .sidebar-links a.more { font-size: .9rem; }
+/* The page you're on: ink, heavier, with a slate line under it (not colour alone) */
+.sidebar-links a[aria-current="page"] { color: var(--text); font-weight: 600; text-decoration: underline;
+  text-decoration-color: var(--chosen); text-decoration-thickness: 2px; text-underline-offset: .3em; }
 .sidebar-links a:not(.more) + a.more { margin-top: .6rem; }
 
 button {
@@ -289,6 +295,7 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .notes-search .listen { font-size: 1.1rem; padding: .6rem 1.1rem; margin-bottom: .8rem; }
 .notes-search .listen:not(.on) { background: var(--accent); border-color: var(--accent); color: #fff; }
 .notes-how { margin-top: 2rem; }
+.notes-how li::marker { color: var(--accent-ink); }
 
 /* Search by notes */
 .notes-search { max-width: 40rem; }
@@ -396,11 +403,11 @@ details.all-tunes[open] > .tune-list { margin: .25rem 0 1.25rem; }
 .tune-list a:hover { color: var(--accent-ink); text-decoration: underline; }
 
 /* Tune page */
-.controls { display: flex; flex-wrap: wrap; gap: 1rem 2.5rem; align-items: end; margin: 1rem 0 1.25rem; }
+.controls { display: flex; flex-wrap: wrap; gap: 1rem 2.5rem; align-items: start; margin: 1rem 0 1.25rem; }  /* the labels on one line */
 .control label { display: block; font-size: .9rem; margin-bottom: .3rem; }
 .control select { padding: .4rem .6rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); }
 .control.tempo { flex: 1 1 18rem; max-width: 32rem; }
-/* "Last used on this device", under the key menu: on its own line, kept for it below the
+/* "Your key last time", under the key menu: on its own line, kept for it below the
    row, so the row never moves when it appears */
 .control { position: relative; }
 .usual-key { position: absolute; top: calc(100% + .2rem); left: 0; font-size: .8rem; white-space: nowrap; }
@@ -425,11 +432,13 @@ details.all-tunes[open] > .tune-list { margin: .25rem 0 1.25rem; }
 @media (max-width: 800px) {  /* on a phone, two by two, rather than three and one left over */
   .tune-actions { display: grid; grid-template-columns: 1fr 1fr; align-items: start; }
   .tune-actions > *, .tune-actions .print-wrap > button, .tune-actions .add-to-set { width: 100%; max-width: none; }
-  /* Its parts sit in the grid themselves, and "Added to My set…" runs across under the buttons,
-     so it doesn't stretch the QR code beside it */
-  .tune-actions .add-to-set-wrap { display: contents; }
   .tune-actions .add-status { grid-column: 1 / -1; }
 }
+/* Add to set's parts sit in the row themselves, and "In your set…" / "Added to…" runs
+   across under the buttons, so the row never wraps around it */
+.tune-actions .add-to-set-wrap { display: contents; }
+.tune-actions .add-status { flex-basis: 100%; margin: 0; }
+.add-status .link-button { margin-left: 0; }
 .held-key { color: var(--muted); }
 /* − and + for the music's size, at the end of the row */
 .music-size { margin-left: auto; }
@@ -630,13 +639,19 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 /* Suggested chords: a chart for accompanists, and switches for the score and playback */
 .card.chords { margin-top: 1.5rem; }
 .chart { display: grid; gap: .3rem; font-weight: 600; font-size: 1.1rem; max-width: 44rem; }
-.chart-row { display: grid; grid-template-columns: repeat(var(--columns), minmax(0, 1fr)); border-left: 1px solid var(--muted); }
+.chart-row { display: grid; grid-template-columns: repeat(var(--columns), minmax(max-content, 1fr)); border-left: 1px solid var(--muted); }
 .chart .bar {
   display: flex; align-items: baseline; gap: .15rem; min-height: 1.8rem; padding: .15rem .4rem;
   border-right: 1px solid var(--muted); white-space: nowrap;
 }
 .chart .beats { flex: 1; display: grid; min-width: 0; column-gap: .35rem; }
-.chart .beats > span { min-width: 0; }
+.chart .beats > span { min-width: max-content; }  /* two chords in a bar never run into each other */
+/* Sharps and flats drawn, close to the letter: the system fonts' ♯ and ♭ come from a symbol
+   font, with room either side ("F ♯"). The character stays, unseen, for copying and reading out. */
+.chart .acc { display: inline-block; width: .42em; height: .8em; margin-left: .04em; overflow: hidden; vertical-align: -.02em;
+  -webkit-text-fill-color: transparent; background: currentColor; mask: var(--sharp) center / contain no-repeat; }
+.chart .acc.flat { mask-image: var(--flat); }
+@media (forced-colors: active) { .chart .acc { forced-color-adjust: none; background: CanvasText; } }
 .chart .held { color: var(--muted); font-weight: 400; }
 /* A second-time ending's row starts under the first-time ending: blank cells before it */
 .chart-row.indented { border-left-color: transparent; }
@@ -799,10 +814,11 @@ body.practice .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height
   #surprise-sidebar { display: none; }
   /* Two columns of links, each a full 44px row, so a thumb doesn't catch the wrong one: the
      ways to a tune first; then, under a line and quieter, the pages about the site, in a row */
-  .sidebar.menu-open .sidebar-links { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0 1rem; }
-  .sidebar-links > * { grid-column: span 3; }
+  .sidebar.menu-open .sidebar-links { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0; }
+  /* The room between columns is inside each link, so the line over the last row is unbroken */
+  .sidebar-links > * { grid-column: span 3; padding-right: 1rem; }
   .sidebar-links a { display: flex; align-items: center; min-height: 2.75rem; line-height: 1.25; }
-  .sidebar-links .menu-surprise { display: flex; align-items: center; min-height: 2.75rem; padding: 0; border: 0; border-radius: 0;
+  .sidebar-links .menu-surprise { display: flex; align-items: center; min-height: 2.75rem; padding: 0 1rem 0 0; border: 0; border-radius: 0;
     background: none; color: var(--link); font: inherit; line-height: 1.25; text-align: left; }
   .sidebar-links .menu-surprise:hover:not(:disabled) { color: var(--accent-ink); text-decoration: underline; }
   .sidebar-links a.more, .sidebar-links a:not(.more) + a.more { grid-column: span 2; margin-top: .35rem;
@@ -820,7 +836,7 @@ body.practice .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height
   .controls-summary[aria-expanded="true"] .change::after { transform: rotate(-90deg); }
   .controls:not(.open) > .control, .controls:not(.open) .music-size { display: none; }
   .controls .view-tools { display: contents; }
-  /* Opened: a fixed grid, so nothing moves when a caption appears ("Last used on this device") */
+  /* Opened: a fixed grid, so nothing moves when a caption appears ("Your key last time") */
   .controls.open { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end;
     grid-template-areas: "summary summary" "key size" "tempo full"; }
   .controls.open .controls-summary { grid-area: summary; }
@@ -880,10 +896,16 @@ body.practice .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height
   box-shadow: 0 4px 14px var(--shadow-float); padding: .3rem;
 }
 .print-menu[hidden] { display: none; }
+.print-menu.opens-right { right: auto; left: 0; }
 .print-menu button { border: none; background: none; text-align: left; padding: .45rem .7rem; border-radius: 6px; white-space: nowrap; }
 .print-menu button:hover { background: var(--accent-soft); }
 .add-to-set-wrap .print-menu { max-width: calc(100vw - 2rem); }
 .add-to-set-wrap .print-menu button { white-space: normal; }  /* a set's name can be long */
+/* The sets that have the tune: ticked; with any ticked, the others keep the tick's room */
+.add-to-set-wrap .print-menu .ticks { padding-left: calc(.7rem + 1.25em); }
+.plus-icon { display: inline-block; width: .9em; height: .9em; margin-right: .35em; vertical-align: -.1em;
+  background: currentColor; mask: var(--plus) center / contain no-repeat; }
+@media (forced-colors: active) { .plus-icon { forced-color-adjust: none; background: CanvasText; } }
 @page { margin: 15mm; }
 
 @media (prefers-reduced-motion: reduce) { main { animation: none; } }
@@ -962,7 +984,6 @@ main { view-transition-name: page; }
 .set-list-mine li { padding: .5rem 0; border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: .3rem .6rem; align-items: baseline; }
 .set-list-mine li a { font-weight: 600; }
 .link-button { border: 0; background: none; padding: 0; color: var(--link, var(--accent)); text-decoration: underline; margin-left: auto; font-size: .9rem; }
-.add-to-set-wrap { display: inline-flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
 .add-status:empty { display: none; }
 @media (max-width: 800px) {
   .set-item-controls { flex-basis: 100%; margin-left: 1.9rem; }  /* under the name, lined up with it */

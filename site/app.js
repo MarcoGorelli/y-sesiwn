@@ -39,7 +39,8 @@ const state = {
   autoListen: false,    // start listening when the notes page opens (from the home page)
   docs: new Map(),      // markdown files, fetched on first use
   chords: { onScore: false, play: "tune" },  // the chord box's settings, for every tune; play: tune, both or chords
-  practice: { countIn: false, click: false, tab: "none", open: null },  // the practice tools, for every tune (open: folded or not)
+  practice: { countIn: false, click: false, tab: "none", open: null },
+  browseOpen: { types: false, keys: false },  // Browse's More types / More keys, once opened  // the practice tools, for every tune (open: folded or not)
   lang: savedLang(),    // "cy" or "en", for the whole site (tune names and the tunes' own notes stay as written)
   musicSize: savedSize(),  // the music's size, an index into SIZES (1: as drawn)
   redrawScore: null,    // draws the open tune's score again (for printing, see "beforeprint")
@@ -701,7 +702,7 @@ function renderNotesPage(main) {
       + "tapiwch nhw ar y bysellfwrdd neu teipiwch nhw, mewn unrhyw gywair neu wythfed.")),
     notesSearch({ autoListen }),
     el("section", { class: "guide notes-how" },
-      el("h2", {}, tr("How it works", "Sut mae'n gweithio")),
+      el("h2", { class: "section-heading" }, tr("How it works", "Sut mae'n gweithio")),
       el("ul", {}, how.map((parts) => el("li", {}, parts)))));
 }
 
@@ -1017,6 +1018,15 @@ document.addEventListener("keydown", (event) => {
   control.dispatchEvent(new Event("change"));
 });
 
+// Where you are: the page's own link in the sidebar (the phone's menu) is marked, for the
+// eye and for screen readers.
+function markCurrentLink(href) {
+  for (const a of document.querySelectorAll(".sidebar-links a")) {
+    if (a.getAttribute("href") === href) a.setAttribute("aria-current", "page");
+    else a.removeAttribute("aria-current");
+  }
+}
+
 function render() {
   // Something stuck to the end of the address (see sitePath): take it off.
   if (rawPath() !== sitePath()) history.replaceState(null, "", (encodeURI(sitePath()) || "./") + location.search);
@@ -1067,6 +1077,7 @@ function render() {
   const home = !tune && !lost && !guide && !map && !offline && !notes && !browse && !contact && !setPage && !setsPage && !sessions;
   document.body.dataset.page = home ? "home" : "other";  // the home page has its own search box
   setMenu(false);
+  markCurrentLink(sessions ? "sesiynau/" : browse ? "?page=browse" : page && !setPage ? `?page=${page}` : null);
   main.lang = state.lang;
   keepAwake(Boolean(tune || setPage));
   if (tune) renderTune(main, group, tune);
@@ -1325,9 +1336,10 @@ function renderBrowse(main) {
   // The commonest types first; the few-tune ones (and Other) behind "More types", as the keys
   // are, so the tunes start sooner on a phone.
   const rareTypes = types.filter((t) => t.count < COMMON_TYPE || t.name === "Other").map((t) => t.name);
-  let typesOpen = rareTypes.length < 2;
+  // Opened, they stay open when the page is drawn again (in the other language, say).
+  let typesOpen = rareTypes.length < 2 || state.browseOpen.types;
   const moreTypes = el("button", { type: "button", class: "more-types", onclick: () => {
-    typesOpen = true;
+    typesOpen = state.browseOpen.types = true;
     show();
     pills.querySelector(`[data-type="${CSS.escape(rareTypes[0])}"]`)?.focus();
   } }, tr(`More types (${rareTypes.length})`, `Rhagor o fathau (${rareTypes.length})`),
@@ -1346,9 +1358,9 @@ function renderBrowse(main) {
   }
   // The most common keys first; the rest (a few tunes each) behind "More keys", so the tunes
   // start sooner on a phone.
-  let keysOpen = false;
+  let keysOpen = state.browseOpen.keys;
   const moreKeys = el("button", { type: "button", class: "more-keys", onclick: () => {
-    keysOpen = true;
+    keysOpen = state.browseOpen.keys = true;
     show();
     keyPills.querySelector(`[data-key="${CSS.escape(keyOrder[COMMON_KEYS])}"]`)?.focus();
   } }, tr(`More keys (${Math.max(0, keyOrder.length - COMMON_KEYS)})`, `Rhagor o gyweiriau (${Math.max(0, keyOrder.length - COMMON_KEYS)})`),
@@ -2005,6 +2017,11 @@ function chartWords(grid) {
   return el("ul", { class: "visually-hidden" }, lines);
 }
 
+// A chord's name, its sharp or flat in a span of its own, drawn close to the letter (the
+// system fonts' ♯ and ♭ come from a symbol font, with room either side): "F♯m", not "F ♯ m".
+const chordName = (name) => (name ?? "").split(/(?<=[A-G])([#♯b♭])/).map((part, i) =>
+  i % 2 ? el("span", { class: /[b♭]/.test(part) ? "acc flat" : "acc" }, part.replace("#", "♯").replace("b", "♭")) : part);
+
 function chordChart(visualObj) {
   const { num, den } = visualObj.getMeterFraction();
   // Every bar of the tune, in order, with its chords and where each starts.
@@ -2057,7 +2074,7 @@ function chordChart(visualObj) {
     parts.at(-1).push(Object.assign(el("span", { class: classes.filter(Boolean).join(" ") },
       b.ending ? el("sup", {}, `${b.ending}.`) : null,
       el("span", { class: "beats", style: `grid-template-columns: ${shares.map((c) => `${(100 * (c.to - c.from)) / b.length}fr`).join(" ")}` },
-        shares.map((c) => el("span", { class: c.held ? "held" : null }, c.name)))),
+        shares.map((c) => el("span", { class: c.held ? "held" : null }, chordName(c.name))))),
       { ending: b.ending, chords: shares.map((c) => `${c.name}:${(c.to - c.from) / b.length}`).join(" ") }));
     held = b.chords.at(-1)?.name ?? held;
   }
@@ -2187,7 +2204,16 @@ function printButton(tune, paper, settings) {
 // A button that opens a plain list of buttons under it (not an ARIA menu: Tab moves through
 // it like any buttons). Pressing one, Esc, or a click or Tab elsewhere, closes it.
 function dropMenu(id, label, buttons, toggleClass = null) {
-  const show = (open) => { menu.hidden = !open; toggle.setAttribute("aria-expanded", String(open)); };
+  const show = (open) => {
+    menu.hidden = !open;
+    toggle.setAttribute("aria-expanded", String(open));
+    // It opens leftwards, under the end of its button; with no room there (the button at
+    // the start of a row), rightwards instead, never over the sidebar.
+    menu.classList.remove("opens-right");
+    if (open && menu.getBoundingClientRect().left < (wrap.closest("main") ?? document.body).getBoundingClientRect().left) {
+      menu.classList.add("opens-right");
+    }
+  };
   const menu = el("div", { class: "print-menu", id, hidden: true, onclick: (e) => { if (e.target.closest("button")) show(false); } },
     buttons);
   const toggle = el("button", { type: "button", class: toggleClass, "aria-expanded": "false", "aria-controls": id, onclick: () => show(menu.hidden) },
@@ -2333,11 +2359,12 @@ function renderTune(main, group, tune) {
   if (tune.key) {
     const { pitch, root } = tune.key;
     const mode = modeName(tune.key.modeName);
-    // Under the menu, in a line kept for it, so nothing moves when it appears.
+    // Under the menu, in a line kept for it, so nothing moves when it appears: a page that
+    // opens in the key kept from last time says so (not a key just chosen, or a link's).
     const usual = el("span", { class: "caption usual-key" });
+    const keptKey = shift === null && settings.transpose && savedKeys()[tune.slug] === settings.transpose ? settings.transpose : null;
     const showUsual = () => {
-      usual.textContent = settings.transpose && savedKeys()[tune.slug] === settings.transpose
-        ? tr("Last used on this device", "Defnyddiwyd ddiwethaf ar y ddyfais hon") : "";
+      usual.textContent = keptKey !== null && settings.transpose === keptKey ? tr("Your key last time", "Eich cywair y tro diwethaf") : "";
     };
     const select = el("select", { id: "key-select", onchange: (e) => {
       settings.transpose = +e.target.value;
@@ -3603,11 +3630,14 @@ const KEY_LETTERS = "abcdefghijkl";  // -5 … +6 semitones
 
 const encodeSet = (items) => items.map(({ tune, key }) => tune.code + (key ? `~${KEY_LETTERS[key + 5]}` : "")).join("");
 
+// One tune in a set's code: its code, and the key it's in (if moved).
+const SET_ITEM = /(\.[0-9a-z]{5}|-[0-9A-Za-z]{3}|[0-9A-Za-z]{2})(?:~([a-l]))?/g;
+
 function decodeSet(text) {
   const items = [];
   let missing = 0;
   const codes = state.byCode;
-  for (const m of (text ?? "").matchAll(/(\.[0-9a-z]{5}|-[0-9A-Za-z]{3}|[0-9A-Za-z]{2})(?:~([a-l]))?/g)) {
+  for (const m of (text ?? "").matchAll(SET_ITEM)) {
     // A tune without a number when the link was made may have one now: its short_id still finds it.
     const tune = codes.get(m[1]) ?? (m[1][0] === "." ? state.byId.get(m[1].slice(1)) : null);
     if (tune) items.push({ tune, key: m[2] ? KEY_LETTERS.indexOf(m[2]) - 5 : 0 });
@@ -3674,14 +3704,48 @@ const defaultSetName = () => tr("My set", "Fy set");
 const setSize = (set) => { const { items, missing } = decodeSet(set.c); return items.length + missing; };
 const tuneCount = (n) => tr(`${n} tune${n === 1 ? "" : "s"}`, `${n} alaw`);
 
+// Whether a set has this tune (this version), read from the set's code as it is: a tune's
+// page may not have every other tune's code yet. A set made before the tune had a number
+// has its short_id instead.
+const isTune = (tune, code) => code === tune.code || code === `.${tune.id}`;
+const setHasTune = (set, tune) => [...set.c.matchAll(SET_ITEM)].some((m) => isTune(tune, m[1]));
+const withoutTune = (c, tune) => [...c.matchAll(SET_ITEM)].filter((m) => !isTune(tune, m[1])).map((m) => m[0]).join("");
+const mySetLink = (set) => el("a", { href: `?set=${set.c}&n=${encodeURIComponent(set.name)}&my=${set.id}`, "data-route": true }, set.name);
+const drawnIcon = (name) => el("span", { class: `${name}-icon`, "aria-hidden": "true" });
+
 // The tune page's button: adds this version, in the key chosen, to the set you're building.
 // Once there's a set, it opens to the list of them (a teacher's, one per class), the last
-// added to first, and a new one.
+// added to first, and a new one. The sets that have the tune already are ticked, and
+// choosing one of those takes it out, so no set has it twice by mistake. Under the row:
+// the sets it's in.
 function addToSetButton(tune, settings) {
-  const status = el("span", { class: "caption add-status", "aria-live": "polite" });
-  const addTo = (id) => {
+  const status = el("p", { class: "caption add-status", "aria-live": "polite" });
+  const showIn = () => {
+    const sets = loadSets().filter((set) => setHasTune(set, tune));
+    status.replaceChildren(...(sets.length ? [drawnIcon("tick"),
+      sets.length === 1 ? tr("In your set ", "Yn eich set ") : tr("In your sets ", "Yn eich setiau "),
+      ...sets.flatMap((set, i) => [i ? ", " : "", mySetLink(set)])] : []));
+  };
+  const redraw = () => { wrap.replaceChildren(control(), status); wrap.querySelector("button").focus(); };
+  const choose = (id) => {
     const sets = loadSets();
     let set = sets.find((x) => x.id === id);
+    if (set && setHasTune(set, tune)) {  // ticked: take it out (and it can be put back)
+      const before = set.c;
+      set.c = withoutTune(set.c, tune);
+      set.updated = Date.now();
+      saveSets(sets);
+      status.replaceChildren(tr(`Taken out of ${set.name}. `, `Wedi'i thynnu o ${set.name}. `),
+        el("button", { type: "button", class: "link-button", onclick: () => {
+          const again = loadSets();
+          const back = again.find((x) => x.id === set.id);
+          if (back) { back.c = before; back.updated = Date.now(); saveSets(again); }
+          showIn();
+          redraw();
+        } }, tr("Undo", "Dadwneud")));
+      redraw();
+      return;
+    }
     if (!set) {
       set = { id: newSetId(), name: sets.length ? `${defaultSetName()} ${sets.length + 1}` : defaultSetName(), c: "" };
       sets.push(set);
@@ -3692,24 +3756,29 @@ function addToSetButton(tune, settings) {
     set.c += encodeSet([{ tune, key: settings.transpose }]);
     set.updated = Date.now();
     saveSets(sets);
-    const count = setSize(set);
-    status.replaceChildren(tr(`Added to ${set.name} (${tuneCount(count)}) · `, `Wedi'i hychwanegu at ${set.name} (${tuneCount(count)}) · `),
-      el("a", { href: `?set=${set.c}&n=${encodeURIComponent(set.name)}&my=${set.id}`, "data-route": true }, tr("see the set", "gweld y set")));
-    wrap.replaceChildren(control(), status);  // the list, now with this set (first)
-    wrap.querySelector("button").focus();
+    status.replaceChildren(drawnIcon("tick"), tr(`Added to ${set.name} (${tuneCount(setSize(set))}) · `,
+      `Wedi'i hychwanegu at ${set.name} (${tuneCount(setSize(set))}) · `), el("a", { href: mySetLink(set).href, "data-route": true }, tr("see the set", "gweld y set")));
+    redraw();  // the list, now with this set (first)
   };
   const control = () => {
     const sets = loadSets();
     const label = tr("Add to set", "Ychwanegu at set");
-    if (!sets.length) return el("button", { type: "button", class: "add-to-set", onclick: () => addTo(null) }, label);
+    if (!sets.length) return el("button", { type: "button", class: "add-to-set", onclick: () => choose(null) }, label);
     const current = currentSetId();
     sets.sort((a, b) => (b.id === current) - (a.id === current) || (b.updated ?? 0) - (a.updated ?? 0));
+    const ticked = sets.some((set) => setHasTune(set, tune));
     return dropMenu(`set-menu-${tune.slug}`, [label], [
-      ...sets.map((set) => el("button", { type: "button", onclick: () => addTo(set.id) },
-        set.name, el("span", { class: "caption" }, ` · ${tuneCount(setSize(set))}`))),
-      el("button", { type: "button", class: "menu-sep", onclick: () => addTo(null) }, tr("+ A new set", "+ Set newydd"))],
+      ...sets.map((set) => {
+        const has = setHasTune(set, tune);
+        // With any ticked, the rest leave the tick's room, so the names line up.
+        return el("button", { type: "button", class: ticked ? (has ? "has-tune" : "ticks") : null, onclick: () => choose(set.id) },
+          has ? drawnIcon("tick") : null, set.name,
+          el("span", { class: "caption" }, ` · ${tuneCount(setSize(set))}${has ? tr(" · take it out", " · ei thynnu allan") : ""}`));
+      }),
+      el("button", { type: "button", class: "menu-sep", onclick: () => choose(null) }, drawnIcon("plus"), tr("A new set", "Set newydd"))],
     "add-to-set");
   };
+  showIn();
   const wrap = el("span", { class: "add-to-set-wrap" }, control(), status);
   return wrap;
 }

@@ -1269,8 +1269,10 @@ function renderBrowse(main) {
     // With nothing chosen the types are the pills above, so the tunes are one list, A to Z, folded.
     const groups = types.map((type) => [type, listed.filter((t) => t.type === type.name)]).filter(([, g]) => g.length);
     const everything = !ts.length && !ks.length;
-    chosenNow.replaceChildren(...[ts.length ? el("span", { lang: "cy" }, ts.map((t) => (t.name === "Other" ? typeName(t.name) : t.name)).join(", ")) : null,
-      ks.length ? ks.map(keyLabel).join(", ") : null].filter(Boolean).flatMap((part, i) => (i ? [" · ", part] : [part])));
+    // The choices in one line, for the phone (each type in its colourway, as on its pill).
+    const chosenType = (t, i) => el("span", { style: `--c: ${t.colour}` }, i ? ", " : "", el("span", { class: "swatch" }),
+      t.name === "Other" ? typeName(t.name) : el("span", { lang: "cy" }, t.name));
+    chosenNow.replaceChildren(...ts.map(chosenType), ts.length && ks.length ? " · " : "", ks.map(keyLabel).join(", "));
     const heading = (type, g) => el("h2", {}, el("span", { class: "swatch" }),
       type.name === "Other" ? typeName(type.name) : el("span", { lang: "cy" }, type.name),
       state.lang !== "cy" && GLOSSED.has(type.name) ? el("span", { class: "gloss" }, ` (${EN_TYPE[type.name]})`) : null,
@@ -2526,6 +2528,7 @@ function versionsFold(summary, list) {
     if (fold.open && !fold.contains(e.target)) fold.open = false;
   };
   document.addEventListener("click", close);
+  fold.addEventListener("focusout", (e) => { if (fold.open && !fold.contains(e.relatedTarget)) fold.open = false; });
   fold.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && fold.open) { e.stopPropagation(); fold.open = false; summary.focus(); }
   });

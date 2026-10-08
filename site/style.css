@@ -360,6 +360,7 @@ details.all-tunes[open] > .tune-list { margin: .25rem 0 1.25rem; }
     border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); }
   .browse-chosen .now { flex: 1; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .browse-chosen .change { flex: none; }
+  .browse-chosen .swatch { transform: translateY(.1em); }
 }
 /* On a phone, along the bottom once something is chosen: down to the tunes ("156 jigs") */
 .browse-jump { display: none; }

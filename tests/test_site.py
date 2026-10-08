@@ -570,11 +570,9 @@ def test_practice_tools_folded_at_first(browser, site, page):
     phone.go_back()
     phone.wait_for_selector(".score .abcjs-staff")
     assert phone.locator("#loop-select").is_visible()  # left open
-    # Another tune starts folded on a phone, where the tools sit above the music, so its
-    # music is on the first screen; a wide screen leaves them as they were.
-    phone.evaluate("navigate('alaw/abaty-waltham/')")
-    phone.wait_for_selector(".score .abcjs-staff")
-    assert not phone.locator("#loop-select").is_visible()
+    # Under the music on a phone too, so the music starts on the first screen
+    assert phone.evaluate("""document.querySelector('.practice-tools').getBoundingClientRect().top
+      > document.querySelector('.score').getBoundingClientRect().bottom - 1""")
     context.close()
     page.click(".practice-tools summary")
     page.wait_for_function("state.practice.open")  # the toggle event comes a moment after the click
@@ -2856,17 +2854,15 @@ def test_tempo_and_key_shortcuts(page):
 
 
 def test_browse_grouped_by_type_with_keys(page):
-    # With nothing chosen, Browse lists the tunes under their types, each with its key; the
-    # less common keys wait behind "More keys"; one type chosen is a plain list.
+    # With nothing chosen, the types are the pills and the tunes one folded list, A to Z,
+    # each with its key; the less common keys wait behind "More keys"; something chosen
+    # lists the tunes under their types; one type chosen is a plain list.
     page.goto_site("?page=browse")
-    page.wait_for_selector(".type-group")
-    types = page.evaluate("state.data.types.filter((t) => t.count).length")
-    assert page.locator(".type-group").count() == types
-    assert page.locator(".type-group h2").first.inner_text().startswith("Jig")
+    page.wait_for_selector(".all-tunes")
+    assert page.locator(".type-group").count() == 0
     assert page.locator(".tune-list li").count() == len(page.evaluate("state.groupList"))
-    # Folded, so the page is the types, not 606 names; each opens on its own.
-    assert page.locator("details.type-group[open]").count() == 0 and not page.locator(".tune-list li").first.is_visible()
-    page.click("details.type-group >> nth=0 >> summary")
+    assert not page.locator(".tune-list li").first.is_visible()
+    page.click("details.all-tunes > summary")
     assert page.locator(".tune-list li").first.is_visible()
     # In English, the Welsh type names say what they are, where the English word differs.
     assert page.locator(".pills [data-type='Walts'] .gloss").inner_text().strip() == "(waltz)"
@@ -2876,15 +2872,54 @@ def test_browse_grouped_by_type_with_keys(page):
     assert shown() == 6 and page.locator(".more-keys").is_visible()
     page.click(".more-keys")
     assert shown() > 6 and not page.locator(".more-keys").is_visible()
-    page.goto_site("?page=browse&key=D%20major")  # something chosen: every group open
+    page.goto_site("?page=browse&key=D%20major")  # something chosen: under their types, open
     page.wait_for_selector(".tune-list li", state="attached")
-    assert page.locator("details.type-group").count() == 0 and page.locator(".tune-list li").first.is_visible()
+    assert page.locator("section.type-group").count() > 1 and page.locator(".tune-list li").first.is_visible()
     page.goto_site("?page=browse&type=Jig&key=D%20major")
     page.wait_for_selector(".tune-list li", state="attached")
     assert page.locator(".type-group").count() == 0 and page.locator(".tune-key").count() == 0  # the key goes without saying
     page.goto_site("?page=browse&key=A%20Dorian")  # a less common key, chosen: the keys stay open
     page.wait_for_selector(".tune-list li", state="attached")
     assert not page.locator(".more-keys").is_visible()
+
+
+def test_browse_link_on_a_phone_folds_the_choices(browser, site):
+    # A shared Browse link on a phone: the choices in one line, the tunes on the first
+    # screen; Change opens them again.
+    context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True,
+                                  service_workers="block")
+    phone = context.new_page()
+    phone.goto(site + "?page=browse&type=Jig&key=D%20major")
+    phone.wait_for_selector(".tune-list li")
+    assert phone.locator(".browse-chosen .now").inner_text() == "Jig · D major"
+    assert not phone.locator(".pills [data-type='Jig']").is_visible()
+    assert phone.locator(".tune-list li").first.bounding_box()["y"] < 844 - 100
+    phone.click(".browse-chosen .change")
+    assert phone.locator(".pills [data-type='Jig']").is_visible() and not phone.locator(".browse-chosen").is_visible()
+    context.close()
+
+
+def test_versions_told_apart(page):
+    # Two versions from the same book in the same key: the one with a name of its own says
+    # it, and so the other says the tune's own name.
+    page.goto_site("alaw/merch-megan/")
+    page.wait_for_selector(".score .abcjs-staff")
+    labels = page.locator(".versions a small").all_inner_texts()
+    assert labels[0].endswith("“Merch Megan”") and labels[3].endswith("“Merch Megan syml”")
+    assert len(set(labels)) == len(labels)
+
+
+def test_tunes_not_loading_offers_to_try_again(browser, site):
+    # No tunes (no signal on a first visit): a plain sentence and Try again, not an error's text.
+    context = browser.new_context(service_workers="block")
+    page = context.new_page()
+    page.route("**/tunes.json*", lambda route: route.abort())
+    page.goto(site)
+    page.wait_for_selector("main .primary")
+    text = page.inner_text("main")
+    assert "Check your connection" in text and "TypeError" not in text
+    assert page.locator("main button.primary").inner_text() == "Try again"
+    context.close()
 
 
 def test_a_moved_key_says_so_when_shared(browser, site):

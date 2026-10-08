@@ -32,7 +32,7 @@ Y *pennawd* yw'r llinellau ar y dechrau:
 |---|---|---|
 | `X:1` | oes | `X:1` bob tro. |
 | `T:` | oes | Y teitl, fel y mae ar y sgôr. |
-| `R:` | argymhellir | Math o alaw, e.e. `jig`, `rîl`, `polca`, `walts`, `pibddawns`. Mae'n gosod y tempo arferol: jigiau 112, riliau 90, polcas 100, unrhyw beth arall 100 curiad y funud. |
+| `R:` | argymhellir | Math o alaw, e.e. `jig`, `rîl`, `polca`, `walts`, `pibddawns`. Mae'n gosod y tempo arferol: jigiau 112, riliau 90, polcas 100, unrhyw beth arall 100 bpm. |
 | `M:` | oes | Amseriad, e.e. `6/8`, `4/4`, `3/4`. |
 | `L:` | oes | Hyd arferol nodyn, fel arfer `1/8`. |
 | `K:` | oes, **olaf** | Cywair, e.e. `D`, `Em`, `ADor`. Mae'r nodau'n dechrau ar y llinell nesaf. |

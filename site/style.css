@@ -345,15 +345,22 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .type-group h2 { display: flex; align-items: baseline; flex-wrap: wrap; font-size: 1.15rem; margin: 0 0 .25rem; }
 .type-group h2 .swatch { transform: translateY(.1em); }
 /* With nothing chosen: one folding row per type, divided by hairlines */
-details.type-group { margin-top: 0; border-bottom: 1px solid var(--border); }
-details.type-group:first-of-type { margin-top: 1rem; border-top: 1px solid var(--border); }
-details.type-group > summary { padding: .55rem 0; }
-details.type-group > summary h2 { margin: 0; }
-details.type-group[open] > .tune-list { margin: 0 0 1.25rem; }
 .type-group h2 :is(.gloss, .count) { color: var(--muted); font-weight: 400; white-space: pre; }
 .tune-key { flex: none; margin-left: .45em; color: var(--muted); font-size: .85rem; }
 .browse-count { margin: 1.25rem 0 0; font-weight: 600; color: var(--text); scroll-margin-top: 1rem; }
 .caption.modes[hidden] { display: none; }
+details.all-tunes { margin-top: 1rem; border-block: 1px solid var(--border); }
+details.all-tunes > summary { padding: .55rem 0; font-weight: 600; }
+details.all-tunes[open] > .tune-list { margin: .25rem 0 1.25rem; }
+/* On a phone, arriving with types or keys chosen: they fold into one line (app.js) */
+.browse-chosen { display: none; }
+@media (max-width: 800px) {
+  .browse-filters.folded { display: none; }
+  .browse-chosen:not([hidden]) { display: flex; align-items: center; gap: .75rem; padding: .35rem .35rem .35rem .85rem;
+    border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); }
+  .browse-chosen .now { flex: 1; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .browse-chosen .change { flex: none; }
+}
 /* On a phone, along the bottom once something is chosen: down to the tunes ("156 jigs") */
 .browse-jump { display: none; }
 @media (max-width: 800px) {
@@ -547,20 +554,24 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .versions a.active { border-color: var(--accent-ink); box-shadow: inset 0 -3px 0 var(--accent-ink); font-weight: 600; }
 .versions a.active small { font-weight: 400; }
 .versions .versions-what { flex-basis: 100%; }
-/* On a phone, one line that opens to the list (app.js), so the music starts on the first screen */
+/* On a phone, a small "Version 1 of 4" beside the type (app.js), whose list opens over the music */
 .versions-fold { display: none; }
 @media (max-width: 800px) {
   .versions { display: none; }
-  .versions-fold { display: block; margin: 0 0 .6rem; }
-  .versions-fold > summary { display: flex; align-items: center; gap: .5rem; min-height: 2.75rem; padding: .35rem .75rem;
-    border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); cursor: pointer; list-style: none; }
+  .tune-sub { position: relative; }
+  .versions-fold { display: block; }
+  .versions-fold > summary { display: flex; align-items: center; gap: .4rem; min-height: 2.75rem; padding: 0 .65rem;
+    border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); cursor: pointer; list-style: none;
+    font-size: .9rem; font-weight: 600; white-space: nowrap; }
+  .versions-fold > summary::-webkit-details-marker { display: none; }
   .versions-fold > summary::before { display: none; }  /* its chevron is on the right, as on the key and tempo line */
-  .versions-fold .now { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: .9rem; }
-  .versions-fold .now strong { color: var(--text); font-size: 1rem; }
   .versions-fold > summary::after { content: ""; flex: none; width: .7em; height: .7em; background: var(--muted);
     mask: var(--chevron) center / contain no-repeat; transform: rotate(90deg); transition: transform .15s; }
+  .versions-fold[open] > summary { border-color: var(--accent-ink); }
   .versions-fold[open] > summary::after { transform: rotate(-90deg); }
-  .versions-list { display: grid; gap: .4rem; padding-top: .5rem; }
+  .versions-list { position: absolute; left: 0; right: 0; top: calc(100% + .4rem); z-index: 6; display: grid; gap: .4rem;
+    padding: .6rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg);
+    box-shadow: 0 6px 18px var(--shadow-float); }
   .versions-list a { display: grid; padding: .5rem .75rem; border: 1px solid var(--border); border-radius: var(--radius);
     background: var(--card-bg); color: var(--text); text-decoration: none; line-height: 1.3; }
   .versions-list a small { color: var(--muted); font-size: .85rem; }
@@ -733,11 +744,6 @@ body.practice .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height
 .score > .audio::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: .9rem; pointer-events: none;
   background: linear-gradient(var(--paper), transparent); }
 @media (max-width: 800px) {
-  /* The practice tools (repeat, chords, count-in…) just above the player, folded, rather
-     than a whole score below it; on the music stand the music comes first */
-  .tune-main { display: flex; flex-direction: column; }
-  .tune-main > .practice-tools { order: -1; margin: 0 0 .75rem; }
-  body.practice .tune-main > .practice-tools { order: 0; margin: .75rem 0 0; }
   /* A phone on a music stand: the name and the one line of key and tempo, then the music,
      edge to edge */
   body.practice main { padding: .5rem .5rem 2rem; }

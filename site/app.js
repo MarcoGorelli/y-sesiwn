@@ -40,7 +40,7 @@ const state = {
   autoListen: false,    // start listening when the notes page opens (from the home page)
   docs: new Map(),      // markdown files, fetched on first use
   chords: { onScore: false, play: "tune" },  // the chord box's settings, for every tune; play: tune, both or chords
-  practice: { countIn: false, click: false, tab: "none", open: null, openOn: null },  // the practice tools, for every tune (open: folded or not; openOn: the tune where)
+  practice: { countIn: false, click: false, tab: "none", open: null },  // the practice tools, for every tune (open: folded or not)
   lang: savedLang(),    // "cy" or "en", for the whole site (tune names and the tunes' own notes stay as written)
   musicSize: savedSize(),  // the music's size, an index into SIZES (1: as drawn)
   redrawScore: null,    // draws the open tune's score again (for printing, see "beforeprint")
@@ -873,6 +873,15 @@ function addressTune() {
   return match ? match[1] : new URLSearchParams(location.search).get("tune")?.replace(ADDRESS_JUNK, "") ?? null;
 }
 
+// The tunes didn't come (no signal on a first visit, most often): say so plainly, as when
+// the sheet music doesn't, and offer to try again (the whole page, since nothing loaded).
+function loadFailed() {
+  document.getElementById("main").replaceChildren(emptyArt(),
+    el("p", {}, tr("Couldn't load the tunes. Check your connection, then try again.",
+      "Methu llwytho'r alawon. Gwiriwch eich cysylltiad, yna rhowch gynnig arall arni.")),
+    el("p", {}, el("button", { type: "button", class: "primary", onclick: () => location.reload() }, tr("Try again", "Rhoi cynnig arall arni"))));
+}
+
 // A tune renamed since (moved.json): its new folder name. Anything else as it is.
 const movedTo = (slug) => state.moved.get(slug) ?? slug;
 
@@ -946,7 +955,7 @@ function showShortcuts() {
   const rows = [
     [keys("/"), tr("Search for a tune by name", "Chwilio am alaw yn ôl ei henw")],
     [keys(tr("Space", "Bylchwr")), tr("Play or pause the tune (on a tune's page)", "Chwarae neu oedi'r alaw (ar dudalen alaw)")],
-    [keys("[", "]"), tr("Slower or faster, 5 bpm at a time (on a tune's page)", "Arafach neu gyflymach, 5 curiad y funud ar y tro (ar dudalen alaw)")],
+    [keys("[", "]"), tr("Slower or faster, 5 bpm at a time (on a tune's page)", "Arafach neu gyflymach, 5 bpm ar y tro (ar dudalen alaw)")],
     [keys(",", "."), tr("A semitone lower or higher (on a tune's page)", "Hanner tôn yn is neu'n uwch (ar dudalen alaw)")],
     [keys("←", "→"), tr("The tune before or after (in a set)", "Yr alaw o'r blaen neu nesaf (mewn set)")],
     [keys("+", "−", "0"), tr("Zoom in, out, or show all of Wales (on a map; the arrow keys move it)", "Chwyddo i mewn, allan, neu ddangos Cymru gyfan (ar fap; mae'r bysellau saeth yn ei symud)")],
@@ -1019,9 +1028,7 @@ function render() {
   const slug = movedTo(addressTune());
   // A tune's own page starts with only that tune (see start()): anything else waits for the rest.
   if (!state.complete && !state.groups.has(slug) && !state.bySlug.has(slug)) {
-    state.loaded.then(render, (error) => {
-      document.getElementById("main").replaceChildren(el("p", {}, `${tr("Couldn't load the tunes", "Methu llwytho'r alawon")}: ${error}`));
-    });
+    state.loaded.then(render, loadFailed);
     return;
   }
   let group = state.groups.get(slug);
@@ -1197,6 +1204,7 @@ function renderBrowse(main) {
 
   const list = el("div", { class: "browse-results" });
   const caption = el("p", { class: "caption browse-count", "aria-live": "polite" });
+  const chosenNow = el("span", { class: "now" });
   const pills = el("div", { class: "pills", role: "group", "aria-label": tr("Tune type", "Math o alaw") });
   const keyPills = el("div", { class: "pills keys", role: "group", "aria-label": tr("Key", "Cywair") });
   // The key a tune is filed under: its first version's, spelled out ("E Dorian").
@@ -1258,20 +1266,21 @@ function renderBrowse(main) {
       t.versions[0].key && ks.length !== 1
         ? el("span", { class: "tune-key" }, shortKey(t.versions[0].key.pitch, t.versions[0].key.modeName)) : null);
     // Grouped by type, each under its own colourway (one type chosen: just its list, the count says which).
-    // With nothing chosen the types are folded, so the page is eleven headings, not 606 names.
+    // With nothing chosen the types are the pills above, so the tunes are one list, A to Z, folded.
     const groups = types.map((type) => [type, listed.filter((t) => t.type === type.name)]).filter(([, g]) => g.length);
     const everything = !ts.length && !ks.length;
+    chosenNow.replaceChildren(...[ts.length ? el("span", { lang: "cy" }, ts.map((t) => (t.name === "Other" ? typeName(t.name) : t.name)).join(", ")) : null,
+      ks.length ? ks.map(keyLabel).join(", ") : null].filter(Boolean).flatMap((part, i) => (i ? [" · ", part] : [part])));
     const heading = (type, g) => el("h2", {}, el("span", { class: "swatch" }),
       type.name === "Other" ? typeName(type.name) : el("span", { lang: "cy" }, type.name),
       state.lang !== "cy" && GLOSSED.has(type.name) ? el("span", { class: "gloss" }, ` (${EN_TYPE[type.name]})`) : null,
       el("span", { class: "count" }, ` · ${g.length}`));
-    list.replaceChildren(...groups.length === 1
-      ? [el("ul", { class: "tune-list" }, groups[0][1].map(item))]
-      : groups.map(([type, g]) => everything
-        ? el("details", { class: "type-group fold", style: `--c: ${type.colour}`, open: openGroups.has(type.name),
-            ontoggle: (e) => { if (e.target.open) openGroups.add(type.name); else openGroups.delete(type.name); } },
-            el("summary", {}, heading(type, g)), el("ul", { class: "tune-list" }, g.map(item)))
-        : el("section", { class: "type-group", style: `--c: ${type.colour}` }, heading(type, g),
+    list.replaceChildren(...everything
+      ? [el("details", { class: "all-tunes fold", open: allOpen, ontoggle: (e) => { allOpen = e.target.open; } },
+          el("summary", {}, tr("List them A to Z", "Eu rhestru o A i Y")), el("ul", { class: "tune-list" }, listed.map(item)))]
+      : groups.length === 1
+        ? [el("ul", { class: "tune-list" }, groups[0][1].map(item))]
+        : groups.map(([type, g]) => el("section", { class: "type-group", style: `--c: ${type.colour}` }, heading(type, g),
             el("ul", { class: "tune-list" }, g.map(item)))));
     // The less common types and keys stay folded unless one of them is chosen.
     const typesFolded = !typesOpen && !rareTypes.some((t) => chosenTypes.has(t));
@@ -1285,7 +1294,7 @@ function renderBrowse(main) {
     showJump();
   };
   const toggle = (set, item) => { if (!set.delete(item)) set.add(item); show(); };
-  const openGroups = new Set();  // the types opened while nothing is chosen
+  let allOpen = false;  // the A to Z list, opened while nothing is chosen
   for (const type of types) {
     pills.append(el("button", {
       type: "button", "data-type": type.name, style: `--c: ${type.colour}`,
@@ -1330,20 +1339,34 @@ function renderBrowse(main) {
   keyPills.append(moreKeys);
   // On a phone the pills fill the screen: once something is chosen, a button along the
   // bottom ("156 jigs") goes down to them, while their count is out of sight below.
+  // Shown until the first tunes are well in sight, not just their count at the screen's very bottom.
   let below = false;
   const jump = el("button", { type: "button", class: "browse-jump", hidden: true, onclick: () => {
     caption.scrollIntoView({ block: "start" });
     list.querySelector("a")?.focus({ preventScroll: true });
   } }, el("span", { class: "icon arrow-down", "aria-hidden": "true" }), "");
   const showJump = () => { jump.hidden = !below || (!chosenTypes.size && !chosenKeys.size); };
-  new IntersectionObserver(([e]) => { below = !e.isIntersecting && e.boundingClientRect.top > 0; showJump(); }).observe(caption);
+  new IntersectionObserver(([e]) => { below = !e.isIntersecting && e.boundingClientRect.top > 0; showJump(); },
+    { rootMargin: "0px 0px -120px 0px" }).observe(list);
+  // Arriving with something chosen (a shared link, a type's own page), on a phone the
+  // choices fold into one line ("Jig · D major · Change"), so the tunes are on the first screen.
+  const filters = el("div", { class: "browse-filters", id: "browse-filters" },
+    el("p", { class: "pills-label" }, tr("Type", "Math")), pills,
+    el("p", { class: "pills-label" }, tr("Key", "Cywair")), keyPills, modal);
+  const arrivedChosen = Boolean(chosenTypes.size || chosenKeys.size) && matchMedia("(max-width: 800px)").matches;
+  filters.classList.toggle("folded", arrivedChosen);
+  const change = el("button", { type: "button", class: "change", "aria-expanded": "false", "aria-controls": "browse-filters", onclick: () => {
+    filters.classList.remove("folded");
+    chosenBar.hidden = true;
+    filters.querySelector("button:not(:disabled):not([hidden])")?.focus();
+  } }, tr("Change", "Newid"));
+  const chosenBar = el("div", { class: "browse-chosen", hidden: !arrivedChosen }, chosenNow, change);
 
   main.replaceChildren(...[
     el("h1", {}, tr("Browse by type and key", "Pori yn ôl math a chywair")),
     el("p", { class: "lead" }, tr("Pick any types and keys: the jigs and reels in D, say.",
       "Dewiswch unrhyw fathau a chyweiriau: y jigiau a'r riliau yn D, dyweder.")),
-    el("p", { class: "pills-label" }, tr("Type", "Math")), pills,
-    el("p", { class: "pills-label" }, tr("Key", "Cywair")), keyPills, modal, caption, list, jump,
+    chosenBar, filters, caption, list, jump,
   ].filter(Boolean));
   show(true);
 }
@@ -2144,10 +2167,8 @@ function saveKey(slug, shift) {
   } catch {}
 }
 
-// The practice tools as the reader left them; but on a phone, where they sit above the
-// music, only on the tune they were opened on: another tune starts with its music on the first screen.
-const practiceToolsOpen = (slug) => (state.practice.open ?? false)
-  && (!matchMedia("(max-width: 800px)").matches || state.practice.openOn === slug);
+// The practice tools as the reader left them (under the music, on a phone as on a wider screen).
+const practiceToolsOpen = () => state.practice.open ?? false;
 function renderTune(main, group, tune) {
   document.title = `${group.title} · Y Sesiwn`;
   rememberTune(group, tune);
@@ -2177,8 +2198,8 @@ function renderTune(main, group, tune) {
     const arrived = warp >= cap;
     speedNote.classList.toggle("arrived", arrived);
     speedNote.replaceChildren(arrived
-      ? tr(`Reached ${bpm} bpm. `, `Wedi cyrraedd ${bpm} curiad y funud. `)
-      : tr(`now ${bpm} of ${goal} bpm`, `nawr ${bpm} o ${goal} curiad y funud`));
+      ? tr(`Reached ${bpm} bpm. `, `Wedi cyrraedd ${bpm} bpm. `)
+      : tr(`now ${bpm} of ${goal} bpm`, `nawr ${bpm} o ${goal} bpm`));
     if (arrived) speedNote.append(el("strong", { lang: "cy" }, "Da iawn!"));
   };
   // Before it starts: a "to" no faster than the tempo has nothing to speed up to.
@@ -2248,7 +2269,7 @@ function renderTune(main, group, tune) {
   const speedFrom = el("span");
   const showTempo = () => {
     // Which note is the beat, the score's own tempo mark shows (♩. = 112).
-    tempoLabel.textContent = tr(`Tempo: ${settings.bpm} bpm`, `Tempo: ${settings.bpm} curiad y funud`);
+    tempoLabel.textContent = tr(`Tempo: ${settings.bpm} bpm`, `Tempo: ${settings.bpm} bpm`);
     // Before Speed up is ticked, "from" says where ticking it would start: the tempo, or,
     // if that's already the goal, 70% of it (see startSpeedUp), never "from 100 to 100".
     const goal = settings.speedTo;
@@ -2283,8 +2304,8 @@ function renderTune(main, group, tune) {
         [i ? " · " : "", el("em", {}, word), ` = ${meaning}`]))
     : null;
 
-  // The versions: tabs on a wider screen; on a phone one line ("Version 1 of 4 · Alawon
-  // Cymru · G major") that opens to the list, so the music still starts on the first screen.
+  // The versions: tabs on a wider screen; on a phone a small "Version 1 of 4" beside the
+  // tune's type, that opens to the list over the music, so the music starts high on the first screen.
   const versionNote = versionNotes(group);
   const versionLink = (v) => el("a", {
     href: tuneUrl(group.slug, v.version), "data-route": true,
@@ -2296,13 +2317,10 @@ function renderTune(main, group, tune) {
   const versions = group.versions.length > 1
     ? [el("nav", { class: "versions", "aria-label": tr("Versions of this tune", "Fersiynau'r alaw hon") },
         group.versions.map(versionLink), whatVersions()),
-      el("details", { class: "versions-fold" },
-        el("summary", {}, el("span", { class: "now" },
-          el("strong", {}, tr(`Version ${tune.version} of ${group.versions.length}`, `Fersiwn ${tune.version} o ${group.versions.length}`)),
-          versionNote.get(tune) ? ` · ${versionNote.get(tune)}` : "")),
+      versionsFold(el("summary", {}, tr(`Version ${tune.version} of ${group.versions.length}`, `Fersiwn ${tune.version} o ${group.versions.length}`)),
         el("nav", { class: "versions-list", "aria-label": tr("Versions of this tune", "Fersiynau'r alaw hon") },
           whatVersions(), group.versions.map(versionLink)))]
-    : null;
+    : [];
 
   // The practice tools, in three lines: repeat (and speed up each time round, from the
   // tempo to a faster one); count-in, click and swing; tablature.
@@ -2310,7 +2328,7 @@ function renderTune(main, group, tune) {
   const toggle = (label, checked, onchange, cls, title) => el("label", { class: `switch${cls ? ` ${cls}` : ""}`, title },
     el("input", { type: "checkbox", checked, onchange: (e) => { onchange(e.target.checked); redraw(); } }), label);
   const speedTo = el("input", { id: "speed-to", type: "number", min: 30, max: 240, step: 1, inputmode: "numeric", value: settings.speedTo,
-    "aria-label": tr("Speed up to (bpm)", "Cyflymu i (curiad y funud)"),
+    "aria-label": tr("Speed up to (bpm)", "Cyflymu i (bpm)"),
     onchange: (e) => {
       const to = Math.round(+e.target.value);
       settings.speedTo = Number.isFinite(to) && to >= 30 ? Math.min(240, to) : tune.bpm;
@@ -2320,7 +2338,7 @@ function renderTune(main, group, tune) {
     } });
   const speedUp = el("div", { class: "speed-up" },
     toggle(tr("Speed up each time", "Cyflymu bob tro"), settings.speedUp, (on) => { settings.speedUp = on; if (on) startSpeedUp(); showTempo(); }),
-    el("span", { class: "speed-range" }, tr("from ", "o "), speedFrom, tr(" to ", " i "), speedTo, tr(" bpm", " curiad y funud")));
+    el("span", { class: "speed-range" }, tr("from ", "o "), speedFrom, tr(" to ", " i "), speedTo, tr(" bpm", " bpm")));
   // Ticking Speed up works at once: it repeats the whole tune if nothing is repeating yet,
   // and, if the tempo is already the goal, starts from 70% of it ("from 78 to 112").
   const startSpeedUp = () => {
@@ -2359,8 +2377,8 @@ function renderTune(main, group, tune) {
     el("div", { class: "practice-line" },
       el("div", { class: "control" }, el("label", { for: "tab-select" }, tr("Tablature", "Tablatur")), tabSelect), whistleKey));
   // Folded at first, so the music is the page (the summary says what's inside); then as left.
-  const practiceTools = el("details", { class: "practice-tools fold", open: practiceToolsOpen(group.slug), "data-slug": group.slug,
-    ontoggle: (e) => { if (!document.body.classList.contains("practice")) { state.practice.open = e.target.open; state.practice.openOn = group.slug; } } },
+  const practiceTools = el("details", { class: "practice-tools fold", open: practiceToolsOpen(),
+    ontoggle: (e) => { if (!document.body.classList.contains("practice")) { state.practice.open = e.target.open; } } },
     // What's inside, for the eye; a screen reader hears just the name, then the tools themselves.
     el("summary", {}, el("span", {}, tr("Practice tools", "Offer ymarfer"),
       el("span", { class: "caption", "aria-hidden": "true" }, tune.chords == null
@@ -2380,8 +2398,8 @@ function renderTune(main, group, tune) {
 
   main.replaceChildren(...[
     el("h1", { lang: nameLang(group.slug) }, group.title),
-    tuneSub(tune, group),
-    versions,
+    tuneSub(tune, group, versions[1]),
+    versions[0],
     controls,
     el("div", { class: "tune-layout" },
       el("div", { class: "tune-main" }, el("div", { class: "score" }, audio, soundNote(), paper),
@@ -2411,7 +2429,7 @@ function linkCarries(tune, settings) {
   const bpm = settings.bpm !== tune.bpm ? settings.bpm : null;
   if (!key && !bpm) return "";
   return state.lang === "cy"
-    ? [key && `yn ${key}`, bpm && `ar ${bpm} curiad y funud`].filter(Boolean).join(", ")
+    ? [key && `yn ${key}`, bpm && `ar ${bpm} bpm`].filter(Boolean).join(", ")
     : [key && `in ${key}`, bpm && `at ${bpm} bpm`].filter(Boolean).join(", ");
 }
 
@@ -2481,7 +2499,8 @@ function qrButton(group, tune, settings) {
 
 // What tells a tune's versions apart, on their tabs: where each is from (the book, or the
 // site), then whatever else differs between them (the key, the time signature); and if two
-// would still read the same, a name of the version's own ("Merch Megan syml").
+// would still read the same, a name of the version's own ("Merch Megan syml"), and the
+// tune's own name on the one that has no other ("Merch Megan"), so it isn't the odd one out.
 function versionNotes(group) {
   const versions = group.versions;
   const keyOf = (v) => (v.key ? `${v.key.root} ${modeName(v.key.modeName)}` : "");
@@ -2489,12 +2508,28 @@ function versionNotes(group) {
   const varies = (trait) => new Set(versions.map(trait)).size > 1;
   const traits = [(v) => v.source, ...[keyOf, meterOf].filter(varies)];
   const notes = new Map(versions.map((v) => [v, traits.map((trait) => trait(v)).filter(Boolean)]));
-  const same = (v) => versions.some((w) => w !== v && notes.get(w).join() === notes.get(v).join());
-  for (const v of versions.filter(same)) {
-    const own = v.titles.slice(1).find((t) => !versions.some((w) => w !== v && w.titles.includes(t)));
+  const alike = (v) => versions.filter((w) => w !== v && notes.get(w).join() === notes.get(v).join());
+  for (const [v, others] of versions.map((v) => [v, alike(v)]).filter(([, others]) => others.length)) {
+    const own = v.titles.slice(1).find((t) => !others.some((w) => w.titles.includes(t)));
     if (own) notes.get(v).push(`“${own}”`);
+    else if (others.every((w) => w.titles.slice(1).some((t) => !v.titles.includes(t)))) notes.get(v).push(`“${group.title}”`);
   }
   return new Map([...notes].map(([v, parts]) => [v, parts.join(" · ")]));
+}
+
+// The versions on a phone: a list that opens over the music, and closes as a menu does,
+// with Esc or a tap anywhere else.
+function versionsFold(summary, list) {
+  const fold = el("details", { class: "versions-fold" }, summary, list);
+  const close = (e) => {
+    if (!fold.isConnected) return document.removeEventListener("click", close);
+    if (fold.open && !fold.contains(e.target)) fold.open = false;
+  };
+  document.addEventListener("click", close);
+  fold.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && fold.open) { e.stopPropagation(); fold.open = false; summary.focus(); }
+  });
+  return fold;
 }
 
 // Under the tune's name: its type in its colourway, linked to the rest of that type, and
@@ -2510,10 +2545,10 @@ function tuneKind(tune) {
     meter ? el("span", { class: "meter" }, ` · ${meter}`) : null);
 }
 
-// The line under the name: its type, and how to say it; on one line where they fit, so
-// the music still starts on a phone's first screen.
-function tuneSub(tune, group) {
-  const parts = [tuneKind(tune), sayIt(group)].filter(Boolean);
+// The line under the name: its type (and on a phone, which version), and how to say it;
+// on one line where they fit, so the music still starts on a phone's first screen.
+function tuneSub(tune, group, versionsFold) {
+  const parts = [tuneKind(tune), versionsFold, sayIt(group)].filter(Boolean);
   return parts.length ? el("div", { class: "tune-sub" }, parts) : null;
 }
 
@@ -2540,7 +2575,7 @@ function setPractice(on) {
   // Open on the music stand, without counting as the reader's choice: leaving puts them
   // back as they were (and the next tune opens them as the reader left them).
   const tools = document.querySelector(".practice-tools");
-  if (tools) tools.open = on || practiceToolsOpen(tools.dataset.slug);
+  if (tools) tools.open = on || practiceToolsOpen();
   state.redrawScore?.();  // in full screen the score leaves out the name, as on a phone
   // On a phone it's a music stand: the key and tempo folded back into their one line, and
   // the music from the top of the screen.
@@ -4422,6 +4457,4 @@ if (topbar && "ResizeObserver" in window) {
     `${getComputedStyle(topbar).position === "sticky" ? topbar.offsetHeight : 0}px`)).observe(topbar);
 }
 
-start().catch((error) => {
-  document.getElementById("main").replaceChildren(el("p", {}, `${tr("Couldn't load the tunes", "Methu llwytho'r alawon")}: ${error}`));
-});
+start().catch(loadFailed);

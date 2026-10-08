@@ -1838,6 +1838,10 @@ def test_set_from_tune_pages(page):
         if key:
             page.select_option("#key-select", key)
         page.click(".add-to-set")
+        if path != "alaw/llancesau-trefaldwyn/":  # the first makes the set; then it's in the list, with a new one
+            menu = page.locator(".add-to-set-wrap .print-menu")
+            assert menu.locator("button").all_inner_texts() == [f"My set · {1 if key else 2} tune{'' if key else 's'}", "+ A new set"]
+            menu.locator("button", has_text="My set").click()
     assert "(3 tunes)" in page.inner_text(".add-status")
     page.click(".add-status a")
     page.wait_for_selector(".set-list li")
@@ -1867,6 +1871,31 @@ def test_set_from_tune_pages(page):
     page.on("dialog", lambda d: d.accept())
     page.click(".set-list-mine button:text-is('Delete')")
     assert page.locator(".set-list-mine").count() == 0
+
+
+def test_add_to_set_choosing_the_set(page):
+    # With more than one set, Add to set opens to the list of them (the last added to
+    # first), and a new one; choosing one adds the tune there.
+    page.goto_site("alaw/glandyfi/")
+    page.evaluate("""() => { localStorage.setItem('sets', JSON.stringify([
+      { id: 'aaaaaa', name: 'Nos Iau', c: '5A', updated: 1 }, { id: 'bbbbbb', name: 'Class', c: '', updated: 2 }]));
+      localStorage.setItem('currentSet', 'aaaaaa'); }""")
+    page.reload()
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.locator(".which-set").count() == 0
+    menu = page.locator(".add-to-set-wrap .print-menu")
+    assert menu.is_hidden()
+    page.click(".add-to-set")
+    assert menu.locator("button").all_inner_texts() == ["Nos Iau · 1 tune", "Class · 0 tunes", "+ A new set"]
+    menu.locator("button", has_text="Class").click()
+    assert "Added to Class (1 tune)" in page.inner_text(".add-status")
+    assert menu.is_hidden()
+    page.click(".add-to-set")  # now Class is first
+    assert menu.locator("button").all_inner_texts()[:2] == ["Class · 1 tune", "Nos Iau · 1 tune"]
+    menu.locator("button", has_text="A new set").click()
+    assert "Added to My set 3 (1 tune)" in page.inner_text(".add-status")
+    kept = page.evaluate("JSON.parse(localStorage.getItem('sets'))")
+    assert [(x["name"], len(x["c"])) for x in kept] == [("Nos Iau", 2), ("Class", 2), ("My set 3", 2)]
 
 
 def test_add_to_set_by_search(page):

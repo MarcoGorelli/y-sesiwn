@@ -66,6 +66,18 @@ def test_chords_source():
 def test_types_and_tempos():
     read = lambda slug: b.parse_headers((b.ROOT / "tunes" / slug / "tune.abc").read_text(encoding="utf-8"))
     assert b.tune_type(read("glandyfi")) and b.default_bpm(read("llancesau-trefaldwyn")) == 112  # a jig
+    assert b.tune_type(read("llancesau-trefaldwyn")) == "Jig"
+    assert b.tune_type(read("bwced")) == "Jig naid"  # R:Slip Jig
+    assert b.tune_type(read("slipio")) == "Jig naid"  # R:jig naid
+    assert b.tune_type({"R": ["jig"], "M": ["9/8"]}) == "Jig naid"  # a jig is in 6/8
+
+
+def test_jigs_in_6_8():
+    # A jig in 9/8 is a slip jig (jig naid): every tune called a jig is in 6/8.
+    for path in TUNES:
+        headers = b.parse_headers(path.read_text(encoding="utf-8"))
+        if b.tune_type(headers) == "Jig":
+            assert headers.get("M", [""])[0].replace(" ", "") != "9/8", path.parent.name
 
 
 def test_no_empty_details():

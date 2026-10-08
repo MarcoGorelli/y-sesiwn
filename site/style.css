@@ -424,11 +424,11 @@ details.all-tunes[open] > .tune-list { margin: .25rem 0 1.25rem; }
 .tune-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
 @media (max-width: 800px) {  /* on a phone, two by two, rather than three and one left over */
   .tune-actions { display: grid; grid-template-columns: 1fr 1fr; align-items: start; }
-  .tune-actions > *, .tune-actions .print-wrap > button, .tune-actions .add-to-set, .tune-actions .which-set { width: 100%; max-width: none; }
+  .tune-actions > *, .tune-actions .print-wrap > button, .tune-actions .add-to-set { width: 100%; max-width: none; }
   /* Its parts sit in the grid themselves, and "Added to My set…" runs across under the buttons,
      so it doesn't stretch the QR code beside it */
   .tune-actions .add-to-set-wrap { display: contents; }
-  .tune-actions .which-set, .tune-actions .add-status { grid-column: 1 / -1; }
+  .tune-actions .add-status { grid-column: 1 / -1; }
 }
 .held-key { color: var(--muted); }
 /* − and + for the music's size, at the end of the row */
@@ -882,6 +882,8 @@ body.practice .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height
 .print-menu[hidden] { display: none; }
 .print-menu button { border: none; background: none; text-align: left; padding: .45rem .7rem; border-radius: 6px; white-space: nowrap; }
 .print-menu button:hover { background: var(--accent-soft); }
+.add-to-set-wrap .print-menu { max-width: calc(100vw - 2rem); }
+.add-to-set-wrap .print-menu button { white-space: normal; }  /* a set's name can be long */
 @page { margin: 15mm; }
 
 @media (prefers-reduced-motion: reduce) { main { animation: none; } }
@@ -1097,4 +1099,3 @@ dialog.shortcuts kbd { display: inline-block; min-width: 1.6em; padding: .05rem 
 .tick-icon { display: inline-block; width: .9em; height: .9em; margin-right: .35em; vertical-align: -.1em;
   background: currentColor; mask: var(--tick) center / contain no-repeat; }
 @media (forced-colors: active) { .tick-icon { forced-color-adjust: none; background: CanvasText; } }
-.which-set { padding: .4rem .5rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); max-width: 12rem; }

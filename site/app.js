@@ -126,11 +126,11 @@ function keyChange(tune) {
 }
 const keyLabel = (text) => tr(text, text.replace(/\b(major|minor|Dorian|Phrygian|Lydian|Mixolydian|Locrian)\b/g, (m) => CY_MODES[m]));
 // A type of tune after a number, in Welsh ("96 jig"); in English the type's plural ("96 jigs").
-const CY_TYPE = { Jig: "jig", Polca: "polca", Walts: "walts", "Rîl": "rîl", Pibddawns: "pibddawns", Ymdaith: "ymdaith",
+const CY_TYPE = { Jig: "jig", "Jig naid": "jig naid", Polca: "polca", Walts: "walts", "Rîl": "rîl", Pibddawns: "pibddawns", Ymdaith: "ymdaith",
   Dawns: "dawns", Alaw: "alaw", "Cân": "cân", Carol: "carol", Other: "alaw arall" };
 const typeName = (name) => (name === "Other" ? tr("Other", "Arall") : name);
 // One tune of a type, in words: "hornpipe" in English, "pibddawns" in Welsh (build_site.py's TYPE_SINGULAR).
-const EN_TYPE = { Jig: "jig", Polca: "polka", Walts: "waltz", "Rîl": "reel", Pibddawns: "hornpipe", Ymdaith: "march",
+const EN_TYPE = { Jig: "jig", "Jig naid": "slip jig", Polca: "polka", Walts: "waltz", "Rîl": "reel", Pibddawns: "hornpipe", Ymdaith: "march",
   Dawns: "dance", Alaw: "air", "Cân": "song", Carol: "carol", Other: "tune" };
 const typeWord = (name) => tr(EN_TYPE[name] ?? name.toLowerCase(), CY_TYPE[name] ?? name.toLowerCase());
 // The Welsh type names, glossed in English wherever the English word differs: "Walts (waltz)",
@@ -2178,18 +2178,20 @@ function printButton(tune, paper, settings) {
   if (tune.chords != null) {
     items.push(["with-chords", tr("Print with chords", "Argraffu gyda chordiau")], ["chart", tr("Print the chord chart", "Argraffu'r siart cordiau")]);
   }
-  // A plain list of buttons that the toggle shows and hides (not an ARIA menu: Tab moves
-  // through it like any buttons). Esc, or a click or Tab elsewhere, closes it.
+  return dropMenu(`print-menu-${tune.slug}`, [tr("Print / save", "Argraffu / cadw")], [
+    ...items.map(([mode, label]) => el("button", { type: "button", onclick: () => printAs(mode, paper) }, label)),
+    el("button", { type: "button", class: "menu-sep", onclick: saveAbc }, tr("Save as ABC", "Cadw fel ABC")),
+    el("button", { type: "button", onclick: saveMidi }, tr("Save as MIDI", "Cadw fel MIDI"))]);
+}
+
+// A button that opens a plain list of buttons under it (not an ARIA menu: Tab moves through
+// it like any buttons). Pressing one, Esc, or a click or Tab elsewhere, closes it.
+function dropMenu(id, label, buttons, toggleClass = null) {
   const show = (open) => { menu.hidden = !open; toggle.setAttribute("aria-expanded", String(open)); };
-  const menu = el("div", { class: "print-menu", id: `print-menu-${tune.slug}`, hidden: true },
-    items.map(([mode, label]) =>
-      el("button", { type: "button", onclick: () => { show(false); printAs(mode, paper); } }, label)),
-    el("button", { type: "button", class: "menu-sep", onclick: () => { show(false); saveAbc(); } },
-      tr("Save as ABC", "Cadw fel ABC")),
-    el("button", { type: "button", onclick: () => { show(false); saveMidi(); } },
-      tr("Save as MIDI", "Cadw fel MIDI")));
-  const toggle = el("button", { type: "button", "aria-expanded": "false", "aria-controls": menu.id, onclick: () => show(menu.hidden) },
-    tr("Print / save", "Argraffu / cadw"), el("span", { class: "chevron", "aria-hidden": "true" }));
+  const menu = el("div", { class: "print-menu", id, hidden: true, onclick: (e) => { if (e.target.closest("button")) show(false); } },
+    buttons);
+  const toggle = el("button", { type: "button", class: toggleClass, "aria-expanded": "false", "aria-controls": id, onclick: () => show(menu.hidden) },
+    ...label, el("span", { class: "chevron", "aria-hidden": "true" }));
   // Clicking anywhere else closes it (and once the page has gone, stop listening).
   const close = (e) => {
     if (!wrap.isConnected) document.removeEventListener("pointerdown", close);
@@ -3668,35 +3670,48 @@ function setCurrentSet(id) {
 }
 const newSetId = () => Math.random().toString(36).slice(2, 8);
 const defaultSetName = () => tr("My set", "Fy set");
+// How many tunes a set has, counting any not loaded yet (or gone) too.
+const setSize = (set) => { const { items, missing } = decodeSet(set.c); return items.length + missing; };
 const tuneCount = (n) => tr(`${n} tune${n === 1 ? "" : "s"}`, `${n} alaw`);
 
 // The tune page's button: adds this version, in the key chosen, to the set you're building.
+// Once there's a set, it opens to the list of them (a teacher's, one per class), the last
+// added to first, and a new one.
 function addToSetButton(tune, settings) {
   const status = el("span", { class: "caption add-status", "aria-live": "polite" });
-  // With more than one set (a teacher's, one per class), which one: the last added to, unless changed.
-  const kept = loadSets();
-  const which = kept.length > 1 ? el("select", { class: "which-set", "aria-label": tr("Which set", "Pa set") },
-    kept.map((x) => el("option", { value: x.id, selected: x.id === currentSetId() }, x.name || defaultSetName())),
-    el("option", { value: "new" }, tr("A new set", "Set newydd"))) : null;
-  const button = el("button", { type: "button", class: "add-to-set", onclick: () => {
+  const addTo = (id) => {
     const sets = loadSets();
-    let set = sets.find((x) => x.id === (which ? which.value : currentSetId()));
+    let set = sets.find((x) => x.id === id);
     if (!set) {
       set = { id: newSetId(), name: sets.length ? `${defaultSetName()} ${sets.length + 1}` : defaultSetName(), c: "" };
       sets.push(set);
-      if (which) which.insertBefore(el("option", { value: set.id }, set.name), which.lastChild);
     }
     setCurrentSet(set.id);
-    if (which) which.value = set.id;
-    const { items } = decodeSet(set.c);
-    items.push({ tune, key: settings.transpose });
-    set.c = encodeSet(items);
+    // Added to the end of its code as it is: a tune's page may not have every other tune's
+    // code yet (it loads with only its own), and decoding would drop the ones it hasn't.
+    set.c += encodeSet([{ tune, key: settings.transpose }]);
     set.updated = Date.now();
     saveSets(sets);
-    status.replaceChildren(tr(`Added to ${set.name} (${tuneCount(items.length)}) · `, `Wedi'i hychwanegu at ${set.name} (${tuneCount(items.length)}) · `),
-      el("a", { href: setUrl(items, set.name, set.id), "data-route": true }, tr("see the set", "gweld y set")));
-  } }, tr("Add to set", "Ychwanegu at set"));
-  return el("span", { class: "add-to-set-wrap" }, button, which, status);
+    const count = setSize(set);
+    status.replaceChildren(tr(`Added to ${set.name} (${tuneCount(count)}) · `, `Wedi'i hychwanegu at ${set.name} (${tuneCount(count)}) · `),
+      el("a", { href: `?set=${set.c}&n=${encodeURIComponent(set.name)}&my=${set.id}`, "data-route": true }, tr("see the set", "gweld y set")));
+    wrap.replaceChildren(control(), status);  // the list, now with this set (first)
+    wrap.querySelector("button").focus();
+  };
+  const control = () => {
+    const sets = loadSets();
+    const label = tr("Add to set", "Ychwanegu at set");
+    if (!sets.length) return el("button", { type: "button", class: "add-to-set", onclick: () => addTo(null) }, label);
+    const current = currentSetId();
+    sets.sort((a, b) => (b.id === current) - (a.id === current) || (b.updated ?? 0) - (a.updated ?? 0));
+    return dropMenu(`set-menu-${tune.slug}`, [label], [
+      ...sets.map((set) => el("button", { type: "button", onclick: () => addTo(set.id) },
+        set.name, el("span", { class: "caption" }, ` · ${tuneCount(setSize(set))}`))),
+      el("button", { type: "button", class: "menu-sep", onclick: () => addTo(null) }, tr("+ A new set", "+ Set newydd"))],
+    "add-to-set");
+  };
+  const wrap = el("span", { class: "add-to-set-wrap" }, control(), status);
+  return wrap;
 }
 
 // ?page=sets: the sets kept in this browser.

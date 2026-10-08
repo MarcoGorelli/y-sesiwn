@@ -56,6 +56,7 @@ GENERIC_TYPES = {"alaw": "Alaw", "air": "Alaw", "can": "Cân", "song": "Cân"}
 # (Welsh tapestry blanket) colourways, shown as small swatches in the site.
 TYPE_ORDER = {
     "Jig": ("jigs", "#C8102E"),           # Welsh red
+    "Jig naid": ("slip jigs", "#7a5230"),  # walnut
     "Polca": ("polkas", "#2f4f8f"),       # indigo
     "Walts": ("waltzes", "#c28f1c"),      # mustard
     "Rîl": ("reels", "#2e6b4f"),          # bottle green
@@ -70,8 +71,8 @@ TYPE_ORDER = {
 
 # One tune of each type, for the tune pages' descriptions ("a jig in G major").
 TYPE_SINGULAR = {
-    "Jig": "jig", "Polca": "polka", "Walts": "waltz", "Rîl": "reel", "Pibddawns": "hornpipe",
-    "Ymdaith": "march", "Dawns": "dance", "Alaw": "air", "Cân": "song", "Carol": "carol", "Other": "tune",
+    "Jig": "jig", "Jig naid": "slip jig", "Polca": "polka", "Walts": "waltz", "Rîl": "reel",
+    "Pibddawns": "hornpipe", "Ymdaith": "march", "Dawns": "dance", "Alaw": "air", "Cân": "song", "Carol": "carol", "Other": "tune",
 }
 
 # ABC header fields shown under Details, in display order (only if present).
@@ -274,8 +275,15 @@ def key_name(key: str) -> str:
 
 
 def tune_type(headers: dict[str, list[str]]) -> str:
-    """Browsing category from R:, e.g. "polca/pibddawns" -> "Polca"."""
-    words = normalize(" ".join(headers.get("R", []))).split()
+    """Browsing category from R:, e.g. "polca/pibddawns" -> "Polca".
+
+    A jig is in 6/8; one in 9/8 is a slip jig (jig naid), whatever R: calls it.
+    """
+    rhythm = normalize(" ".join(headers.get("R", [])))
+    meter = "".join(headers.get("M", [""])[:1]).replace(" ", "")
+    if re.search(r"\bslip ?jig|\bjig naid", rhythm) or (meter == "9/8" and "jig" in rhythm):
+        return "Jig naid"
+    words = rhythm.split()
     for table in (SPECIFIC_TYPES, GENERIC_TYPES):
         for word in words:
             for prefix, label in table.items():
@@ -542,7 +550,7 @@ NOT_OFFLINE = {"sw.js", "og-image.png", "CNAME", "sitemap.xml", "robots.txt", "4
 
 
 # Welsh for the tune pages' descriptions (app.js has the same: CY_TYPE, CY_MODES).
-CY_TYPE = {"Jig": "jig", "Polca": "polca", "Walts": "walts", "Rîl": "rîl", "Pibddawns": "pibddawns", "Ymdaith": "ymdaith",
+CY_TYPE = {"Jig": "jig", "Jig naid": "jig naid", "Polca": "polca", "Walts": "walts", "Rîl": "rîl", "Pibddawns": "pibddawns", "Ymdaith": "ymdaith",
            "Dawns": "dawns", "Alaw": "alaw", "Cân": "cân", "Carol": "carol", "Other": "alaw"}
 CY_MODES = {"major": "fwyaf", "minor": "leiaf", "Dorian": "Doriaidd", "Phrygian": "Phrygaidd", "Lydian": "Lydaidd",
             "Mixolydian": "Mixolydaidd", "Locrian": "Locriaidd"}

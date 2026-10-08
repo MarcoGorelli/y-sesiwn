@@ -36,7 +36,7 @@ The lines at the top are the *header*:
 |---|---|---|
 | `X:1` | yes | Always `X:1`. |
 | `T:` | yes | The title, as printed on the sheet music. |
-| `R:` | recommended | Tune type, e.g. `jig`, `rîl`, `polca`, `walts`, `pibddawns`. It sets the default tempo: jigs 112, reels 90, polcas 100, anything else 100 bpm. |
+| `R:` | recommended | Tune type, e.g. `jig` (6/8), `jig naid` (slip jig, 9/8), `rîl`, `polca`, `walts`, `pibddawns`. It sets the default tempo: jigs 112, reels 90, polcas 100, anything else 100 bpm. |
 | `M:` | yes | Time signature, e.g. `6/8`, `4/4`, `3/4`. |
 | `L:` | yes | Default note length, usually `1/8`. |
 | `K:` | yes, **last** | Key, e.g. `D`, `Em`, `ADor`. The notes start on the next line. |

@@ -3,7 +3,6 @@
 // Pages: ./ (home), alaw/<folder>/ (a tune; ?v=2 for its second version), ?page=add / ?page=fix
 // (guides), ?page=contact, … Every address is relative to <base href> in index.html.
 
-const NOTES = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
 const AUDIO_PARAMS = {
   program: 0,
   soundFontUrl: "static/soundfont/",
@@ -113,7 +112,7 @@ const CY_MODES = { major: "fwyaf", minor: "leiaf", Dorian: "Doriaidd", Phrygian:
 const modeName = (name) => tr(name, CY_MODES[name] ?? name);
 // A key in short, for the phone's one line: "D" (major), "E min", "A dor", "G mix".
 const SHORT_MODES = { major: "", minor: " min", Dorian: " dor", Mixolydian: " mix", Lydian: " lyd", Phrygian: " phr", Locrian: " loc" };
-const shortKey = (pitch, mode) => `${NOTES[((pitch % 12) + 12) % 12]}${SHORT_MODES[mode] ?? ""}`;
+const shortKey = (pitch, mode) => `${keyNote(pitch, mode)}${SHORT_MODES[mode] ?? ""}`;
 // The key a tune changes to part-way through (its first K: after the header's), or null.
 const ABC_MODES = { "": "major", maj: "major", ion: "major", m: "minor", min: "minor", aeo: "minor", dor: "Dorian",
   mix: "Mixolydian", lyd: "Lydian", phr: "Phrygian", loc: "Locrian" };
@@ -842,7 +841,7 @@ function tuneUrl(group, version = 1) {
 function tuneLink(group, tune, settings) {
   const query = new URLSearchParams();
   if (tune.version > 1) query.set("v", tune.version);
-  if (settings?.transpose && tune.key) query.set("key", NOTES[(tune.key.pitch + settings.transpose + 12) % 12]);
+  if (settings?.transpose && tune.key) query.set("key", keyNote(tune.key.pitch + settings.transpose, tune.key.modeName));
   if (settings?.bpm && settings.bpm !== tune.bpm) query.set("tempo", settings.bpm);  // "learn it at 70"
   return `alaw/${encodeURIComponent(group.slug)}/${query.size ? `?${query}` : ""}`;
 }
@@ -1185,9 +1184,26 @@ function recentTunes() {
     const moved = state.moved.has(r.group) && state.bySlug.get(movedTo(r.group));
     return moved ? { group: moved.group, version: moved.version } : r;
   }).filter((r) => state.groups.has(r.group));  // …or removed
-  if (!tunes.length) return null;
-  return el("p", { class: "recent" }, el("span", { class: "recent-label" }, tr("Recently opened:", "Agorwyd yn ddiweddar:")), " ",
-    tunes.map((r, i) => [i ? " · " : "", el("a", { href: tuneUrl(r.group, r.version), "data-route": true }, tuneName(r.group, state.groups.get(r.group).title))]));
+  // And the sets made here, newest first: at a session it's last night's tunes or your own set.
+  // Only what the player opened or made: nothing suggested.
+  const sets = loadSets().sort((a, b) => (b.updated ?? 0) - (a.updated ?? 0));
+  if (!tunes.length && !sets.length) return null;
+  const SHOWN = 3;
+  return el("section", { class: "recent", "aria-label": tr("Your tunes", "Eich alawon") },
+    tunes.length ? [
+      el("p", { class: "pills-label", id: "recent-label" }, tr("Recently opened", "Agorwyd yn ddiweddar")),
+      el("ul", { class: "pills recent-list", "aria-labelledby": "recent-label" }, tunes.map((r) => el("li", {},
+        el("a", { href: tuneUrl(r.group, r.version), "data-route": true }, tuneName(r.group, state.groups.get(r.group).title))))),
+    ] : null,
+    sets.length ? [
+      el("p", { class: "pills-label", id: "recent-sets-label" }, tr("Your sets", "Eich setiau")),
+      el("ul", { class: "pills recent-list", "aria-labelledby": "recent-sets-label" }, sets.slice(0, SHOWN).map((set) => {
+        const { items } = decodeSet(set.c);
+        return el("li", {}, el("a", { href: setUrl(items, set.name, set.id), "data-route": true, onclick: () => setCurrentSet(set.id) },
+          set.name, el("span", { class: "count" }, ` · ${tuneCount(items.length)}`)));
+      }), sets.length > SHOWN ? el("li", { class: "all-sets" }, el("a", { href: "?page=sets", "data-route": true },
+        tr(`All ${sets.length} sets`, `Y ${sets.length} set i gyd`))) : null),
+    ] : null);
 }
 
 // ---- Browse page -------------------------------------------------------------------
@@ -1444,6 +1460,75 @@ function semitones(tune, key) {
   const outside = (shift) => Math.max(0, STAVE.low - (low + shift)) + Math.max(0, high + shift - STAVE.high);
   const other = key > 0 ? key - 12 : key + 12;
   return outside(other) < outside(key) ? other : key;
+}
+
+// A tune moved to another key, its notes and chords written in that key. abcjs spells a
+// key with six sharps or six flats in flats (Gb major, Eb minor); players of the session
+// instruments read F# major and D# minor, as the key menu says, so those parts are
+// written again a letter lower: Gb as F#, Cb as B, and the chords with them.
+function transposeAbc(tune, abc, key) {
+  return key ? respell(ABCJS.strTranspose(abc, ABCJS.renderAbc("*", abc), semitones(tune, key))) : abc;
+}
+
+// A key's note as the key menu says it: with the fewest sharps or flats in its signature,
+// and sharps when it's six either way. "Db major" (5 flats, not C#'s 7 sharps), "G# minor",
+// "F# major".
+const MODE_STEP = { major: 0, Dorian: 2, Phrygian: 4, Lydian: 5, Mixolydian: 7, minor: 9, Locrian: 11 };
+const SHARP_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+const FLAT_NAMES = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
+function keyNote(pitch, mode = "major") {
+  const pc = ((pitch % 12) + 12) % 12;
+  const sharps = ((pc - (MODE_STEP[mode] ?? 0) + 12) * 7) % 12;  // its major key, in fifths up from C
+  return (sharps <= 6 ? SHARP_NAMES : FLAT_NAMES)[pc];
+}
+const keyName = (pitch, mode) => `${keyNote(pitch, mode)} ${modeName(mode)}`;
+
+const LETTERS = "CDEFGAB";
+function respell(abc) {
+  let shift = false;  // writing the notes a letter lower, in this key
+  const key = (text) => {  // a K: field: is it one to write again, and how
+    const k = /^(\s*)([A-G])([#b]?)(\s*)([A-Za-z]*)/.exec(text);
+    if (!k) { shift = false; return text; }
+    const pitch = LETTER_PITCH[k[2]] + ({ "#": 1, b: -1 }[k[3]] ?? 0);
+    const mode = ABC_MODES[k[5].toLowerCase().slice(0, 3)] ?? "major";
+    shift = k[3] === "b" && keyNote(pitch, mode).includes("#");
+    return shift ? k[1] + keyNote(pitch, mode) + k[4] + text.slice(k[1].length + k[2].length + k[3].length + k[4].length) : text;
+  };
+  const note = (acc, letter, octaves) => {
+    let step = LETTERS.indexOf(letter.toUpperCase()) + (letter === letter.toLowerCase() ? 35 : 28)
+      + [...octaves].reduce((n, c) => n + (c === "'" ? 7 : -7), 0);
+    const from = Math.floor(step / 7) * 12 + LETTER_PITCH[LETTERS[step % 7]];
+    step -= 1;
+    const octave = Math.floor(step / 7);
+    const to = octave * 12 + LETTER_PITCH[LETTERS[step % 7]];
+    let mark = "";
+    if (acc) {
+      const value = ACCIDENTALS[acc] + from - to;
+      mark = Object.keys(ACCIDENTALS).find((a) => ACCIDENTALS[a] === value);
+      if (mark === undefined) throw new Error("no spelling");
+    }
+    const name = LETTERS[step % 7];
+    return mark + (octave >= 5 ? name.toLowerCase() + "'".repeat(octave - 5) : name + ",".repeat(4 - octave));
+  };
+  const chord = (text) => text.replace(/(^|\/)([A-G])([#b]?)/g, (_, slash, letter, acc) =>
+    slash + SHARP_NAMES[(LETTER_PITCH[letter] + ({ "#": 1, b: -1 }[acc] ?? 0) + 12) % 12]);
+  const music = (line) => line.replace(/("[^"]*")|(![^!]*!|\+[^+\s]*\+)|\[([A-Za-z]):([^\]]*)\]|(%.*)|(\^\^|\^|__|_|=)?([A-Ga-g])([,']*)/g,
+    (all, quoted, deco, field, value, comment, acc, letter, octaves) => {
+      if (field) return field === "K" ? `[K:${key(value)}]` : all;
+      if (deco || comment) return all;
+      if (quoted) return shift && /^"[A-G]/.test(quoted) ? `"${chord(quoted.slice(1, -1))}"` : all;
+      return shift ? note(acc, letter, octaves) : all;
+    });
+  try {
+    let body = false;
+    return abc.split("\n").map((line) => {
+      if (/^K:/.test(line)) { body = true; return `K:${key(line.slice(2))}`; }
+      if (!body || /^[A-Za-z+]:/.test(line) || /^%/.test(line)) return line;
+      return music(line);
+    }).join("\n");
+  } catch {
+    return abc;  // a note with no spelling a letter lower (beyond a double sharp): leave abcjs's
+  }
 }
 
 function stripFields(abc, fields) {
@@ -1745,10 +1830,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   // S:, Z:, B: (book), N: (notes), A: (area), H: (history) and R: (the tune type) are in
   // the Details box, so leave them off the score; the version tabs say which version it is.
   let abc = setTempo(stripFields(tune.abc, "SZBNAHR"), tune.beat, bpm).replace(/^(T:.*) \(version \d+\)$/m, "$1");
-  if (transpose) {
-    // strTranspose needs the whole array renderAbc returns, not its first tune.
-    abc = ABCJS.strTranspose(abc, ABCJS.renderAbc("*", abc), semitones(tune, transpose));
-  }
+  abc = transposeAbc(tune, abc, transpose);
   const tab = TABS[state.practice.tab];
   const whistle = WHISTLES[state.practice.tab];
   if (whistle) abc = withFingerings(abc, whistle);
@@ -1774,7 +1856,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   hideMeasuring();
   const { num, den } = visualObj.getMeterFraction();
   nameScore(paper, [
-    tune.key && `${NOTES[(tune.key.pitch + transpose + 12) % 12]} ${modeName(tune.key.modeName)}`,
+    tune.key && keyName(tune.key.pitch + transpose, tune.key.modeName),
     num && tr(`${num}/${den} time`, `amser ${num}/${den}`),
   ].filter(Boolean).join(", "));
   // Chords are always drawn (so playback has them), and hidden unless asked for.
@@ -1785,7 +1867,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
     chart.replaceChildren(grid, chartWords(grid));
     if (tune.key) {  // printed above the chart (print-only)
       const { pitch } = tune.key;
-      chart.parentElement.querySelector(".print-key").textContent = `${tr("Key", "Cywair")}: ${NOTES[(pitch + transpose + 12) % 12]} ${modeName(tune.key.modeName)}`;
+      chart.parentElement.querySelector(".print-key").textContent = `${tr("Key", "Cywair")}: ${keyName(pitch + transpose, tune.key.modeName)}`;
     }
   }
   const audioParams = { ...AUDIO_PARAMS, chordsOff: state.chords.play === "tune", voicesOff: state.chords.play === "chords",
@@ -2079,10 +2161,9 @@ function download(name, type, data) {
 // save the tune as an ABC or MIDI file, in the key (and for MIDI the tempo and Play
 // choice) set on the page.
 function printButton(tune, paper, settings) {
-  const transposed = (abc) => (settings.transpose
-    ? ABCJS.strTranspose(abc, ABCJS.renderAbc("*", abc), semitones(tune, settings.transpose)) : abc);
+  const transposed = (abc) => transposeAbc(tune, abc, settings.transpose);
   const fileName = (ext) => {
-    const key = settings.transpose && tune.key ? `-in-${NOTES[(tune.key.pitch + settings.transpose + 12) % 12].replace("#", "sharp")}` : "";
+    const key = settings.transpose && tune.key ? `-in-${keyNote(tune.key.pitch + settings.transpose, tune.key.modeName).replace("#", "sharp")}` : "";
     return `${tune.slug}${key}.${ext}`;
   };
   const saveAbc = () => download(fileName("abc"), "text/vnd.abc", transposed(tune.abc));
@@ -2250,10 +2331,11 @@ function renderTune(main, group, tune) {
   if (tune.key) {
     const { pitch, root } = tune.key;
     const mode = modeName(tune.key.modeName);
+    // Under the menu, in a line kept for it, so nothing moves when it appears.
     const usual = el("span", { class: "caption usual-key" });
     const showUsual = () => {
       usual.textContent = settings.transpose && savedKeys()[tune.slug] === settings.transpose
-        ? tr(" · your usual key on this device", " · eich cywair arferol ar y ddyfais hon") : "";
+        ? tr("Last used on this device", "Defnyddiwyd ddiwethaf ar y ddyfais hon") : "";
     };
     const select = el("select", { id: "key-select", onchange: (e) => {
       settings.transpose = +e.target.value;
@@ -2261,11 +2343,11 @@ function renderTune(main, group, tune) {
       showUsual(); showInAddress(); showSummary(); redraw();
     } });
     for (let shift = -5; shift <= 6; shift++) {  // semitones, nearest direction
-      const label = shift === 0 ? `${root} ${mode} ${tr("(original)", "(gwreiddiol)")}` : `${NOTES[(pitch + shift + 12) % 12]} ${mode}`;
+      const label = shift === 0 ? `${root} ${mode} ${tr("(original)", "(gwreiddiol)")}` : keyName(pitch + shift, tune.key.modeName);
       select.append(el("option", { value: shift, selected: shift === settings.transpose }, label));
     }
     showUsual();
-    controls.append(el("div", { class: "control" }, el("label", { for: "key-select" }, tr("Key", "Cywair"), usual), select));
+    controls.append(el("div", { class: "control" }, el("label", { for: "key-select" }, tr("Key", "Cywair")), select, usual));
   }
   const tempoLabel = el("label", { for: "tempo" });
   const speedFrom = el("span");
@@ -2427,7 +2509,7 @@ function renderTune(main, group, tune) {
 // when it's as written. Said on Link copied and under the QR code, so the sender knows.
 function linkCarries(tune, settings) {
   const key = settings.transpose && tune.key
-    ? `${NOTES[(tune.key.pitch + settings.transpose + 12) % 12]} ${modeName(tune.key.modeName)}` : null;
+    ? keyName(tune.key.pitch + settings.transpose, tune.key.modeName) : null;
   const bpm = settings.bpm !== tune.bpm ? settings.bpm : null;
   if (!key && !bpm) return "";
   return state.lang === "cy"
@@ -3690,7 +3772,7 @@ function setScore(tune, key) {
     paper.drawn = true;
     // The numbered heading above says which tune it is, so no title (T:) on the music.
     let abc = setTempo(stripFields(tune.abc, "SZBNAHTR"), tune.beat, tune.bpm);
-    if (key) abc = ABCJS.strTranspose(abc, ABCJS.renderAbc("*", abc), semitones(tune, key));
+    abc = transposeAbc(tune, abc, key);
     paper.dataset.bars = ownBarsPerLine(tune.abc);
     const layout = scoreLayout(paper);
     ABCJS.renderAbc(paper, shortCredits(abc, layout), { responsive: "resize", add_classes: true, paddingtop: 0, ...layout });
@@ -3705,7 +3787,7 @@ function keyOptions(tune, key) {
   const { pitch, root } = tune.key;
   const mode = modeName(tune.key.modeName);
   return Array.from({ length: 12 }, (_, i) => i - 5).map((shift) => el("option", { value: shift, selected: shift === key },
-    shift === 0 ? `${root} ${mode} ${tr("(original)", "(gwreiddiol)")}` : `${NOTES[(pitch + shift + 12) % 12]} ${mode}`));
+    shift === 0 ? `${root} ${mode} ${tr("(original)", "(gwreiddiol)")}` : keyName(pitch + shift, tune.key.modeName)));
 }
 
 // ?page=set: a set, from its link. Editing it changes the link (and, for your own
@@ -3882,8 +3964,8 @@ function renderSet(main) {
   const asList = () => [name, ...items.map(({ tune, key }) => {
     const group = state.groups.get(tune.group);
     const version = group.versions.length > 1 ? tr(` (version ${tune.version})`, ` (fersiwn ${tune.version})`) : "";
-    const keyName = tune.key ? `: ${NOTES[(tune.key.pitch + key + 12) % 12]} ${modeName(tune.key.modeName)}` : "";
-    return `• ${tune.base}${version}${keyName}`;
+    const inKey = tune.key ? `: ${keyName(tune.key.pitch + key, tune.key.modeName)}` : "";
+    return `• ${tune.base}${version}${inKey}`;
   }), shareLink()].join("\n");
   const copyList = el("button", { type: "button", onclick: async (e) => {
     try { await navigator.clipboard.writeText(asList()); e.target.closest("button").replaceChildren(...doneText(tr("List copied", "Rhestr wedi'i chopïo"))); }
@@ -4163,14 +4245,17 @@ function noteMiss(query, found) {
   }, 1500);
 }
 
-// A tune in the search's list: its type's colour, its name, and what it is ("jig · G major"),
-// so two tunes of the same name, or a half-remembered one, can be told apart.
+// A tune in the search's list: its type's colour, its name, and what it is ("Jig · G major",
+// "Pibddawns (hornpipe) · D major", as Browse names the types), so two tunes of the same
+// name, or a half-remembered one, can be told apart.
 function suggestion(group) {
   const type = state.data.types?.find((t) => t.name === group.type);
   const key = group.versions[0].key;
-  const what = [group.type !== "Other" && typeWord(group.type), key && `${key.root} ${modeName(key.modeName)}`].filter(Boolean).join(" · ");
+  const gloss = state.lang !== "cy" && GLOSSED.has(group.type) ? el("span", { class: "gloss" }, ` (${EN_TYPE[group.type]})`) : null;
+  const what = [group.type !== "Other" && [typeName(group.type), gloss], key && `${key.root} ${modeName(key.modeName)}`]
+    .filter(Boolean).flatMap((part, i) => (i ? [" · ", part] : [part]));
   return [el("span", { class: "swatch", style: type ? `--c: ${type.colour}` : null, "aria-hidden": "true" }),
-    tuneName(group.slug, group.title), what ? el("span", { class: "what" }, what) : null];
+    tuneName(group.slug, group.title), what.length ? el("span", { class: "what" }, what) : null];
 }
 
 function attachSearch(input, list, { showAllOnFocus = true, onPick = null } = {}) {

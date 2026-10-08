@@ -112,6 +112,17 @@ def test_recently_opened(page):
         "Machynlleth", "Sawdl y Fuwch", "Cawl Cennin", "Llancesau Trefaldwyn", "Nyth y Gog"]
 
 
+def test_your_sets_on_home(page):
+    # The sets made here are on the home page too, newest first, three of them and then all.
+    page.goto_site()
+    page.evaluate("""() => localStorage.setItem('sets', JSON.stringify([
+      {id: 'a1', name: 'Tuesday', c: '', updated: 3}, {id: 'a2', name: 'Class 2', c: '', updated: 1},
+      {id: 'a3', name: 'Ffair', c: '', updated: 2}, {id: 'a4', name: 'Old', c: '', updated: 0}]))""")
+    page.goto_site()
+    assert page.locator(".recent a").all_text_contents() == [
+        "Tuesday · 0 tunes", "Ffair · 0 tunes", "Class 2 · 0 tunes", "All 4 sets"]
+
+
 def test_markdown_reader_only_for_its_pages(page):
     # The Markdown reader is only loaded for About and the guides.
     requests = []
@@ -1211,19 +1222,32 @@ def test_tune_names_marked_welsh_or_english(page):
     assert page.get_attribute(".tune-list a[href='alaw/glandyfi/'] span", "lang") == "cy"
 
 
+def test_keys_spelt_as_players_write_them(page):
+    # The fewest sharps or flats, and sharps when it's six either way; the music is written
+    # in the key the menu says (abcjs's Gb major comes out as F# major, notes and chords).
+    page.goto_site("alaw/glandyfi/?key=F%23")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.locator("#key-select option").all_inner_texts() == [
+        "D major", "Eb major", "E major", "F major", "F# major", "G major (original)",
+        "Ab major", "A major", "Bb major", "B major", "C major", "Db major"]
+    assert page.inner_text(".controls-summary .now").startswith("F# (from G)")
+    assert page.evaluate("""() => respell('X:1\\nK:Gb\\n"Gb"GABc =Bd|"Cb"e_f|]')""") == 'X:1\nK:F#\n"F#"FGAB ^^Ac|"B"d=e|]'
+    assert page.evaluate("""() => respell('X:1\\nK:Ab\\n"Ab"ABc|]')""") == 'X:1\nK:Ab\n"Ab"ABc|]'  # 4 flats: as it is
+
+
 def test_usual_key_remembered(page, site):
     # The key chosen for a tune is kept on the device and used next time (and said so);
     # a shared link's key wins without replacing it.
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-staff")
     page.select_option("#key-select", "2")
-    assert "your usual key" in page.inner_text("label[for=key-select]")
+    assert page.inner_text(".usual-key") == "Last used on this device"
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.input_value("#key-select") == "2" and page.url == site + "alaw/glandyfi/?key=A"
     page.goto_site("alaw/glandyfi/?key=C")
     page.wait_for_selector(".score .abcjs-staff")
-    assert page.input_value("#key-select") == "5" and "your usual key" not in page.inner_text("label[for=key-select]")
+    assert page.input_value("#key-select") == "5" and page.inner_text(".usual-key") == ""
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.input_value("#key-select") == "2"

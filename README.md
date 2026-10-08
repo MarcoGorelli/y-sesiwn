@@ -169,7 +169,7 @@ scheduled runs after 60 days without a commit).
   *Add to set*. The address carries the key chosen (`alaw/glandyfi/?key=A`,
   by name, in the tune's own mode), so a copied link, *Share* and the QR code
   open the tune in that key. The key chosen for a tune is kept on the device
-  (`localStorage`) and used next time ("your usual key on this device"), and
+  (`localStorage`) and used next time ("Last used on this device"), and
   tapping a note in the music plays from there.
 - **Accessibility:** tune names are marked Welsh or English (`lang`, from
   `pronunciation.json`) so screen readers say them in the right voice; moving to

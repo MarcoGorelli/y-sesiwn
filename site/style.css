@@ -179,6 +179,8 @@ button.primary:hover { color: #fff; filter: brightness(1.1); }
 .suggestions li[role="option"] { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: .75rem; }
 .suggestions .swatch { width: .75em; height: .75em; margin-right: -.25rem; transform: translateY(.05em); }
 .suggestions .what { margin-left: auto; color: var(--muted); font-size: .85rem; white-space: nowrap; }
+/* On a phone the type's gloss would push "what it is" onto a second line: Browse has it */
+@media (max-width: 800px) { .suggestions .what .gloss { display: none; } }
 .suggestions .try { display: block; margin-top: .3rem; font-size: .9rem; }
 @media (hover: hover) { .suggestions li:not(.empty):hover { background: var(--accent-soft); } }
 /* The one Enter opens: a clear bar down its side as well as the tint. */
@@ -398,6 +400,11 @@ details.all-tunes[open] > .tune-list { margin: .25rem 0 1.25rem; }
 .control label { display: block; font-size: .9rem; margin-bottom: .3rem; }
 .control select { padding: .4rem .6rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); }
 .control.tempo { flex: 1 1 18rem; max-width: 32rem; }
+/* "Last used on this device", under the key menu: on its own line, kept for it below the
+   row, so the row never moves when it appears */
+.control { position: relative; }
+.usual-key { position: absolute; top: calc(100% + .2rem); left: 0; font-size: .8rem; white-space: nowrap; }
+.controls:has(.usual-key) { margin-bottom: 2rem; }
 .control input[type="range"] { width: 100%; height: 2rem; accent-color: var(--chosen); }  /* slate: a setting, not an accent */
 /* How the music is shown (size, full screen): at the end of the row, apart from the rest */
 .view-tools { display: flex; align-items: end; gap: .75rem; margin-left: auto; }
@@ -813,7 +820,7 @@ body.practice .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height
   .controls-summary[aria-expanded="true"] .change::after { transform: rotate(-90deg); }
   .controls:not(.open) > .control, .controls:not(.open) .music-size { display: none; }
   .controls .view-tools { display: contents; }
-  /* Opened: a fixed grid, so nothing moves when a caption appears ("your usual key") */
+  /* Opened: a fixed grid, so nothing moves when a caption appears ("Last used on this device") */
   .controls.open { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end;
     grid-template-areas: "summary summary" "key size" "tempo full"; }
   .controls.open .controls-summary { grid-area: summary; }
@@ -821,6 +828,7 @@ body.practice .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height
   .controls.open > .control.tempo { grid-area: tempo; max-width: none; }
   .controls.open .music-size { grid-area: size; margin-left: 0; }
   .controls.open .practice-toggle { grid-area: full; }
+  .controls.open .usual-key { position: static; display: block; min-height: 1.55em; margin-top: .2rem; white-space: normal; }
   /* On the music stand the one line has less room: the chevron says it opens */
   body.practice .controls-summary .change { font-size: 0; gap: 0; }
   body.practice .controls-summary .change::after { font-size: .9rem; }
@@ -965,9 +973,19 @@ body.practice .set-list, body.practice .set-count, body.practice .set-actions > 
   .set-paper { border: none; background: none; padding: 0; }
 }
 
-/* Home page: the last few tunes opened on this device */
-.recent { margin: .9rem 0 1.5rem; font-size: .9rem; }
-.recent-label { color: var(--muted); }
+/* Home page: the last few tunes opened on this device, and the sets made on it, as pills
+   to tap (at a session it's often last night's tune) */
+.recent { margin: 1.25rem 0 1.5rem; }
+.recent .pills-label { margin: 1rem 0 .5rem; }
+.recent .pills-label:first-child { margin-top: 0; }
+.recent-list { margin: 0; padding: 0; list-style: none; }
+.recent-list a { display: inline-flex; align-items: center; padding: .45rem .9rem; border: 1px solid var(--border);
+  border-radius: 999px; background: var(--card-bg); color: var(--text); text-decoration: none; transition: color .15s, border-color .15s; }
+.recent-list .count { color: var(--muted); white-space: pre; }
+.recent-list .all-sets a { padding-inline: .25rem; border-color: transparent; background: none; color: var(--link); text-decoration: underline; }
+@media (hover: hover) { .recent-list a:hover { border-color: var(--accent-ink); color: var(--accent-ink); } }
+@media (pointer: coarse) { .recent-list a { min-height: 44px; } }
+@media (prefers-reduced-motion: reduce) { .recent-list a { transition: none; } }
 /* A straight hairline above the saving items (a border on the rounded button would curve) */
 .print-menu .menu-sep { position: relative; margin-top: .5rem; }
 .print-menu .menu-sep::before { content: ""; position: absolute; left: .4rem; right: .4rem; top: -.3rem; border-top: 1px solid var(--border); }
@@ -1000,12 +1018,14 @@ body.practice .tune-sub { display: none; }
   .set-item-controls button { min-width: 2.5rem; min-height: 2.5rem; }
   .set-item-controls select { min-height: 2.5rem; }
   .link-button { padding: .5rem 0; }
-  .say-key summary { padding: .3rem 0; }
+  .say-key summary { display: inline-flex; align-items: center; min-height: 44px; }
   /* At a session it's one thumb, often in the dark: 44px for every control (WCAG 2.5.5).
      Not the player's own buttons (abcjs's large size), the piano's keys or links in a line of text. */
-  button:not(.key, .link-button, .abcjs-btn), select, .segmented span, .versions a, .fold > summary,
+  button:not(.key, .link-button, .abcjs-btn), select, .segmented span, .versions a, .fold > summary, details.abc > summary,
   input:not([type="range"], [type="checkbox"], [type="radio"]) { min-height: 44px; }
-  .segmented span, .fold > summary { display: flex; align-items: center; }
+  .segmented span, .fold > summary, details.abc > summary { display: flex; align-items: center; }
+  details.abc { padding-block: 0; }  /* its heading is the 44px target */
+  details.abc pre { margin-bottom: .75rem; }
   .versions a { align-content: center; }
   .preview-play, .map-zoom button { width: 44px; height: 44px; }
   .music-size button { min-width: 44px; }

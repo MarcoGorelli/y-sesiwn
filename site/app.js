@@ -1745,13 +1745,17 @@ const whistle = (name, low) => ({ label: () => tr(`Whistle in ${name}`, `Chwisl 
 const FINGERED = {
   "whistle-D": whistle("D", 62), "whistle-C": whistle("C", 60), "whistle-G": whistle("G", 67), "whistle-Bb": whistle("B♭", 70),
   ...Object.fromEntries([["recorder", 60, "Descant", "desgant"], ["recorder-treble", 65, "Treble", "trebl"]].map(([value, low, en, cy]) =>
-    [value, { recorder: true, label: () => tr(`${en} recorder`, `Recorder ${cy}`), low, holes: (n) => RECORDER_HOLES[n] ?? null, high: () => false }])),
+    [value, { recorder: true, jumpUp: true, label: () => tr(`${en} recorder`, `Recorder ${cy}`), low, holes: (n) => RECORDER_HOLES[n] ?? null, high: () => false }])),
 };
 
+// A recorder's notes below its lowest are played an octave up (or two), as recorder players
+// do at a session: marked "up" so the jump shows.
 function fingering(midi, instrument) {
-  const n = midi - instrument.low;
+  let n = midi - instrument.low;
+  let up = false;
+  while (n < 0 && instrument.jumpUp) { n += 12; up = true; }
   const holes = n < 0 ? null : instrument.holes(n);
-  return holes && { holes, high: instrument.high(n) };  // null: not on this instrument
+  return holes && { holes, high: instrument.high(n), up };  // null: not on this instrument
 }
 
 function withFingerings(abc, instrument) {
@@ -1784,6 +1788,7 @@ function withFingerings(abc, instrument) {
     const cell = (f, row) => (f === "tied" ? "*" : f ? f.holes[row] : row === 0 ? "?" : "*");
     for (let row = 0; row < instrument.holes(0).length; row++) out.push(`w:${notes.map((f) => cell(f, row)).join(" ")}`);
     if (notes.some((f) => f?.high)) out.push(`w:${notes.map((f) => (f?.high ? "+" : "*")).join(" ")}`);
+    if (notes.some((f) => f?.up)) out.push(`w:${notes.map((f) => (f?.up ? "↑" : "*")).join(" ")}`);
   });
   return out.join("\n");
 }
@@ -2561,8 +2566,8 @@ function renderTune(main, group, tune) {
   const tabWhat = el("span", { class: "caption", hidden: state.practice.tab !== "none" },
     tr("Where to put your fingers, under each note", "Ble i roi eich bysedd, o dan bob nodyn"));
   const fingerKey = () => FINGERED[state.practice.tab]?.recorder
-    ? tr("Thumb first · ● covered · ○ open · ◐ half-covered (the thumb: pinched) · ? not on the recorder",
-      "Bawd yn gyntaf · ● ar gau · ○ ar agor · ◐ hanner ar gau (y bawd: wedi'i binsio) · ? ddim ar y recorder")
+    ? tr("Thumb first · ● covered · ○ open · ◐ half-covered (the thumb: pinched) · ↑ too low, so an octave up · ? not on the recorder",
+      "Bawd yn gyntaf · ● ar gau · ○ ar agor · ◐ hanner ar gau (y bawd: wedi'i binsio) · ↑ rhy isel, felly wythfed yn uwch · ? ddim ar y recorder")
     : tr("● covered · ○ open · ◐ half-covered · + blow harder · ? not on the whistle",
       "● ar gau · ○ ar agor · ◐ hanner ar gau · + chwythu'n galetach · ? ddim ar y chwisl");
   const fingeringKey = el("span", { class: "caption fingering-key", hidden: !FINGERED[state.practice.tab] }, fingerKey());

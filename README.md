@@ -234,7 +234,8 @@ scheduled runs after 60 days without a commit).
   whistle in D, C, G or B♭ (six holes under each note: ● covered, ○ open, ◐ half; + for the
   second octave) and a descant or treble recorder (thumb and seven holes, baroque
   fingering from the American Recorder Society's chart; ◐ is half a double hole
-  or a pinched thumb). ? marks a note the instrument doesn't have. They're
+  or a pinched thumb; a note below the recorder's lowest is played an octave up,
+  marked ↑). ? marks a note the instrument doesn't have. They're
   written as lines of lyrics (`w:`), so abcjs lines them up; worked out from
   the notes as drawn (`withFingerings()` in `app.js`), so they follow the key menu.
 - **Other sound stops the tune:** while a tune plays, a silent looping `<audio>`

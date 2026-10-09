@@ -302,7 +302,7 @@ def test_swing(page):
 def test_whistle_fingerings(page):
     page.goto_site()
     f = lambda midi, instrument="whistle-D": page.evaluate(
-        "([m, w]) => { const r = fingering(m, FINGERED[w]); return r && [r.holes, r.high]; }", [midi, instrument])
+        "([m, w]) => { const r = fingering(m, FINGERED[w]); return r && [r.holes, r.high, ...(r.up ? ['up'] : [])]; }", [midi, instrument])
     assert f(62) == ["●●●●●●", False]   # D: all covered
     assert f(66) == ["●●●●○○", False]   # F sharp
     assert f(73) == ["○○○○○○", False]   # C sharp: all open
@@ -313,9 +313,10 @@ def test_whistle_fingerings(page):
     assert f(60, "recorder") == ["●●●●●●●●", False]  # recorder: thumb and all seven covered
     assert f(65, "recorder") == ["●●●●●○●●", False]  # F, forked
     assert f(76, "recorder") == ["◐●●●●●○○", False]  # E, second octave: thumb pinched
-    assert f(59, "recorder") is None and f(88, "recorder") is None
+    assert f(59, "recorder") == ["●●○○○○○○", False, "up"] and f(88, "recorder") is None  # too low: an octave up
     assert f(65, "recorder-treble") == ["●●●●●●●●", False]  # treble: the same fingerings from low F
     assert f(70, "recorder-treble") == ["●●●●●○●●", False]  # B flat: the descant's forked F
+    assert f(62, "recorder-treble") == ["●●●○○○○○", False, "up"]  # low D: played an octave up
     # Lined up under their notes, a tied note's continuation included; rests take none.
     rows = page.evaluate("""() => { const v = ABCJS.renderAbc('*', withFingerings('X:1\\nM:6/8\\nL:1/8\\nK:D\\nD3- D2 E | F2 z G z A|', FINGERED['whistle-D']))[0];
       return v.lines[0].staff[0].voices[0].filter((e) => e.el_type === 'note' && !e.rest).map((n) => (n.lyric || []).map((l) => l.syllable).join('')); }""")
@@ -337,11 +338,14 @@ def test_whistle_on_a_tune(page):
     page.wait_for_function("(before) => [...document.querySelectorAll('.score .abcjs-lyric')].map((e) => e.textContent).join('') !== before", arg=in_d)
     assert "?" in lyrics()
     in_a = lyrics()
-    page.select_option("#tab-select", "recorder")  # its lowest note is C: still too low in A
+    page.select_option("#tab-select", "recorder")  # its lowest note is C: in A, some go an octave up
     page.wait_for_function("(before) => [...document.querySelectorAll('.score .abcjs-lyric')].map((e) => e.textContent).join('') !== before", arg=in_a)
-    assert "?" in lyrics()
-    page.select_option("#key-select", "0")  # back to D: all on the recorder
-    page.wait_for_function("() => ![...document.querySelectorAll('.score .abcjs-lyric')].some((e) => e.textContent === '?')")
+    assert "?" not in lyrics() and "↑" in lyrics()
+    page.select_option("#key-select", "0")  # back to D: all where they're written
+    page.wait_for_function("() => ![...document.querySelectorAll('.score .abcjs-lyric')].some((e) => e.textContent.includes('↑'))")
+    page.select_option("#tab-select", "recorder-treble")  # from low F: low D and E go up
+    page.wait_for_function("() => [...document.querySelectorAll('.score .abcjs-lyric')].some((e) => e.textContent.includes('↑'))")
+    assert "?" not in lyrics()
     assert "recorder" in page.locator(".fingering-key").text_content()
     page.select_option("#tab-select", "none")
     page.wait_for_function("!document.querySelector('.score .abcjs-lyric')")

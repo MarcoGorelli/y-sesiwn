@@ -301,8 +301,8 @@ def test_swing(page):
 
 def test_whistle_fingerings(page):
     page.goto_site()
-    f = lambda midi, whistle="whistle-D": page.evaluate(
-        "([m, w]) => { const r = whistleFingering(m, WHISTLES[w]); return r && [r.holes, r.high]; }", [midi, whistle])
+    f = lambda midi, instrument="whistle-D": page.evaluate(
+        "([m, w]) => { const r = fingering(m, FINGERED[w]); return r && [r.holes, r.high]; }", [midi, instrument])
     assert f(62) == ["●●●●●●", False]   # D: all covered
     assert f(66) == ["●●●●○○", False]   # F sharp
     assert f(73) == ["○○○○○○", False]   # C sharp: all open
@@ -310,8 +310,12 @@ def test_whistle_fingerings(page):
     assert f(72) == ["○●●○○○", False]   # C natural, cross-fingered
     assert f(61) is None and f(86) is None  # below and above a D whistle
     assert f(60, "whistle-C") == ["●●●●●●", False]
+    assert f(60, "recorder") == ["●●●●●●●●", False]  # recorder: thumb and all seven covered
+    assert f(65, "recorder") == ["●●●●●○●●", False]  # F, forked
+    assert f(76, "recorder") == ["◐●●●●●○○", False]  # E, second octave: thumb pinched
+    assert f(59, "recorder") is None and f(88, "recorder") is None
     # Lined up under their notes, a tied note's continuation included; rests take none.
-    rows = page.evaluate("""() => { const v = ABCJS.renderAbc('*', withFingerings('X:1\\nM:6/8\\nL:1/8\\nK:D\\nD3- D2 E | F2 z G z A|', WHISTLES['whistle-D']))[0];
+    rows = page.evaluate("""() => { const v = ABCJS.renderAbc('*', withFingerings('X:1\\nM:6/8\\nL:1/8\\nK:D\\nD3- D2 E | F2 z G z A|', FINGERED['whistle-D']))[0];
       return v.lines[0].staff[0].voices[0].filter((e) => e.el_type === 'note' && !e.rest).map((n) => (n.lyric || []).map((l) => l.syllable).join('')); }""")
     assert rows == ["●●●●●●", "", "●●●●●○", "●●●●○○", "●●●○○○", "●●○○○○"]
 
@@ -320,19 +324,26 @@ def test_whistle_on_a_tune(page):
     page.goto_site("alaw/llancesau-trefaldwyn/")
     page.open_tools()
     page.wait_for_selector(".score .abcjs-staff")
-    assert page.locator(".whistle-key").is_hidden()
+    assert page.locator(".fingering-key").is_hidden()
     page.select_option("#tab-select", "whistle-D")
     page.wait_for_selector(".score .abcjs-lyric")
-    assert page.locator(".whistle-key").is_visible()
+    assert page.locator(".fingering-key").is_visible()
     lyrics = lambda: "".join(page.locator(".score .abcjs-lyric").all_text_contents())
     in_d = lyrics()
     assert "?" not in in_d and "+" in in_d  # all on a D whistle, some in the second octave
     page.select_option("#key-select", "-5")  # down to A: its lowest notes are below the whistle
     page.wait_for_function("(before) => [...document.querySelectorAll('.score .abcjs-lyric')].map((e) => e.textContent).join('') !== before", arg=in_d)
     assert "?" in lyrics()
+    in_a = lyrics()
+    page.select_option("#tab-select", "recorder")  # its lowest note is C: still too low in A
+    page.wait_for_function("(before) => [...document.querySelectorAll('.score .abcjs-lyric')].map((e) => e.textContent).join('') !== before", arg=in_a)
+    assert "?" in lyrics()
+    page.select_option("#key-select", "0")  # back to D: all on the recorder
+    page.wait_for_function("() => ![...document.querySelectorAll('.score .abcjs-lyric')].some((e) => e.textContent === '?')")
+    assert "recorder" in page.locator(".fingering-key").text_content()
     page.select_option("#tab-select", "none")
     page.wait_for_function("!document.querySelector('.score .abcjs-lyric')")
-    assert page.locator(".whistle-key").is_hidden()
+    assert page.locator(".fingering-key").is_hidden()
 
 
 @pytest.mark.parametrize("path", ["alaw/llancesau-trefaldwyn/", "alaw/pibddawns-abertawe/", "alaw/tom-jones/", "",
@@ -1426,6 +1437,25 @@ def test_loop_part_and_speed_up(browser, site):
     context.close()
 
 
+def test_other_sound_pauses_the_tune(browser, site):
+    # A phone pausing the page's silent <audio> (another tab or app has started playing)
+    # pauses the tune too; pausing the tune lets the <audio> go.
+    context = browser.new_context(service_workers="block")
+    page = context.new_page()
+    page.goto(site + "?tune=glandyfi")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.click(".abcjs-midi-start")
+    page.wait_for_function("document.querySelector('.abcjs-note_playing') && audioFocus.playing")
+    page.evaluate("audioFocus.element.pause()")
+    page.wait_for_function("!state.synth.isStarted && !document.querySelector('.abcjs-midi-start.abcjs-pushed')")
+    assert not page.evaluate("audioFocus.playing")
+    page.click(".abcjs-midi-start")  # plays again at the first press
+    page.wait_for_function("audioFocus.playing && !audioFocus.element.paused && state.synth.timer.isRunning")
+    page.click(".abcjs-midi-start")  # pause
+    page.wait_for_function("!audioFocus.playing && audioFocus.element.paused")
+    context.close()
+
+
 def test_speed_up_arrives(browser, site):
     # Sped up to the tune's usual tempo (112 bpm, a jig's, from 107), the note says so: "da iawn".
     context = browser.new_context(service_workers="block")
@@ -1758,10 +1788,15 @@ def test_send_a_tune_without_abc(page):
     page.wait_for_selector(".send-tune form")
     page.evaluate(CATCH_MAIL)
     form = page.locator(".send-tune form")
+    # The ABC starts with its header, the title following the tune's name; a header alone isn't a tune.
+    header = form.locator("[name=abc]").input_value()
+    assert header == "X:1\nT:\nR:\nM:\nL:1/8\nK:\n"
     form.locator("[name=abc]").fill("T:Something\nABC def")
     page.wait_for_function("document.querySelector('.abc-problem').textContent.includes('K:')")
-    form.locator("[name=abc]").fill("")
+    form.locator("[name=abc]").fill(header)
+    page.wait_for_selector(".abc-preview", state="hidden")
     form.locator("[name=name]").fill("Y Deryn Du")
+    assert form.locator("[name=abc]").input_value() == "X:1\nT:Y Deryn Du\nR:\nM:\nL:1/8\nK:\n"
     form.locator("[name=source]").fill("My grandmother")
     form.locator("[name=permission]").check()
     form.locator("button[type=submit]").click()
@@ -2375,7 +2410,7 @@ def test_share_button(browser, site):
 def test_tablature_choices(page):
     page.goto_site("?tune=glandyfi")
     options = page.eval_on_selector_all("#tab-select option", "os => os.map((o) => o.value)")
-    assert options == ["none", "mandolin", "guitar", "whistle-D", "whistle-C", "whistle-G", "whistle-Bb"]
+    assert options == ["none", "mandolin", "guitar", "whistle-D", "whistle-C", "whistle-G", "whistle-Bb", "recorder"]
 
 
 # ---- The notes page ---------------------------------------------------------------

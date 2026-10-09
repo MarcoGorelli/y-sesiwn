@@ -230,11 +230,17 @@ scheduled runs after 60 days without a commit).
   *Chord chart* (title, key and chart only, big). `printAs()` sets
   `body[data-print]` for the print styles and puts things back on
   `afterprint`.
-- **Whistle fingerings:** the Tablature menu also offers a tin whistle in D, C,
-  G or B♭: six holes under each note (● covered, ○ open, ◐ half), + for the
-  second octave, ? for a note the whistle doesn't have. They're written as
-  lines of lyrics (`w:`), so abcjs lines them up; worked out from the notes as
-  drawn (`withFingerings()` in `app.js`), so they follow the key menu.
+- **Whistle and recorder fingerings:** the Tablature menu also offers a tin
+  whistle in D, C, G or B♭ (six holes under each note: ● covered, ○ open, ◐ half; + for the
+  second octave) and a descant recorder (thumb and seven holes, baroque
+  fingering from the American Recorder Society's chart; ◐ is half a double hole
+  or a pinched thumb). ? marks a note the instrument doesn't have. They're
+  written as lines of lyrics (`w:`), so abcjs lines them up; worked out from
+  the notes as drawn (`withFingerings()` in `app.js`), so they follow the key menu.
+- **Other sound stops the tune:** while a tune plays, a silent looping `<audio>`
+  plays too (`audioFocus` in `app.js`), since phones only pause media elements
+  when another tab or app starts playing; when it's paused, or iOS interrupts
+  the audio context, the tune pauses. It also gives the lock screen a pause button.
 - **Swing:** hornpipes play swung by default (a switch in the practice tools), using
   abcjs's `swing` option; only for tunes in 2/4, 3/4 or 4/4.
 - **Save:** the Print menu (*Print / save*) also saves the tune as ABC or MIDI,

@@ -14,6 +14,12 @@ const AUDIO_PARAMS = {
 // play or a piano key, so ask for playback. (Safari 16.4+; ignored elsewhere.)
 if ("audioSession" in navigator) navigator.audioSession.type = "playback";
 
+// <base href> is relative ("./", or "../../" on a tune's own page): fixed here as the
+// address it means now, so it doesn't follow the address as the app changes it (the
+// browser fetches the tab's icon late, and would look for it under alaw/<folder>/).
+const baseElement = document.querySelector("base");
+if (baseElement) baseElement.href = document.baseURI;
+
 // Markdown pages: ?page=<key> shows the "# heading" section of file (or all of it).
 // The Welsh versions (cy) are separate files, kept in step with the English ones.
 const PAGES = {
@@ -44,7 +50,7 @@ const state = {
   lang: savedLang(),    // "cy" or "en", for the whole site (tune names and the tunes' own notes stay as written)
   musicSize: savedSize(),  // the music's size, an index into SIZES (1: as drawn)
   redrawScore: null,    // draws the open tune's score again (for printing, see "beforeprint")
-  printing: false,      // between "beforeprint" and "afterprint" on a phone: the score keeps the tune's name
+  printing: false,      // between "beforeprint" and "afterprint": the score keeps the tune's name
   controlsOpen: false,  // on a phone, a tune's key, tempo and size unfolded (see renderTune)
   offlineReady: false,  // the offline copy (sw.js) is saved
   offlineFailed: false,  // …or saving it failed this visit
@@ -52,6 +58,8 @@ const state = {
   played: savedPlayed(),  // anything has been played on this device (see saveAllSounds)
   savingSounds: false,  // while it saves the rest, asked for on the offline card
   updated: false,       // a new version is saved (a deploy): the next page opens it (openUpdated)
+  setEditOpen: false,   // a set's Tunes and keys unfolded (once it has tunes), kept while the site is open
+  naming: null,         // a set just made on My sets: its page opens with the name ready to type over
 };
 
 // ---- Welsh or English --------------------------------------------------------------
@@ -211,11 +219,14 @@ function search(query) {
   // Tunes (groups of versions) whose names match; any version's titles count.
   const q = normalize(query);
   if (!q) return state.groupList;
-  return state.groupList
+  const scored = state.groupList
     .map((tune) => [score(q, tune), tune])
     .filter(([s]) => s >= 0.7)
-    .sort((x, y) => y[0] - x[0] || (x[1].title < y[1].title ? -1 : 1))
-    .map(([, tune]) => tune);
+    .sort((x, y) => y[0] - x[0] || (x[1].title < y[1].title ? -1 : 1));
+  const found = scored.map(([, tune]) => tune);
+  // Where the names only spelt a little like it start (after every name that has it): -1, none.
+  found.close = scored.findIndex(([s]) => s < 1);
+  return found;
 }
 
 // ---- Search by notes (any key) ------------------------------------------------------
@@ -1572,11 +1583,14 @@ function setTempo(abc, beat, bpm) {
 
 // abcjs names each score "Sheet Music for "<title>"" (its <title> and aria-label), in English.
 // about (its key and time, say) is added on, for screen readers: the picture says nothing else.
-function nameScore(paper, about = "") {
+function nameScore(paper, about = "", tuneTitle = "") {
   const score = paper.querySelector("svg");
   if (!score) return;
-  const name = (text) => (state.lang === "cy"
-    ? text.replace(/^Sheet Music for /, "Sgôr ").replace(/^Sheet Music$/, "Sgôr") : text) + (about ? `: ${about}` : "");
+  // Drawn without the tune's name (the heading above has it), the music still says it to a screen reader.
+  const name = (text) => {
+    if (tuneTitle && text === "Sheet Music") text = `Sheet Music for "${tuneTitle}"`;
+    return (state.lang === "cy" ? text.replace(/^Sheet Music for /, "Sgôr ").replace(/^Sheet Music$/, "Sgôr") : text) + (about ? `: ${about}` : "");
+  };
   const title = score.querySelector("title");
   if (title) title.textContent = name(title.textContent);
   if (score.hasAttribute("aria-label")) score.setAttribute("aria-label", name(score.getAttribute("aria-label")));
@@ -1761,6 +1775,17 @@ function scoreLayout(paper) {
   return { staffwidth, wrap: { minSpacing: 1.8, maxSpacing: 2.7, preferredMeasuresPerLine: bars } };
 }
 
+// Not one bar left alone on the last line (a whole line of the screen for a final note):
+// drawn again with a bar more on each line, a little closer together. Returns the music drawn.
+function noLoneBar(visualObj, layout, draw) {
+  if (!layout.wrap || !visualObj) return visualObj;
+  const lines = visualObj.lines.filter((line) => line.staff)
+    .map((line) => line.staff[0].voices[0].filter((x) => x.el_type === "bar").length);
+  const most = Math.max(...lines);
+  if (lines.length < 2 || lines.at(-1) !== 1 || most < 3) return visualObj;
+  return draw({ ...layout, wrap: { ...layout.wrap, minSpacing: 1.5, preferredMeasuresPerLine: most + 1 } }) ?? visualObj;
+}
+
 // The bars on a line of the tune as written (the middle one of its lines, so a short
 // last line doesn't count): what scoreLayout scales down for a narrow screen.
 function ownBarsPerLine(abc) {
@@ -1846,9 +1871,9 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   const tab = TABS[state.practice.tab];
   const whistle = WHISTLES[state.practice.tab];
   if (whistle) abc = withFingerings(abc, whistle);
-  // On a phone the tune's name is the page's heading, just above: the score leaves it out,
+  // The tune's name is the page's heading, just above: on screen the score leaves it out,
   // so the music starts higher. Printed, it keeps it (the heading isn't printed).
-  if ((matchMedia("(max-width: 800px)").matches || document.body.classList.contains("practice")) && !state.printing) abc = abc.replace(/^T:.*\n/gm, "");
+  if (!state.printing) abc = abc.replace(/^T:.*\n/gm, "");
   paper.dataset.bars = ownBarsPerLine(tune.abc);
   const layout = scoreLayout(paper);
   paper.dataset.layout = JSON.stringify(layout);
@@ -1859,9 +1884,10 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   if (document.body.classList.contains("practice") && !state.printing && grow > 1.1) {
     abc = `%%composerfont * ${Math.round(9 / grow)}\n%%tempofont * ${Math.round(12 / grow)}\n${abc}`;
   }
-  const visualObj = ABCJS.renderAbc(paper, accompaniment(abc, state.chords.play === "both"),
+  const render = (layout) => ABCJS.renderAbc(paper, accompaniment(abc, state.chords.play === "both"),
     { responsive: "resize", add_classes: true, paddingtop: 0, ...layout, ...(tab ? { tablature: [{ ...tab, label: tab.label() }] } : {}),
       selectTypes: ["note"], clickListener: playFrom })[0];
+  const visualObj = noLoneBar(render(layout), layout, render);
   // abcjs makes each clickable note a Tab stop: hundreds, between the player and the rest
   // of the page. Keyboards have the space bar to play instead.
   paper.querySelectorAll("svg [tabindex]").forEach((n) => n.removeAttribute("tabindex"));
@@ -1870,7 +1896,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   nameScore(paper, [
     tune.key && keyName(tune.key.pitch + transpose, tune.key.modeName),
     num && tr(`${num}/${den} time`, `amser ${num}/${den}`),
-  ].filter(Boolean).join(", "));
+  ].filter(Boolean).join(", "), tune.base);
   // Chords are always drawn (so playback has them), and hidden unless asked for.
   paper.classList.toggle("hide-chords", !state.chords.onScore);
   if (chart) {
@@ -2400,7 +2426,7 @@ function renderTune(main, group, tune) {
     })),
     // How the music is shown, at the end of the row: its size, and full screen.
     el("div", { class: "view-tools" }, musicSize(redraw), practice)]);
-  // Under the music: taking it with you (sharing, printing, saving, a set).
+  // Taking it with you: sharing, printing, saving, a set.
   const actions = el("div", { class: "tune-actions", role: "group", "aria-label": tr("Take it with you", "Mynd â hi gyda chi") },
     shareButton(group.title, () => `https://ysesiwn.cymru/${tuneLink(group, tune, settings)}`, () => linkCarries(tune, settings)),
     printButton(tune, paper, settings), qrButton(group, tune, settings), addToSetButton(tune, settings));
@@ -2465,12 +2491,16 @@ function renderTune(main, group, tune) {
       showInAddress();
     }
   };
+  // With none chosen, what tablature is; with a whistle, how to read its fingering.
+  const tabWhat = el("span", { class: "caption", hidden: state.practice.tab !== "none" },
+    tr("Where to put your fingers, under each note", "Ble i roi eich bysedd, o dan bob nodyn"));
   const whistleKey = el("span", { class: "caption whistle-key", hidden: !WHISTLES[state.practice.tab] },
     tr("● covered · ○ open · ◐ half-covered · + blow harder · ? not on this whistle",
       "● ar gau · ○ ar agor · ◐ hanner ar gau · + chwythu'n galetach · ? ddim ar y chwisl hon"));
   const tabSelect = el("select", { id: "tab-select", onchange: (e) => {
     state.practice.tab = e.target.value;
     whistleKey.hidden = !WHISTLES[state.practice.tab];
+    tabWhat.hidden = state.practice.tab !== "none";
     redraw();
   } },
     [["none", tr("No tablature", "Dim tablatur")], ["mandolin", tr("Mandolin / fiddle", "Mandolin / ffidil")],
@@ -2483,12 +2513,15 @@ function renderTune(main, group, tune) {
       el("div", { class: "control" }, el("label", { for: "loop-select" }, tr("Repeat", "Ailadrodd")), loopSelect), speedUp),
     speedNote,
     el("div", { class: "practice-line" },
-      toggle(tr("Count-in", "Cyfrif i mewn"), state.practice.countIn, (on) => { state.practice.countIn = on; }),
-      toggle(tr("Click", "Clic"), state.practice.click, (on) => { state.practice.click = on; }),
+      // What each does, in a word or two beside it, for someone who hasn't met them
+      toggle(el("span", {}, tr("Count-in", "Cyfrif i mewn"), el("span", { class: "what" }, tr(" · a bar of clicks first", " · bar o gliciau yn gyntaf"))),
+        state.practice.countIn, (on) => { state.practice.countIn = on; }),
+      toggle(el("span", {}, tr("Click", "Clic"), el("span", { class: "what" }, tr(" · on every beat", " · ar bob curiad"))),
+        state.practice.click, (on) => { state.practice.click = on; }),
       canSwing(tune) ? toggle(tr("Swing", "Swing"), settings.swing, (on) => { settings.swing = on; }, "swing",
         tr("Play the quavers long-short, as hornpipes are played", "Chwarae'r cwafers yn hir-byr, fel y chwaraeir pibddawnsiau")) : null),
     el("div", { class: "practice-line" },
-      el("div", { class: "control" }, el("label", { for: "tab-select" }, tr("Tablature", "Tablatur")), tabSelect), whistleKey));
+      el("div", { class: "control" }, el("label", { for: "tab-select" }, tr("Tablature", "Tablatur")), tabSelect), tabWhat, whistleKey));
   // Folded at first, so the music is the page (the summary says what's inside); then as left.
   const practiceTools = el("details", { class: "practice-tools fold", open: practiceToolsOpen(),
     ontoggle: (e) => { if (!document.body.classList.contains("practice")) { state.practice.open = e.target.open; } } },
@@ -2516,8 +2549,9 @@ function renderTune(main, group, tune) {
     controls,
     el("div", { class: "tune-layout" },
       el("div", { class: "tune-main" }, el("div", { class: "score" }, audio, soundNote(), paper),
-        practiceTools, chords, actions),
-      el("div", { class: "tune-side" },
+        practiceTools, chords),
+      // Taking it with you first, in reach beside the music (on a phone, after the practice tools)
+      el("div", { class: "tune-side" }, actions,
         el("section", { class: "card" }, el("h2", {}, tr("Details", "Manylion")), details, gloss || null),
         placeCard(group),
         el("details", { class: "abc" }, el("summary", {}, tr("ABC notation", "Nodiant ABC")), el("pre", { tabindex: 0 }, stripFields(tune.abc, "Z"))),
@@ -3308,7 +3342,7 @@ async function renderSessions(main) {
     const fits = (s, day = chosenDay, county = chosenCounty) => (!day || s.day === day) && (!county || s.county === county);
     for (const pill of dayPills.children) {
       const n = sessions.filter((s) => fits(s, pill.dataset.day)).length;
-      pill.setAttribute("aria-pressed", pill.dataset.day === chosenDay);
+      pill.setAttribute("aria-pressed", pill.dataset.day === (chosenDay ?? ""));
       pill.lastChild.textContent = String(n);
       pill.disabled = n === 0 && pill.dataset.day !== chosenDay;
     }
@@ -3331,6 +3365,9 @@ async function renderSessions(main) {
           town.county !== town.name ? el("span", { class: "caption" }, ` · ${tr(town.county, town.sessions[0].county_cy)}`) : null),
         town.sessions.filter((s) => fits(s)).map(sessionCard))));
   };
+  // Any day first, as Everywhere is first among the areas: chosen until a day is
+  dayPills.append(el("button", { type: "button", "data-day": "", onclick: () => { chosenDay = null; show(); } },
+    `${tr("Any day", "Unrhyw ddiwrnod")} ·\u00a0`, el("span", {})));
   for (const day of DAYS.filter((d) => sessions.some((s) => s.day === d))) {  // only days with a session
     dayPills.append(el("button", { type: "button", "data-day": day, onclick: () => { chosenDay = chosenDay === day ? null : day; show(); } },
       `${tr(day, CY_DAYS[day])} ·\u00a0`, el("span", {})));
@@ -3716,8 +3753,9 @@ const drawnIcon = (name) => el("span", { class: `${name}-icon`, "aria-hidden": "
 // The tune page's button: adds this version, in the key chosen, to the set you're building.
 // Once there's a set, it opens to the list of them (a teacher's, one per class), the last
 // added to first, and a new one. The sets that have the tune already are ticked, and
-// choosing one of those takes it out, so no set has it twice by mistake. Under the row:
-// the sets it's in.
+// choosing one of those takes it out, so no set has it twice by mistake. A new set is
+// named first ("Tuesday at the Ship"), the name offered ready to type over; Enter keeps
+// it. Under the row: the sets it's in.
 function addToSetButton(tune, settings) {
   const status = el("p", { class: "caption add-status", "aria-live": "polite" });
   const showIn = () => {
@@ -3726,30 +3764,16 @@ function addToSetButton(tune, settings) {
       sets.length === 1 ? tr("In your set ", "Yn eich set ") : tr("In your sets ", "Yn eich setiau "),
       ...sets.flatMap((set, i) => [i ? ", " : "", mySetLink(set)])] : []));
   };
-  const redraw = () => { wrap.replaceChildren(control(), status); wrap.querySelector("button").focus(); };
-  const choose = (id) => {
-    const sets = loadSets();
-    let set = sets.find((x) => x.id === id);
-    if (set && setHasTune(set, tune)) {  // ticked: take it out (and it can be put back)
-      const before = set.c;
-      set.c = withoutTune(set.c, tune);
-      set.updated = Date.now();
-      saveSets(sets);
-      status.replaceChildren(tr(`Taken out of ${set.name}. `, `Wedi'i thynnu o ${set.name}. `),
-        el("button", { type: "button", class: "link-button", onclick: () => {
-          const again = loadSets();
-          const back = again.find((x) => x.id === set.id);
-          if (back) { back.c = before; back.updated = Date.now(); saveSets(again); }
-          showIn();
-          redraw();
-        } }, tr("Undo", "Dadwneud")));
-      redraw();
-      return;
-    }
-    if (!set) {
-      set = { id: newSetId(), name: sets.length ? `${defaultSetName()} ${sets.length + 1}` : defaultSetName(), c: "" };
-      sets.push(set);
-    }
+  let naming = false;
+  // Focus goes back to the button for a keyboard, which would lose it with the list
+  // redrawn; not after a tap, where it would only leave a ring that looks stuck.
+  const redraw = (focus = false) => {
+    wrap.replaceChildren(...[control(), naming ? namer() : null, status].filter(Boolean));
+    if (naming) wrap.querySelector(".set-namer input").select();
+    else if (focus) wrap.querySelector("button").focus();
+  };
+  const byKeyboard = (e) => e?.detail === 0;  // a click from Enter or space
+  const add = (set, sets) => {
     setCurrentSet(set.id);
     // Added to the end of its code as it is: a tune's page may not have every other tune's
     // code yet (it loads with only its own), and decoding would drop the ones it hasn't.
@@ -3758,12 +3782,77 @@ function addToSetButton(tune, settings) {
     saveSets(sets);
     status.replaceChildren(drawnIcon("tick"), tr(`Added to ${set.name} (${tuneCount(setSize(set))}) · `,
       `Wedi'i hychwanegu at ${set.name} (${tuneCount(setSize(set))}) · `), el("a", { href: mySetLink(set).href, "data-route": true }, tr("see the set", "gweld y set")));
-    redraw();  // the list, now with this set (first)
+  };
+  const choose = (id, e) => {
+    const sets = loadSets();
+    const set = sets.find((x) => x.id === id);
+    if (!set) { naming = true; status.replaceChildren(); redraw(); return; }  // a new one: its name first
+    if (setHasTune(set, tune)) {  // ticked: take it out (and it can be put back)
+      const before = set.c;
+      set.c = withoutTune(set.c, tune);
+      set.updated = Date.now();
+      saveSets(sets);
+      status.replaceChildren(tr(`Taken out of ${set.name}. `, `Wedi'i thynnu o ${set.name}. `),
+        el("button", { type: "button", class: "link-button", onclick: (e) => {
+          const again = loadSets();
+          const back = again.find((x) => x.id === set.id);
+          if (back) { back.c = before; back.updated = Date.now(); saveSets(again); }
+          showIn();
+          redraw(byKeyboard(e));
+        } }, tr("Undo", "Dadwneud")));
+      redraw(byKeyboard(e));
+      return;
+    }
+    add(set, sets);
+    redraw(byKeyboard(e));  // the list, now with this set (first)
+  };
+  // The new set's name: offered as "My set" (or "My set 2", the first not taken), selected,
+  // so typing replaces it. A name another set has already isn't used twice: that set is offered instead.
+  const namer = () => {
+    const sets = loadSets();
+    const taken = (name) => sets.find((set) => set.name.toLocaleLowerCase() === name.toLocaleLowerCase());
+    let offered = defaultSetName();
+    for (let n = 2; taken(offered); n++) offered = `${defaultSetName()} ${n}`;
+    const id = `set-namer-${tune.slug}`;
+    const hint = el("p", { class: "caption set-namer-hint", "aria-live": "polite" });
+    const input = el("input", { type: "text", id, value: offered, maxlength: 60, autocomplete: "off", spellcheck: "false",
+      enterkeyhint: "done", "aria-describedby": `${id}-hint`, oninput: () => hint.replaceChildren() });
+    hint.id = `${id}-hint`;
+    return el("form", { class: "set-namer",
+      onkeydown: (e) => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); cancel(e); } },
+      onsubmit: (e) => {
+        e.preventDefault();
+        const name = input.value.replace(/\s+/g, " ").trim() || offered;
+        const same = taken(name);
+        if (same) {
+          hint.replaceChildren(...(setHasTune(same, tune)
+            ? [tr(`${same.name} has this tune already: give the new set another name.`,
+                `Mae'r alaw hon yn ${same.name} yn barod: rhowch enw arall i'r set newydd.`)]
+            : [tr(`You have a set called ${same.name} already. `, `Mae gennych set o'r enw ${same.name} yn barod. `),
+                el("button", { type: "button", class: "link-button", onclick: (e) => { naming = false; choose(same.id, e); } },
+                  tr(`Add it to ${same.name}`, `Ei hychwanegu at ${same.name}`))]));
+          input.focus();
+          return;
+        }
+        const set = { id: newSetId(), name, c: "" };
+        const all = loadSets();
+        all.push(set);
+        naming = false;
+        add(set, all);
+        redraw(true);
+      } },
+      el("label", { for: id }, tr("Name the new set", "Enw'r set newydd")),
+      el("span", { class: "set-namer-row" }, input,
+        el("button", { class: "primary" }, tr("Make the set", "Gwneud y set")),
+        el("button", { type: "button", onclick: cancel }, tr("Cancel", "Canslo"))),
+      hint);
   };
   const control = () => {
     const sets = loadSets();
     const label = tr("Add to set", "Ychwanegu at set");
-    if (!sets.length) return el("button", { type: "button", class: "add-to-set", onclick: () => choose(null) }, label);
+    if (!sets.length) {
+      return el("button", { type: "button", class: "add-to-set", "aria-expanded": String(naming), onclick: (e) => (naming ? cancel(e) : choose(null, e)) }, label);
+    }
     const current = currentSetId();
     sets.sort((a, b) => (b.id === current) - (a.id === current) || (b.updated ?? 0) - (a.updated ?? 0));
     const ticked = sets.some((set) => setHasTune(set, tune));
@@ -3771,13 +3860,15 @@ function addToSetButton(tune, settings) {
       ...sets.map((set) => {
         const has = setHasTune(set, tune);
         // With any ticked, the rest leave the tick's room, so the names line up.
-        return el("button", { type: "button", class: ticked ? (has ? "has-tune" : "ticks") : null, onclick: () => choose(set.id) },
+        return el("button", { type: "button", class: ticked ? (has ? "has-tune" : "ticks") : null, onclick: (e) => choose(set.id, e) },
           has ? drawnIcon("tick") : null, set.name,
           el("span", { class: "caption" }, ` · ${tuneCount(setSize(set))}${has ? tr(" · take it out", " · ei thynnu allan") : ""}`));
       }),
-      el("button", { type: "button", class: "menu-sep", onclick: () => choose(null) }, drawnIcon("plus"), tr("A new set", "Set newydd"))],
+      el("button", { type: "button", class: "menu-sep", onclick: (e) => choose(null, e) }, drawnIcon("plus"), tr("A new set", "Set newydd"))],
     "add-to-set");
   };
+  // Not making a new set after all (Cancel, Esc, or the first Add to set pressed again).
+  const cancel = (e) => { naming = false; showIn(); redraw(byKeyboard(e)); };
   showIn();
   const wrap = el("span", { class: "add-to-set-wrap" }, control(), status);
   return wrap;
@@ -3795,7 +3886,7 @@ function renderSets(main) {
           const { items } = decodeSet(set.c);
           return el("li", {},
             el("a", { href: setUrl(items, set.name, set.id), "data-route": true, onclick: () => setCurrentSet(set.id) }, set.name),
-            el("span", { class: "caption" }, ` · ${tuneCount(items.length)}${set.id === currentSetId() ? tr(" · adding to this one", " · yn ychwanegu at hon") : ""}`),
+            el("span", { class: "caption" }, ` · ${tuneCount(items.length)}`),
             el("button", { type: "button", class: "link-button", "aria-label": tr(`Delete ${set.name}`, `Dileu ${set.name}`), onclick: () => {
               deleted = { set, current: set.id === currentSetId() };
               saveSets(loadSets().filter((x) => x.id !== set.id));
@@ -3824,9 +3915,12 @@ function renderSets(main) {
       undo,
       el("p", {}, el("button", { type: "button", class: "primary", onclick: () => {
         const sets = loadSets();
-        const set = { id: newSetId(), name: defaultSetName(), c: "", updated: Date.now() };
+        let name = defaultSetName();
+        for (let n = 2; sets.some((set) => set.name === name); n++) name = `${defaultSetName()} ${n}`;
+        const set = { id: newSetId(), name, c: "", updated: Date.now() };
         saveSets([...sets, set]);
         setCurrentSet(set.id);
+        state.naming = set.id;  // its page opens with the name ready to type over
         navigate(setUrl([], set.name, set.id));
       } }, tr("New set", "Set newydd"))),
       el("p", { class: "sets-own" }, tr("Y Sesiwn doesn't come with ready-made sets, on purpose: finding which tunes sit well "
@@ -3859,7 +3953,8 @@ function setScore(tune, key) {
     abc = transposeAbc(tune, abc, key);
     paper.dataset.bars = ownBarsPerLine(tune.abc);
     const layout = scoreLayout(paper);
-    ABCJS.renderAbc(paper, shortCredits(abc, layout), { responsive: "resize", add_classes: true, paddingtop: 0, ...layout });
+    const render = (layout) => ABCJS.renderAbc(paper, shortCredits(abc, layout), { responsive: "resize", add_classes: true, paddingtop: 0, ...layout })[0];
+    noLoneBar(render(layout), layout, render);
     hideMeasuring();
     nameScore(paper);
   };
@@ -4036,13 +4131,17 @@ function renderSet(main) {
     el("label", { for: "set-add", class: "visually-hidden" }, tr("Add a tune to the set", "Ychwanegu alaw at y set")),
     addInput, addList);
   const title = mine
-    ? el("input", { type: "text", class: "set-name", value: name, "aria-label": tr("Name of the set", "Enw'r set"),
-        onchange: (e) => { name = e.target.value.trim() || defaultSetName(); save(); } })
+    ? el("input", { type: "text", class: "set-name", value: name, maxlength: 60, "aria-label": tr("Name of the set", "Enw'r set"),
+        onchange: (e) => { name = e.target.value.replace(/\s+/g, " ").trim() || defaultSetName(); e.target.value = name; save(); },
+        onkeydown: (e) => { if (e.key === "Enter") e.target.blur(); } })
     : el("h1", {}, name);
-  const copy = el("button", { type: "button", onclick: async (e) => {
-    try { await navigator.clipboard.writeText(shareLink()); e.target.closest("button").replaceChildren(...doneText(tr("Link copied", "Dolen wedi'i chopïo"))); }
-    catch { prompt(tr("Copy this link:", "Copïwch y ddolen hon:"), shareLink()); }
-  } }, tr("Copy link", "Copïo'r ddolen"));
+  // Sharing, in one menu: the phone's share sheet (where there is one), the link, the set
+  // as a list to paste, the QR code. What was copied is said under the row.
+  const shared = el("p", { class: "caption set-shared", "aria-live": "polite" });
+  const copied = (what, text, ask) => async () => {
+    try { await navigator.clipboard.writeText(text()); shared.replaceChildren(...doneText(what)); }
+    catch { prompt(ask, text()); }
+  };
   // The set as text to paste into a message or notes: its name, a bullet for each tune
   // (version and key), and the link.
   const asList = () => [name, ...items.map(({ tune, key }) => {
@@ -4051,10 +4150,16 @@ function renderSet(main) {
     const inKey = tune.key ? `: ${keyName(tune.key.pitch + key, tune.key.modeName)}` : "";
     return `• ${tune.base}${version}${inKey}`;
   }), shareLink()].join("\n");
-  const copyList = el("button", { type: "button", onclick: async (e) => {
-    try { await navigator.clipboard.writeText(asList()); e.target.closest("button").replaceChildren(...doneText(tr("List copied", "Rhestr wedi'i chopïo"))); }
-    catch { prompt(tr("Copy this list:", "Copïwch y rhestr hon:"), asList()); }
-  } }, tr("Copy as a list", "Copïo fel rhestr"));
+  const share = dropMenu("set-share-menu", [tr("Share", "Rhannu")], [
+    navigator.share ? el("button", { type: "button", onclick: () => navigator.share({ title: name, url: shareLink() }).catch(() => {}) },
+      tr("Send with an app…", "Anfon gydag ap…")) : null,
+    el("button", { type: "button", onclick: copied(tr("Link copied", "Dolen wedi'i chopïo"), shareLink, tr("Copy this link:", "Copïwch y ddolen hon:")) },
+      tr("Copy link", "Copïo'r ddolen")),
+    el("button", { type: "button", onclick: copied(tr("List copied", "Rhestr wedi'i chopïo"), asList, tr("Copy this list:", "Copïwch y rhestr hon:")) },
+      tr("Copy as a list", "Copïo fel rhestr")),
+    el("button", { type: "button", onclick: () => showQr(name, shareLink(),
+      tr("Scan with a phone's camera to open this set.", "Sganiwch gyda chamera ffôn i agor y set hon.")) }, tr("QR code", "Cod QR")),
+  ].filter(Boolean), "share");
   const printAll = () => { for (const paper of music.querySelectorAll(".set-paper")) paper.draw(); window.print(); };
   // Printing with the browser's own menu: draw every score first. (Gone with the page.)
   const beforePrint = () => {
@@ -4068,6 +4173,13 @@ function renderSet(main) {
     setCurrentSet(set.id);
     navigate(setUrl(items, name, set.id));
   } }, tr("Save to my sets", "Cadw yn fy setiau"));
+  // The running order, keys and adding tunes: folded once there are tunes, so the page
+  // opens as a music stand; open while the set is empty (and then as it was left).
+  const edit = el("details", { class: "set-edit fold", open: !items.length || state.setEditOpen,
+    ontoggle: (e) => { if (items.length) state.setEditOpen = e.target.open; } },
+    el("summary", {}, el("span", {}, tr("Tunes and keys", "Alawon a chyweiriau"),
+      el("span", { class: "caption", "aria-hidden": "true" }, tr(" · order, keys, add a tune", " · trefn, cyweiriau, ychwanegu alaw")))),
+    addBox, added, empty, list, undo);
 
   main.replaceChildren(...[
     title,
@@ -4075,18 +4187,18 @@ function renderSet(main) {
     missing ? el("p", { class: "caption" }, tr(missing === 1 ? "1 tune in this set isn't on the site any more."
       : `${missing} tunes in this set aren't on the site any more.`,
       `Dyw ${tuneCount(missing)} yn y set hon ddim ar y wefan bellach.`)) : null,
-    el("div", { class: "set-actions" }, saveButton, navigator.share ? shareButton(name, shareLink) : null, copy, copyList,
-      el("button", { type: "button", onclick: () => showQr(name, shareLink(),
-        tr("Scan with a phone's camera to open this set.", "Sganiwch gyda chamera ffôn i agor y set hon.")) }, tr("QR code", "Cod QR")),
+    el("div", { class: "set-actions" }, saveButton, share,
       el("button", { type: "button", onclick: printAll }, tr("Print", "Argraffu")),
       el("button", { type: "button", class: "practice-toggle", onclick: () => setPractice(!document.body.classList.contains("practice")) },
         practiceLabel(document.body.classList.contains("practice"))),
       musicSize(() => music.querySelectorAll(".set-paper").forEach((paper) => {
         if (paper.drawn) { paper.drawn = false; paper.draw(); }
       }))),
-    addBox, added, empty, list, undo,
+    shared,
+    edit,
     music, nav,
   ].filter(Boolean));
+  if (mine && state.naming === my) { state.naming = null; title.select(); }
   if (mine) setCurrentSet(my);
   draw();
 }
@@ -4330,13 +4442,13 @@ function noteMiss(query, found) {
 }
 
 // A tune in the search's list: its type's colour, its name, and what it is ("Jig · G major",
-// "Pibddawns (hornpipe) · D major", as Browse names the types), so two tunes of the same
+// "Pibddawns (hornpipe) · D major", "Other · G major", as Browse names the types), so two tunes of the same
 // name, or a half-remembered one, can be told apart.
 function suggestion(group) {
   const type = state.data.types?.find((t) => t.name === group.type);
   const key = group.versions[0].key;
   const gloss = state.lang !== "cy" && GLOSSED.has(group.type) ? el("span", { class: "gloss" }, ` (${EN_TYPE[group.type]})`) : null;
-  const what = [group.type !== "Other" && [typeName(group.type), gloss], key && `${key.root} ${modeName(key.modeName)}`]
+  const what = [[typeName(group.type), gloss], key && `${key.root} ${modeName(key.modeName)}`]
     .filter(Boolean).flatMap((part, i) => (i ? [" · ", part] : [part]));
   return [el("span", { class: "swatch", style: type ? `--c: ${type.colour}` : null, "aria-hidden": "true" }),
     tuneName(group.slug, group.title), what.length ? el("span", { class: "what" }, what) : null];
@@ -4378,7 +4490,15 @@ function attachSearch(input, list, { showAllOnFocus = true, onPick = null } = {}
   const show = () => {
     const query = input.value;
     if (!query.trim() && !showAllOnFocus) { results = []; close(); return; }
-    results = query.trim() ? search(query).slice(0, 20) : state.groupList;
+    // Names spelt only a little like it come after the ones that have it, and with
+    // those, just the three closest: "llwyn" isn't followed by every name with "wyn".
+    let closeFrom = -1;
+    if (query.trim()) {
+      const found = search(query);
+      closeFrom = found.close;
+      results = (closeFrom > 0 ? found.slice(0, closeFrom + 3) : found).slice(0, 20);
+      if (closeFrom >= results.length) closeFrom = -1;
+    } else results = state.groupList;
     noteMiss(query, results.length);
     say(query);
     active = 0;
@@ -4388,6 +4508,7 @@ function attachSearch(input, list, { showAllOnFocus = true, onPick = null } = {}
     list.replaceChildren(...(results.length
       ? results.map((tune, i) => el("li", {
           role: "option", id: `${input.id}-option-${i}`, "aria-selected": String(i === active),
+          class: i && i === closeFrom ? "close" : null, "data-label": i && i === closeFrom ? tr("Close spellings", "Sillafiadau tebyg") : null,
           onmousedown: (e) => { e.preventDefault(); open(tune); },
         }, suggestion(tune)))
       : [el("li", { class: "empty" }, ...(state.complete
@@ -4608,10 +4729,9 @@ if ("serviceWorker" in navigator) {
   });
 }
 
-// Printing from a phone: the score is drawn again with the tune's name, which it leaves
-// out on screen (drawScore), and without it again afterwards.
+// Printing: the score is drawn again with the tune's name, which it leaves out on screen
+// (drawScore), and without it again afterwards.
 window.addEventListener("beforeprint", () => {
-  if (!matchMedia("(max-width: 800px)").matches) return;
   state.printing = true;
   state.redrawScore?.();
 });

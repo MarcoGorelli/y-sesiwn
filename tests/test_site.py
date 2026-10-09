@@ -637,7 +637,7 @@ def test_coming_up_on_the_sessions_page(page):
     link = page.locator(".coming-up li a").first
     card = link.get_attribute("href")[1:]
     day = page.evaluate(f"async () => (await loadSessions()).sessions.find((s) => 'session-' + s.id === '{card}').day")
-    page.locator(f".pills [data-day]:not([data-day='{day}']):not([disabled])").first.click()  # another day: its card is hidden
+    page.locator(f".pills [data-day]:not([data-day='{day}'], [data-day='']):not([disabled])").first.click()  # another day: its card is hidden
     assert page.locator(f"#{card}").count() == 0
     link.click()
     page.wait_for_function(f"document.activeElement.id === '{card}'")
@@ -1037,11 +1037,11 @@ def test_new_version_straight_away(browser, site):
         page.wait_for_function("navigator.serviceWorker.controller !== null", timeout=30000)
         app.write_text(original + "\nwindow.newVersion = true;\n", encoding="utf-8")  # a deploy
         page.goto(site + "?set=5A3V~h&n=Nos%20Iau")
-        page.wait_for_selector(".set-list li")
+        page.wait_for_selector(".set-list li", state="attached")
         assert page.evaluate("window.newVersion") is True
         context.set_offline(True)
         page.goto(site + "?set=5A3V~h&n=Nos%20Iau")
-        page.wait_for_selector(".set-list li")
+        page.wait_for_selector(".set-list li", state="attached")
         assert page.evaluate("window.newVersion") is None  # offline: the saved copy
     finally:
         app.write_text(original, encoding="utf-8")
@@ -1493,7 +1493,7 @@ def test_count_in_and_click(page):
     page.check(".practice-row label:has-text('Count-in')")
     count_in = page.evaluate(drum)
     assert count_in["melodyStarts"] > 0 and count_in["drums"] == 2  # one 6/8 bar: two dotted-crotchet clicks
-    page.check(".practice-row label:has-text('Click')")
+    page.check(".practice-row label:has-text('Click · on every beat')")
     assert page.evaluate(drum)["drums"] > 50  # a click on every beat of the tune
 
 
@@ -1843,13 +1843,20 @@ def test_set_from_tune_pages(page):
         if key:
             page.select_option("#key-select", key)
         page.click(".add-to-set")
-        if path != "alaw/llancesau-trefaldwyn/":  # the first makes the set; then it's in the list, with a new one
+        if path == "alaw/llancesau-trefaldwyn/":  # the first makes the set, named first ("My set", ready to type over)
+            assert page.input_value(".set-namer input") == "My set"
+            assert page.evaluate("document.activeElement.selectionEnd - document.activeElement.selectionStart") == len("My set")
+            page.press(".set-namer input", "Enter")
+        else:  # then it's in the list, with a new one
             menu = page.locator(".add-to-set-wrap .print-menu")
             assert menu.locator("button").all_inner_texts() == [f"My set · {1 if key else 2} tune{'' if key else 's'}", "A new set"]
             menu.locator("button", has_text="My set").click()
     assert "(3 tunes)" in page.inner_text(".add-status")
     page.click(".add-status a")
-    page.wait_for_selector(".set-list li")
+    # The set opens as a music stand: its tunes and keys folded above the music
+    page.wait_for_selector(".set-edit")
+    assert not page.locator(".set-list").is_visible()
+    page.click(".set-edit > summary")
     assert page.locator(".set-list li > a").all_inner_texts() == ["Llancesau Trefaldwyn", "Glandyfi", "Nyth y Gog"]
     assert "?set=5A3V~h7o&n=My%20set&my=" in page.url  # Glandyfi (version 2) up two: ~h
     assert page.locator(".set-list li").nth(1).locator("select").input_value() == "2"
@@ -1898,9 +1905,23 @@ def test_add_to_set_choosing_the_set(page):
     page.click(".add-to-set")  # now Class is first, ticked: it has the tune
     assert menu.locator("button").all_inner_texts()[:2] == ["Class · 1 tune · take it out", "Nos Iau · 1 tune"]
     menu.locator("button", has_text="A new set").click()
-    assert "Added to My set 3 (1 tune)" in page.inner_text(".add-status")
+    # Named first: a name another set has isn't used twice; that set is offered instead
+    assert page.evaluate("document.activeElement.matches('.set-namer input')")
+    page.fill(".set-namer input", "nos iau")
+    page.press(".set-namer input", "Enter")
+    assert page.inner_text(".set-namer-hint") == "You have a set called Nos Iau already. Add it to Nos Iau"
+    page.fill(".set-namer input", " Class ")
+    page.press(".set-namer input", "Enter")
+    assert page.inner_text(".set-namer-hint") == "Class has this tune already: give the new set another name."
+    page.keyboard.press("Escape")  # put away
+    assert page.locator(".set-namer").count() == 0
+    page.click(".add-to-set")
+    menu.locator("button", has_text="A new set").click()
+    page.fill(".set-namer input", "Dydd Sadwrn")
+    page.press(".set-namer input", "Enter")
+    assert "Added to Dydd Sadwrn (1 tune)" in page.inner_text(".add-status")
     kept = page.evaluate("JSON.parse(localStorage.getItem('sets'))")
-    assert [(x["name"], len(x["c"])) for x in kept] == [("Nos Iau", 2), ("Class", 2), ("My set 3", 2)]
+    assert [(x["name"], len(x["c"])) for x in kept] == [("Nos Iau", 2), ("Class", 2), ("Dydd Sadwrn", 2)]
 
 
 def test_add_to_set_knows_its_sets(page):
@@ -1933,7 +1954,7 @@ def test_add_to_set_knows_its_sets(page):
     page.wait_for_selector(".score .abcjs-staff")
     assert page.inner_text(".add-status") == "In your sets Nos Iau, Class"
     page.click(".add-status a >> nth=0")
-    page.wait_for_selector(".set-list li")
+    page.wait_for_selector(".set-list li", state="attached")
 
 
 def test_current_page_marked(page):
@@ -1955,6 +1976,9 @@ def test_add_to_set_by_search(page):
     page.goto_site("?page=sets")
     page.click("text=New set")
     page.wait_for_selector("#set-add")
+    # A new set opens with its name ready to type over, and its tunes unfolded
+    assert page.evaluate("document.activeElement.matches('.set-name')")
+    assert page.evaluate("document.activeElement.selectionEnd") == len("My set")
     assert page.locator("text=No tunes yet").is_visible()
     page.fill("#set-add", "llancesau")
     page.wait_for_selector("#set-add-list li")
@@ -1985,9 +2009,9 @@ def test_shared_set(browser, site, link):
                                   service_workers="block")
     page = context.new_page()
     page.goto(site + link)
-    page.wait_for_selector(".set-list li")
+    page.wait_for_selector(".set-list li", state="attached")
     assert page.inner_text("main h1") == "Nos Iau"
-    assert page.locator(".set-list li > a").all_inner_texts() == ["Glandyfi", "Llancesau Trefaldwyn"]
+    assert page.locator(".set-list li > a").all_text_contents() == ["Glandyfi", "Llancesau Trefaldwyn"]
     assert "1 tune in this set isn't on the site any more" in page.inner_text("main")  # an unknown code
     assert page.locator(".set-list li select").first.input_value() == "2"
     page.click("text=Save to my sets")
@@ -2003,16 +2027,18 @@ def test_copy_set_as_a_list(browser, site):
     context = browser.new_context(service_workers="block", permissions=["clipboard-read", "clipboard-write"])
     page = context.new_page()
     page.goto(site + "?set=3V~h5A&n=Nos%20Iau")
-    page.wait_for_selector(".set-list li")
+    page.wait_for_selector(".set-list li", state="attached")
+    page.click(".set-actions .share")
     page.click("text=Copy as a list")
     assert page.evaluate("navigator.clipboard.readText()") == (
         "Nos Iau\n"
         "• Glandyfi (version 2): A major\n"
         "• Llancesau Trefaldwyn (version 1): D major\n"
         "https://ysesiwn.cymru/?set=3V~h5A&n=Nos%20Iau")
-    assert page.inner_text(".set-actions") .count("List copied") == 1
+    assert page.inner_text(".set-shared") == "List copied"
     page.click(".lang-switch [data-lang=cy]")
-    page.wait_for_selector(".set-list li")
+    page.wait_for_selector(".set-list li", state="attached")
+    page.click(".set-actions .share")
     page.click("text=Copïo fel rhestr")
     assert "• Glandyfi (fersiwn 2): A fwyaf" in page.evaluate("navigator.clipboard.readText()")
     context.close()
@@ -2024,8 +2050,8 @@ def test_set_codes_that_change(page):
     page.goto_site()
     short_id = page.evaluate("state.bySlug.get('machynlleth').id")
     page.goto_site(f"?set=.{short_id}~a5A&n=Old")
-    page.wait_for_selector(".set-list li")
-    assert page.locator(".set-list li > a").all_inner_texts() == ["Machynlleth", "Llancesau Trefaldwyn"]
+    page.wait_for_selector(".set-list li", state="attached")
+    assert page.locator(".set-list li > a").all_text_contents() == ["Machynlleth", "Llancesau Trefaldwyn"]
     assert page.locator(".set-list li select").first.input_value() == "-5"
     assert "?set=5Z~a5A&n=Old" in page.url
     page.evaluate("""localStorage.setItem('sets', JSON.stringify([{ id: 'old1', name: 'Old', s: '6m42r~2.bne0o' }]))""")
@@ -2043,13 +2069,12 @@ def test_big_set(page, site):
     page.goto_site()
     codes = page.evaluate("state.data.tunes.slice(0, 100).map((t, i) => t.code + (i % 3 ? '' : '~h')).join('')")
     page.goto_site(f"?set={codes}&n=Big")
-    page.wait_for_selector(".set-list li")
+    page.wait_for_selector(".set-list li", state="attached")
     assert page.locator(".set-list li").count() == 100
-    assert page.locator(".set-paper svg").count() == 0
-    page.locator(".set-paper").first.scroll_into_view_if_needed()
-    page.wait_for_selector(".set-paper svg")
+    page.wait_for_selector(".set-paper svg")  # the music comes first, under the buttons
     assert 0 < page.locator(".set-paper svg").count() < 30
     page.evaluate("window.scrollTo(0, 0)")
+    page.click(".set-actions .share")
     page.click(".set-actions button:text-is('QR code')")
     page.wait_for_selector("dialog svg.qr")
     link = f"https://ysesiwn.cymru/?set={codes}&n=Big"
@@ -2332,6 +2357,7 @@ def test_share_button(browser, site):
     assert page.evaluate("window.shared") == {"title": "Glandyfi", "url": "https://ysesiwn.cymru/alaw/glandyfi/"}
     page.goto(site + "?set=3V~h5A&n=Nos%20Iau")
     page.click(".set-actions .share")
+    page.click("#set-share-menu button:text-is('Send with an app…')")
     assert page.evaluate("window.shared.title") == "Nos Iau" and "?set=3V~h5A" in page.evaluate("window.shared.url")
     context.close()
 
@@ -2475,9 +2501,10 @@ def test_player_stays_in_reach(browser, site):
         context.close()
 
 
-def test_phone_score_leaves_out_the_name(browser, site):
-    # On a phone the heading names the tune: the score doesn't repeat it, except printed.
-    context = browser.new_context(service_workers="block", **PHONE)
+@pytest.mark.parametrize("phone", [True, False])
+def test_score_leaves_out_the_name(browser, site, phone):
+    # The heading names the tune: the score doesn't repeat it, except printed.
+    context = browser.new_context(service_workers="block", **(PHONE if phone else {}))
     page = context.new_page()
     page.goto(site + "?tune=glandyfi")
     page.wait_for_selector(".score .abcjs-staff")
@@ -2692,8 +2719,8 @@ def test_moved_tune(page, site):
     assert page.url.endswith("/alaw/glandyfi/?key=A")  # Glandyfi is in G: 2 up, as kept for its old name
     assert page.inner_text("h1") == "Glandyfi" and page.input_value("#key-select") == "2"
     page.goto_site("?set=zz~h")
-    page.wait_for_selector(".set-list li")
-    assert page.inner_text(".set-list li a") == "Glandyfi" and page.input_value(".set-list select") == "2"
+    page.wait_for_selector(".set-list li", state="attached")
+    assert page.text_content(".set-list li a") == "Glandyfi" and page.input_value(".set-list select") == "2"
 
 
 def test_tune_page_without_tunes_json(page, site):
@@ -2832,6 +2859,7 @@ def test_screen_stays_on_with_music(page, site):
     page.wait_for_function("wakeLog.join() === 'request,release'")
     page.goto_site("?set=3V~h5A&n=Nos%20Iau")
     page.wait_for_function("wakeLog.join() === 'request'")
+    page.click(".set-edit > summary")
     page.click(".set-list a >> nth=0")  # from a set to one of its tunes: kept on
     page.wait_for_selector(".score .abcjs-staff")
     assert page.evaluate("wakeLog.join()") == "request"
@@ -2869,7 +2897,8 @@ def test_set_next_and_previous(browser, site):
     page.keyboard.press("ArrowLeft")
     page.wait_for_function("document.querySelector('.set-nav-where').textContent.startsWith('2 / 3')")
     # Typing in a box (the set's name, adding a tune) keeps the arrow keys for the text.
-    page.focus("#set-add")  # (which scrolls up to it)
+    page.click(".set-edit > summary")  # (which scrolls up to it)
+    page.focus("#set-add")
     before = page.evaluate("scrollY")
     page.keyboard.press("ArrowLeft")
     page.wait_for_timeout(100)

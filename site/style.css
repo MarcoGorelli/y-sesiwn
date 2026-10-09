@@ -28,6 +28,7 @@
   --scrim: #0006;             /* behind a dialog */
   --shadow-float: #00000026;  /* things that float over the page */
   --shadow-soft: #0000001f;
+  --art-dim: none;            /* the drawn instruments on their quilt: dimmed at night, as the paper is */
   /* Red and black striped Welsh flannel (as in a pais or betgwn), down the edge of a call-out */
   --flannel: linear-gradient(to right, #C8102E 0 2.5px, #1d1d1b 2.5px 4px, #C8102E 4px 7px) left / 7px 100% no-repeat;
   /* Drawn icons, used as masks so they take the text colour: a chevron (pointing right)
@@ -57,6 +58,7 @@
     --chosen: #dfe3e8;
     --on-chosen: #111418;
     --paper: #ddd6c6;         /* still paper for the sheet music, but not glaring at night */
+    --art-dim: brightness(.88);
   }
 }
 
@@ -189,8 +191,12 @@ button.primary:hover { color: #fff; filter: brightness(1.1); }
 @media (max-width: 800px) { .suggestions .what .gloss { display: none; } }
 .suggestions .try { display: block; margin-top: .3rem; font-size: .9rem; }
 @media (hover: hover) { .suggestions li:not(.empty):hover { background: var(--accent-soft); } }
-/* The one Enter opens: a clear bar down its side as well as the tint. */
-.suggestions li[aria-selected="true"] { background: var(--accent-soft); }  /* a wash, not a bar on one edge */
+/* The one Enter opens: the red wash */
+.suggestions li[aria-selected="true"] { background: var(--accent-soft); }
+/* Names spelt only a little like the search: under a quiet line of their own */
+.suggestions li.close { position: relative; margin-top: 1.9rem; }
+.suggestions li.close::before { content: attr(data-label); position: absolute; left: 0; right: 0; bottom: 100%; padding: .2rem 1rem .25rem;
+  border-top: 1px solid var(--border); color: var(--muted); font-size: .8rem; pointer-events: none; }
 .suggestions li.empty { color: var(--muted); cursor: default; }
 
 .hero-search { max-width: 40rem; margin: 1.5rem 0 1rem; }
@@ -258,6 +264,7 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
   flex: none; display: flex; align-items: flex-end; justify-content: center;
   width: min(100%, 300px); aspect-ratio: 300 / 170; padding: 0 1.75rem 1.75rem;
   background: url("static/quilt.svg") center / 100% 100% no-repeat;
+  filter: var(--art-dim);
 }
 .instruments img { width: 30%; height: auto; }
 .home-intro { display: grid; grid-template-columns: minmax(0, 40rem) auto; column-gap: 3rem; align-items: start; }
@@ -428,17 +435,25 @@ details.all-tunes[open] > .tune-list { margin: .25rem 0 1.25rem; }
 .view-tools .music-size { margin-left: 0; }
 /* On a phone: the key, tempo and size as one line, which opens to change them */
 .controls-summary { display: none; }
-.tune-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
-@media (max-width: 800px) {  /* on a phone, two by two, rather than three and one left over */
-  .tune-actions { display: grid; grid-template-columns: 1fr 1fr; align-items: start; }
-  .tune-actions > *, .tune-actions .print-wrap > button, .tune-actions .add-to-set { width: 100%; max-width: none; }
-  .tune-actions .add-status { grid-column: 1 / -1; }
-}
-/* Add to set's parts sit in the row themselves, and "In your set…" / "Added to…" runs
-   across under the buttons, so the row never wraps around it */
+/* Take it with you: at the top of the side column, beside the music; two by two */
+.tune-actions { display: grid; grid-template-columns: 1fr 1fr; align-items: start; gap: .5rem; margin: 0 0 1rem; }
+.tune-actions > *, .tune-actions .print-wrap > button, .tune-actions .add-to-set { width: 100%; max-width: none; }
+.tune-actions > button, .tune-actions .print-wrap > button { padding-inline: .6rem; white-space: nowrap; }
+/* Add to set's parts sit in the grid themselves, and the new set's name, "In your set…"
+   and "Added to…" run across under the buttons */
 .tune-actions .add-to-set-wrap { display: contents; }
-.tune-actions .add-status { flex-basis: 100%; margin: 0; }
+.tune-actions :is(.add-status, .set-namer) { grid-column: 1 / -1; margin: 0; }
 .add-status .link-button { margin-left: 0; }
+.set-namer { display: grid; gap: .35rem; padding: .7rem .8rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); }
+.set-namer label { font-size: .9rem; font-weight: 600; }
+.set-namer-row { display: flex; flex-wrap: wrap; gap: .5rem; }
+.set-namer input { flex: 1 1 10rem; min-width: 0; font: inherit; color: inherit; background: var(--card-bg);
+  border: 1px solid var(--border); border-radius: var(--radius); padding: .45rem .65rem; }
+.set-namer input:focus { outline: none; border-color: var(--accent-ink); box-shadow: 0 0 0 3px var(--accent-soft); }
+.set-namer-row button { flex: 1 0 auto; }
+.set-namer-hint { margin: 0; }
+.set-namer-hint:empty { display: none; }
+.set-namer-hint .link-button { margin-left: 0; font-size: inherit; }
 .held-key { color: var(--muted); }
 /* − and + for the music's size, at the end of the row */
 .music-size { margin-left: auto; }
@@ -501,7 +516,7 @@ details[open] > summary::before { transform: rotate(90deg); }
 .pills button[aria-pressed="true"]::before {
   content: ""; flex: none; width: .9em; height: .9em; margin-right: .35em; background: currentColor; mask: var(--tick) center / contain no-repeat; }
 @media (hover: hover) { :is(.pills.keys, .pills.plain) button:hover:not(:disabled) { border-color: var(--slate); color: inherit; } }
-.tune-layout { display: grid; grid-template-columns: minmax(0, 3fr) minmax(14rem, 1fr); gap: 1.5rem; align-items: start; }
+.tune-layout { display: grid; grid-template-columns: minmax(0, 3fr) minmax(16rem, 1fr); gap: 1.5rem; align-items: start; }
 .score {                     /* sheet music on cream "paper", also in dark mode */
   background: var(--paper); color: #000;
   border: 1px solid var(--border);
@@ -588,7 +603,7 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
   .versions-fold[open] > summary::after { transform: rotate(-90deg); }
   .versions-list { position: absolute; left: 0; right: 0; top: calc(100% + .4rem); z-index: 6; display: grid; gap: .4rem;
     padding: .6rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg);
-    box-shadow: 0 6px 18px var(--shadow-float); }
+    box-shadow: 0 4px 14px var(--shadow-float); }
   .versions-list a { display: grid; padding: .5rem .75rem; border: 1px solid var(--border); border-radius: var(--radius);
     background: var(--card-bg); color: var(--text); text-decoration: none; line-height: 1.3; }
   .versions-list a small { color: var(--muted); font-size: .85rem; }
@@ -693,6 +708,7 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .segmented input:focus-visible + span { outline: 2px solid var(--accent-ink); outline-offset: -2px; }
 .switch { display: flex; align-items: center; gap: .45rem; cursor: pointer; }
 .switch input { accent-color: var(--accent-ink); width: 1.5rem; height: 1.5rem; margin: 0; flex: none; }
+.switch .what { color: var(--muted); }
 .card.chords .caption { margin: 0; }
 .hide-chords .abcjs-chord { display: none; }
 .card.place .wales-map { max-width: 10rem; margin: .25rem auto .5rem; }
@@ -823,6 +839,8 @@ body.practice .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height
   .sidebar-links .menu-surprise:hover:not(:disabled) { color: var(--accent-ink); text-decoration: underline; }
   .sidebar-links a.more, .sidebar-links a:not(.more) + a.more { grid-column: span 2; margin-top: .35rem;
     border-top: 1px solid var(--border); color: var(--muted); font-size: .85rem; }
+  /* …starting a row of their own, even with an odd number of links above (Surprise me isn't in the home page's menu) */
+  .sidebar-links a:not(.more) + a.more { grid-column: 1 / span 2; }
   /* One line, so the music starts high on the first screen: the key and tempo, to tap
      and change them, and full screen. Opened: key and size; then tempo and full screen. */
   .controls { gap: .75rem 1.25rem; margin-bottom: 1rem; align-items: center; }
@@ -851,6 +869,13 @@ body.practice .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height
   main { padding: 1.5rem 1rem 3rem; }
   .site-footer { padding: 22px 1rem 1.25rem; }
   .tune-layout, .map-layout { grid-template-columns: minmax(0, 1fr); }  /* min 0: a long line of the ABC mustn't widen the page */
+  /* One column: the music and its practice tools, then Take it with you, then the chords and the rest */
+  .tune-layout { display: flex; flex-direction: column; align-items: stretch; gap: 0; }
+  .tune-main, .tune-side { display: contents; }
+  .tune-layout :is(.tune-main, .tune-side) > * { order: 2; min-width: 0; }
+  .tune-layout .tune-main > :is(.score, .practice-tools) { order: 0; }
+  .tune-layout .tune-side > .tune-actions { order: 1; margin: .75rem 0 0; }
+  .tune-layout .tune-side > .card:not(.place) { margin-top: 1.5rem; }
   .map-layout figure { position: static; max-width: 22rem; margin: 0 auto; }
   /* Sessions: the list first, right under the filters, so a filter's result is in sight; the map after it */
   .sessions-layout .session-list { order: -1; }
@@ -866,7 +891,7 @@ body.practice .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height
   .lang-switch button { padding: .25rem .4rem; }
   .sidebar-actions { gap: .35rem; }
   .sidebar-actions button { padding: .3rem .5rem; font-size: .85rem; }
-  .tune-actions button { padding: .4rem .6rem; }  /* Print, QR code and Add to set on one row */
+  .tune-actions button { padding: .4rem .6rem; }
 }
 /* Printing a tune: just the sheet music (in the key chosen on the page), full width. */
 @media print {
@@ -950,7 +975,17 @@ main { view-transition-name: page; }
   border-radius: var(--radius); padding: .2rem .5rem; width: 100%; max-width: 40rem; margin: 0 0 .4rem; }
 .set-name:focus { outline: none; border-color: var(--accent-ink); border-style: solid; }
 .set-count { margin: 0 0 1rem; }
-.set-actions { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .5rem; margin: 0 0 1.25rem; }  /* the buttons level with Size's, under its label */
+.set-actions { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .5rem; margin: 0 0 .4rem; }  /* the buttons level with Size's, under its label */
+.set-actions .print-menu { right: auto; left: 0; }  /* Share, near the start of the row: opens rightwards */
+.set-shared { margin: 0 0 .6rem; min-height: 1.55em; }
+/* The running order, keys and adding tunes: a fold above the music, as the practice tools are */
+.set-edit { max-width: 46rem; margin: 0 0 1.25rem; border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .9rem; background: var(--card-bg); }
+.set-edit > summary { padding: .2rem 0; }
+.set-edit > summary .caption { font-size: .85rem; }
+.set-edit[open] > summary .caption { display: none; }
+.set-edit[open] > summary { margin-bottom: .75rem; }
+.set-edit .set-list { margin-bottom: .5rem; }
+.set-edit .set-undo { margin: 0 0 .5rem; }
 /* The running order: number, the tune's woven swatch and name, its key and controls beside it */
 .set-list { list-style: none; counter-reset: set; padding: 0; margin: 0 0 2rem; max-width: 46rem; border-top: 1px solid var(--border); }
 .set-list li { counter-increment: set; display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .5rem; padding: .4rem 0; border-bottom: 1px solid var(--border); }
@@ -987,11 +1022,14 @@ main { view-transition-name: page; }
 .add-status:empty { display: none; }
 @media (max-width: 800px) {
   .set-item-controls { flex-basis: 100%; margin-left: 1.9rem; }  /* under the name, lined up with it */
+  /* Share, Print, Full screen and − + on one row, so the music starts higher */
+  .set-actions > button, .set-actions .print-wrap > button { padding-inline: .7rem; }
+  .set-actions .music-size .label { display: none; }
 }
 /* Practice mode on a set: just the music */
-body.practice .set-list, body.practice .set-count, body.practice .set-actions > :not(.practice-toggle, .music-size), body.practice .set-name { display: none; }
+body.practice .set-edit, body.practice .set-shared, body.practice .set-count, body.practice .set-actions > :not(.practice-toggle, .music-size), body.practice .set-name { display: none; }
 @media print {
-  .set-list, .set-count, .set-actions, .set-name, .add-to-set-wrap, .set-undo, .browse-jump { display: none !important; }
+  .set-edit, .set-shared, .set-count, .set-actions, .set-name, .add-to-set-wrap, .set-undo, .browse-jump { display: none !important; }
   .set-tune { break-inside: avoid; }
   .set-paper { border: none; background: none; padding: 0; }
 }

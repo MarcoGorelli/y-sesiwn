@@ -631,6 +631,42 @@ const canListen = () => !!navigator.mediaDevices?.getUserMedia && "AudioContext"
 
 const PREVIEWS = 5;  // results shown with their opening bars
 
+// A small round Play button for some drawn music (an opening, a tune in a set): while it
+// plays it's a stop button. One sound at a time: another button, a key of the keyboard or
+// leaving the page stops it. label(playing) names it for a screen reader.
+function playButton(music, label) {
+  const button = el("button", { type: "button", class: "preview-play", "aria-label": label(false), "data-playing": "false" }, playIcon());
+  let playing = null;
+  const done = () => {
+    playing = null;
+    button.replaceChildren(playIcon());
+    button.dataset.playing = "false";
+    button.setAttribute("aria-label", label(false));
+  };
+  button.onclick = () => {
+    if (playing) { playing.stop(); return; }
+    const visualObj = music();
+    if (!visualObj) return;
+    state.keyNote?.stop();
+    const synth = new ABCJS.synth.CreateSynth();
+    let timer = 0;
+    // A handle, not the synth's own stop, which abcjs also calls while priming.
+    const sound = { stop() { clearTimeout(timer); synth.stop(); if (playing === sound) done(); } };
+    state.keyNote = sound;
+    soundPlayed();
+    playing = sound;
+    button.replaceChildren(stopIcon());
+    button.dataset.playing = "true";
+    button.setAttribute("aria-label", label(true));
+    synth.init({ visualObj, options: AUDIO_PARAMS }).then(() => synth.prime()).then(({ duration }) => {
+      if (state.keyNote !== sound || playing !== sound) return;
+      synth.start();
+      timer = setTimeout(() => { if (playing === sound) done(); }, duration * 1000 + 200);
+    }).catch(() => { if (playing === sound) done(); });
+  };
+  return button;
+}
+
 // The opening of a tune, as a small score with a play button: its header and first
 // line of music (chords hidden). Enough to recognise it by eye or by ear.
 function tunePreview(tune) {
@@ -644,42 +680,17 @@ function tunePreview(tune) {
   }
   const abc = setTempo([...head, first.replace(/\s*(:\||\|)?\s*$/, " |]")].join("\n"), tune.beat, tune.bpm);
   const paper = el("div", { class: "preview-score hide-chords" });
-  const button = el("button", { type: "button", class: "preview-play", "aria-label": tr(`Play the opening of ${tune.base}`, `Chwarae dechrau ${tune.base}`), "data-playing": "false" }, playIcon());
+  let visualObj = null;
+  const button = playButton(() => visualObj, (playing) => playing
+    ? tr(`Stop the opening of ${tune.base}`, `Stopio dechrau ${tune.base}`)
+    : tr(`Play the opening of ${tune.base}`, `Chwarae dechrau ${tune.base}`));
   const box = el("div", { class: "preview" }, button, paper);
   requestAnimationFrame(() => {
     // On a phone, drawn at the box's own width (not drawn wide and shrunk), so the notes are full size.
     const narrow = matchMedia("(max-width: 800px)").matches && paper.clientWidth > 0;
-    const visualObj = ABCJS.renderAbc(paper, abc, { responsive: "resize", paddingtop: 0, paddingbottom: 0, add_classes: true,
+    visualObj = ABCJS.renderAbc(paper, abc, { responsive: "resize", paddingtop: 0, paddingbottom: 0, add_classes: true,
       ...(narrow ? { staffwidth: Math.max(180, paper.clientWidth - 24) } : {}) })[0];
     nameScore(paper);
-    // Play plays the opening; while it plays the button is a stop button.
-    let playing = null;
-    const done = () => {
-      playing = null;
-      button.replaceChildren(playIcon());
-      button.dataset.playing = "false";
-      button.setAttribute("aria-label", tr(`Play the opening of ${tune.base}`, `Chwarae dechrau ${tune.base}`));
-    };
-    button.onclick = () => {
-      if (playing) { playing.stop(); return; }
-      state.keyNote?.stop();
-      const synth = new ABCJS.synth.CreateSynth();
-      let timer = 0;
-      // Stopped by this button, another preview, a key of the keyboard or leaving the
-      // page. (A handle, not the synth's own stop, which abcjs also calls while priming.)
-      const preview = { stop() { clearTimeout(timer); synth.stop(); if (playing === preview) done(); } };
-      state.keyNote = preview;  // one sound at a time, like the keyboard
-      soundPlayed();
-      playing = preview;
-      button.replaceChildren(stopIcon());
-      button.dataset.playing = "true";
-      button.setAttribute("aria-label", tr(`Stop the opening of ${tune.base}`, `Stopio dechrau ${tune.base}`));
-      synth.init({ visualObj, options: AUDIO_PARAMS }).then(() => synth.prime()).then(({ duration }) => {
-        if (state.keyNote !== preview || playing !== preview) return;
-        synth.start();
-        timer = setTimeout(() => { if (playing === preview) done(); }, duration * 1000 + 200);
-      }).catch(() => { if (playing === preview) done(); });
-    };
   });
   return box;
 }
@@ -947,6 +958,7 @@ window.addEventListener("popstate", () => {
 function focusHeading() {
   const main = document.getElementById("main");
   const focus = () => {
+    if (document.activeElement?.matches(".set-name")) return true;  // a new set's name, selected to type over
     const h1 = main.querySelector("h1");
     if (!h1) return false;
     h1.tabIndex = -1;
@@ -3740,6 +3752,8 @@ const defaultSetName = () => tr("My set", "Fy set");
 // How many tunes a set has, counting any not loaded yet (or gone) too.
 const setSize = (set) => { const { items, missing } = decodeSet(set.c); return items.length + missing; };
 const tuneCount = (n) => tr(`${n} tune${n === 1 ? "" : "s"}`, `${n} alaw`);
+// The count kept on one line: "(2 tunes)", never "(2" and "tunes)"
+const countText = (text) => el("span", { class: "nowrap" }, text);
 
 // Whether a set has this tune (this version), read from the set's code as it is: a tune's
 // page may not have every other tune's code yet. A set made before the tune had a number
@@ -3780,8 +3794,12 @@ function addToSetButton(tune, settings) {
     set.c += encodeSet([{ tune, key: settings.transpose }]);
     set.updated = Date.now();
     saveSets(sets);
-    status.replaceChildren(drawnIcon("tick"), tr(`Added to ${set.name} (${tuneCount(setSize(set))}) · `,
-      `Wedi'i hychwanegu at ${set.name} (${tuneCount(setSize(set))}) · `), el("a", { href: mySetLink(set).href, "data-route": true }, tr("see the set", "gweld y set")));
+    // In the key it went in, which may not be the written one: "Added to Tuesday at the Ship in A major"
+    const key = tune.key ? keyName(tune.key.pitch + settings.transpose, tune.key.modeName) : null;
+    status.replaceChildren(drawnIcon("tick"),
+      tr(`Added to ${set.name}${key ? ` in ${key}` : ""} `, `Wedi'i hychwanegu at ${set.name}${key ? ` yn ${key}` : ""} `),
+      countText(`(${tuneCount(setSize(set))})`), " · ",
+      el("a", { href: mySetLink(set).href, "data-route": true }, tr("see the set", "gweld y set")));
   };
   const choose = (id, e) => {
     const sets = loadSets();
@@ -3843,7 +3861,7 @@ function addToSetButton(tune, settings) {
       } },
       el("label", { for: id }, tr("Name the new set", "Enw'r set newydd")),
       el("span", { class: "set-namer-row" }, input,
-        el("button", { class: "primary" }, tr("Make the set", "Gwneud y set")),
+        el("button", { class: "primary" }, tr("Make the set", "Creu'r set")),
         el("button", { type: "button", onclick: cancel }, tr("Cancel", "Canslo"))),
       hint);
   };
@@ -3862,7 +3880,7 @@ function addToSetButton(tune, settings) {
         // With any ticked, the rest leave the tick's room, so the names line up.
         return el("button", { type: "button", class: ticked ? (has ? "has-tune" : "ticks") : null, onclick: (e) => choose(set.id, e) },
           has ? drawnIcon("tick") : null, set.name,
-          el("span", { class: "caption" }, ` · ${tuneCount(setSize(set))}${has ? tr(" · take it out", " · ei thynnu allan") : ""}`));
+          el("span", { class: "caption" }, " · ", countText(tuneCount(setSize(set))), has ? tr(" · take it out", " · ei thynnu allan") : ""));
       }),
       el("button", { type: "button", class: "menu-sep", onclick: (e) => choose(null, e) }, drawnIcon("plus"), tr("A new set", "Set newydd"))],
     "add-to-set");
@@ -3954,7 +3972,7 @@ function setScore(tune, key) {
     paper.dataset.bars = ownBarsPerLine(tune.abc);
     const layout = scoreLayout(paper);
     const render = (layout) => ABCJS.renderAbc(paper, shortCredits(abc, layout), { responsive: "resize", add_classes: true, paddingtop: 0, ...layout })[0];
-    noLoneBar(render(layout), layout, render);
+    paper.visualObj = noLoneBar(render(layout), layout, render);
     hideMeasuring();
     nameScore(paper);
   };
@@ -4000,6 +4018,7 @@ function renderSet(main) {
     for (const e of entries) if (e.isIntersecting) { e.target.draw(); observer.unobserve(e.target); }
   }, { rootMargin: "800px" });
   const colour = Object.fromEntries(state.data.types.map((t) => [t.name, t.colour]));
+  const inItsKey = ({ tune, key }) => tuneLink(state.groups.get(tune.group), tune, { transpose: key });
   const swatch = (tune) => el("span", { class: "swatch", style: `--c: ${colour[state.groups.get(tune.group).type] ?? "var(--muted)"}` });
   const icon = (name) => el("span", { class: `icon ${name}`, "aria-hidden": "true" });
   // A tune taken out, until another is: "Removed Calon Lân. Undo", back in its place and key
@@ -4030,7 +4049,7 @@ function renderSet(main) {
       const keySelect = el("select", { "aria-label": tr(`Key for ${item.tune.base}`, `Cywair ${item.tune.base}`),
         onchange: (e) => { item.key = +e.target.value; save(); draw(); } }, keyOptions(item.tune, item.key));
       return el("li", {}, swatch(item.tune),
-        el("a", { href: tuneUrl(item.tune.group, item.tune.version), "data-route": true }, tuneName(item.tune.group, item.tune.base)),
+        el("a", { href: inItsKey(item), "data-route": true }, tuneName(item.tune.group, item.tune.base)),
         several ? el("span", { class: "caption" }, tr(` (version ${item.tune.version})`, ` (fersiwn ${item.tune.version})`)) : null,
         el("span", { class: "set-item-controls" }, keySelect,
           el("button", { type: "button", "aria-label": tr("Move up", "Symud i fyny"), disabled: i === 0, onclick: () => move(i, -1) }, icon("arrow-up")),
@@ -4042,7 +4061,18 @@ function renderSet(main) {
     music.replaceChildren(...items.map((item, i) => {
       const paper = setScore(item.tune, item.key);
       observer.observe(paper);
-      return el("section", { class: "set-tune" }, el("h2", {}, swatch(item.tune), `${i + 1}. `, tuneName(item.tune.group, item.tune.base)), paper);
+      // Its number, name (to its own page, in this key) and key, and a Play for practising it.
+      const key = item.tune.key ? keyName(item.tune.key.pitch + item.key, item.tune.key.modeName) : null;
+      const play = playButton(() => { paper.draw(); return paper.visualObj; }, (playing) => playing
+        ? tr(`Stop ${item.tune.base}`, `Stopio ${item.tune.base}`)
+        : tr(`Play ${item.tune.base}${key ? ` in ${key}` : ""}`, `Chwarae ${item.tune.base}${key ? ` yn ${key}` : ""}`));
+      return el("section", { class: "set-tune" },
+        el("div", { class: "set-tune-head" },
+          el("h2", {}, swatch(item.tune), `${i + 1}. `,
+            el("a", { href: inItsKey(item), "data-route": true }, tuneName(item.tune.group, item.tune.base)),
+            key ? el("span", { class: "set-key" }, ` · ${key}`) : null),
+          play),
+        paper);
     }));
     count.textContent = tuneCount(items.length);
     empty.hidden = items.length > 0;
@@ -4130,6 +4160,7 @@ function renderSet(main) {
   const addBox = el("div", { class: "search set-add" },
     el("label", { for: "set-add", class: "visually-hidden" }, tr("Add a tune to the set", "Ychwanegu alaw at y set")),
     addInput, addList);
+  // Your own set's name is the page's heading, ready to edit.
   const title = mine
     ? el("input", { type: "text", class: "set-name", value: name, maxlength: 60, "aria-label": tr("Name of the set", "Enw'r set"),
         onchange: (e) => { name = e.target.value.replace(/\s+/g, " ").trim() || defaultSetName(); e.target.value = name; save(); },
@@ -4182,7 +4213,7 @@ function renderSet(main) {
     addBox, added, empty, list, undo);
 
   main.replaceChildren(...[
-    title,
+    mine ? el("h1", { class: "set-heading" }, title) : title,
     el("p", { class: "set-count" }, count, " · ", el("a", { href: "?page=sets", "data-route": true }, tr("My sets", "Fy setiau"))),
     missing ? el("p", { class: "caption" }, tr(missing === 1 ? "1 tune in this set isn't on the site any more."
       : `${missing} tunes in this set aren't on the site any more.`,

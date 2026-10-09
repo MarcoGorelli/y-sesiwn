@@ -1856,6 +1856,14 @@ def test_set_from_tune_pages(page):
     # The set opens as a music stand: its tunes and keys folded above the music
     page.wait_for_selector(".set-edit")
     assert not page.locator(".set-list").is_visible()
+    # Your own set's name, to edit, is the page's heading; each tune's music is under its
+    # number, name (to its page, in this key) and key, with a Play for practising it.
+    assert page.locator("h1 > input.set-name").input_value() == "My set"
+    heads = page.locator(".set-tune h2")
+    assert [" ".join(t.split()) for t in heads.all_inner_texts()] == [
+        "1. Llancesau Trefaldwyn · D major", "2. Glandyfi · A major", "3. Nyth y Gog · E minor"]
+    assert heads.nth(1).locator("a").get_attribute("href") == "alaw/glandyfi/?v=2&key=A"
+    assert page.get_attribute(".set-tune:nth-child(2) .preview-play", "aria-label") == "Play Glandyfi in A major"
     page.click(".set-edit > summary")
     assert page.locator(".set-list li > a").all_inner_texts() == ["Llancesau Trefaldwyn", "Glandyfi", "Nyth y Gog"]
     assert "?set=5A3V~h7o&n=My%20set&my=" in page.url  # Glandyfi (version 2) up two: ~h
@@ -1900,7 +1908,7 @@ def test_add_to_set_choosing_the_set(page):
     page.click(".add-to-set")
     assert menu.locator("button").all_inner_texts() == ["Nos Iau · 1 tune", "Class · 0 tunes", "A new set"]
     menu.locator("button", has_text="Class").click()
-    assert "Added to Class (1 tune)" in page.inner_text(".add-status")
+    assert "Added to Class in G major (1 tune)" in page.inner_text(".add-status")
     assert menu.is_hidden()
     page.click(".add-to-set")  # now Class is first, ticked: it has the tune
     assert menu.locator("button").all_inner_texts()[:2] == ["Class · 1 tune · take it out", "Nos Iau · 1 tune"]
@@ -1919,7 +1927,7 @@ def test_add_to_set_choosing_the_set(page):
     menu.locator("button", has_text="A new set").click()
     page.fill(".set-namer input", "Dydd Sadwrn")
     page.press(".set-namer input", "Enter")
-    assert "Added to Dydd Sadwrn (1 tune)" in page.inner_text(".add-status")
+    assert "Added to Dydd Sadwrn in G major (1 tune)" in page.inner_text(".add-status")
     kept = page.evaluate("JSON.parse(localStorage.getItem('sets'))")
     assert [(x["name"], len(x["c"])) for x in kept] == [("Nos Iau", 2), ("Class", 2), ("Dydd Sadwrn", 2)]
 
@@ -1949,7 +1957,7 @@ def test_add_to_set_knows_its_sets(page):
     assert page.inner_text(".add-status") == "In your set Nos Iau"
     page.click(".add-to-set")
     menu.locator("button", has_text="Class").click()
-    assert page.inner_text(".add-status").startswith("Added to Class (2 tunes)")
+    assert page.inner_text(".add-status").startswith("Added to Class in G major (2 tunes)")
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.inner_text(".add-status") == "In your sets Nos Iau, Class"
@@ -2209,10 +2217,12 @@ def test_accessibility(browser, site, scheme, width):
     page = context.new_page()
     problems = []
     for path in ["", "?page=browse", "?tune=glandyfi", "?tune=nyth-y-gog", "?page=map", "sesiynau/", "?page=offline", "?page=about", "?page=add",
-                 "?page=contact", "?page=set&s=bne0o.6m42r~2&name=Nos%20Iau", "?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A", "cy:", "cy:?tune=glandyfi"]:
+                 "?page=contact", "?page=set&s=bne0o.6m42r~2&name=Nos%20Iau", "my:?set=3V~h5A&n=Nos%20Iau&my=aaaaaa", "?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A", "cy:", "cy:?tune=glandyfi"]:
         if path.startswith("cy:"):  # in Welsh: the home page, and a page with the not-in-Welsh-yet note
             page.evaluate("localStorage.setItem('lang', 'cy')")
-        page.goto(site + path.removeprefix("cy:"))
+        if path.startswith("my:"):  # your own set: its name is a field to edit, in the heading
+            page.evaluate("localStorage.setItem('sets', JSON.stringify([{ id: 'aaaaaa', name: 'Nos Iau', c: '3V~h5A', updated: 1 }]))")
+        page.goto(site + path.removeprefix("cy:").removeprefix("my:"))
         # No fade-in: text caught half-faded would count as low contrast.
         page.add_style_tag(content="*, *::before, *::after { animation: none !important; transition: none !important; }")
         page.wait_for_function("typeof state !== 'undefined' && state.data && !document.querySelector('#main .loading')")

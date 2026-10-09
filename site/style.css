@@ -436,9 +436,10 @@ details.all-tunes[open] > .tune-list { margin: .25rem 0 1.25rem; }
 /* On a phone: the key, tempo and size as one line, which opens to change them */
 .controls-summary { display: none; }
 /* Take it with you: at the top of the side column, beside the music; two by two */
-.tune-actions { display: grid; grid-template-columns: 1fr 1fr; align-items: start; gap: .5rem; margin: 0 0 1rem; }
+.tune-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; margin: 0 0 1rem; }
 .tune-actions > *, .tune-actions .print-wrap > button, .tune-actions .add-to-set { width: 100%; max-width: none; }
-.tune-actions > button, .tune-actions .print-wrap > button { padding-inline: .6rem; white-space: nowrap; }
+/* A longer label ("Ychwanegu at set") wraps inside its button, and its row's buttons stay one height */
+.tune-actions > button, .tune-actions :is(.print-wrap, .add-to-set-wrap) > button { height: 100%; padding-inline: .6rem; text-wrap: balance; }
 /* Add to set's parts sit in the grid themselves, and the new set's name, "In your set…"
    and "Added to…" run across under the buttons */
 .tune-actions .add-to-set-wrap { display: contents; }
@@ -484,6 +485,8 @@ details[open] > summary::before { transform: rotate(90deg); }
 .speed-up[hidden] { display: none; }
 .speed-range { display: inline-flex; align-items: center; gap: .35rem; color: var(--muted); }
 .speed-range > span { color: var(--text); font-variant-numeric: tabular-nums; }
+/* Not ticked: the range is only what it would be */
+.speed-up:not(:has(> .switch input:checked)) .speed-range input { opacity: .6; }
 #speed-to {
   width: 4.5rem; padding: .3rem .4rem; text-align: right; font-variant-numeric: tabular-nums;
   border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg);
@@ -517,6 +520,19 @@ details[open] > summary::before { transform: rotate(90deg); }
   content: ""; flex: none; width: .9em; height: .9em; margin-right: .35em; background: currentColor; mask: var(--tick) center / contain no-repeat; }
 @media (hover: hover) { :is(.pills.keys, .pills.plain) button:hover:not(:disabled) { border-color: var(--slate); color: inherit; } }
 .tune-layout { display: grid; grid-template-columns: minmax(0, 3fr) minmax(16rem, 1fr); gap: 1.5rem; align-items: start; }
+/* Without room for a side column beside the music (a tablet upright on a stand), one column,
+   as on a phone: the music and its practice tools, then Take it with you in a row, then the rest */
+@media (max-width: 1100px) {
+  .tune-layout { display: flex; flex-direction: column; align-items: stretch; gap: 0; }
+  .tune-main, .tune-side { display: contents; }
+  .tune-layout :is(.tune-main, .tune-side) > * { order: 2; min-width: 0; }
+  .tune-layout .tune-main > :is(.score, .practice-tools) { order: 0; }
+  .tune-layout .tune-side > .tune-actions { order: 1; margin: .75rem 0 0; }
+  .tune-layout .tune-side > .card:not(.place) { margin-top: 1.5rem; }
+}
+@media (min-width: 960px) and (max-width: 1100px) {
+  .tune-layout .tune-side > .tune-actions { grid-template-columns: repeat(4, minmax(0, 1fr)); }  /* room for all four in a row */
+}
 .score {                     /* sheet music on cream "paper", also in dark mode */
   background: var(--paper); color: #000;
   border: 1px solid var(--border);
@@ -868,14 +884,7 @@ body.practice .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height
   body.practice .controls-summary .change::after { font-size: .9rem; }
   main { padding: 1.5rem 1rem 3rem; }
   .site-footer { padding: 22px 1rem 1.25rem; }
-  .tune-layout, .map-layout { grid-template-columns: minmax(0, 1fr); }  /* min 0: a long line of the ABC mustn't widen the page */
-  /* One column: the music and its practice tools, then Take it with you, then the chords and the rest */
-  .tune-layout { display: flex; flex-direction: column; align-items: stretch; gap: 0; }
-  .tune-main, .tune-side { display: contents; }
-  .tune-layout :is(.tune-main, .tune-side) > * { order: 2; min-width: 0; }
-  .tune-layout .tune-main > :is(.score, .practice-tools) { order: 0; }
-  .tune-layout .tune-side > .tune-actions { order: 1; margin: .75rem 0 0; }
-  .tune-layout .tune-side > .card:not(.place) { margin-top: 1.5rem; }
+  .map-layout { grid-template-columns: minmax(0, 1fr); }  /* min 0: a long line of the ABC mustn't widen the page */
   .map-layout figure { position: static; max-width: 22rem; margin: 0 auto; }
   /* Sessions: the list first, right under the filters, so a filter's result is in sight; the map after it */
   .sessions-layout .session-list { order: -1; }
@@ -1007,9 +1016,16 @@ main { view-transition-name: page; }
 .set-music { padding-top: .25rem; background: url("carthen.svg") repeat-x top left / auto 7px; }
 .set-tune { margin: 1.25rem 0 1.75rem; scroll-margin-bottom: 4.5rem; }
 .set-tune:last-child { margin-bottom: 1rem; }
-.set-tune h2 { display: flex; align-items: center; gap: .5rem; font-size: 1.15rem; margin: 0 0 .5rem; }
+.set-tune-head { display: flex; align-items: center; gap: .75rem; margin: 0 0 .5rem; }
+.set-tune h2 { display: flex; flex-wrap: wrap; align-items: center; gap: 0 .5rem; font-size: 1.15rem; margin: 0; min-width: 0; }
+.set-tune h2 a { color: inherit; text-decoration: none; }
+@media (hover: hover) { .set-tune h2 a:hover { color: var(--accent-ink); text-decoration: underline; } }
+.set-key { color: var(--muted); font-weight: 400; white-space: pre; }  /* "· A major": the key it's in, in this set */
+.set-tune-head .preview-play { margin-left: auto; }
+.set-heading { margin: 0; }
 .set-paper { background: var(--paper); color: #000; border: 1px solid var(--border); border-radius: var(--radius); padding: .75rem 1rem 1rem; min-height: 8rem; box-shadow: 0 1px 3px #0000000f; }
 .set-undo[hidden] { display: none; }
+.nowrap { white-space: nowrap; }
 .set-undo { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .6rem; max-width: 40rem; margin: .75rem 0 0; }
 .set-undo button { padding: .3rem .8rem; }
 .sets-backup { max-width: 40rem; margin-top: 1.5rem; }

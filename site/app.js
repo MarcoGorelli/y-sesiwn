@@ -21,8 +21,10 @@ if ("audioSession" in navigator) navigator.audioSession.type = "playback";
 const audioFocus = {
   element: null,
   playing: false,
-  hold(playing, title) {
+  by: null,  // what's holding it (a round Play's sound), so only that lets it go
+  hold(playing, title, by = null) {
     this.playing = playing;
+    this.by = playing ? by : null;
     if (!playing) { this.element?.pause(); return; }
     if (!this.element) {
       // Half a second of silence: a WAV file, 8 kHz, 8-bit (128 is silent).
@@ -675,11 +677,13 @@ const PREVIEWS = 5;  // results shown with their opening bars
 
 // A small round Play button for some drawn music (an opening, a tune in a set): while it
 // plays it's a stop button. One sound at a time: another button, a key of the keyboard or
-// leaving the page stops it. label(playing) names it for a screen reader.
-function playButton(music, label) {
+// leaving the page stops it, and so does another app's sound (audioFocus). label(playing)
+// names it for a screen reader; title, on the phone's lock screen.
+function playButton(music, label, title) {
   const button = el("button", { type: "button", class: "preview-play", "aria-label": label(false), "data-playing": "false" }, playIcon());
   let playing = null;
   const done = () => {
+    if (audioFocus.playing && playing && audioFocus.by === playing) audioFocus.hold(false);
     playing = null;
     button.replaceChildren(playIcon());
     button.dataset.playing = "false";
@@ -703,6 +707,7 @@ function playButton(music, label) {
     synth.init({ visualObj, options: AUDIO_PARAMS }).then(() => synth.prime()).then(({ duration }) => {
       if (state.keyNote !== sound || playing !== sound) return;
       synth.start();
+      audioFocus.hold(true, title, sound);  // another app's sound stops it, as it does a tune's
       timer = setTimeout(() => { if (playing === sound) done(); }, duration * 1000 + 200);
     }).catch(() => { if (playing === sound) done(); });
   };
@@ -725,7 +730,7 @@ function tunePreview(tune) {
   let visualObj = null;
   const button = playButton(() => visualObj, (playing) => playing
     ? tr(`Stop the opening of ${tune.base}`, `Stopio dechrau ${tune.base}`)
-    : tr(`Play the opening of ${tune.base}`, `Chwarae dechrau ${tune.base}`));
+    : tr(`Play the opening of ${tune.base}`, `Chwarae dechrau ${tune.base}`), tune.base);
   const box = el("div", { class: "preview" }, button, paper);
   requestAnimationFrame(() => {
     // On a phone, drawn at the box's own width (not drawn wide and shrunk), so the notes are full size.
@@ -1484,12 +1489,12 @@ function features() {
   const withChords = state.groupList.filter((g) => g.versions.some((v) => v.chords != null)).length;
   const items = state.lang === "cy" ? [
     [["Unrhyw gywair, unrhyw dempo"], ": trawsgyweiriwch alaw i siwtio'ch offeryn neu'ch llais, a gwrandewch arni gyda'r nodau'n goleuo."],
-    [["Ymarfer"], ": ailadroddwch yr alaw neu un rhan gan gyflymu bob tro, gyda thablatur ar gyfer mandolin, ffidil neu gitâr."],
+    [["Ymarfer"], ": ailadroddwch yr alaw neu un rhan gan gyflymu bob tro, gyda thablatur ar gyfer mandolin, ffidil neu gitâr, a byseddu ar gyfer chwisl neu recorder."],
     [["Cordiau"], `: cyfeiliant awgrymedig ar gyfer gitâr, piano neu delyn (${withChords} o alawon hyd yma).`],
     [["Setiau"], ": casglwch alawon i'w chwarae gyda'i gilydd, yn eich cyweiriau chi, a'u rhannu fel dolen neu god QR."],
   ] : [
     [["Any key, any tempo"], ": transpose a tune for your instrument or voice, and hear it with the notes lit up."],
-    [["Practise"], ": repeat the tune or a part, speeding up each time, with tablature for mandolin, fiddle or guitar."],
+    [["Practise"], ": repeat the tune or a part, speeding up each time, with tablature for mandolin, fiddle or guitar, and fingering for whistle or recorder."],
     [["Chords"], `: suggested accompaniment for guitar, piano or harp (${withChords} tunes so far).`],
     [["Sets"], ": gather tunes to play together, in your keys, and share them as a link or a QR code."],
   ];
@@ -1733,7 +1738,7 @@ const WHISTLE_HOLES = ["●●●●●●", "●●●●●◐", "●●●●
   "●●◐○○○", "●●○○○○", "●◐○○○○", "●○○○○○", "○●●○○○", "○○○○○○"];
 // The recorder's: thumb, then the seven finger holes, baroque (English) fingering, as the
 // American Recorder Society's chart has them; ◐ is half a double hole, or a pinched thumb.
-// From low C on a descant; a treble's are the same from its low F.
+// From low C, on a descant.
 const RECORDER_HOLES = [
   "●●●●●●●●", "●●●●●●●◐", "●●●●●●●○", "●●●●●●◐○", "●●●●●●○○", "●●●●●○●●",  // C–F
   "●●●●○●●○", "●●●●○○○○", "●●●○●●◐○", "●●●○○○○○", "●●○●●○○○", "●●○○○○○○",  // F♯–B
@@ -1744,9 +1749,11 @@ const RECORDER_HOLES = [
 const whistle = (name, low) => ({ label: () => tr(`Whistle in ${name}`, `Chwisl ${name}`), low, holes: (n) => (n > 23 ? null : WHISTLE_HOLES[n % 12]), high: (n) => n >= 12 });
 const FINGERED = {
   "whistle-D": whistle("D", 62), "whistle-C": whistle("C", 60), "whistle-G": whistle("G", 67), "whistle-Bb": whistle("B♭", 70),
-  ...Object.fromEntries([["recorder", 60, "Descant", "desgant"], ["recorder-treble", 65, "Treble", "trebl"]].map(([value, low, en, cy]) =>
-    [value, { recorder: true, jumpUp: true, label: () => tr(`${en} recorder`, `Recorder ${cy}`), low, holes: (n) => RECORDER_HOLES[n] ?? null, high: () => false }])),
+  recorder: { recorder: true, jumpUp: true, label: () => tr("Descant recorder", "Recorder desgant"), low: 60, holes: (n) => RECORDER_HOLES[n] ?? null, high: () => false },
 };
+// Where a gap goes between the holes, so a column reads as hands do: a whistle's two
+// hands (3 | 3); a recorder's thumb, then its left hand and right (1 | 3 | 4).
+const HOLE_GROUPS = { 6: [3], 8: [1, 4] };
 
 // A recorder's notes below its lowest are played an octave up (or two), as recorder players
 // do at a session: marked "up" so the jump shows.
@@ -1780,15 +1787,22 @@ function withFingerings(abc, instrument) {
         ? fingering(Math.max(...note.midiPitches.map((m) => m.pitch)), instrument) : "tied");
     }
   }
-  const out = ["%%vocalfont Helvetica 9"];
+  const out = ["%%vocalfont Helvetica 11"];
+  const holes = instrument.holes(0).length;
   lines.forEach((line, i) => {
     out.push(line);
     const notes = perLine.get(i);
     if (!notes) return;
-    const cell = (f, row) => (f === "tied" ? "*" : f ? f.holes[row] : row === 0 ? "?" : "*");
-    for (let row = 0; row < instrument.holes(0).length; row++) out.push(`w:${notes.map((f) => cell(f, row)).join(" ")}`);
-    if (notes.some((f) => f?.high)) out.push(`w:${notes.map((f) => (f?.high ? "+" : "*")).join(" ")}`);
-    if (notes.some((f) => f?.up)) out.push(`w:${notes.map((f) => (f?.up ? "↑" : "*")).join(" ")}`);
+    const row = (mark) => out.push(`w:${notes.map(mark).join(" ")}`);
+    // What to do differently comes first, next to the note: an octave up, or blow harder.
+    if (notes.some((f) => f?.up)) row((f) => (f?.up ? "8va" : "*"));
+    if (notes.some((f) => f?.high)) row((f) => (f?.high ? "+" : "*"));
+    for (let hole = 0; hole < holes; hole++) {
+      // A gap between the hands: a row of dots, unseen (style.css), as abcjs leaves room
+      // only for a row with something in it.
+      if (HOLE_GROUPS[holes]?.includes(hole)) row((f) => (f === "tied" ? "*" : "."));
+      row((f) => (f === "tied" ? "*" : f ? f.holes[hole] : hole === 0 ? "?" : "*"));
+    }
   });
   return out.join("\n");
 }
@@ -1961,6 +1975,21 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   // abcjs makes each clickable note a Tab stop: hundreds, between the player and the rest
   // of the page. Keyboards have the space bar to play instead.
   paper.querySelectorAll("svg [tabindex]").forEach((n) => n.removeAttribute("tabindex"));
+  // A whistle's or recorder's "8va" (an octave up) in red, so the jump shows, and the
+  // dots that hold a gap between the hands unseen (style.css).
+  paper.classList.toggle("fingered", !!fingered);
+  // The holes are drawn larger than abcjs's lyrics, in the room it leaves for them: abcjs
+  // spaces the rows in ems, so the spacing is fixed first, or they'd spread as they grow.
+  if (fingered) {
+    for (const text of paper.querySelectorAll(".abcjs-lyric")) {
+      const size = Number(text.getAttribute("font-size"));
+      for (const row of text.children) {
+        if (row.getAttribute("dy") === "1.2em" && size) row.setAttribute("dy", 1.2 * size);
+        const mark = row.textContent;
+        row.setAttribute("class", mark === "8va" ? "octave-up" : mark === "." ? "hand-gap" : "hole");
+      }
+    }
+  }
   hideMeasuring();
   const { num, den } = visualObj.getMeterFraction();
   nameScore(paper, [
@@ -2327,6 +2356,10 @@ function dropMenu(id, label, buttons, toggleClass = null) {
   return wrap;
 }
 
+// The score's own word for the tune's type (R:), when it says no more than the type under
+// the tune's name ("jig" under "Jig"): the Details box leaves it out. "Set Dance" stays.
+const sameType = (tune, value) => [tune.type, EN_TYPE[tune.type]].some((name) => name?.toLowerCase() === value.trim().toLowerCase());
+
 // The Details box's labels (from build_site.py's HEADER_LABELS), in Welsh.
 const CY_DETAILS = { "Tune type": "Math o alaw", Key: "Cywair", "Time signature": "Amseriad",
   "Composer / arranger": "Cyfansoddwr / trefnydd", Area: "Ardal", Origin: "Tarddiad", Book: "Llyfr",
@@ -2506,7 +2539,7 @@ function renderTune(main, group, tune) {
   // Its other names first (with the rest of what's known about it, not between the name and the music)
   const details = el("dl", {},
     group.titles.length > 1 ? [el("dt", {}, tr("Also known as", "Enwau eraill")), el("dd", {}, group.titles.slice(1).join(", "))] : null,
-    tune.details.filter(([label]) => !shownElsewhere.has(label)).map(([label, value]) =>
+    tune.details.filter(([label, value]) => !shownElsewhere.has(label) && !(label === "Tune type" && sameType(tune, value))).map(([label, value]) =>
       [el("dt", {}, tr(label, CY_DETAILS[label] ?? label)), el("dd", {}, detailValue(label, value))]));
   // What the Welsh credit words mean (trefniant = arranged by, …), for English readers.
   const gloss = tune.gloss.length && state.lang !== "cy"
@@ -2562,19 +2595,22 @@ function renderTune(main, group, tune) {
       showInAddress();
     }
   };
-  // With none chosen, what tablature is; with a whistle or recorder, how to read its fingering.
+  // With none chosen, what tablature is; with a whistle or recorder, how to read its
+  // fingering, just above the music, each sign kept on a line with what it means.
   const tabWhat = el("span", { class: "caption", hidden: state.practice.tab !== "none" },
     tr("Where to put your fingers, under each note", "Ble i roi eich bysedd, o dan bob nodyn"));
-  const fingerKey = () => FINGERED[state.practice.tab]?.recorder
-    ? tr("Thumb first · ● covered · ○ open · ◐ half-covered (the thumb: pinched) · ↑ too low, so an octave up · ? not on the recorder",
-      "Bawd yn gyntaf · ● ar gau · ○ ar agor · ◐ hanner ar gau (y bawd: wedi'i binsio) · ↑ rhy isel, felly wythfed yn uwch · ? ddim ar y recorder")
-    : tr("● covered · ○ open · ◐ half-covered · + blow harder · ? not on the whistle",
-      "● ar gau · ○ ar agor · ◐ hanner ar gau · + chwythu'n galetach · ? ddim ar y chwisl");
-  const fingeringKey = el("span", { class: "caption fingering-key", hidden: !FINGERED[state.practice.tab] }, fingerKey());
+  const fingerKey = () => (FINGERED[state.practice.tab]?.recorder
+    ? [tr("Thumb, then left hand, then right", "Bawd, yna'r llaw chwith, yna'r dde"), tr("● covered", "● ar gau"), tr("○ open", "○ ar agor"),
+      tr("◐ half-covered (the thumb: pinched)", "◐ hanner ar gau (y bawd: wedi'i binsio)"),
+      tr("8va too low, so an octave up", "8va rhy isel, felly wythfed yn uwch"), tr("? not on the recorder", "? ddim ar y recorder")]
+    : [tr("Left hand, then right", "Llaw chwith, yna'r dde"), tr("● covered", "● ar gau"), tr("○ open", "○ ar agor"),
+      tr("◐ half-covered", "◐ hanner ar gau"), tr("+ blow harder", "+ chwythu'n galetach"), tr("? not on the whistle", "? ddim ar y chwisl")])
+    .flatMap((part, i) => [i ? " · " : "", el("span", {}, part)]);
+  const fingeringKey = el("p", { class: "caption fingering-key", hidden: !FINGERED[state.practice.tab] }, fingerKey());
   const tabSelect = el("select", { id: "tab-select", onchange: (e) => {
     state.practice.tab = e.target.value;
     fingeringKey.hidden = !FINGERED[state.practice.tab];
-    fingeringKey.textContent = fingerKey();
+    fingeringKey.replaceChildren(...fingerKey());
     tabWhat.hidden = state.practice.tab !== "none";
     redraw();
   } },
@@ -2596,7 +2632,7 @@ function renderTune(main, group, tune) {
       canSwing(tune) ? toggle(tr("Swing", "Swing"), settings.swing, (on) => { settings.swing = on; }, "swing",
         tr("Play the quavers long-short, as hornpipes are played", "Chwarae'r cwafers yn hir-byr, fel y chwaraeir pibddawnsiau")) : null),
     el("div", { class: "practice-line" },
-      el("div", { class: "control" }, el("label", { for: "tab-select" }, tr("Tablature", "Tablatur")), tabSelect), tabWhat, fingeringKey));
+      el("div", { class: "control" }, el("label", { for: "tab-select" }, tr("Tablature", "Tablatur")), tabSelect), tabWhat));
   // Folded at first, so the music is the page (the summary says what's inside); then as left.
   const practiceTools = el("details", { class: "practice-tools fold", open: practiceToolsOpen(),
     ontoggle: (e) => { if (!document.body.classList.contains("practice")) { state.practice.open = e.target.open; } } },
@@ -2623,7 +2659,7 @@ function renderTune(main, group, tune) {
     versions[0],
     controls,
     el("div", { class: "tune-layout" },
-      el("div", { class: "tune-main" }, el("div", { class: "score" }, audio, soundNote(), paper),
+      el("div", { class: "tune-main" }, fingeringKey, el("div", { class: "score" }, audio, soundNote(), paper),
         practiceTools, chords),
       // Taking it with you first, in reach beside the music (on a phone, after the practice tools)
       el("div", { class: "tune-side" }, actions,
@@ -3940,10 +3976,14 @@ function addToSetButton(tune, settings) {
     return dropMenu(`set-menu-${tune.slug}`, [label], [
       ...sets.map((set) => {
         const has = setHasTune(set, tune);
-        // With any ticked, the rest leave the tick's room, so the names line up.
-        return el("button", { type: "button", class: ticked ? (has ? "has-tune" : "ticks") : null, onclick: (e) => choose(set.id, e) },
-          has ? drawnIcon("tick") : null, set.name,
-          el("span", { class: "caption" }, " · ", countText(tuneCount(setSize(set))), has ? tr(" · take it out", " · ei thynnu allan") : ""));
+        // With any ticked, the rest leave the tick's room, so the names line up. Its count
+        // (and, ticked, what choosing it does) on a line of its own under the name, so a long
+        // name doesn't strand a "·"; a screen reader hears what it does first.
+        const count = countText(tuneCount(setSize(set)));
+        return el("button", { type: "button", class: ticked ? (has ? "has-tune" : "ticks") : null, onclick: (e) => choose(set.id, e),
+          "aria-label": has ? tr(`Take it out of ${set.name} (${count})`, `Ei thynnu allan o ${set.name} (${count})`) : null },
+          has ? drawnIcon("tick") : null, el("span", { class: "set-choice" }, set.name,
+            el("span", { class: "caption" }, count, has ? tr(" · take it out", " · ei thynnu allan") : "")));
       }),
       el("button", { type: "button", class: "menu-sep", onclick: (e) => choose(null, e) }, drawnIcon("plus"), tr("A new set", "Set newydd"))],
     "add-to-set");
@@ -4128,7 +4168,7 @@ function renderSet(main) {
       const key = item.tune.key ? keyName(item.tune.key.pitch + item.key, item.tune.key.modeName) : null;
       const play = playButton(() => { paper.draw(); return paper.visualObj; }, (playing) => playing
         ? tr(`Stop ${item.tune.base}`, `Stopio ${item.tune.base}`)
-        : tr(`Play ${item.tune.base}${key ? ` in ${key}` : ""}`, `Chwarae ${item.tune.base}${key ? ` yn ${key}` : ""}`));
+        : tr(`Play ${item.tune.base}${key ? ` in ${key}` : ""}`, `Chwarae ${item.tune.base}${key ? ` yn ${key}` : ""}`), item.tune.base);
       return el("section", { class: "set-tune" },
         el("div", { class: "set-tune-head" },
           el("h2", {}, swatch(item.tune), `${i + 1}. `,
@@ -4348,19 +4388,28 @@ function sendTuneForm() {
     el("option", { value: "Other" }, typeName("Other")));
   const source = el("input", { type: "text", name: "source", required: true });
   const who = el("input", { type: "text", name: "who", autocomplete: "name" });
-  // The ABC starts with the header filled in, ready for the rest; its title follows the
-  // tune's name until it's typed over.
-  const abc = el("textarea", { name: "abc", rows: 10, spellcheck: "false", class: "abc-input",
-    placeholder: "X:1\nT:Llancesau Trefaldwyn\nR:jig\nM:6/8\nL:1/8\nK:D\nAG |: F2 F GFG | AFD DFA | …" });
+  // The ABC starts with the header filled in, ready for the rest; its title (T:) and type
+  // (R:) follow the tune's name and the Type menu until they're typed over.
+  const abc = el("textarea", { name: "abc", rows: 10, spellcheck: "false", class: "abc-input" });
   abc.value = "X:1\nT:\nR:\nM:\nL:1/8\nK:\n";
-  let title = "";
-  name.addEventListener("input", () => {
-    const now = name.value.trim();
-    const lines = abc.value.split("\n");
-    const at = lines.findIndex((line) => /^T:/.test(line) && line.slice(2).trim() === title);
-    if (at >= 0) { lines[at] = `T:${now}`; abc.value = lines.join("\n"); }
-    title = now;
-  });
+  const follow = (field, control, value) => {
+    let was = "";
+    control.addEventListener(control === type ? "change" : "input", () => {
+      const now = value();
+      const lines = abc.value.split("\n");
+      const at = lines.findIndex((line) => line.startsWith(`${field}:`) && line.slice(2).trim() === was);
+      if (at >= 0) { lines[at] = `${field}:${now}`; abc.value = lines.join("\n"); }
+      was = now;
+    });
+  };
+  follow("T", name, () => name.value.trim());
+  follow("R", type, () => (type.value && type.value !== "Other" ? type.value.toLowerCase() : ""));  // as the tunes have it: "R:jig"
+  // What the header's letters mean, and a tune written out, for anyone new to ABC.
+  const abcExample = el("details", { class: "fold abc-example" },
+    el("summary", {}, tr("What the letters mean, with an example", "Beth mae'r llythrennau'n ei olygu, gydag enghraifft")),
+    el("p", { class: "caption" }, tr("T: the name · R: the type · M: the time signature · L: how long a plain note is · K: the key, with the notes on the lines after it.",
+      "T: yr enw · R: y math · M: yr amseriad · L: hyd nodyn plaen · K: y cywair, gyda'r nodau ar y llinellau ar ei ôl.")),
+    el("pre", {}, "X:1\nT:Llancesau Trefaldwyn\nR:jig\nM:6/8\nL:1/8\nK:D\nAG |: F2 F GFG | AFD DFA | …"));
   // Notes or anything else besides the header's field lines: the header alone isn't a tune.
   const hasTune = (text) => text.split("\n").some((line) => line.trim() && !/^([A-Za-z]:|%)/.test(line.trim()));
   const permission = el("input", { type: "checkbox", name: "permission", required: true });
@@ -4381,8 +4430,8 @@ function sendTuneForm() {
       problem.textContent = tr("The ABC needs a K: line (the key) just before the notes.", "Mae angen llinell K: (y cywair) ar yr ABC yn union cyn y nodau.");
     } else if (!notes.length) {
       problem.textContent = tr("No notes found yet: they go on the lines after K:.", "Dim nodau eto: maen nhw'n mynd ar y llinellau ar ôl K:.");
-    } else if (tune.warnings?.length) {  // abcjs's own messages are in English
-      problem.textContent = `${tr("Something to check", "Rhywbeth i'w wirio")}: ${tune.warnings[0].replace(/<[^>]+>/g, "")}`;
+    } else if (tune.warnings?.length) {  // abcjs's own messages are in English, and the Welsh says so
+      problem.textContent = `${tr("Something to check", "Rhywbeth i'w wirio (neges abcjs, yn Saesneg)")}: ${tune.warnings[0].replace(/<[^>]+>/g, "")}`;
     }
   }
   // The email is in the sender's language too; either way the subject starts with "Y Sesiwn".
@@ -4394,7 +4443,7 @@ function sendTuneForm() {
     field(tr("The tune in ABC notation (optional)", "Yr alaw mewn nodiant ABC (dewisol)"), abc,
       tr("No ABC? No problem: leave this as it is and attach a photo of the sheet music or a recording to the email before you send it.",
         "Dim ABC? Dim problem: gadewch hwn fel y mae ac atodwch lun o'r sgôr neu recordiad i'r e-bost cyn ei anfon.")),
-    preview, problem,
+    abcExample, preview, problem,
     el("label", { class: "check" }, permission, tr(" It's a traditional tune, or I have permission to share it.",
       " Mae'n alaw draddodiadol, neu mae gen i ganiatâd i'w rhannu.")),
   ], {

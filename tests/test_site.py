@@ -314,13 +314,10 @@ def test_whistle_fingerings(page):
     assert f(65, "recorder") == ["●●●●●○●●", False]  # F, forked
     assert f(76, "recorder") == ["◐●●●●●○○", False]  # E, second octave: thumb pinched
     assert f(59, "recorder") == ["●●○○○○○○", False, "up"] and f(88, "recorder") is None  # too low: an octave up
-    assert f(65, "recorder-treble") == ["●●●●●●●●", False]  # treble: the same fingerings from low F
-    assert f(70, "recorder-treble") == ["●●●●●○●●", False]  # B flat: the descant's forked F
-    assert f(62, "recorder-treble") == ["●●●○○○○○", False, "up"]  # low D: played an octave up
     # Lined up under their notes, a tied note's continuation included; rests take none.
     rows = page.evaluate("""() => { const v = ABCJS.renderAbc('*', withFingerings('X:1\\nM:6/8\\nL:1/8\\nK:D\\nD3- D2 E | F2 z G z A|', FINGERED['whistle-D']))[0];
       return v.lines[0].staff[0].voices[0].filter((e) => e.el_type === 'note' && !e.rest).map((n) => (n.lyric || []).map((l) => l.syllable).join('')); }""")
-    assert rows == ["●●●●●●", "", "●●●●●○", "●●●●○○", "●●●○○○", "●●○○○○"]
+    assert rows == ["●●●.●●●", "", "●●●.●●○", "●●●.●○○", "●●●.○○○", "●●○.○○○"]  # "." keeps a gap between the hands
 
 
 def test_whistle_on_a_tune(page):
@@ -340,12 +337,11 @@ def test_whistle_on_a_tune(page):
     in_a = lyrics()
     page.select_option("#tab-select", "recorder")  # its lowest note is C: in A, some go an octave up
     page.wait_for_function("(before) => [...document.querySelectorAll('.score .abcjs-lyric')].map((e) => e.textContent).join('') !== before", arg=in_a)
-    assert "?" not in lyrics() and "↑" in lyrics()
+    assert "?" not in lyrics() and "8va" in lyrics()
+    assert page.locator(".score .octave-up").count() > 0  # "8va", in red
+    assert page.locator(".score .hand-gap").count() > 0  # thumb | left hand | right hand
     page.select_option("#key-select", "0")  # back to D: all where they're written
-    page.wait_for_function("() => ![...document.querySelectorAll('.score .abcjs-lyric')].some((e) => e.textContent.includes('↑'))")
-    page.select_option("#tab-select", "recorder-treble")  # from low F: low D and E go up
-    page.wait_for_function("() => [...document.querySelectorAll('.score .abcjs-lyric')].some((e) => e.textContent.includes('↑'))")
-    assert "?" not in lyrics()
+    page.wait_for_function("() => !document.querySelector('.score .octave-up')")
     assert "recorder" in page.locator(".fingering-key").text_content()
     page.select_option("#tab-select", "none")
     page.wait_for_function("!document.querySelector('.score .abcjs-lyric')")
@@ -1890,7 +1886,7 @@ def test_set_from_tune_pages(page):
             page.press(".set-namer input", "Enter")
         else:  # then it's in the list, with a new one
             menu = page.locator(".add-to-set-wrap .print-menu")
-            assert menu.locator("button").all_inner_texts() == [f"My set · {1 if key else 2} tune{'' if key else 's'}", "A new set"]
+            assert menu.locator("button").all_inner_texts() == [f"My set\n{1 if key else 2} tune{'' if key else 's'}", "A new set"]
             menu.locator("button", has_text="My set").click()
     assert "(3 tunes)" in page.inner_text(".add-status")
     page.click(".add-status a")
@@ -1947,12 +1943,12 @@ def test_add_to_set_choosing_the_set(page):
     menu = page.locator(".add-to-set-wrap .print-menu")
     assert menu.is_hidden()
     page.click(".add-to-set")
-    assert menu.locator("button").all_inner_texts() == ["Nos Iau · 1 tune", "Class · 0 tunes", "A new set"]
+    assert menu.locator("button").all_inner_texts() == ["Nos Iau\n1 tune", "Class\n0 tunes", "A new set"]
     menu.locator("button", has_text="Class").click()
     assert "Added to Class in G major (1 tune)" in page.inner_text(".add-status")
     assert menu.is_hidden()
     page.click(".add-to-set")  # now Class is first, ticked: it has the tune
-    assert menu.locator("button").all_inner_texts()[:2] == ["Class · 1 tune · take it out", "Nos Iau · 1 tune"]
+    assert menu.locator("button").all_inner_texts()[:2] == ["Class\n1 tune · take it out", "Nos Iau\n1 tune"]
     menu.locator("button", has_text="A new set").click()
     # Named first: a name another set has isn't used twice; that set is offered instead
     assert page.evaluate("document.activeElement.matches('.set-namer input')")
@@ -1986,7 +1982,7 @@ def test_add_to_set_knows_its_sets(page):
     assert page.inner_text(".add-status") == "In your set Nos Iau"
     page.click(".add-to-set")
     menu = page.locator(".add-to-set-wrap .print-menu")
-    assert menu.locator("button").all_inner_texts() == ["Nos Iau · 2 tunes · take it out", "Class · 1 tune", "A new set"]
+    assert menu.locator("button").all_inner_texts() == ["Nos Iau\n2 tunes · take it out", "Class\n1 tune", "A new set"]
     assert menu.locator("button.has-tune .tick-icon").count() == 1
     # The menu opens on the side with room, never over the sidebar.
     assert menu.bounding_box()["x"] >= page.locator("main").bounding_box()["x"]
@@ -2416,7 +2412,7 @@ def test_share_button(browser, site):
 def test_tablature_choices(page):
     page.goto_site("?tune=glandyfi")
     options = page.eval_on_selector_all("#tab-select option", "os => os.map((o) => o.value)")
-    assert options == ["none", "mandolin", "guitar", "whistle-D", "whistle-C", "whistle-G", "whistle-Bb", "recorder", "recorder-treble"]
+    assert options == ["none", "mandolin", "guitar", "whistle-D", "whistle-C", "whistle-G", "whistle-Bb", "recorder"]
 
 
 # ---- The notes page ---------------------------------------------------------------

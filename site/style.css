@@ -58,7 +58,7 @@
     --chosen: #dfe3e8;
     --on-chosen: #111418;
     --paper: #ddd6c6;         /* still paper for the sheet music, but not glaring at night */
-    --art-dim: brightness(.88);
+    --art-dim: brightness(.78);  /* a little under the paper's: no brighter than the music beside it */
   }
 }
 
@@ -319,7 +319,7 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
   position: relative; display: flex; height: 7.5rem; min-width: 24rem;
   border-top: 4px solid var(--slate); border-radius: 4px 4px 6px 6px;
 }
-.piano .key { border-radius: 0 0 5px 5px; padding: 0; cursor: pointer; transition: background-color .08s; }
+.piano .key { border-radius: 0 0 6px 6px; padding: 0; cursor: pointer; transition: background-color .08s; }
 .piano .white {
   flex: 1; display: flex; align-items: flex-end; justify-content: center; padding-bottom: .35rem;
   background: var(--ivory); border: 1px solid var(--key-edge); border-top: none; margin-right: -1px; color: var(--key-label);
@@ -999,6 +999,7 @@ main { view-transition-name: page; }
 .set-count { margin: 0 0 1rem; }
 .set-actions { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .5rem; margin: 0 0 .4rem; }  /* the buttons level with Size's, under its label */
 .set-actions .print-menu { right: auto; left: 0; }  /* Share, near the start of the row: opens rightwards */
+.set-actions .row-break { display: none; }
 .set-shared { margin: 0 0 .6rem; min-height: 1.55em; }
 /* The running order, keys and adding tunes: a fold above the music, as the practice tools are */
 .set-edit { margin: 0 0 1.25rem; border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .9rem; background: var(--card-bg); }
@@ -1034,6 +1035,11 @@ main { view-transition-name: page; }
 .set-tune h2 a { color: inherit; text-decoration: none; }
 @media (hover: hover) { .set-tune h2 a:hover { color: var(--accent-ink); text-decoration: underline; } }
 .set-key { color: var(--muted); font-weight: 400; white-space: pre; }  /* "· A major": the key it's in, in this set */
+/* On a phone, where it would wrap and start a line with "·", the key is under the name */
+@media (max-width: 800px) {
+  .set-key { flex-basis: 100%; font-size: .9rem; }
+  .set-key .sep { display: none; }
+}
 .set-tune-head .preview-play { margin-left: auto; }
 .set-heading { margin: 0; }
 .set-paper { background: var(--paper); color: #000; border: 1px solid var(--border); border-radius: var(--radius); padding: .75rem 1rem 1rem; min-height: 8rem; box-shadow: 0 1px 3px #0000000f; }
@@ -1054,6 +1060,7 @@ main { view-transition-name: page; }
   /* Share, Print, Full screen and − + on one row, so the music starts higher */
   .set-actions > button, .set-actions .print-wrap > button { padding-inline: .7rem; }
   .set-actions .music-size .label { display: none; }
+  .set-actions .row-break { display: block; flex-basis: 100%; height: 0; margin-top: -.5rem; }  /* Save above the row */
 }
 /* A small phone: smaller, tighter buttons, so the row stays one row in Welsh too
    ("Rhannu", "Argraffu", "Sgrin lawn", − +) */
@@ -1090,13 +1097,16 @@ body.practice .set-edit, body.practice .set-shared, body.practice .set-count, bo
 .fingering-key { margin: 0 0 .5rem; }
 .fingering-key[hidden] { display: none; }
 .fingering-key > span { white-space: nowrap; }
+.fingering-key strong { color: var(--text); }
+.fingering-key .link-button { margin: 0; font-size: inherit; }
 .score .abcjs-lyric { fill: #262b31; }
-/* A whistle's or recorder's holes: ● ○ ◐ fill only part of a lyric's room, so they're drawn
-   larger in it (app.js fixes the rows' spacing first); "8va" (an octave up) in red; the row
-   of dots that holds a gap between the hands, unseen */
-.fingered .abcjs-lyric .hole { font-size: 1.45em; }
+/* A whistle's or recorder's holes, drawn as circles (app.js drawHoles) in the score's ink:
+   covered filled, open a ring, half-covered both; "+" and "?" larger than abcjs's lyrics;
+   "8va" (an octave up) in red */
+.fingered .holes { stroke: #262b31; stroke-width: 1.3; fill: none; }
+.fingered .holes .covered { fill: #262b31; }
+.fingered .abcjs-lyric .sign { font-size: 1.3em; }
 .fingered .abcjs-lyric .octave-up { fill: var(--accent); font-weight: 700; }
-.fingered .abcjs-lyric .hand-gap { visibility: hidden; }
 
 /* How to say a Welsh tune name (English only) */
 .say { margin: -.4rem 0 .9rem; color: var(--muted); font-size: .9rem; }
@@ -1133,6 +1143,12 @@ body.practice .tune-sub { display: none; }
   details.abc pre { margin-bottom: .75rem; }
   .versions a { align-content: center; }
   .preview-play, .map-zoom button { width: 44px; height: 44px; }
+  /* Links on a line of their own, or in the footer's line, get a finger's height too: the
+     rows grow, the text stays as it is. Not links inside a sentence. */
+  .tune-list li { padding: 0; }
+  .tune-list a, .button-link, .coming-up li > a { display: inline-flex; align-items: center; min-height: 44px; }
+  .coming-up li { padding: 0; }
+  .site-footer a, .site-footer .link-button { display: inline-block; padding: .7rem 0; }
   .music-size button { min-width: 44px; }
   .set-item-controls button { min-width: 44px; }
   .switch input { width: 1.75rem; height: 1.75rem; }

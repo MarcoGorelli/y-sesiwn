@@ -317,7 +317,7 @@ def test_whistle_fingerings(page):
     # Lined up under their notes, a tied note's continuation included; rests take none.
     rows = page.evaluate("""() => { const v = ABCJS.renderAbc('*', withFingerings('X:1\\nM:6/8\\nL:1/8\\nK:D\\nD3- D2 E | F2 z G z A|', FINGERED['whistle-D']))[0];
       return v.lines[0].staff[0].voices[0].filter((e) => e.el_type === 'note' && !e.rest).map((n) => (n.lyric || []).map((l) => l.syllable).join('')); }""")
-    assert rows == ["●●●.●●●", "", "●●●.●●○", "●●●.●○○", "●●●.○○○", "●●○.○○○"]  # "." keeps a gap between the hands
+    assert rows == ["●●●●●●", "", "●●●●●○", "●●●●○○", "●●●○○○", "●●○○○○"]
 
 
 def test_whistle_on_a_tune(page):
@@ -339,7 +339,10 @@ def test_whistle_on_a_tune(page):
     page.wait_for_function("(before) => [...document.querySelectorAll('.score .abcjs-lyric')].map((e) => e.textContent).join('') !== before", arg=in_a)
     assert "?" not in lyrics() and "8va" in lyrics()
     assert page.locator(".score .octave-up").count() > 0  # "8va", in red
-    assert page.locator(".score .hand-gap").count() > 0  # thumb | left hand | right hand
+    # Drawn as circles, thumb | left hand | right hand: a wider step between the hands
+    gaps = page.evaluate("""() => [...document.querySelector('.score .holes').querySelectorAll('circle')]
+      .map((c) => +c.getAttribute('cy')).map((y, i, all) => i ? Math.round(y - all[i - 1]) : 0).slice(1)""")
+    assert len(gaps) == 7 and gaps[0] == gaps[3] > gaps[1] == gaps[2] == gaps[4]
     page.select_option("#key-select", "0")  # back to D: all where they're written
     page.wait_for_function("() => !document.querySelector('.score .octave-up')")
     assert "recorder" in page.locator(".fingering-key").text_content()

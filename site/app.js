@@ -1785,19 +1785,27 @@ function drawHoles(text, holes) {
   const r = step * .36;
   const g = document.createElementNS(SVG_NS, "g");
   g.setAttribute("class", "holes");
-  marks.forEach(({ mark }, i) => {
-    const cy = marks[0].y + step * (i + .5 * gaps.filter((at) => at <= i).length);
-    const ring = document.createElementNS(SVG_NS, "circle");
-    for (const [name, value] of Object.entries({ cx: x, cy, r, class: mark === "●" ? "covered" : "open" })) ring.setAttribute(name, value);
-    g.append(ring);
-    if (mark === "◐") {  // the left half covered
-      const half = document.createElementNS(SVG_NS, "path");
-      half.setAttribute("d", `M${x} ${cy - r}A${r} ${r} 0 0 0 ${x} ${cy + r}Z`);
-      half.setAttribute("class", "covered");
-      g.append(half);
-    }
-  });
+  marks.forEach(({ mark }, i) => holeMark(g, mark, x, marks[0].y + step * (i + .5 * gaps.filter((at) => at <= i).length), r));
   text.after(g);
+}
+// One hole: covered (●) filled, open (○) a ring, half-covered (◐) a ring with its left half filled.
+function holeMark(parent, mark, cx, cy, r) {
+  const ring = document.createElementNS(SVG_NS, "circle");
+  for (const [name, value] of Object.entries({ cx, cy, r, class: mark === "●" ? "covered" : "open" })) ring.setAttribute(name, value);
+  parent.append(ring);
+  if (mark === "◐") {
+    const half = document.createElementNS(SVG_NS, "path");
+    half.setAttribute("d", `M${cx} ${cy - r}A${r} ${r} 0 0 0 ${cx} ${cy + r}Z`);
+    half.setAttribute("class", "covered");
+    parent.append(half);
+  }
+}
+// The same, on its own, for the key to them above the music.
+function holeSample(mark) {
+  const svg = document.createElementNS(SVG_NS, "svg");
+  for (const [name, value] of Object.entries({ viewBox: "0 0 12 12", class: "holes hole-sample", "aria-hidden": "true" })) svg.setAttribute(name, value);
+  holeMark(svg, mark, 6, 6, 4.8);
+  return svg;
 }
 
 // A recorder's notes below its lowest are played an octave up (or two), as recorder players
@@ -2104,6 +2112,14 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   state.synth = controller;
   // setWarp (the speed-up) also updates abcjs's own tempo box, which isn't shown.
   if (controller.control) controller.control.setWarp = () => {};
+  // abcjs's sound forgets a jump made while playing (the slider, a looped part coming
+  // round): paused after one, it would play on from somewhere else than the notes being
+  // lit. So at each pause, both go back to where the lit notes are.
+  const pause = controller.pause;
+  controller.pause = () => {
+    pause();
+    if (controller.timer) controller.seek(controller.timer.currentMillisecond() / 1000, "seconds");
+  };
   if (part) {
     // The player's own loop brings playback round again after the last part.
     cursor.loop = repeatLoop(controller, part, settings, onSpeed);
@@ -2637,25 +2653,38 @@ function renderTune(main, group, tune) {
   // fingering, just above the music, each sign kept on a line with what it means.
   const tabWhat = el("span", { class: "caption", hidden: state.practice.tab !== "none" },
     tr("Where to put your fingers, under each note", "Ble i roi eich bysedd, o dan bob nodyn"));
-  const fingerKey = () => (FINGERED[state.practice.tab]?.recorder
-    ? [tr("Thumb, then left hand, then right", "Bawd, yna'r llaw chwith, yna'r dde"), tr("● covered", "● ar gau"), tr("○ open", "○ ar agor"),
-      tr("◐ half-covered (the thumb: pinched)", "◐ hanner ar gau (y bawd: wedi'i binsio)"),
-      tr("8va too low, so an octave up", "8va rhy isel, felly wythfed yn uwch"), tr("? not on the recorder", "? ddim ar y recorder")]
-    : [tr("Left hand, then right", "Llaw chwith, yna'r dde"), tr("● covered", "● ar gau"), tr("○ open", "○ ar agor"),
-      tr("◐ half-covered", "◐ hanner ar gau"), tr("+ blow harder", "+ chwythu'n galetach"), tr("? not on the whistle", "? ddim ar y chwisl")])
-    .flatMap((part, i) => [i ? " · " : "", el("span", {}, part)]);
-  // Which it is, first, with the way to change it, there by the music: the menu is down
-  // in the practice tools, a long way below once the holes are drawn.
-  const tabName = () => el("span", {}, el("strong", {}, FINGERED[state.practice.tab]?.label()), " ",
-    el("button", { type: "button", class: "link-button", "aria-label": tr("Change the tablature", "Newid y tablatur"), onclick: () => {
-      tabSelect.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
-      tabSelect.focus({ preventScroll: true });
-    } }, tr("Change", "Newid")));
-  const fingeringKey = el("p", { class: "caption fingering-key", hidden: !FINGERED[state.practice.tab] });
+  // Which it is, with the way to change it (the menu is down in the practice tools, a long
+  // way below once the holes are drawn); which way up the holes go; then each sign, drawn
+  // as in the music, with what it means.
+  const fingerKey = () => {
+    const f = FINGERED[state.practice.tab];
+    const sign = (mark, meaning) => el("li", {},
+      "●○◐".includes(mark) ? holeSample(mark) : el("span", { class: `sign${mark === "8va" ? " up" : ""}`, "aria-hidden": "true" }, mark),
+      el("span", { class: "visually-hidden" }, `${mark} `), meaning);
+    return [
+      el("p", { class: "fingering-name" }, el("strong", {}, f.label()), " ",
+        el("button", { type: "button", class: "link-button", "aria-label": tr("Change the tablature", "Newid y tablatur"), onclick: () => {
+          tabSelect.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+          tabSelect.focus({ preventScroll: true });
+        } }, tr("Change", "Newid")),
+        el("br"), f.recorder
+          ? tr("The thumb (at the back), then from the mouthpiece down: left hand, then right",
+            "Y bawd (yn y cefn), yna o'r darn ceg i lawr: y llaw chwith, yna'r dde")
+          : tr("From the mouthpiece down: left hand, then right", "O'r darn ceg i lawr: y llaw chwith, yna'r dde")),
+      el("ul", { class: "fingering-signs" },
+        sign("●", tr("covered", "ar gau")), sign("○", tr("open", "ar agor")),
+        f.recorder ? sign("◐", tr("half-covered (the thumb: pinched)", "hanner ar gau (y bawd: wedi'i binsio)")) : sign("◐", tr("half-covered", "hanner ar gau")),
+        f.recorder ? sign("8va", tr("too low, so an octave up", "rhy isel, felly wythfed yn uwch")) : sign("+", tr("blow harder", "chwythu'n galetach")),
+        sign("?", f.recorder ? tr("not on the recorder", "ddim ar y recorder") : tr("not on the whistle", "ddim ar y chwisl"))),
+    ];
+  };
+  const fingeringKey = el("div", { class: "caption fingering-key", hidden: !FINGERED[state.practice.tab] });
   const showKey = () => {
     fingeringKey.hidden = !FINGERED[state.practice.tab];
-    if (!fingeringKey.hidden) fingeringKey.replaceChildren(tabName(), " · ", ...fingerKey());
+    if (!fingeringKey.hidden) fingeringKey.replaceChildren(...fingerKey());
   };
+  // Said to a screen reader as it's chosen: the menu stays where it is, the holes appear above.
+  const tabSaid = el("span", { class: "visually-hidden", "aria-live": "polite" });
   // Choosing one draws the music again above the menu, longer or shorter. Chosen with a
   // finger or the mouse, the page goes up to where the music starts (and how to read it),
   // to see what changed; with the keyboard, going through them, the menu stays where it was.
@@ -2666,6 +2695,10 @@ function renderTune(main, group, tune) {
       const was = e.target.getBoundingClientRect().top;
       state.practice.tab = e.target.value;
       showKey();
+      const label = e.target.selectedOptions[0]?.textContent;
+      tabSaid.textContent = state.practice.tab === "none" ? label : FINGERED[state.practice.tab]
+        ? tr(`${label}: the holes under each note, and how to read them just above the music`, `${label}: y tyllau o dan bob nodyn, a sut i'w darllen ychydig uwchben y gerddoriaeth`)
+        : tr(`${label}, under each note`, `${label}, o dan bob nodyn`);
       tabWhat.hidden = state.practice.tab !== "none";
       redraw();
       if (tabByKeys || state.practice.tab === "none") { window.scrollBy(0, e.target.getBoundingClientRect().top - was); return; }
@@ -2675,10 +2708,16 @@ function renderTune(main, group, tune) {
       window.scrollTo({ top: window.scrollY + start.getBoundingClientRect().top - pinned - 12,
         behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
     } },
-    [["none", tr("No tablature", "Dim tablatur")], ["mandolin", tr("Mandolin / fiddle", "Mandolin / ffidil")],
-      ["guitar", tr("Guitar", "Gitâr")],
-      ...Object.entries(FINGERED).map(([value, f]) => [value, f.label()])].map(([value, label]) =>
-      el("option", { value, selected: state.practice.tab === value }, label)));
+    // The whistles together, under one heading: eight choices read as five.
+    (() => {
+      const option = ([value, label]) => el("option", { value, selected: state.practice.tab === value }, label);
+      const fingered = Object.entries(FINGERED).map(([value, f]) => [value, f.label()]);
+      return [
+        ...[["none", tr("No tablature", "Dim tablatur")], ["mandolin", tr("Mandolin / fiddle", "Mandolin / ffidil")], ["guitar", tr("Guitar", "Gitâr")]].map(option),
+        el("optgroup", { label: tr("Whistle", "Chwisl") }, fingered.filter(([value]) => value.startsWith("whistle")).map(option)),
+        ...fingered.filter(([value]) => !value.startsWith("whistle")).map(option),
+      ];
+    })());
   showKey();
   const practiceRow = el("div", { class: "practice-row" },
     chordSettings(tune, () => redraw()),
@@ -2694,7 +2733,7 @@ function renderTune(main, group, tune) {
       canSwing(tune) ? toggle(tr("Swing", "Swing"), settings.swing, (on) => { settings.swing = on; }, "swing",
         tr("Play the quavers long-short, as hornpipes are played", "Chwarae'r cwafers yn hir-byr, fel y chwaraeir pibddawnsiau")) : null),
     el("div", { class: "practice-line" },
-      el("div", { class: "control" }, el("label", { for: "tab-select" }, tr("Tablature", "Tablatur")), tabSelect), tabWhat));
+      el("div", { class: "control" }, el("label", { for: "tab-select" }, tr("Tablature", "Tablatur")), tabSelect), tabWhat, tabSaid));
   // Folded at first, so the music is the page (the summary says what's inside); then as left.
   const practiceTools = el("details", { class: "practice-tools fold", open: practiceToolsOpen(),
     ontoggle: (e) => { if (!document.body.classList.contains("practice")) { state.practice.open = e.target.open; } } },
@@ -2721,7 +2760,7 @@ function renderTune(main, group, tune) {
     versions[0],
     controls,
     el("div", { class: "tune-layout" },
-      el("div", { class: "tune-main" }, fingeringKey, el("div", { class: "score" }, audio, soundNote(), paper),
+      el("div", { class: "tune-main" }, el("div", { class: "score" }, fingeringKey, audio, soundNote(), paper),
         practiceTools, chords),
       // Taking it with you first, in reach beside the music (on a phone, after the practice tools)
       el("div", { class: "tune-side" }, actions,
@@ -3577,7 +3616,7 @@ async function renderSessions(main) {
   const upcoming = soon.length || later.length ? el("section", { class: "coming-up" }, ...[
     el("h2", { class: "section-heading" }, tr("Coming up", "I ddod")),
     soon.length ? [el("p", { class: "pills-label" }, tr("Next seven days", "Y saith diwrnod nesaf")), soonList(soon)] : null,
-    later.length ? [el("p", { class: "pills-label" }, tr("Further ahead", "Ymhellach ymlaen")), soonList(later)] : null,
+    later.length ? [el("p", { class: "pills-label" }, tr("Further ahead: one-off dates", "Ymhellach ymlaen: dyddiadau arbennig")), soonList(later)] : null,
   ].filter(Boolean)) : null;
   main.replaceChildren(...[
     el("h1", {}, tr("Active sessions", "Sesiynau cyfredol")),
@@ -4248,6 +4287,7 @@ function renderSet(main) {
   // Which tune is at the top of the screen (-1: still above the first). The last ones may
   // be too short to scroll to the top: at the bottom of the page, the one jumped to.
   let jumped = -1;
+  let turned = 0;  // when the bar last turned the page (onScroll)
   const below = () => {  // the top of the screen, under the bar that stays there on phones
     const bar = document.querySelector(".topbar");
     return (bar && getComputedStyle(bar).position === "sticky" ? bar.offsetHeight : 0) + 8;  // (stuck at the top: its height)
@@ -4269,6 +4309,7 @@ function renderSet(main) {
       x.querySelector(".set-paper").draw();
     }
     jumped = i;
+    turned = Date.now();
     window.scrollTo({ top: window.scrollY + all[i].getBoundingClientRect().top - below() });
     showPlace();
   };
@@ -4277,6 +4318,7 @@ function renderSet(main) {
   const prev = el("button", { type: "button", "aria-label": tr("Previous tune", "Yr alaw flaenorol"), onclick: () => turn(-1) }, icon("chevron-left"));
   const next = el("button", { type: "button", "aria-label": tr("Next tune", "Yr alaw nesaf"), onclick: () => turn(1) }, icon("chevron-right"));
   const nav = el("nav", { class: "set-nav", "aria-label": tr("Tunes in the set", "Alawon y set") }, prev, where, next);
+  nav.addEventListener("focusin", () => nav.classList.remove("tucked"));
   function showPlace() {
     const i = place();
     nav.hidden = items.length < 2;
@@ -4290,10 +4332,23 @@ function renderSet(main) {
     if (event.ctrlKey || event.metaKey || event.altKey || event.target.closest("input, textarea, select, [contenteditable]")) return;
     if (event.key === "ArrowRight" || event.key === "ArrowLeft") { event.preventDefault(); turn(event.key === "ArrowRight" ? 1 : -1); }
   };
-  let ticking = false;
+  // Reading down the music, the bar tucks away below the screen, so it doesn't sit over
+  // the bars being read; it's back as the page goes up again, at the end of the set, or
+  // with the focus in it. Not after a turn with the bar itself.
+  let ticking = false, lastY = window.scrollY;
   const onScroll = () => {
     if (!music.isConnected) { window.removeEventListener("scroll", onScroll); return; }
-    if (!ticking) { ticking = true; requestAnimationFrame(() => { ticking = false; showPlace(); }); }
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        showPlace();
+        const y = window.scrollY, atEnd = window.innerHeight + y >= document.documentElement.scrollHeight - 2;
+        if (Math.abs(y - lastY) < 8) return;
+        nav.classList.toggle("tucked", y > lastY && !atEnd && Date.now() - turned > 1000 && !nav.contains(document.activeElement));
+        lastY = y;
+      });
+    }
   };
   document.addEventListener("keydown", onKey);
   window.addEventListener("scroll", onScroll, { passive: true });
@@ -4470,8 +4525,16 @@ function sendTuneForm() {
   // What the header's letters mean, and a tune written out, for anyone new to ABC.
   const abcExample = el("details", { class: "fold abc-example" },
     el("summary", {}, tr("What the letters mean, with an example", "Beth mae'r llythrennau'n ei olygu, gydag enghraifft")),
-    el("p", { class: "caption" }, tr("X: the tune's number in the file (leave it as 1) · T: the name · R: the type · M: the time signature · L: how long a note with no number after it is (1/8, a quaver; A2 is then a crotchet) · K: the key, with the notes on the lines after it.",
-      "X: rhif yr alaw yn y ffeil (gadewch hi'n 1) · T: yr enw · R: y math · M: yr amseriad · L: hyd nodyn heb rif ar ei ôl (1/8, cwafer; mae A2 wedyn yn grosiet) · K: y cywair, gyda'r nodau ar y llinellau ar ei ôl.")),
+    // Each letter with what it means, a line each, beside the example.
+    el("dl", { class: "abc-letters caption" }, [
+      ["X:", tr("the tune's number in the file (leave it as 1)", "rhif yr alaw yn y ffeil (gadewch e'n 1)")],
+      ["T:", tr("the name", "yr enw")],
+      ["R:", tr("the type", "y math")],
+      ["M:", tr("the time signature", "yr amseriad")],
+      ["L:", tr("how long a note with no number after it is (1/8, a quaver; A2 is then a crotchet)",
+        "hyd nodyn heb rif ar ei ôl (1/8, cwafer; mae A2 wedyn yn grosiet)")],
+      ["K:", tr("the key, with the notes on the lines after it", "y cywair, gyda'r nodau ar y llinellau ar ei ôl")],
+    ].map(([letter, meaning]) => [el("dt", {}, letter), el("dd", {}, meaning)])),
     el("pre", {}, "X:1\nT:Llancesau Trefaldwyn\nR:jig\nM:6/8\nL:1/8\nK:D\nAG |: F2 F GFG | AFD DFA | …"));
   // Notes or anything else besides the header's field lines: the header alone isn't a tune.
   const hasTune = (text) => text.split("\n").some((line) => line.trim() && !/^([A-Za-z]:|%)/.test(line.trim()));

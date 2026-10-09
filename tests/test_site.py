@@ -340,7 +340,7 @@ def test_whistle_on_a_tune(page):
     assert "?" not in lyrics() and "8va" in lyrics()
     assert page.locator(".score .octave-up").count() > 0  # "8va", in red
     # Drawn as circles, thumb | left hand | right hand: a wider step between the hands
-    gaps = page.evaluate("""() => [...document.querySelector('.score .holes').querySelectorAll('circle')]
+    gaps = page.evaluate("""() => [...document.querySelector('.score g.holes').querySelectorAll('circle')]
       .map((c) => +c.getAttribute('cy')).map((y, i, all) => i ? Math.round(y - all[i - 1]) : 0).slice(1)""")
     assert len(gaps) == 7 and gaps[0] == gaps[3] > gaps[1] == gaps[2] == gaps[4]
     page.select_option("#key-select", "0")  # back to D: all where they're written
@@ -1439,6 +1439,28 @@ def test_loop_part_and_speed_up(browser, site):
                                f"[...document.querySelectorAll('.score .abcjs-note')].indexOf(n) >= 30; }})()", timeout=15000)
     page.click(".abcjs-midi-start")  # pause
     assert not errors, errors
+    context.close()
+
+
+def test_paused_after_a_jump_plays_on_from_the_lit_notes(browser, site):
+    # Moved on while playing, then paused and played again, the sound carries on from
+    # the notes that are lit (abcjs's own would carry on from where it was before the jump).
+    context = browser.new_context(service_workers="block")
+    page = context.new_page()
+    page.goto(site + "?tune=glandyfi")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.click(".abcjs-midi-start")
+    page.wait_for_function("document.querySelector('.abcjs-note_playing') && state.synth.timer")
+    page.evaluate("state.synth.seek(.6)")
+    page.click(".abcjs-midi-start")  # pause
+    page.wait_for_function("!state.synth.isStarted")
+    page.click(".abcjs-midi-start")  # play
+    page.wait_for_function("state.synth.isStarted && state.synth.timer.isRunning")
+    # Where the sound is (abcjs's audio clock) against where the lit notes are, in seconds.
+    sound, notes = page.evaluate("""() => { const b = state.synth.midiBuffer;
+      return [ABCJS.synth.activeAudioContext().currentTime - b.startTimeSec, state.synth.timer.currentMillisecond() / 1000]; }""")
+    assert notes > 5 and abs(sound - notes) < .25, (sound, notes)
+    page.click(".abcjs-midi-start")  # pause
     context.close()
 
 

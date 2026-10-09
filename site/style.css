@@ -7,6 +7,9 @@
   --sidebar-bg: #eef0f1;      /* pale slate */
   --card-bg: #ffffff;
   --paper: #fbf6ea;           /* cream, behind the sheet music */
+  --score-ink: #000;          /* the music on its paper, the same in both themes, as the paper's text below */
+  --paper-muted: #505963;     /* quieter text on the paper: 4.5:1 or more on it in both themes */
+  --paper-link: #14539c;      /* a link on the paper: 4.5:1 or more on it in both themes */
   --text: #262b31;
   --muted: #5f6973;
   --border: #dcdfe3;
@@ -294,7 +297,7 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
   .notes-results { padding-left: 1.6rem; }
   .notes-results .preview { margin-left: -1.6rem; }
 }
-.preview-score { flex: 1; min-width: 0; background: var(--paper); border-radius: 6px; padding: .2rem .4rem; color: #000; }
+.preview-score { flex: 1; min-width: 0; background: var(--paper); border-radius: 6px; padding: .2rem .4rem; color: var(--score-ink); }
 .preview-score .abcjs-tempo { display: none; }  /* the tempo only sets playback speed */
 .preview-play { flex: none; width: 2.2rem; height: 2.2rem; padding: 0; border-radius: 50%; font-size: .9rem; display: grid; place-items: center; }
 .preview-play svg { width: 1.1rem; height: 1.1rem; }
@@ -406,8 +409,8 @@ details.all-tunes[open] > .tune-list { margin: .25rem 0 1.25rem; }
 }
 .tune-list { columns: 3 14rem; column-gap: 2rem; padding: 0; list-style: none; margin: .5rem 0 0; }
 .tune-list li { break-inside: avoid; padding: .15rem 0; display: flex; align-items: baseline; }  /* long names wrap beside the swatch */
-.tune-list a { color: var(--text); text-decoration: none; }
-.tune-list a:hover { color: var(--accent-ink); text-decoration: underline; }
+.tune-list a { color: var(--text); text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 22%, transparent); text-underline-offset: .2em; }  /* a quiet line: a link, not a list of words */
+@media (hover: hover) { .tune-list a:hover { color: var(--accent-ink); text-decoration-color: currentColor; } }
 
 /* Tune page */
 .controls { display: flex; flex-wrap: wrap; gap: 1rem 2.5rem; align-items: start; margin: 1rem 0 1.25rem; }  /* the labels on one line */
@@ -524,7 +527,7 @@ details[open] > summary::before { transform: rotate(90deg); }
   .tune-layout { display: flex; flex-direction: column; align-items: stretch; gap: 0; }
   .tune-main, .tune-side { display: contents; }
   .tune-layout :is(.tune-main, .tune-side) > * { order: 2; min-width: 0; }
-  .tune-layout .tune-main > :is(.fingering-key, .score, .practice-tools) { order: 0; }
+  .tune-layout .tune-main > :is(.score, .practice-tools) { order: 0; }
   .tune-layout .tune-side > .tune-actions { order: 1; margin: .75rem 0 0; }
   .tune-layout .tune-side > .card:not(.place) { margin-top: 1.5rem; }
 }
@@ -539,7 +542,7 @@ details[open] > summary::before { transform: rotate(90deg); }
   .tune-layout .tune-side > .tune-actions { grid-template-columns: repeat(4, minmax(0, 1fr)); }  /* room for all four in a row */
 }
 .score {                     /* sheet music on cream "paper", also in dark mode */
-  background: var(--paper); color: #000;
+  background: var(--paper); color: var(--score-ink);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: .75rem 1rem 1rem;
@@ -699,7 +702,7 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .chart .repeat-start::before { content: ":" / ""; color: var(--accent-ink); font-weight: 700; margin-right: .1rem; }
 .chart .repeat-end::after { content: ":" / ""; color: var(--accent-ink); font-weight: 700; margin-left: auto; }
 .chart sup { font-size: .65rem; color: var(--muted); font-weight: 400; }
-.score > .sound-note { margin: .5rem 0 0; color: #505963; }  /* on the cream paper in both themes, as below */
+.score > .sound-note { margin: .5rem 0 0; color: var(--paper-muted); }  /* on the cream paper in both themes, as below */
 .playback { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .5rem; min-width: 0; }
 .playback .label { color: inherit; }  /* a label like Repeat's and Tablature's */
 /* Three buttons in a row, one pressed: which parts playback plays */
@@ -976,6 +979,10 @@ main { view-transition-name: page; }
 .abc-example { margin-top: -.5rem; }
 .abc-example > summary { font-size: .9rem; }
 .abc-example p { margin: .4rem 0; }
+/* The letters, a line each: the letter as it's typed, then what it means */
+.abc-letters { display: grid; grid-template-columns: auto 1fr; gap: .2rem .75rem; margin: .5rem 0 .6rem; max-width: 40rem; }
+.abc-letters dt { font: 600 .85rem ui-monospace, "SF Mono", Menlo, monospace; color: var(--text); }
+.abc-letters dd { margin: 0; }
 .abc-example pre { margin: 0; padding: .6rem .8rem; font-size: .85rem; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); overflow-x: auto; }
 .abc-preview { overflow-x: auto; }
 .abc-preview[hidden] { display: none !important; }  /* over abcjs's inline display */
@@ -1042,7 +1049,7 @@ main { view-transition-name: page; }
 }
 .set-tune-head .preview-play { margin-left: auto; }
 .set-heading { margin: 0; }
-.set-paper { background: var(--paper); color: #000; border: 1px solid var(--border); border-radius: var(--radius); padding: .75rem 1rem 1rem; min-height: 8rem; box-shadow: 0 1px 3px #0000000f; }
+.set-paper { background: var(--paper); color: var(--score-ink); border: 1px solid var(--border); border-radius: var(--radius); padding: .75rem 1rem 1rem; min-height: 8rem; box-shadow: 0 1px 3px #0000000f; }
 .set-undo[hidden] { display: none; }
 .nowrap { white-space: nowrap; }
 .set-undo { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .6rem; max-width: 40rem; margin: .75rem 0 0; }
@@ -1094,17 +1101,24 @@ body.practice .set-edit, body.practice .set-shared, body.practice .set-count, bo
 .print-menu .menu-sep { position: relative; margin-top: .5rem; }
 .print-menu .menu-sep::before { content: ""; position: absolute; left: .4rem; right: .4rem; top: -.3rem; border-top: 1px solid var(--border); }
 /* How to read the holes, just above the music they're under; each sign kept with its meaning */
-.fingering-key { margin: 0 0 .5rem; }
+/* How to read the holes, at the top of the music's paper, in its ink: which it is (and
+   Change), which way up, then each sign drawn as in the music, kept with its meaning */
+.score > .fingering-key { margin: 0 0 .6rem; color: var(--paper-muted); }
 .fingering-key[hidden] { display: none; }
-.fingering-key > span { white-space: nowrap; }
-.fingering-key strong { color: var(--text); }
-.fingering-key .link-button { margin: 0; font-size: inherit; }
-.score .abcjs-lyric { fill: #262b31; }
+.fingering-name { margin: 0 0 .3rem; }
+.fingering-name strong { color: var(--score-ink); }
+.fingering-key .link-button { margin: 0; font-size: inherit; color: var(--paper-link); }
+.fingering-signs { display: flex; flex-wrap: wrap; gap: .15rem 1.1rem; margin: 0; padding: 0; list-style: none; }
+.fingering-signs li { display: inline-flex; align-items: center; gap: .4rem; white-space: nowrap; }
+.fingering-signs .hole-sample { flex: none; width: 1.05em; height: 1.05em; }
+.fingering-signs .sign { min-width: 1.05em; text-align: center; font-weight: 700; color: var(--score-ink); }
+.fingering-signs .sign.up { color: var(--accent); }  /* "8va", red as in the music */
+.score .abcjs-lyric { fill: var(--score-ink); }
 /* A whistle's or recorder's holes, drawn as circles (app.js drawHoles) in the score's ink:
    covered filled, open a ring, half-covered both; "+" and "?" larger than abcjs's lyrics;
    "8va" (an octave up) in red */
-.fingered .holes { stroke: #262b31; stroke-width: 1.3; fill: none; }
-.fingered .holes .covered { fill: #262b31; }
+.holes { stroke: var(--score-ink); stroke-width: 1.3; fill: none; }
+.holes .covered { fill: var(--score-ink); }
 .fingered .abcjs-lyric .sign { font-size: 1.3em; }
 .fingered .abcjs-lyric .octave-up { fill: var(--accent); font-weight: 700; }
 
@@ -1146,9 +1160,14 @@ body.practice .tune-sub { display: none; }
   /* Links on a line of their own, or in the footer's line, get a finger's height too: the
      rows grow, the text stays as it is. Not links inside a sentence. */
   .tune-list li { padding: 0; }
-  .tune-list a, .button-link, .coming-up li > a { display: inline-flex; align-items: center; min-height: 44px; }
-  .coming-up li { padding: 0; }
-  .site-footer a, .site-footer .link-button { display: inline-block; padding: .7rem 0; }
+  .tune-list a, .button-link { display: inline-flex; align-items: center; min-height: 44px; }
+  .site-footer a, .site-footer .link-button { display: inline-block; min-width: 44px; padding: .7rem 0; text-align: center; }
+  /* Links that start a line that may wrap (a session coming up, a tune in a set, a link
+     under a card): padding on an inline link reaches a finger's height without making its
+     line taller, so a wrapped line stays with it; the rows are spaced so they don't meet */
+  .coming-up li { padding: .45rem 0; }
+  .coming-up li > a, .set-tune h2 a, .card.place .caption a, .report-line a { padding-block: .65rem; }
+  .fingering-key .link-button { padding-block: .7rem; margin-block: -.7rem; }
   .music-size button { min-width: 44px; }
   .set-item-controls button { min-width: 44px; }
   .switch input { width: 1.75rem; height: 1.75rem; }
@@ -1171,6 +1190,9 @@ body.practice .tune-sub { display: none; }
   border-radius: 999px; background: var(--card-bg); box-shadow: 0 2px 8px var(--shadow-soft);
 }
 .set-nav[hidden] { display: none; }
+.set-nav { transition: transform .2s cubic-bezier(.16, 1, .3, 1), opacity .2s; }
+.set-nav.tucked { transform: translateY(calc(100% + 1rem)); opacity: 0; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .set-nav { transition: none; } }
 .set-nav button { min-width: 2.75rem; min-height: 2.75rem; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; }
 .set-nav button .icon { width: 1.1rem; height: 1.1rem; }
 .set-nav-where { font-size: .9rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

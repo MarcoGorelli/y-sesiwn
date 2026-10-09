@@ -314,6 +314,8 @@ def test_whistle_fingerings(page):
     assert f(65, "recorder") == ["●●●●●○●●", False]  # F, forked
     assert f(76, "recorder") == ["◐●●●●●○○", False]  # E, second octave: thumb pinched
     assert f(59, "recorder") is None and f(88, "recorder") is None
+    assert f(65, "recorder-treble") == ["●●●●●●●●", False]  # treble: the same fingerings from low F
+    assert f(70, "recorder-treble") == ["●●●●●○●●", False]  # B flat: the descant's forked F
     # Lined up under their notes, a tied note's continuation included; rests take none.
     rows = page.evaluate("""() => { const v = ABCJS.renderAbc('*', withFingerings('X:1\\nM:6/8\\nL:1/8\\nK:D\\nD3- D2 E | F2 z G z A|', FINGERED['whistle-D']))[0];
       return v.lines[0].staff[0].voices[0].filter((e) => e.el_type === 'note' && !e.rest).map((n) => (n.lyric || []).map((l) => l.syllable).join('')); }""")
@@ -2410,7 +2412,7 @@ def test_share_button(browser, site):
 def test_tablature_choices(page):
     page.goto_site("?tune=glandyfi")
     options = page.eval_on_selector_all("#tab-select option", "os => os.map((o) => o.value)")
-    assert options == ["none", "mandolin", "guitar", "whistle-D", "whistle-C", "whistle-G", "whistle-Bb", "recorder"]
+    assert options == ["none", "mandolin", "guitar", "whistle-D", "whistle-C", "whistle-G", "whistle-Bb", "recorder", "recorder-treble"]
 
 
 # ---- The notes page ---------------------------------------------------------------

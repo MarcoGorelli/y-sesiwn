@@ -1724,7 +1724,7 @@ function repeatLoop(controller, part, settings, onSpeed) {
   };
 }
 
-// Fingerings under the stave, for a whistle or a (descant) recorder: each hole, top to
+// Fingerings under the stave, for a whistle or a recorder: each hole, top to
 // bottom, for each note. They're written as lines of lyrics (w:), one a hole, so abcjs
 // lines them up under the notes, and they follow the key menu, since they're worked out
 // from the notes as drawn. low: the lowest note (MIDI), as written; holes: the fingering
@@ -1733,6 +1733,7 @@ const WHISTLE_HOLES = ["●●●●●●", "●●●●●◐", "●●●●
   "●●◐○○○", "●●○○○○", "●◐○○○○", "●○○○○○", "○●●○○○", "○○○○○○"];
 // The recorder's: thumb, then the seven finger holes, baroque (English) fingering, as the
 // American Recorder Society's chart has them; ◐ is half a double hole, or a pinched thumb.
+// From low C on a descant; a treble's are the same from its low F.
 const RECORDER_HOLES = [
   "●●●●●●●●", "●●●●●●●◐", "●●●●●●●○", "●●●●●●◐○", "●●●●●●○○", "●●●●●○●●",  // C–F
   "●●●●○●●○", "●●●●○○○○", "●●●○●●◐○", "●●●○○○○○", "●●○●●○○○", "●●○○○○○○",  // F♯–B
@@ -1740,10 +1741,11 @@ const RECORDER_HOLES = [
   "◐●●●○●○○", "◐●●●○○○○", "◐●●○●○○○", "◐●●○○○○○", "◐●●○○●●◐", "◐●●○●●○○",  // F♯–B
   "◐●○○●●○○", "◐●○●●○●●", "◐●○●●○●●", "◐○●●○●●○"];                             // C–D♯
 // A whistle's second octave is the first again, blown harder (+).
-const whistle = (name, low) => ({ name, low, holes: (n) => (n > 23 ? null : WHISTLE_HOLES[n % 12]), high: (n) => n >= 12 });
+const whistle = (name, low) => ({ label: () => tr(`Whistle in ${name}`, `Chwisl ${name}`), low, holes: (n) => (n > 23 ? null : WHISTLE_HOLES[n % 12]), high: (n) => n >= 12 });
 const FINGERED = {
   "whistle-D": whistle("D", 62), "whistle-C": whistle("C", 60), "whistle-G": whistle("G", 67), "whistle-Bb": whistle("B♭", 70),
-  recorder: { low: 60, holes: (n) => RECORDER_HOLES[n] ?? null, high: () => false },
+  ...Object.fromEntries([["recorder", 60, "Descant", "desgant"], ["recorder-treble", 65, "Treble", "trebl"]].map(([value, low, en, cy]) =>
+    [value, { recorder: true, label: () => tr(`${en} recorder`, `Recorder ${cy}`), low, holes: (n) => RECORDER_HOLES[n] ?? null, high: () => false }])),
 };
 
 function fingering(midi, instrument) {
@@ -2558,7 +2560,7 @@ function renderTune(main, group, tune) {
   // With none chosen, what tablature is; with a whistle or recorder, how to read its fingering.
   const tabWhat = el("span", { class: "caption", hidden: state.practice.tab !== "none" },
     tr("Where to put your fingers, under each note", "Ble i roi eich bysedd, o dan bob nodyn"));
-  const fingerKey = () => state.practice.tab === "recorder"
+  const fingerKey = () => FINGERED[state.practice.tab]?.recorder
     ? tr("Thumb first · ● covered · ○ open · ◐ half-covered (the thumb: pinched) · ? not on the recorder",
       "Bawd yn gyntaf · ● ar gau · ○ ar agor · ◐ hanner ar gau (y bawd: wedi'i binsio) · ? ddim ar y recorder")
     : tr("● covered · ○ open · ◐ half-covered · + blow harder · ? not on the whistle",
@@ -2573,7 +2575,7 @@ function renderTune(main, group, tune) {
   } },
     [["none", tr("No tablature", "Dim tablatur")], ["mandolin", tr("Mandolin / fiddle", "Mandolin / ffidil")],
       ["guitar", tr("Guitar", "Gitâr")],
-      ...Object.entries(FINGERED).map(([value, f]) => [value, f.name ? tr(`Whistle in ${f.name}`, `Chwisl ${f.name}`) : tr("Recorder", "Recorder")])].map(([value, label]) =>
+      ...Object.entries(FINGERED).map(([value, f]) => [value, f.label()])].map(([value, label]) =>
       el("option", { value, selected: state.practice.tab === value }, label)));
   const practiceRow = el("div", { class: "practice-row" },
     chordSettings(tune, () => redraw()),

@@ -232,7 +232,7 @@ scheduled runs after 60 days without a commit).
   `afterprint`.
 - **Whistle and recorder fingerings:** the Tablature menu also offers a tin
   whistle in D, C, G or B♭ (six holes under each note: ● covered, ○ open, ◐ half; + for the
-  second octave) and a descant recorder (thumb and seven holes, baroque
+  second octave) and a descant or treble recorder (thumb and seven holes, baroque
   fingering from the American Recorder Society's chart; ◐ is half a double hole
   or a pinched thumb). ? marks a note the instrument doesn't have. They're
   written as lines of lyrics (`w:`), so abcjs lines them up; worked out from

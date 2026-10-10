@@ -545,8 +545,10 @@ def main() -> None:
 
 
 # Not needed offline: link-preview images, the source of the service worker itself, and
-# GitHub Pages' "not found" page (offline, sw.js answers every address with the app).
-NOT_OFFLINE = {"sw.js", "og-image.png", "CNAME", "sitemap.xml", "robots.txt", "404.html"}
+# GitHub Pages' "not found" page (offline, sw.js answers every address with the app), and
+# GridinSoft's file proving we own the domain.
+NOT_OFFLINE = {"sw.js", "og-image.png", "CNAME", "sitemap.xml", "robots.txt", "404.html",
+               "gridinsoft-qwhiwg62aaa11k3qbqvvhusx8eo7c6v2tjj40adno3rw650jcp1du72cqupbn9ay.txt"}
 
 
 # Welsh for the tune pages' descriptions (app.js has the same: CY_TYPE, CY_MODES).

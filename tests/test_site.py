@@ -243,7 +243,7 @@ def test_print(page, mode, score, chords_on_score, chart):
     page.evaluate("window.print = () => {}")  # the real print dialog can't be driven
     page.select_option("#key-select", "2")  # prints in the key chosen on the page
     page.click("text=Print / save")
-    page.click(f".print-menu >> text='{mode}'")
+    page.click(f"[id^=print-menu] >> text='{mode}'")
     page.emulate_media(media="print")
     assert page.locator(".score").is_visible() == score
     assert page.locator(".score .abcjs-chord").first.is_visible() == chords_on_score
@@ -262,12 +262,12 @@ def test_print(page, mode, score, chords_on_score, chart):
 def test_print_menu(page):
     page.goto_site("?tune=glandyfi")
     page.click("text=Print / save")
-    assert page.locator(".print-menu").is_visible()
+    assert page.locator("[id^=print-menu]").is_visible()
     page.mouse.click(5, 900)  # clicking elsewhere closes it
-    assert not page.locator(".print-menu").is_visible()
+    assert not page.locator("[id^=print-menu]").is_visible()
     page.goto_site("?tune=cawl-cennin")  # no chords: no chord printing, but still saving
     page.click("text=Print / save")
-    assert page.locator(".print-menu button").all_inner_texts() == ["Print the sheet music", "Save as ABC", "Save as MIDI"]
+    assert page.locator("[id^=print-menu] button").all_inner_texts() == ["Print the sheet music", "Save as ABC", "Save as MIDI"]
 
 
 SPY_SWING = """() => {
@@ -418,7 +418,7 @@ def test_save_abc_and_midi(page):
     page.select_option("#key-select", "2")  # G major -> A major
     page.click("text=Print / save")
     with page.expect_download() as info:
-        page.click(".print-menu >> text='Save as ABC'")
+        page.click("[id^=print-menu] >> text='Save as ABC'")
     abc = open(info.value.path(), encoding="utf-8").read()
     assert info.value.suggested_filename == "glandyfi-in-A.abc"
     assert "\nK:A" in abc and "T:Glandyfi" in abc
@@ -427,7 +427,7 @@ def test_save_abc_and_midi(page):
         page.click(f".playback label:has-text('{play}')")
         page.click("text=Print / save")
         with page.expect_download() as info:
-            page.click(".print-menu >> text='Save as MIDI'")
+            page.click("[id^=print-menu] >> text='Save as MIDI'")
         data = open(info.value.path(), "rb").read()
         assert data[:4] == b"MThd" and info.value.suggested_filename == "glandyfi-in-A.mid"
         sizes[play] = len(data)
@@ -829,7 +829,7 @@ def test_fits_a_phone_with_everything_open(browser, site, path):
 def test_home_page(page):
     page.goto_site()
     features = page.locator(".features li").all_inner_texts()
-    assert len(features) == 4 and any(f.startswith("Chords: ") for f in features)
+    assert len(features) == 4 and any(f.startswith("Chords\n") for f in features)
     # No red button competes with the search: Surprise me is a plain one, and finding a
     # tune by its notes is a line of text.
     assert page.locator("main button.primary:visible").count() == 0
@@ -1952,13 +1952,15 @@ def test_qr_code(browser, site, scheme):
     page.goto(site + "alaw/glandyfi/?v=2")
     page.wait_for_selector(".score .abcjs-staff")
     assert not [u for u in requests if "qrcode" in u]  # only loaded when asked for
-    page.click(".qr-button")
+    page.click(".tune-actions .share")
+    page.click(".tune-actions button:text-is('QR code')")
     page.wait_for_selector("dialog.qr-dialog[open] svg.qr")
     image = Image.open(io.BytesIO(page.locator("dialog svg.qr").screenshot()))
     assert [r.text for r in zxingcpp.read_barcodes(image)] == ["https://ysesiwn.cymru/alaw/glandyfi/?v=2"]
     page.keyboard.press("Escape")
     page.wait_for_selector("dialog.qr-dialog", state="detached")
-    page.click(".qr-button")  # again, and closed with its button
+    page.click(".tune-actions .share")  # again, and closed with its button
+    page.click(".tune-actions button:text-is('QR code')")
     page.click("dialog.qr-dialog button:text-is('Close')")
     page.wait_for_selector("dialog.qr-dialog", state="detached")
     context.close()
@@ -2490,12 +2492,14 @@ def test_space_bar_plays(page):
 
 
 def test_share_button(browser, site):
-    # Where the device has a share sheet, Share opens it with the tune's own address.
+    # Where the device has a share sheet, Share's menu opens it with the tune's own address,
+    # on a tune's page as on a set's.
     context = browser.new_context(service_workers="block")
     page = context.new_page()
     page.add_init_script("navigator.share = async (data) => { window.shared = data; }")
     page.goto(site + "?tune=glandyfi")
     page.click(".tune-actions .share")
+    page.click(".tune-actions button:text-is('Send with an app…')")
     assert page.evaluate("window.shared") == {"title": "Glandyfi", "url": "https://ysesiwn.cymru/alaw/glandyfi/"}
     page.goto(site + "?set=3V~h5A&n=Nos%20Iau")
     page.click(".set-actions .share")
@@ -2658,23 +2662,22 @@ def test_score_leaves_out_the_name(browser, site, phone):
     context.close()
 
 
-def test_copy_link_where_there_is_no_share_sheet(page):
-    # Most computers have no share sheet: the tune's link is copied instead.
+def test_copy_link(page):
+    # Copy link, in Share's menu: the tune's link, said on the line under the buttons.
     page.goto_site("?tune=glandyfi")
     page.wait_for_selector(".score .abcjs-inline-audio")
-    if page.evaluate("'share' in navigator"):
-        pytest.skip("this browser has a share sheet")
     page.context.grant_permissions(["clipboard-read", "clipboard-write"])
     # Copied (asynchronously: wait for it), or, where the clipboard is refused, offered to copy by hand.
     offered = []
     page.on("dialog", lambda d: (offered.append(d.default_value), d.dismiss()))
     page.click(".tune-actions .share")
+    page.click(".tune-actions button:text-is('Copy link')")
     for _ in range(50):
-        if offered or page.inner_text(".tune-actions .share") == "Link copied":
+        if offered or page.inner_text(".share-status") == "Link copied":
             break
         page.wait_for_timeout(100)
     link = offered[0] if offered else page.evaluate("navigator.clipboard.readText()")
-    assert offered or page.inner_text(".tune-actions .share") == "Link copied"
+    assert offered or page.inner_text(".share-status") == "Link copied"
     assert link.startswith("https://ysesiwn.cymru/alaw/glandyfi/")
 
 
@@ -2732,14 +2735,14 @@ def test_print_list_and_chart_words(page):
     # puts focus back on its button. The chord chart is read bar by bar, in words.
     page.goto_site("?tune=glandyfi")
     page.wait_for_selector(".score .abcjs-staff")
-    toggle = page.locator(".print-wrap > button")
+    toggle = page.locator("[aria-controls^=print-menu]")
     assert toggle.get_attribute("aria-haspopup") is None and page.locator("[role=menu], [role=menuitem]").count() == 0
     toggle.click()
-    assert page.locator(".print-menu").is_visible() and toggle.get_attribute("aria-expanded") == "true"
-    page.locator(".print-menu button").first.focus()
+    assert page.locator("[id^=print-menu]").is_visible() and toggle.get_attribute("aria-expanded") == "true"
+    page.locator("[id^=print-menu] button").first.focus()
     page.keyboard.press("Escape")
-    assert page.locator(".print-menu").is_hidden()
-    assert page.evaluate("document.activeElement === document.querySelector('.print-wrap > button')")
+    assert page.locator("[id^=print-menu]").is_hidden()
+    assert page.evaluate("document.activeElement === document.querySelector('[aria-controls^=print-menu]')")
     words = page.text_content(".chart-box .visually-hidden")
     assert words.startswith("Bar 1: repeat from here, G.") and "; repeat." in words
     assert page.get_attribute(".chart-box .chart", "aria-hidden") == "true"
@@ -3207,9 +3210,11 @@ def test_a_moved_key_says_so_when_shared(browser, site):
     page.goto(site + "alaw/glandyfi/?key=A&tempo=80")
     page.wait_for_selector(".score .abcjs-inline-audio")
     page.click(".tune-actions .share")
-    page.wait_for_function("document.querySelector('.tune-actions .share').innerText.startsWith('Link copied')")  # once the clipboard has it
-    assert page.inner_text(".tune-actions .share") == "Link copied, in A major, at 80 bpm"
-    page.click(".qr-button")
+    page.click(".tune-actions button:text-is('Copy link')")
+    page.wait_for_function("document.querySelector('.share-status').innerText.startsWith('Link copied')")  # once the clipboard has it
+    assert page.inner_text(".share-status") == "Link copied, in A major, at 80 bpm"
+    page.click(".tune-actions .share")
+    page.click(".tune-actions button:text-is('QR code')")
     assert "this tune, in A major, at 80 bpm." in page.inner_text(".qr-dialog .caption >> nth=0")
     page.keyboard.press("Escape")
     page.select_option("#key-select", "0")
@@ -3235,3 +3240,43 @@ def test_notes_results_say_only_what_differs(page):
     page.wait_for_selector(".notes-results li")
     first = page.locator(".notes-results li").first.inner_text()
     assert "starts like this" not in first
+
+
+def test_set_music_in_the_site_typeface(page):
+    # A set's music is drawn as a tune's page draws it: its credit and tempo in the site's
+    # own typeface, never abcjs's Times.
+    page.goto_site("?set=3V~h5A&n=Nos%20Iau")
+    page.wait_for_selector(".set-paper .abcjs-staff")
+    fonts = page.eval_on_selector_all(".set-paper svg text", "ts => [...new Set(ts.map((t) => getComputedStyle(t).fontFamily))]")
+    assert fonts and all("system-ui" in f for f in fonts), fonts
+
+
+def test_music_size_says_its_size(page):
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.inner_text(".music-size .label") == "Size: 100%"
+    page.click("[aria-label='Bigger music']")
+    assert page.inner_text(".music-size .label") == "Size: 125%"
+    assert page.get_attribute(".music-size", "aria-label") == "Size of the music: 125%"
+
+
+def test_browse_says_what_the_types_are(page):
+    # With nothing chosen, what each type is, under the folded list; gone once one is chosen.
+    page.goto_site("?page=browse")
+    about = page.locator(".types-about")
+    assert about.locator("dt").first.inner_text() == "Jig"
+    assert about.locator("dd").count() == page.locator(".pills button[data-type]").count()
+    page.click(".pills button[data-type='Jig']")
+    assert about.count() == 0
+
+
+def test_home_features_only_on_a_first_visit(page):
+    # "What you can do" is for a first visit: once a tune has been opened here, the home page
+    # has Recently opened instead.
+    page.goto_site()
+    page.wait_for_selector(".features")
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.goto_site()
+    page.wait_for_selector(".recent-list")
+    assert page.locator(".features").count() == 0

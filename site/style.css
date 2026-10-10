@@ -227,11 +227,12 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 @media (hover: hover) { .pills button:hover:not(:disabled) { border-color: var(--c); color: inherit; } }
 .pills button[aria-pressed="true"] { border-color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); font-weight: 600; }
 
-/* "What you can do": the features, two columns on wide screens */
-/* On a phone: the features' names as pills, the descriptions folded under them */
-.features ul { columns: 2 22rem; column-gap: 2.5rem; margin: 0; padding-left: 1.2rem; max-width: 60rem; }
-.features li { break-inside: avoid; margin-bottom: .45rem; }
-.features li::marker { color: var(--accent-ink); }
+/* "What you can do" (a first visit only): each thing's name, and what it is under it, in
+   two columns on wide screens, as Browse's types are */
+.features ul { columns: 2 22rem; column-gap: 2.5rem; margin: 1rem 0 0; padding: 0; list-style: none; max-width: 60rem; }
+.features li { break-inside: avoid; padding-bottom: .9rem; }
+.features li strong { display: block; }
+.features li span { display: block; margin-top: .1rem; color: var(--muted); }
 /* Upcoming sessions, on the home page and the sessions page */
 .coming-up ul { list-style: none; padding: 0; margin: 0; }
 .coming-up li { padding: .2rem 0; }
@@ -371,6 +372,14 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 details.all-tunes { margin-top: 1rem; border-block: 1px solid var(--border); }
 details.all-tunes > summary { padding: .55rem 0; font-weight: 600; }
 details.all-tunes[open] > .tune-list { margin: .25rem 0 1.25rem; }
+/* With nothing chosen: what each type is, two columns of them where there's room */
+.types-about { margin-top: 2.5rem; }
+.types-about dl { columns: 2 22rem; column-gap: 2.5rem; margin: 1rem 0 0; }
+.types-about dl > div { break-inside: avoid; padding-bottom: .9rem; }
+.types-about dt { display: flex; align-items: baseline; font-weight: 700; }
+.types-about dt .swatch { transform: translateY(.1em); }
+.types-about dt .gloss { color: var(--muted); font-weight: 400; white-space: pre; }
+.types-about dd { margin: .1rem 0 0; color: var(--muted); }
 /* On a phone, arriving with types or keys chosen: they fold into one line (app.js) */
 .browse-chosen { display: none; }
 @media (max-width: 800px) {
@@ -438,7 +447,8 @@ details.all-tunes[open] > .tune-list { margin: .25rem 0 1.25rem; }
 .view-tools .music-size { margin-left: 0; }
 /* On a phone: the key, tempo and size as one line, which opens to change them */
 .controls-summary { display: none; }
-/* Take it with you: at the top of the side column, beside the music; two by two */
+/* Take it with you: at the top of the side column, beside the music: Share and Print / save
+   side by side, Add to set across under them */
 .tune-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; margin: 0 0 1rem; }
 .tune-actions > *, .tune-actions .print-wrap > button, .tune-actions .add-to-set { width: 100%; max-width: none; }
 /* A longer label ("Ychwanegu at set") wraps inside its button, and its row's buttons stay one height */
@@ -446,7 +456,8 @@ details.all-tunes[open] > .tune-list { margin: .25rem 0 1.25rem; }
 /* Add to set's parts sit in the grid themselves, and the new set's name, "In your set…"
    and "Added to…" run across under the buttons */
 .tune-actions .add-to-set-wrap { display: contents; }
-.tune-actions :is(.add-status, .set-namer) { grid-column: 1 / -1; margin: 0; }
+.tune-actions :is(.add-to-set-wrap > :first-child, .add-status, .set-namer, .share-status) { grid-column: 1 / -1; margin: 0; }
+.share-status:empty { display: none; }
 .add-status .link-button { margin-left: 0; }
 .set-namer { display: grid; gap: .35rem; padding: .7rem .8rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); }
 .set-namer label { font-size: .9rem; font-weight: 600; }
@@ -546,7 +557,8 @@ details[open] > summary::before { transform: rotate(90deg); }
   .view-tools { margin-left: 0; }
 }
 @media (min-width: 960px) and (max-width: 1100px) {
-  .tune-layout .tune-side > .tune-actions { grid-template-columns: repeat(4, minmax(0, 1fr)); }  /* room for all four in a row */
+  .tune-layout .tune-side > .tune-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }  /* room for all three in a row */
+  .tune-layout .tune-side > .tune-actions .add-to-set-wrap > :first-child { grid-column: auto; }
 }
 .score {                     /* sheet music on cream "paper", also in dark mode */
   background: var(--paper); color: var(--score-ink);
@@ -1015,9 +1027,13 @@ main { view-transition-name: page; }
 .qr-dialog form { margin-top: .75rem; }
 
 /* Sets: a list to arrange, then every tune's music */
-.set-name { font-family: inherit; font-size: 2rem; font-weight: 700; line-height: 1.2; color: var(--text); background: transparent; border: 1px dashed var(--border);
-  border-radius: var(--radius); padding: .2rem .5rem; width: 100%; max-width: 40rem; margin: 0 0 .4rem; }
-.set-name:focus { outline: none; border-color: var(--accent-ink); border-style: solid; }
+/* Your own set's name: a heading at rest, with a dashed line under it to say it can be
+   changed; the whole dashed box with the pointer over it, and a red one while it's edited */
+.set-name { font-family: inherit; font-size: 2rem; font-weight: 700; line-height: 1.2; color: var(--text); background: transparent;
+  border: 1px dashed transparent; border-bottom-color: var(--border);
+  padding: .2rem .5rem; width: 100%; max-width: 40rem; margin: 0 0 .4rem; }
+@media (hover: hover) { .set-name:hover { border-color: var(--border); border-radius: var(--radius); } }
+.set-name:focus { outline: none; border-color: var(--accent-ink); border-style: solid; border-radius: var(--radius); }
 .set-count { margin: 0 0 1rem; }
 .set-actions { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .5rem; margin: 0 0 .4rem; }  /* the buttons level with Size's, under its label */
 .set-actions .print-menu { right: auto; left: 0; }  /* Share, near the start of the row: opens rightwards */

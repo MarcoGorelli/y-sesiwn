@@ -12,3 +12,4 @@ Decisions the owner has made, and things earlier critiques got wrong. Drop any f
 
 - **A "Back to <original key>" / reset-key button on the tune page.** It was tried and removed because it crowds the controls. The way back is the Key menu, where the written key is marked "(original)". The phone's one line says "A (from G)" when the key has moved. Don't suggest a reset button or chip in any form.
 - **"Play this next", related or next tunes, or ready-made sets.** The site never suggests sets or what to play next; the owner rules this out entirely. The empty space at the end of a tune page is not a reason to add one. Don't propose it as a fix, a peak-end idea or a provocative question.
+- **A tempo for sets (one for the whole set, or one per tune, carried in the set's link).** Sets play each tune at its written tempo, on purpose. Don't flag that a set can't carry or change tempo, and don't suggest a set tempo control.

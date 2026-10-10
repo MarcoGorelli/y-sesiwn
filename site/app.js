@@ -758,7 +758,7 @@ function tunePreview(tune) {
   requestAnimationFrame(() => {
     // On a phone, drawn at the box's own width (not drawn wide and shrunk), so the notes are full size.
     const narrow = matchMedia("(max-width: 800px)").matches && paper.clientWidth > 0;
-    visualObj = ABCJS.renderAbc(paper, abc, { responsive: "resize", paddingtop: 0, paddingbottom: 0, add_classes: true,
+    visualObj = ABCJS.renderAbc(paper, abc, { responsive: "resize", paddingtop: 0, paddingbottom: 0, add_classes: true, format: SCORE_FORMAT,
       ...(narrow ? { staffwidth: Math.max(180, paper.clientWidth - 24) } : {}) })[0];
     nameScore(paper);
   });
@@ -1248,6 +1248,7 @@ const instruments = (where = "") => el("div", { class: `instruments${where}`, ro
 function renderHome(main) {
   document.title = "Y Sesiwn";
   const count = state.groupList.length;  // one entry per tune, whatever its number of versions
+  const yours = recentTunes();  // nothing yet on a first visit
   main.replaceChildren(...[
     // The welcome and the ways in, with the instruments beside them on a wide screen.
     el("div", { class: "home-intro" },
@@ -1261,10 +1262,10 @@ function renderHome(main) {
         el("a", { href: "?page=browse", "data-route": true, class: "button-link" },
           tr(`Browse all ${count} tunes`, `Pori'r ${count} alaw`))),
       instruments(" at-top")),
-    recentTunes(),  // nothing yet on a first visit
+    yours,
     notesInvite(),
     upcomingSessions(),
-    features(),
+    yours ? null : features(),  // a first visit: what the tune pages can do
     instruments(" at-end"),  // phones: the picture here instead, by the offline card
     offlineCard(),
   ].filter(Boolean));
@@ -1314,6 +1315,23 @@ function recentTunes() {
 
 // Every tune, narrowed down by types and keys. The choice is kept in the address
 // (?page=browse&type=Jig&type=Polca&key=D%20major), so "the jigs and polkas in D" can be shared.
+// What each type is, for anyone who hasn't met them: Browse with nothing chosen. (Their
+// time signatures are the ones most of the type's tunes here have.)
+const TYPE_ABOUT = {
+  Jig: ["Lively, in 6/8: two beats in a bar, each of three quick notes.", "Bywiog, mewn 6/8: dau guriad i'r bar, tri nodyn cyflym ym mhob un."],
+  "Jig naid": ["A jig with a third beat, in 9/8: three beats of three notes, lilting.", "Jig â thrydydd curiad, mewn 9/8: tri churiad o dri nodyn, yn siglo."],
+  Polca: ["Bright and bouncy, in two or four, for dancing.", "Sionc a bywiog, mewn dau neu bedwar, i ddawnsio."],
+  Walts: ["Three beats in a bar, the first the strongest: for couples turning.", "Tri churiad i'r bar, y cyntaf yn gryfaf: i barau'n troi."],
+  "Rîl": ["Fast and smooth: a steady run of even notes, four beats in a bar.", "Cyflym a llyfn: rhediad cyson o nodau gwastad, pedwar curiad i'r bar."],
+  Pibddawns: ["Four in a bar, with dotted, swung notes: steadier than a reel.", "Pedwar i'r bar, gyda nodau dot yn siglo: yn fwy pwyllog na rîl."],
+  Ymdaith: ["A tune to walk or march to, with a steady beat.", "Alaw i gerdded neu orymdeithio iddi, gyda churiad cyson."],
+  Dawns: ["The tunes of particular Welsh folk dances.", "Alawon dawnsiau gwerin Cymreig penodol."],
+  Alaw: ["An air: a tune to listen to more than dance to, often played slowly and freely.",
+    "Alaw i wrando arni yn fwy nag i ddawnsio, yn aml yn araf ac yn rhydd."],
+  "Cân": ["A song's melody, to play or sing.", "Alaw cân, i'w chwarae neu ei chanu."],
+  Carol: ["A carol or hymn tune, as it's sung.", "Alaw carol neu emyn, fel y'i cenir."],
+  Other: ["Tunes the books give no type.", "Alawon heb fath yn y llyfrau."],
+};
 const COMMON_KEYS = 6;  // key pills shown before "More keys"
 const COMMON_TYPE = 25;  // type pills with fewer tunes than this (and Other) wait behind "More types"
 function renderBrowse(main) {
@@ -1397,9 +1415,18 @@ function renderBrowse(main) {
       type.name === "Other" ? typeName(type.name) : el("span", { lang: "cy" }, type.name),
       state.lang !== "cy" && GLOSSED.has(type.name) ? el("span", { class: "gloss" }, ` (${EN_TYPE[type.name]})`) : null,
       el("span", { class: "count" }, ` · ${g.length}`));
+    // With nothing chosen, under the folded list: what each type is.
+    const about = (type) => el("div", {},
+      el("dt", { style: `--c: ${type.colour}` }, el("span", { class: "swatch" }),
+        type.name === "Other" ? typeName(type.name) : el("span", { lang: "cy" }, type.name),
+        state.lang !== "cy" && GLOSSED.has(type.name) ? el("span", { class: "gloss" }, ` (${EN_TYPE[type.name]})`) : null),
+      el("dd", {}, tr(...TYPE_ABOUT[type.name])));
     list.replaceChildren(...everything
       ? [el("details", { class: "all-tunes fold", open: allOpen, ontoggle: (e) => { allOpen = e.target.open; } },
-          el("summary", {}, tr("List them A to Z", "Eu rhestru o A i Y")), el("ul", { class: "tune-list" }, listed.map(item)))]
+          el("summary", {}, tr("List them A to Z", "Eu rhestru o A i Y")), el("ul", { class: "tune-list" }, listed.map(item))),
+        el("section", { class: "types-about", "aria-labelledby": "types-about" },
+          el("h2", { class: "section-heading", id: "types-about" }, tr("What the types are", "Beth yw'r mathau")),
+          el("dl", {}, types.filter((type) => TYPE_ABOUT[type.name]).map(about)))]
       : groups.length === 1
         ? [el("ul", { class: "tune-list" }, groups[0][1].map(item))]
         : groups.map(([type, g]) => el("section", { class: "type-group", style: `--c: ${type.colour}` }, heading(type, g),
@@ -1507,25 +1534,24 @@ function notesInvite() {
     ] : [notes(tr("Tap or type the notes", "Tapio neu deipio'r nodau"))]));
 }
 
+// What the tune pages can do, for a first visit; once a tune has been opened here (or a
+// set made), the home page has Your tunes instead, and this steps aside.
 function features() {
-  // A few things worth knowing before opening a tune; the sidebar has the rest.
   const withChords = state.groupList.filter((g) => g.versions.some((v) => v.chords != null)).length;
   const items = state.lang === "cy" ? [
-    [["Unrhyw gywair, unrhyw dempo"], ": trawsgyweiriwch alaw i siwtio'ch offeryn neu'ch llais, a gwrandewch arni gyda'r nodau'n goleuo."],
-    [["Ymarfer"], ": ailadroddwch yr alaw neu un rhan gan gyflymu bob tro, gyda thablatur ar gyfer mandolin, ffidil neu gitâr, a byseddu ar gyfer chwisl neu recorder."],
-    [["Cordiau"], `: cyfeiliant awgrymedig ar gyfer gitâr, piano neu delyn (${withChords} o alawon hyd yma).`],
-    [["Setiau"], ": casglwch alawon i'w chwarae gyda'i gilydd, yn eich cyweiriau chi, a'u rhannu fel dolen neu god QR."],
+    ["Unrhyw gywair, unrhyw dempo", "Trawsgyweiriwch alaw i siwtio'ch offeryn neu'ch llais, a gwrandewch arni gyda'r nodau'n goleuo."],
+    ["Ymarfer", "Ailadroddwch yr alaw neu un rhan gan gyflymu bob tro, gyda thablatur ar gyfer mandolin, ffidil neu gitâr, a byseddu ar gyfer chwisl neu recorder."],
+    ["Cordiau", `Cyfeiliant awgrymedig ar gyfer gitâr, piano neu delyn (${withChords} o alawon hyd yma).`],
+    ["Setiau", "Casglwch alawon i'w chwarae gyda'i gilydd, yn eich cyweiriau chi, a'u rhannu fel dolen neu god QR."],
   ] : [
-    [["Any key, any tempo"], ": transpose a tune for your instrument or voice, and hear it with the notes lit up."],
-    [["Practise"], ": repeat the tune or a part, speeding up each time, with tablature for mandolin, fiddle or guitar, and fingering for whistle or recorder."],
-    [["Chords"], `: suggested accompaniment for guitar, piano or harp (${withChords} tunes so far).`],
-    [["Sets"], ": gather tunes to play together, in your keys, and share them as a link or a QR code."],
+    ["Any key, any tempo", "Transpose a tune for your instrument or voice, and hear it with the notes lit up."],
+    ["Practise", "Repeat the tune or a part, speeding up each time, with tablature for mandolin, fiddle or guitar, and fingering for whistle or recorder."],
+    ["Chords", `Suggested accompaniment for guitar, piano or harp (${withChords} tunes so far).`],
+    ["Sets", "Gather tunes to play together, in your keys, and share them as a link or a QR code."],
   ];
-  // [["words"]] is the bold lead-in; plain strings follow it.
-  const bold = (part) => Array.isArray(part) ? el("strong", {}, part) : part;
   return el("section", { class: "features" },
     el("h2", { class: "section-heading" }, tr("What you can do", "Beth allwch chi ei wneud")),
-    el("ul", {}, items.map((parts) => el("li", {}, parts.map(bold)))));
+    el("ul", {}, items.map(([name, what]) => el("li", {}, el("strong", {}, name), el("span", {}, what)))));
 }
 
 function heroSearch(count) {
@@ -1909,13 +1935,17 @@ function stopPlayback() {
   audioFocus.hold(false);
 }
 
-// The words in the music (the credit, the tempo, chords, tablature, a printed title) in the
-// site's own typeface, not abcjs's Times and Arial: at abcjs's own sizes, so it's laid out
-// as before. First, so the tune's own directives (and full screen's sizes) come after.
+// The words in the music (the credit, the tempo, chords, the endings' numbers, tablature, a
+// printed title) in the site's own typeface, not abcjs's Times and Arial: at abcjs's own
+// sizes, so it's laid out as before. Given to every drawing of music (renderAbc's format),
+// which abcjs reads before the tune, so the tune's own directives (and full screen's sizes)
+// come after; and the line numbers in its messages (Add a tune) stay the tune's own.
 const SCORE_FACE = '"system-ui, -apple-system, Segoe UI, Roboto, sans-serif"';
-const SCORE_FONTS = [["title", "20"], ["subtitle", "16"], ["composer", "14 italic"], ["tempo", "15 bold"], ["voice", "13 bold"],
-  ["parts", "15"], ["info", "12 italic"], ["gchord", "12"], ["annotation", "12"], ["vocal", "13"], ["words", "16"], ["text", "16"],
-  ["tablabel", "16"], ["tabnumber", "11"], ["tabgrace", "8"]].map(([name, size]) => `%%${name}font ${SCORE_FACE} ${size}\n`).join("");
+const SCORE_FORMAT = Object.fromEntries([["title", "20"], ["subtitle", "16"], ["composer", "14 italic"], ["tempo", "15 bold"],
+  ["voice", "13 bold"], ["parts", "15"], ["info", "12 italic"], ["gchord", "12"], ["annotation", "12"], ["vocal", "13"],
+  ["words", "16"], ["text", "16"], ["repeat", "13"], ["measure", "14 italic"], ["triplet", "11 italic"],
+  ["tablabel", "16"], ["tabnumber", "11"], ["tabgrace", "8"]]
+  .map(([name, size]) => [`${name}font`, `${SCORE_FACE} ${size}`]));
 
 // On a narrow screen a tune's own lines (four bars or so, as in the books) shrink to fit
 // it, too small to read; there abcjs lays the music out again in shorter lines, at a
@@ -1989,21 +2019,27 @@ function followMusic(note) {
 
 // − and + for the music's size: for reading at a distance (a tablet on a music stand)
 // or with poor sight. Kept on this device.
+// Its label says the size, as Tempo's says the tempo: "Size: 125%" (100%: as drawn).
 function musicSize(redraw) {
-  const label = el("span", { class: "label", "aria-hidden": "true" }, tr("Size", "Maint"));  // above the buttons, as Key and Tempo
+  const label = el("span", { class: "label", "aria-hidden": "true" });  // above the buttons, as Key and Tempo
   const button = (step, text, name) => el("button", { type: "button", "aria-label": name, onclick: () => {
     state.musicSize = Math.max(0, Math.min(SIZES.length - 1, state.musicSize + step));
     try { localStorage.setItem("musicSize", state.musicSize); } catch {}
-    smaller.disabled = state.musicSize === 0;
-    bigger.disabled = state.musicSize === SIZES.length - 1;
+    show();
     redraw();
   } }, text);
   const smaller = button(-1, "−", tr("Smaller music", "Cerddoriaeth lai"));
   const bigger = button(1, "+", tr("Bigger music", "Cerddoriaeth fwy"));
-  smaller.disabled = state.musicSize === 0;
-  bigger.disabled = state.musicSize === SIZES.length - 1;
-  return el("div", { class: "music-size", role: "group", "aria-label": tr("Size of the music", "Maint y gerddoriaeth") },
-    label, el("div", { class: "buttons" }, smaller, bigger));
+  const group = el("div", { class: "music-size", role: "group" }, label, el("div", { class: "buttons" }, smaller, bigger));
+  const show = () => {
+    const size = `${Math.round(SIZES[state.musicSize] * 100)}%`;
+    label.textContent = tr(`Size: ${size}`, `Maint: ${size}`);
+    group.setAttribute("aria-label", tr(`Size of the music: ${size}`, `Maint y gerddoriaeth: ${size}`));
+    smaller.disabled = state.musicSize === 0;
+    bigger.disabled = state.musicSize === SIZES.length - 1;
+  };
+  show();
+  return group;
 }
 
 // Laying it out, abcjs measures the music in a 1px svg it leaves on the page, as an
@@ -2046,11 +2082,10 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   if (document.body.classList.contains("practice") && !state.printing && grow > 1.1) {
     abc = `%%composerfont * ${Math.round(9 / grow)}\n%%tempofont * ${Math.round(12 / grow)}\n${abc}`;
   }
-  abc = SCORE_FONTS + abc;
   // The tablature's name is said once, above the music (fingeringKey), not on every line.
   const tablature = tab ? [{ instrument: tab.instrument, label: "" }] : null;
   const render = (layout) => ABCJS.renderAbc(paper, accompaniment(abc, settings.chords.play === "both"),
-    { responsive: "resize", add_classes: true, paddingtop: 0, ...layout, ...(tablature ? { tablature } : {}),
+    { responsive: "resize", add_classes: true, paddingtop: 0, format: SCORE_FORMAT, ...layout, ...(tablature ? { tablature } : {}),
       // Laying the music out again in shorter lines (wrap), abcjs reads the tune again and
       // leaves its tablature behind: given back here, before it's drawn.
       afterParsing: (parsed) => { if (tablature && !parsed.tablatures) parsed.tablatures = ABCJS.parseOnly(abc, { tablature })[0].tablatures; },
@@ -2347,11 +2382,11 @@ function chordCard(tune) {
 // the player plays (under Hear), and whether they're shown on the sheet music (under See).
 function chordSettings(tune, settings, redraw) {
   if (tune.chords == null) return null;
-  // Each choice in full, and in short for a phone ("Tune · With chords · Chords"), so the three
+  // Each choice in full, and in short for a phone ("Tune · Both · Chords"), so the three
   // stay on one line there; screen readers hear the full words either way.
   const playback = el("div", { class: "segmented", role: "radiogroup", "aria-label": tr("Hear", "Clywed") },
     [["tune", tr("Tune only", "Yr alaw yn unig"), tr("Tune", "Alaw")],
-      ["both", tr("Tune and chords", "Alaw a chordiau"), tr("With chords", "Gyda chordiau")],
+      ["both", tr("Tune and chords", "Alaw a chordiau"), tr("Both", "Y ddau")],
       ["chords", tr("Chords only", "Cordiau yn unig"), tr("Chords", "Cordiau")]].map(([value, label, short]) =>
       el("label", {},
         el("input", { type: "radio", name: "chord-playback", value, checked: settings.chords.play === value,
@@ -2654,9 +2689,13 @@ function renderTune(main, group, tune) {
     // How the music is shown, at the end of the row: its size, and full screen.
     el("div", { class: "view-tools" }, musicSize(redraw), practice)]);
   // Taking it with you: sharing, printing, saving, a set.
+  const shareStatus = el("p", { class: "caption share-status", "aria-live": "polite" });
+  const carries = () => linkCarries(tune, settings);
+  const share = shareMenu(`share-menu-${tune.slug}`, () => group.title, () => `https://ysesiwn.cymru/${tuneLink(group, tune, settings)}`,
+    shareStatus, { carries, qrNote: () => { const what = carries();
+      return tr(`Scan with a phone's camera to open this tune${what ? `, ${what}` : ""}.`, `Sganiwch gyda chamera ffôn i agor yr alaw hon${what ? `, ${what}` : ""}.`); } });
   const actions = el("div", { class: "tune-actions", role: "group", "aria-label": tr("Take it with you", "Mynd â hi gyda chi") },
-    shareButton(group.title, () => `https://ysesiwn.cymru/${tuneLink(group, tune, settings)}`, () => linkCarries(tune, settings)),
-    printButton(tune, paper, settings), qrButton(group, tune, settings), addToSetButton(tune, settings));
+    share, printButton(tune, paper, settings), addToSetButton(tune, settings), shareStatus);
 
   const shownElsewhere = new Set(["Key", "Composer / arranger", "Time signature"]);  // the key menu; the score's credit; under the name
   // Its other names first (with the rest of what's known about it, not between the name and the music)
@@ -2983,29 +3022,25 @@ async function showQr(title, link, caption) {
   dialog.showModal();
 }
 
-// The device's own share sheet (WhatsApp, Messages, email, …), where it has one: most
-// phones, and some computers. Elsewhere there's Copy link and the QR code.
-// The phone's own share sheet; where there's none (most computers), Copy link, as on a set.
-// carries(): what the link holds besides the tune ("in A major"), said on Link copied.
-function shareButton(title, link, carries = () => "") {
-  if (navigator.share) {
-    return el("button", { type: "button", class: "share", onclick: () => navigator.share({ title, url: link() }).catch(() => {}) },
-      tr("Share", "Rhannu"));
-  }
-  return el("button", { type: "button", class: "share", onclick: async (e) => {
-    const what = carries();
-    try { await navigator.clipboard.writeText(link()); e.target.closest("button").replaceChildren(...doneText(tr("Link copied", "Dolen wedi'i chopïo") + (what ? `, ${what}` : ""))); }
-    catch { prompt(tr("Copy this link:", "Copïwch y ddolen hon:"), link()); }
-  } }, tr("Copy link", "Copïo'r ddolen"));
-}
-
-function qrButton(group, tune, settings) {
-  return el("button", { type: "button", class: "qr-button", onclick: () => {
-    const what = linkCarries(tune, settings);
-    showQr(group.title, `https://ysesiwn.cymru/${tuneLink(group, tune, settings)}`,
-      tr(`Scan with a phone's camera to open this tune${what ? `, ${what}` : ""}.`, `Sganiwch gyda chamera ffôn i agor yr alaw hon${what ? `, ${what}` : ""}.`));
-  },
-  }, tr("QR code", "Cod QR"));
+// Sharing, in one menu, the same on a tune's page and a set's: the device's own share sheet
+// (WhatsApp, Messages, email, …) where it has one, the link, anything else to copy
+// (a set as a list), and the QR code. What was copied is said on the status line, with
+// what the link carries ("Link copied, in A major, at 80 bpm").
+// title() and link() are read when used (a set can be renamed); copies: [[label, done,
+// ask, text()]], ask being what the prompt says where the clipboard can't be written.
+function shareMenu(id, title, link, status, { carries = () => "", copies = [], qrNote }) {
+  const copy = (done, ask, text) => async () => {
+    try { await navigator.clipboard.writeText(text()); status.replaceChildren(...doneText(done())); }
+    catch { prompt(ask, text()); }
+  };
+  const linkDone = () => { const what = carries(); return tr("Link copied", "Dolen wedi'i chopïo") + (what ? `, ${what}` : ""); };
+  return dropMenu(id, [tr("Share", "Rhannu")], [
+    navigator.share ? el("button", { type: "button", onclick: () => navigator.share({ title: title(), url: link() }).catch(() => {}) },
+      tr("Send with an app…", "Anfon gydag ap…")) : null,
+    el("button", { type: "button", onclick: copy(linkDone, tr("Copy this link:", "Copïwch y ddolen hon:"), link) }, tr("Copy link", "Copïo'r ddolen")),
+    ...copies.map(([label, done, ask, text]) => el("button", { type: "button", onclick: copy(() => done, ask, text) }, label)),
+    el("button", { type: "button", onclick: () => showQr(title(), link(), qrNote()) }, tr("QR code", "Cod QR")),
+  ].filter(Boolean), "share");
 }
 
 // What tells a tune's versions apart, on their tabs: where each is from (the book, or the
@@ -4328,7 +4363,7 @@ function setScore(tune, key) {
     abc = transposeAbc(tune, abc, key);
     paper.dataset.bars = ownBarsPerLine(tune.abc);
     const layout = scoreLayout(paper);
-    const render = (layout) => ABCJS.renderAbc(paper, shortCredits(abc, layout), { responsive: "resize", add_classes: true, paddingtop: 0, ...layout })[0];
+    const render = (layout) => ABCJS.renderAbc(paper, shortCredits(abc, layout), { responsive: "resize", add_classes: true, paddingtop: 0, format: SCORE_FORMAT, ...layout })[0];
     paper.visualObj = noLoneBar(render(layout), layout, render);
     hideMeasuring();
     nameScore(paper);
@@ -4557,13 +4592,9 @@ function renderSet(main) {
         onchange: (e) => { name = e.target.value.replace(/\s+/g, " ").trim() || defaultSetName(); e.target.value = name; save(); },
         onkeydown: (e) => { if (e.key === "Enter") e.target.blur(); } })
     : el("h1", {}, name);
-  // Sharing, in one menu: the phone's share sheet (where there is one), the link, the set
-  // as a list to paste, the QR code. What was copied is said under the row.
+  // Sharing, in the same menu as a tune's: with the set as a list to paste, too. What was
+  // copied is said under the row.
   const shared = el("p", { class: "caption set-shared", "aria-live": "polite" });
-  const copied = (what, text, ask) => async () => {
-    try { await navigator.clipboard.writeText(text()); shared.replaceChildren(...doneText(what)); }
-    catch { prompt(ask, text()); }
-  };
   // The set as text to paste into a message or notes: its name, a bullet for each tune
   // (version and key), and the link.
   const asList = () => [name, ...items.map(({ tune, key }) => {
@@ -4572,16 +4603,9 @@ function renderSet(main) {
     const inKey = tune.key ? `: ${keyName(tune.key.pitch + key, tune.key.modeName)}` : "";
     return `• ${tune.base}${version}${inKey}`;
   }), shareLink()].join("\n");
-  const share = dropMenu("set-share-menu", [tr("Share", "Rhannu")], [
-    navigator.share ? el("button", { type: "button", onclick: () => navigator.share({ title: name, url: shareLink() }).catch(() => {}) },
-      tr("Send with an app…", "Anfon gydag ap…")) : null,
-    el("button", { type: "button", onclick: copied(tr("Link copied", "Dolen wedi'i chopïo"), shareLink, tr("Copy this link:", "Copïwch y ddolen hon:")) },
-      tr("Copy link", "Copïo'r ddolen")),
-    el("button", { type: "button", onclick: copied(tr("List copied", "Rhestr wedi'i chopïo"), asList, tr("Copy this list:", "Copïwch y rhestr hon:")) },
-      tr("Copy as a list", "Copïo fel rhestr")),
-    el("button", { type: "button", onclick: () => showQr(name, shareLink(),
-      tr("Scan with a phone's camera to open this set.", "Sganiwch gyda chamera ffôn i agor y set hon.")) }, tr("QR code", "Cod QR")),
-  ].filter(Boolean), "share");
+  const share = shareMenu("set-share-menu", () => name, shareLink, shared, {
+    copies: [[tr("Copy as a list", "Copïo fel rhestr"), tr("List copied", "Rhestr wedi'i chopïo"), tr("Copy this list:", "Copïwch y rhestr hon:"), asList]],
+    qrNote: () => tr("Scan with a phone's camera to open this set.", "Sganiwch gyda chamera ffôn i agor y set hon.") });
   const printAll = () => { for (const paper of music.querySelectorAll(".set-paper")) paper.draw(); window.print(); };
   // Printing with the browser's own menu: draw every score first. (Gone with the page.)
   const beforePrint = () => {
@@ -4720,7 +4744,7 @@ function sendTuneForm() {
     problem.textContent = "";
     if (preview.hidden) return;
     const withHeader = /^X:/m.test(text) ? text : `X:1\n${text}`;
-    const tune = ABCJS.renderAbc(preview, withHeader, { responsive: "resize", add_classes: true })[0];
+    const tune = ABCJS.renderAbc(preview, withHeader, { responsive: "resize", add_classes: true, format: SCORE_FORMAT })[0];
     nameScore(preview);
     const notes = tune.lines.flatMap((l) => l.staff?.[0]?.voices?.[0] ?? []).filter((e) => e.el_type === "note");
     if (!/^K:/m.test(text)) {

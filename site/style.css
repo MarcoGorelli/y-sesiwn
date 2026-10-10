@@ -232,7 +232,12 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .features ul { columns: 2 22rem; column-gap: 2.5rem; margin: 1rem 0 0; padding: 0; list-style: none; max-width: 60rem; }
 .features li { break-inside: avoid; padding-bottom: .9rem; }
 .features li strong { display: block; }
-.features li span { display: block; margin-top: .1rem; color: var(--muted); }
+.features li > span { display: block; margin-top: .1rem; color: var(--muted); }
+/* The holes or tabs, chosen here: under the other three, across both columns */
+.features .tab-feature { column-span: all; max-width: 40rem; padding-top: .3rem; }
+.tab-feature .pills-label { margin: .8rem 0 .5rem; }
+.tab-said { margin: .6rem 0 0; min-height: 1.4em; }
+.tab-said:empty { min-height: 0; }
 /* Upcoming sessions, on the home page and the sessions page */
 .coming-up ul { list-style: none; padding: 0; margin: 0; }
 .coming-up li { padding: .2rem 0; }
@@ -273,7 +278,14 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .instruments img { width: 30%; height: auto; }
 .home-intro { display: grid; grid-template-columns: minmax(0, 40rem) auto; column-gap: 3rem; align-items: start; }
 .home-intro > :not(.instruments) { grid-column: 1; }
-.instruments.at-top { grid-column: 2; grid-row: 1 / span 4; align-self: center; width: 320px; }
+.instruments.at-top { grid-column: 2; grid-row: 1 / span 3; align-self: center; width: 320px; }
+/* Coming up in the column under the instruments, beside the ways in and what follows; the
+   last row takes what it's taller by, so the left column's lines keep their spacing */
+@media (min-width: 1101px) {
+  .home-intro { grid-template-rows: repeat(7, auto) 1fr; }
+  .home-intro > .coming-up { grid-column: 2; grid-row: 4 / -1; width: 320px; margin-top: .5rem; }
+  .home-intro > .coming-up .section-heading { margin-top: 0; }
+}
 @media (max-width: 1100px) {  /* not enough room beside it: under the welcome, before the search */
   .home-intro { grid-template-columns: minmax(0, 1fr); }
   .instruments.at-top { grid-column: 1; grid-row: 3; align-self: start; width: min(100%, 300px); margin: 0 0 .25rem; }
@@ -284,11 +296,12 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
   .instruments.at-end { display: flex; }
 }
 
-/* Home page: the way into the notes page */
-.home-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; }
-.notes-invite { margin: 1.1rem 0 .5rem; }
+/* Home page: the way into the notes page, then, quieter, browsing or chance */
+.notes-invite { margin: 0 0 .35rem; }
 .notes-invite .link-button { margin: 0; font-size: inherit; }
 .notes-invite .mic-icon { margin-right: .2em; }
+.home-more { margin: 0 0 .5rem; color: var(--muted); }
+.home-more .link-button { margin: 0; font-size: inherit; }
 .button-link { font-weight: 600; }
 
 /* The notes page: previews of the top matches */
@@ -504,10 +517,19 @@ details[open] > summary::before { transform: rotate(90deg); }
 .practice-group { display: grid; gap: .6rem; }
 .practice-group + .practice-group { padding-top: .9rem; border-top: 1px solid var(--border); }
 .practice-group > .label { font-weight: 600; color: var(--text); }
-/* Above the music, for a learner who doesn't read the stave yet: the way to the holes or tabs */
-.tab-invite { margin: -.25rem 0 .75rem; color: var(--muted); }
-.tab-invite[hidden] { display: none; }
+/* Above the music, for a learner who doesn't read the stave yet: an offer, in the reading
+   size and ink (not a footnote), with a hole drawn as in the music; the choices open under it */
+.tab-invite { margin: -.25rem 0 .9rem; }
+.tab-invite[hidden], .tab-invite-choices[hidden] { display: none; }
+.tab-invite-line { margin: 0; }
+.tab-invite-line:focus { outline: none; }
+.tab-invite-line .hole-sample { width: 1.05em; height: 1.05em; margin-right: .4em; vertical-align: -.15em; }
+.tab-invite .holes { stroke: currentColor; }  /* on the page, not the paper: the text's colour, in both themes */
+.tab-invite .holes .covered { fill: currentColor; }
 .tab-invite .link-button { margin: 0; font-size: inherit; }
+.tab-invite-choices { max-width: 40rem; padding: .1rem 0 .2rem; }
+.tab-invite-choices .pills-label { margin: .6rem 0 .5rem; }
+.tab-invite-choices .caption { margin: .6rem 0 0; }
 .kept-note { margin: 0; padding-top: .7rem; border-top: 1px solid var(--border); color: var(--muted); }
 .kept-note .link-button { margin: 0; font-size: inherit; }
 .kept-note .link-button[hidden] { display: none; }
@@ -1223,6 +1245,8 @@ body.practice .tune-sub { display: none; }
   .card.place .caption a, .report-line a, dd > a:first-child, .offline-card .more a, .set-count a { padding-block: .85rem; }
   .fingering-key .link-button, .sound-on .link-button, .kept-note .link-button, .tab-invite .link-button { padding-block: .7rem; margin-block: -.7rem; min-width: 44px; }  /* "Newid" is short */
   .notes-invite .link-button { display: inline-flex; align-items: center; min-height: 44px; }
+  .home-more :is(a, .link-button) { display: inline-block; padding-block: .7rem; margin-block: -.7rem; }
+  .tab-choice button { min-height: 44px; }
   .segmented label { min-width: 44px; }
   .music-size button { min-width: 44px; }
   .set-item-controls button { min-width: 44px; }

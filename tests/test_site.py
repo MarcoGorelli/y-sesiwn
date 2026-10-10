@@ -320,20 +320,47 @@ def test_whistle_fingerings(page):
     assert rows == ["●●●●●●", "", "●●●●●○", "●●●●○○", "●●●○○○", "●●○○○○"]
 
 
-# For a learner who doesn't read the stave: a line above the music, the way to the tablature
-# menu (opening the practice tools), gone once any tablature has been chosen, for good.
+# For a learner who doesn't read the stave: a line above the music that opens the choices
+# in place (the practice tools stay folded, now and on the next tune), gone once any has
+# been chosen, the music alone too, for good.
 def test_tablature_invite(page):
     page.goto_site("alaw/llancesau-trefaldwyn/")
     page.wait_for_selector(".score .abcjs-staff")
     # Above the music, so it's seen before the staves (and heard before them)
     assert page.locator(".tab-invite").bounding_box()["y"] < page.locator(".score").bounding_box()["y"]
+    assert page.locator(".tab-invite-choices").is_hidden()
+    page.click(".tab-invite-line .link-button")
+    assert page.get_attribute(".tab-invite-line .link-button", "aria-expanded") == "true"
+    # The music alone is one of the choices, and the one chosen at first
+    assert page.locator(".tab-choice [aria-pressed=true]").inner_text() == "Just the music"
+    page.click(".tab-choice button:has-text('Whistle in D')")
+    page.wait_for_selector(".score .abcjs-lyric")
+    assert page.locator(".tab-invite").is_hidden() and page.locator(".fingering-key").is_visible()
     assert page.locator(".practice-tools").evaluate("d => !d.open")
-    page.click(".tab-invite .link-button")
+    assert page.input_value("#tab-select") == "whistle-D"
+    page.wait_for_timeout(100)  # (a toggle event would come a moment after)
+    assert page.evaluate("state.practice") == {"tab": "whistle-D", "open": None, "tabKnown": True}
+    # Change goes down to the menu; opened for it, the tools aren't kept open
+    page.click(".fingering-key .link-button")
     page.wait_for_function("document.activeElement.id === 'tab-select'")
-    assert page.locator(".practice-tools").evaluate("d => d.open")
-    page.select_option("#tab-select", "whistle-D")
-    assert page.locator(".tab-invite").is_hidden()
+    page.wait_for_timeout(100)
+    assert page.evaluate("state.practice.open") is None
     page.select_option("#tab-select", "none")
+    page.reload()
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.locator(".tab-invite").is_hidden()
+
+
+# Someone who reads the music says so once, and isn't asked again.
+def test_tablature_invite_just_the_music(page):
+    page.goto_site("alaw/llancesau-trefaldwyn/")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.click(".tab-invite-line .link-button")
+    page.click(".tab-choice button:has-text('Just the music')")
+    assert page.inner_text(".tab-invite").startswith("Just the music.")
+    assert page.evaluate("document.activeElement.closest('.tab-invite') !== null")
+    assert page.locator(".score .abcjs-lyric").count() == 0
+    assert page.evaluate("state.practice") == {"tab": "none", "open": None, "tabKnown": True}
     page.reload()
     page.wait_for_selector(".score .abcjs-staff")
     assert page.locator(".tab-invite").is_hidden()
@@ -852,18 +879,32 @@ def test_home_page(page):
     # No red button competes with the search: Surprise me is a plain one, and finding a
     # tune by its notes is a line of text.
     assert page.locator("main button.primary:visible").count() == 0
-    assert page.locator(".notes-invite a[href='?page=notes']").is_visible()
+    assert page.locator(".notes-invite :is(a[href='?page=notes'], .listen-start)").is_visible()
     assert page.locator(".offline-card").is_visible()
     # One Surprise me: the home page's own, not the sidebar's too.
-    assert page.locator(".home-actions button:has-text('Surprise me')").is_visible() and not page.locator("#surprise-sidebar").is_visible()
+    assert page.locator(".home-more button:has-text('surprise me')").is_visible() and not page.locator("#surprise-sidebar").is_visible()
     # One search box on the home page: its own big one, not the sidebar's too.
     assert page.locator("#hero-search").is_visible() and not page.locator("#search-input").is_visible()
     # Browsing every tune has its own page; the home page links to it.
     assert page.locator(".tune-list").count() == 0
-    page.click("a.button-link:has-text('Browse all')")
+    page.click(".home-more a:has-text('browse all')")
     page.wait_for_selector(".tune-list li", state="attached")
     assert page.locator("details.all-tunes").evaluate("d => d.open")  # all of them, as it says
     assert page.locator(".tune-list li").count() == len(page.evaluate("state.groupList"))
+
+
+# The holes or tabs can be chosen on the home page, before the first tune; the music alone
+# is chosen at first, and is a choice like the others.
+def test_tablature_chosen_on_the_home_page(page):
+    page.goto_site()
+    page.wait_for_selector(".features")
+    assert page.locator(".tab-choice [aria-pressed=true]").inner_text() == "Just the music"
+    page.click(".tab-choice button:has-text('Descant recorder')")
+    assert page.inner_text(".tab-said") == "Descant recorder under the notes, on every tune. Kept on this device."
+    assert page.evaluate("state.practice") == {"tab": "recorder", "open": None, "tabKnown": True}
+    page.goto_site("alaw/llancesau-trefaldwyn/")
+    page.wait_for_selector(".score g.holes", state="attached")
+    assert page.locator(".tab-invite").is_hidden() and "recorder" in page.locator(".fingering-key").text_content()
 
 
 # A page's text, sidebar and footer as the reader sees them, except what is English on
@@ -2537,9 +2578,8 @@ def test_tablature_choices(page):
 # ---- The notes page ---------------------------------------------------------------
 
 def test_notes_page(page):
-    # From the home page's invitation, typed notes are searched and kept in the address.
-    page.goto_site()
-    page.click(".notes-invite a[href='?page=notes']")
+    # Typed notes are searched and kept in the address.
+    page.goto_site("?page=notes")
     page.fill("#notes-search", "D G B D C B G A")
     assert "q=D%20G%20B%20D%20C%20B%20G%20A" in page.url
     assert page.locator(".notes-results li a").first.inner_text() == "Glandyfi"

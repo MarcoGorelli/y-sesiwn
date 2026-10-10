@@ -1218,7 +1218,7 @@ function renderNotFound(main, slug) {
       `Does dim alaw yn y cyfeiriad hwn (“${slug}”). Efallai iddi gael enw newydd, neu ei hychwanegu at alaw arall fel un o'i fersiynau.`)),
     near.length ? el("p", {}, tr("Were you looking for:", "Oeddech chi'n chwilio am:")) : null,
     near.length ? el("ul", { class: "not-found" }, near.map((g) => el("li", {}, el("a", { href: tuneUrl(g.slug), "data-route": true }, tuneName(g.slug, g.title))))) : null,
-    heroSearch(state.groupList.length),
+    heroSearch(),
   ].filter(Boolean));
 }
 
@@ -1250,22 +1250,24 @@ function renderHome(main) {
   const count = state.groupList.length;  // one entry per tune, whatever its number of versions
   const yours = recentTunes();  // nothing yet on a first visit
   main.replaceChildren(...[
-    // The welcome and the ways in, with the instruments beside them on a wide screen.
+    // The welcome and the ways in (the search, then by its notes, then, quieter, browsing
+    // or chance), then what's yours or what the tunes can do; on a wide screen, the
+    // instruments beside them and Coming up under the instruments.
     el("div", { class: "home-intro" },
       el("h1", {}, tr("Croeso! Welcome to Y\u00a0Sesiwn", "Croeso i'r Sesiwn!")),
       el("p", { class: "lead" }, ...tr(
         [el("strong", {}, "Free and open source"), `: sheet music for ${count} Welsh folk tunes, to learn, play and share.`],
         [el("strong", {}, "Am ddim a chod agored"), `: sgorau ${count} o alawon gwerin Cymru, i'w dysgu, eu chwarae a'u rhannu.`])),
-      heroSearch(count),
-      el("div", { class: "home-actions" },
-        el("button", { type: "button", onclick: openRandomTune }, tr("Surprise me", "Alaw ar hap")),  // the search comes first
-        el("a", { href: "?page=browse&all=1", "data-route": true, class: "button-link" },
-          tr(`Browse all ${count} tunes`, `Pori'r ${count} alaw`))),
-      instruments(" at-top")),
-    yours,
-    notesInvite(),
-    upcomingSessions(),
-    yours ? null : features(),  // a first visit: what the tune pages can do
+      instruments(" at-top"),
+      heroSearch(),
+      notesInvite(),
+      el("p", { class: "home-more" }, tr("Or ", "Neu "),
+        el("a", { href: "?page=browse&all=1", "data-route": true }, tr(`browse all ${count} tunes`, `pori'r ${count} alaw`)),
+        tr(", or ", ", neu "),
+        el("button", { type: "button", class: "link-button", onclick: openRandomTune }, tr("surprise me", "alaw ar hap"))),
+      yours,
+      upcomingSessions(),
+      yours ? null : features()),  // a first visit: what the tune pages can do
     instruments(" at-end"),  // phones: the picture here instead, by the offline card
     offlineCard(),
   ].filter(Boolean));
@@ -1524,45 +1526,75 @@ function renderBrowse(main) {
 
 // On the home page, the way into the notes page: "Play it to me" goes there and starts
 // listening at once (the tap is still the go-ahead for the microphone and sound).
-// One line under the search: finding a tune by its notes, played to the microphone or tapped.
+// One line under the search: finding a tune by its notes, played to the microphone.
 function notesInvite() {
   const notes = (text) => el("a", { href: "?page=notes", "data-route": true }, text);
   return el("p", { class: "notes-invite" }, el("strong", {}, tr("Know the tune but not its name?", "Gwybod yr alaw ond nid ei henw?")), " ",
-    ...(canListen() ? [
-      el("button", { type: "button", class: "link-button listen-start",
-        onclick: () => { state.autoListen = true; navigate("?page=notes"); } }, micIcon(), tr("Play it to me", "Chwaraewch hi i mi")),
-      tr(" or ", " neu "), notes(tr("tap the notes", "tapiwch y nodau")),
-    ] : [notes(tr("Tap or type the notes", "Tapio neu deipio'r nodau"))]));
+    // (Tapping them is on the notes page too, beside the microphone.)
+    canListen()
+      ? el("button", { type: "button", class: "link-button listen-start",
+        onclick: () => { state.autoListen = true; navigate("?page=notes"); } }, micIcon(), tr("Play it to me", "Chwaraewch hi i mi"))
+      : notes(tr("Tap or type the notes", "Tapio neu deipio'r nodau")));
 }
 
 // What the tune pages can do, for a first visit; once a tune has been opened here (or a
-// set made), the home page has Your tunes instead, and this steps aside.
+// set made), the home page has Your tunes instead, and this steps aside. The holes or tabs
+// can be chosen here, before the first tune: the music alone is one of the choices, and the
+// one chosen at first.
 function features() {
   const withChords = state.groupList.filter((g) => g.versions.some((v) => v.chords != null)).length;
   const items = state.lang === "cy" ? [
     ["Unrhyw gywair, unrhyw dempo", "Trawsgyweiriwch alaw i siwtio'ch offeryn neu'ch llais, gwrandewch arni gyda'r nodau'n goleuo, ac ailadroddwch un rhan gan gyflymu bob tro."],
-    ["Tyllau a thablatur", "Newydd i ddarllen cerddoriaeth? Tyllau'r chwisl neu'r recorder, neu dablatur ar gyfer mandolin, ffidil neu gitâr, o dan bob nodyn."],
     ["Cordiau", `Cyfeiliant awgrymedig ar gyfer gitâr, piano neu delyn (${withChords} o alawon hyd yma).`],
     ["Setiau", "Casglwch alawon i'w chwarae gyda'i gilydd, yn eich cyweiriau chi, a'u rhannu fel dolen neu god QR."],
   ] : [
     ["Any key, any tempo", "Transpose a tune for your instrument or voice, hear it with the notes lit up, and repeat a part, speeding up each time."],
-    ["Holes and tabs", "New to reading music? Whistle or recorder holes, or tabs for mandolin, fiddle or guitar, under every note."],
     ["Chords", `Suggested accompaniment for guitar, piano or harp (${withChords} tunes so far).`],
     ["Sets", "Gather tunes to play together, in your keys, and share them as a link or a QR code."],
   ];
+  const said = el("p", { class: "caption tab-said", "aria-live": "polite" });
+  const holes = el("li", { class: "tab-feature" },
+    el("strong", {}, tr("Holes or tabs, if you want them", "Tyllau neu dablatur, os hoffech chi")),
+    el("span", {}, tr("Don't read music yet? The holes to cover on a whistle or recorder, or tabs for mandolin, fiddle or guitar, under every note. Not sure which whistle? Most are in D.",
+      "Ddim yn darllen cerddoriaeth eto? Y tyllau i'w cau ar chwisl neu recorder, neu dablatur ar gyfer mandolin, ffidil neu gitâr, o dan bob nodyn. Ddim yn siŵr pa chwisl? Mae'r rhan fwyaf yn D.")),
+    el("p", { class: "pills-label", id: "tab-choice-label" }, tr("Under the notes, on every tune", "O dan y nodau, ar bob alaw")),
+    tabChooser("tab-choice-label", (value, name) => said.replaceChildren(...doneText(value === "none"
+      ? tr("Just the music, on every tune. Kept on this device.", "Y gerddoriaeth yn unig, ar bob alaw. Wedi'i gadw ar y ddyfais hon.")
+      : tr(`${name} under the notes, on every tune. Kept on this device.`, `${name} o dan y nodau, ar bob alaw. Wedi'i gadw ar y ddyfais hon.`)))),
+    said);
   return el("section", { class: "features" },
     el("h2", { class: "section-heading" }, tr("What you can do", "Beth allwch chi ei wneud")),
-    el("ul", {}, items.map(([name, what]) => el("li", {}, el("strong", {}, name), el("span", {}, what)))));
+    el("ul", {}, items.map(([name, what]) => el("li", {}, el("strong", {}, name), el("span", {}, what))), holes));
 }
 
-function heroSearch(count) {
+// Holes or tabs under the notes, as a row of pills: the same on the home page and in a
+// tune's way in. "Just the music" is one of them, as much a choice as the others: reading
+// the music is how most players play. Kept for every tune (it's the reader's instrument),
+// and choosing any, the music alone too, is choosing (tabKnown: the invite has done its job).
+function tabChooser(labelId, onChoose) {
+  const choices = ["none", "whistle-D", "recorder", "mandolin", "guitar"];
+  if (!choices.includes(state.practice.tab)) choices.push(state.practice.tab);  // another whistle, chosen on a tune
+  const name = (value) => (value === "none" ? tr("Just the music", "Y gerddoriaeth yn unig") : (FINGERED[value] ?? TABS[value]).label());
+  const pills = el("div", { class: "pills plain tab-choice", role: "group", "aria-labelledby": labelId },
+    choices.map((value) => el("button", { type: "button", "data-tab": value, "aria-pressed": String(state.practice.tab === value),
+      onclick: () => {
+        state.practice.tab = value;
+        state.practice.tabKnown = true;
+        savePractice();
+        for (const pill of pills.children) pill.setAttribute("aria-pressed", String(pill.dataset.tab === value));
+        onChoose(value, name(value));
+      } }, name(value))));
+  return pills;
+}
+
+function heroSearch() {
   const input = el("input", {
     id: "hero-search", type: "search", autocomplete: "off", spellcheck: "false",
-    placeholder: tr(`Search ${count} tunes by name…`, `Chwilio'r ${count} alaw yn ôl enw…`), role: "combobox", "aria-expanded": "false",
+    placeholder: tr("Find a tune…", "Chwilio am alaw…"), role: "combobox", "aria-expanded": "false",
     "aria-controls": "hero-suggestions", "aria-autocomplete": "list",
   });
   const list = el("ul", { id: "hero-suggestions", class: "suggestions", role: "listbox", hidden: true });
-  // The list below already shows every tune, so only suggest once something is typed.
+  // Only suggest once something is typed: a list on focus would cover the ways in below.
   attachSearch(input, list, { showAllOnFocus: false });
   return el("div", { class: "search hero-search" },
     el("label", { for: "hero-search", class: "visually-hidden" }, tr("Search tunes by name", "Chwilio am alawon yn ôl enw")),
@@ -2798,18 +2830,43 @@ function renderTune(main, group, tune) {
         sign("?", f.recorder ? tr("not on the recorder", "ddim ar y recorder") : tr("not on the whistle", "ddim ar y chwisl"))),
     ];
   };
-  // The way to the menu, down in the practice tools, which may be folded.
+  // The way to the menu, down in the practice tools, which may be folded: opened for the
+  // menu, they aren't kept open for the next tune (only the reader's own fold is).
+  let openedForMenu = false;
   const toTabMenu = () => {
-    practiceTools.open = true;
+    if (!practiceTools.open) { openedForMenu = true; practiceTools.open = true; }
     tabSelect.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
     tabSelect.focus({ preventScroll: true });
   };
   // For a learner who doesn't read the stave yet, a way in above the music, on the first
-  // screen: the holes or tabs are three steps away otherwise. Gone once any has been chosen here.
-  const tabInvite = el("p", { class: "caption tab-invite", hidden: state.practice.tab !== "none" || state.practice.tabKnown },
-    tr("New to reading music? ", "Newydd i ddarllen cerddoriaeth? "),
-    el("button", { type: "button", class: "link-button", onclick: toTabMenu },
-      tr("Show whistle holes or tabs", "Dangos tyllau'r chwisl neu dablatur")));
+  // screen: the home page's choices, opened in place, so the page doesn't move and the
+  // practice tools stay as they were. Gone once any has been chosen here, the music alone too.
+  const inviteChoices = el("div", { class: "tab-invite-choices", id: "tab-invite-choices", hidden: true },
+    el("p", { class: "pills-label", id: "tab-invite-label" }, tr("Under the notes, on every tune", "O dan y nodau, ar bob alaw")),
+    tabChooser("tab-invite-label", (value) => fromInvite(value)),
+    el("p", { class: "caption" }, tr("Not sure which whistle? Most are in D. ", "Ddim yn siŵr pa chwisl? Mae'r rhan fwyaf yn D. "),
+      el("button", { type: "button", class: "link-button", onclick: toTabMenu }, tr("Other whistles", "Chwislau eraill"))));
+  const inviteButton = el("button", { type: "button", class: "link-button", "aria-expanded": "false", "aria-controls": "tab-invite-choices",
+    onclick: () => {
+      inviteChoices.hidden = !inviteChoices.hidden;
+      inviteButton.setAttribute("aria-expanded", String(!inviteChoices.hidden));
+    } }, tr("Show where your fingers go", "Dangos ble mae'r bysedd yn mynd"));
+  const inviteLine = el("p", { class: "tab-invite-line" }, holeSample("◐"), tr("Don't read music yet? ", "Ddim yn darllen cerddoriaeth eto? "), inviteButton);
+  const tabInvite = el("div", { class: "tab-invite", hidden: state.practice.tab !== "none" || state.practice.tabKnown }, inviteLine, inviteChoices);
+  // Chosen in the invite: holes or tabs, and focus to their Change just above the music; or
+  // the music alone, said where the invite was, and where the holes or tabs are if wanted later.
+  const fromInvite = (value) => {
+    chooseTab(value);
+    if (value !== "none") {
+      tabInvite.hidden = true;
+      fingeringKey.querySelector(".link-button")?.focus();
+      return;
+    }
+    const done = el("p", { class: "tab-invite-line", tabindex: -1 }, ...doneText(tr("Just the music. Holes or tabs are in the practice tools, under the music, if you want them.",
+      "Y gerddoriaeth yn unig. Mae'r tyllau neu'r tablatur yn yr offer ymarfer, o dan y gerddoriaeth, os hoffech chi nhw.")));
+    tabInvite.replaceChildren(done);
+    done.focus();
+  };
   const fingeringKey = el("div", { class: "caption fingering-key", hidden: state.practice.tab === "none" });
   const showKey = () => {
     fingeringKey.hidden = state.practice.tab === "none";
@@ -2825,17 +2882,8 @@ function renderTune(main, group, tune) {
     onkeydown: () => { tabByKeys = true; }, onpointerdown: () => { tabByKeys = false; },
     onchange: (e) => {
       const was = e.target.getBoundingClientRect().top;
-      state.practice.tab = e.target.value;
-      if (state.practice.tab !== "none") state.practice.tabKnown = true;
-      savePractice();
-      showKey();
+      chooseTab(e.target.value);
       tabInvite.hidden = true;
-      const label = e.target.selectedOptions[0]?.textContent;
-      tabSaid.textContent = state.practice.tab === "none" ? label : FINGERED[state.practice.tab]
-        ? tr(`${label}: the holes under each note, and how to read them just above the music`, `${label}: y tyllau o dan bob nodyn, a sut i'w darllen ychydig uwchben y gerddoriaeth`)
-        : tr(`${label}, under each note`, `${label}, o dan bob nodyn`);
-      tabWhat.hidden = state.practice.tab !== "none";
-      redraw();
       if (tabByKeys || state.practice.tab === "none") { window.scrollBy(0, e.target.getBoundingClientRect().top - was); return; }
       const pinned = [...document.querySelectorAll(".topbar")].filter((x) => getComputedStyle(x).position === "sticky")
         .reduce((bottom, x) => Math.max(bottom, x.getBoundingClientRect().bottom), 0);
@@ -2851,6 +2899,21 @@ function renderTune(main, group, tune) {
         el("optgroup", { label: tr("Whistle and recorder: holes", "Chwisl a recorder: tyllau") },
           Object.entries(FINGERED).map(([value, f]) => option([value, f.label()])))];
     })());
+  // Choosing the holes or tabs, from the menu or the invite: kept for every tune, drawn,
+  // and said (from outside the practice tools, which may be folded).
+  const chooseTab = (value) => {
+    state.practice.tab = value;
+    if (value !== "none") state.practice.tabKnown = true;
+    savePractice();
+    showKey();
+    tabSelect.value = value;
+    tabWhat.hidden = value !== "none";
+    const label = value === "none" ? tr("None", "Dim") : (FINGERED[value] ?? TABS[value]).label();
+    tabSaid.textContent = value === "none" ? label : FINGERED[value]
+      ? tr(`${label}: the holes under each note, and how to read them just above the music`, `${label}: y tyllau o dan bob nodyn, a sut i'w darllen ychydig uwchben y gerddoriaeth`)
+      : tr(`${label}, under each note`, `${label}, o dan bob nodyn`);
+    redraw();
+  };
   showKey();
   const chordTools = chordSettings(tune, settings, () => redraw());
   const countInToggle = toggle(el("span", {}, tr("Count-in", "Cyfrif i mewn"), el("span", { class: "what" }, tr(" · a bar of clicks first", " · bar o gliciau yn gyntaf"))),
@@ -2876,7 +2939,7 @@ function renderTune(main, group, tune) {
     toolGroup(tr("See", "Gweld"),
       chordTools ? el("div", { class: "practice-line" }, chordTools.onScore) : null,
       el("div", { class: "practice-line" },
-        el("div", { class: "control" }, el("label", { for: "tab-select" }, tr("Holes or tabs", "Tyllau neu dablatur")), tabSelect), tabWhat, tabSaid)),
+        el("div", { class: "control" }, el("label", { for: "tab-select" }, tr("Holes or tabs", "Tyllau neu dablatur")), tabSelect), tabWhat)),
     keptNote);
   // What playing will sound like besides the tune, by the player, where Play is pressed: so
   // a click or chords kept for this tune are never a surprise at a session.
@@ -2946,7 +3009,10 @@ function renderTune(main, group, tune) {
         : tr(" · chords, repeat, speed up, holes or tabs", " · cordiau, ailadrodd, cyflymu, tyllau neu dablatur");
   };
   const practiceTools = el("details", { class: "practice-tools fold", open: practiceToolsOpen(),
-    ontoggle: (e) => { if (!document.body.classList.contains("practice")) { state.practice.open = e.target.open; savePractice(); } } },
+    ontoggle: (e) => {
+      if (openedForMenu) { openedForMenu = false; return; }  // opened by a link to the menu, not by the reader
+      if (!document.body.classList.contains("practice")) { state.practice.open = e.target.open; savePractice(); }
+    } },
     el("summary", {}, el("span", {}, tr("Practice tools", "Offer ymarfer"), practiceCaption)),
     practiceRow);
   showPracticeOn();
@@ -2967,6 +3033,7 @@ function renderTune(main, group, tune) {
     versions[0],
     controls,
     tabInvite,
+    tabSaid,
     el("div", { class: "tune-layout" },
       el("div", { class: "tune-main" }, el("div", { class: "score" }, fingeringKey, audio, soundOn, soundNote(), paper),
         practiceTools, chords),

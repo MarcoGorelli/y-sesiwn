@@ -264,8 +264,8 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
    then the search. On a phone the picture comes near the end instead (by "Take it to the
    session"), so the search stays near the top. */
 .instruments {
-  flex: none; display: flex; align-items: flex-end; justify-content: center;
-  width: min(100%, 300px); aspect-ratio: 300 / 170; padding: 0 1.75rem 1.75rem;
+  flex: none; display: flex; align-items: center; justify-content: center;
+  width: min(100%, 300px); aspect-ratio: 300 / 170; padding: 0 1.75rem;
   background: url("static/quilt.svg") center / 100% 100% no-repeat;
   filter: var(--art-dim);
 }

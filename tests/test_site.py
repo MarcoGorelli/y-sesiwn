@@ -1193,7 +1193,7 @@ def test_share_in_a_key(page, site):
     assert page.url == site + "alaw/glandyfi/?v=2&key=Bb&tempo=70"
     page.goto_site("?tune=glandyfi&key=D")  # an older link: moves to the tune's address, key kept
     page.wait_for_selector(".score .abcjs-staff")
-    assert page.url == site + "alaw/glandyfi/?key=D"
+    assert page.url == site + "alaw/glandyfi/?key=D&tempo=150"  # at the tempo kept for it (chosen above)
 
 
 def test_keyboard_shortcuts(page):

@@ -339,7 +339,7 @@ def test_tablature_invite(page):
     assert page.locator(".practice-tools").evaluate("d => !d.open")
     assert page.input_value("#tab-select") == "whistle-D"
     page.wait_for_timeout(100)  # (a toggle event would come a moment after)
-    assert page.evaluate("state.practice") == {"tab": "whistle-D", "open": None, "tabKnown": True, "heard": 0, "holesSeen": True}
+    assert page.evaluate("state.practice") == {"tab": "whistle-D", "open": None, "tabKnown": True, "heard": 0, "holesSeen": False}
     # Change goes down to the menu; opened for it, the tools aren't kept open
     page.click(".fingering-key .link-button")
     page.wait_for_function("document.activeElement.id === 'tab-select'")
@@ -398,8 +398,8 @@ def test_tablature_invite_answered_by_reading(page, how):
     assert page.locator(".tab-invite").is_hidden()
 
 
-# On a phone, once a tune has shown how to read the holes, the next folds it away (the name
-# and Change stay); printed, it's there.
+# On a phone, once a tune has been played with the holes, the next folds how to read them
+# away (the name and Change stay); only drawn, they may not have been read. Printed, it's there.
 def test_hole_key_folds_on_a_phone(page):
     page.set_viewport_size({"width": 390, "height": 844})
     page.goto_site("alaw/llancesau-trefaldwyn/")
@@ -410,10 +410,44 @@ def test_hole_key_folds_on_a_phone(page):
     assert page.locator(".fingering-signs").is_visible() and page.locator(".fingering-how").count() == 0
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score g.holes", state="attached")
+    assert page.locator(".fingering-how").count() == 0  # drawn, not yet played
+    page.evaluate("heardWithTheHoles()")
+    assert page.evaluate("state.practice.holesSeen")
+    page.goto_site("alaw/llancesau-trefaldwyn/")
+    page.wait_for_selector(".score g.holes", state="attached")
     assert page.locator(".fingering-name .link-button").is_visible()
     assert page.locator(".fingering-how").evaluate("d => !d.open") and page.locator(".fingering-signs").is_hidden()
     page.click(".fingering-how > summary")
     assert page.locator(".fingering-signs").is_visible()
+
+
+# A tune that goes beyond the whistle says how many notes aren't on it, and offers the
+# nearest key where every note is, which the Key menu then has.
+def test_whistle_out_of_range(page):
+    page.goto_site()
+    page.evaluate("localStorage.setItem('practice', JSON.stringify({tab: 'whistle-D', open: null, tabKnown: true}))")
+    page.goto_site("alaw/tros-y-garreg/")
+    page.wait_for_selector(".score g.holes", state="attached")
+    assert page.inner_text(".fit-note") == "10 notes aren't on the whistle in D (marked ?). Play it in G minor, and every note is there."
+    page.click(".fit-note .link-button")
+    page.wait_for_function("document.querySelector('.fit-note').hidden")
+    assert page.input_value("#key-select") == "5"
+    assert page.evaluate("[...document.querySelectorAll('.score .abcjs-lyric .sign')].filter((t) => t.textContent === '?').length") == 0
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score g.holes", state="attached")
+    assert page.locator(".fit-note").is_hidden()
+
+
+# A fiddle has no frets: its tablature is read as fingers.
+def test_fiddle_tab_has_no_frets(page):
+    page.goto_site()
+    page.evaluate("localStorage.setItem('practice', JSON.stringify({tab: 'mandolin', open: null, tabKnown: true}))")
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert "on a fiddle, 2 is the first finger" in page.inner_text(".fingering-key")
+    page.click(".fingering-key .link-button")
+    page.select_option("#tab-select", "guitar")
+    assert "on a fiddle" not in page.inner_text(".fingering-key") and "the number is the fret" in page.inner_text(".fingering-key")
 
 
 def test_whistle_on_a_tune(page):

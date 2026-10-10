@@ -248,7 +248,7 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .tab-sample .ink { fill: var(--text); }
 .tab-sample .holes { stroke: var(--text); stroke-width: .7; }
 .tab-sample .holes .covered { fill: var(--text); }
-.tab-sample .fret { fill: var(--text); font-size: 7.5px; font-weight: 600; text-anchor: middle; paint-order: stroke; stroke: var(--bg); stroke-width: 2.5px; }
+.tab-sample .fret { fill: var(--text); font-size: 8px; font-weight: 600; text-anchor: middle; }
 .tab-said { margin: .6rem 0 0; min-height: 1.4em; }
 .tab-said:empty { min-height: 0; }
 /* Upcoming sessions, on the home page and the sessions page */
@@ -537,7 +537,8 @@ details[open] > summary::before { transform: rotate(90deg); }
 .tab-invite[hidden], .tab-invite-choices[hidden] { display: none; }
 .tab-invite-line { margin: 0; }
 .tab-invite-line:focus { outline: none; }
-.tab-invite-line .hole-column { width: .5em; height: 1.5em; margin-right: .5em; vertical-align: -.35em; stroke-width: 1.2; }
+.tab-invite-line .hole-column { width: .5em; height: 1.85em; margin-right: .5em; vertical-align: -.55em; stroke-width: 1.2; }
+.tab-invite-line .hole-column .body { stroke-width: 1; }
 .tab-invite .holes { stroke: currentColor; }  /* on the page, not the paper: the text's colour, in both themes */
 .tab-invite .holes .covered { fill: currentColor; }
 .tab-invite .link-button { margin: 0; font-size: inherit; }
@@ -1198,6 +1199,9 @@ body.practice .set-edit, body.practice .set-shared, body.practice .set-count, bo
 .fingering-how > summary { width: fit-content; color: var(--paper-link); cursor: pointer; }
 .fingering-how > p { margin: .2rem 0 .3rem; }
 .fingering-key .link-button { margin: 0; font-size: inherit; color: var(--paper-link); }
+/* Notes not on the whistle chosen, and where every note is: in the paper's ink, to be read */
+.fit-note { margin: 0 0 .35rem; color: var(--score-ink); }
+.fit-note[hidden] { display: none; }
 .fingering-signs { display: flex; flex-wrap: wrap; gap: .15rem 1.1rem; margin: 0; padding: 0; list-style: none; }
 .fingering-signs li { display: inline-flex; align-items: center; gap: .4rem; white-space: nowrap; }
 .fingering-signs .hole-sample { flex: none; width: 1.05em; height: 1.05em; }

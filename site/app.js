@@ -1592,9 +1592,9 @@ function tabWelcome() {
   const said = el("p", { class: "caption tab-said", "aria-live": "polite" });
   return el("section", { class: "tab-welcome", "aria-labelledby": "tab-welcome-title" },
     el("h2", { id: "tab-welcome-title" }, tr("Holes or tabs, if you want them", "Tyllau neu dablatur, os hoffech chi")),
-    el("p", {}, tr("Don't read music yet? Most whistles are in D. Have the holes or tabs for yours under every note.",
-      "Ddim yn darllen cerddoriaeth eto? Mae'r rhan fwyaf o chwislau yn D. Cewch y tyllau neu'r tablatur ar gyfer eich un chi o dan bob nodyn.")),
-    el("p", { class: "pills-label", id: "tab-choice-label" }, tr("Under the notes, on every tune", "O dan y nodau, ar bob alaw")),
+    el("p", {}, tr("Don't read music yet? Most whistles are in D. Have the holes or tabs for your instrument under every note.",
+      "Ddim yn darllen cerddoriaeth eto? Mae'r rhan fwyaf o chwislau yn D. Cewch y tyllau neu'r tablatur ar gyfer eich offeryn o dan bob nodyn.")),
+    el("p", { class: "pills-label", id: "tab-choice-label" }, tr("On every tune", "Ar bob alaw")),
     tabChooser("tab-choice-label", (value, name) => said.replaceChildren(...doneText(value === "none"
       ? tr("Just the music, on every tune. Kept on this device.", "Y gerddoriaeth yn unig, ar bob alaw. Wedi'i gadw ar y ddyfais hon.")
       : tr(`${name} under the notes, on every tune. Kept on this device.`, `${name} o dan y nodau, ar bob alaw. Wedi'i gadw ar y ddyfais hon.`)))),
@@ -1655,9 +1655,12 @@ function tabSample(kind) {
     ["●", "●", "●", "○", "○", "○"].forEach((mark, i) => holeMark(g, mark, 10, 3.2 + i * 4.6 + (i >= 3 ? 2.2 : 0), 1.85));
     svg.append(g);
   } else {
-    for (const y of [8, 16, 24]) add("line", { x1: 0, x2: 20, y1: y, y2: y, class: "line" });
-    add("text", { x: 5.5, y: 11.2, class: "fret" }, "2");
-    add("text", { x: 14.5, y: 19.2, class: "fret" }, "0");
+    // Each number sits in a gap in its string, as tablature has it, so it isn't read as a dash.
+    const string = (y, at) => {
+      for (const [x1, x2] of at === undefined ? [[0, 20]] : [[0, at - 3], [at + 3, 20]]) add("line", { x1, x2, y1: y, y2: y, class: "line" });
+      if (at !== undefined) add("text", { x: at, y: y + 3, class: "fret" }, at < 10 ? "2" : "0");
+    };
+    string(8, 6); string(16, 14); string(24);
   }
   return svg;
 }
@@ -1934,7 +1937,7 @@ function drawHoles(text, holes) {
   const gaps = HOLE_GROUPS[holes] ?? [];
   const span = marks[holes - 1].y - marks[0].y;
   const step = span / (holes - 1 + gaps.length * .5);  // a gap between hands: half a step more
-  const r = step * .36;
+  const r = step * .4;
   const g = document.createElementNS(SVG_NS, "g");
   g.setAttribute("class", "holes");
   marks.forEach(({ mark }, i) => holeMark(g, mark, x, marks[0].y + step * (i + .5 * gaps.filter((at) => at <= i).length), r));
@@ -1960,14 +1963,41 @@ function holeSample(mark) {
   return svg;
 }
 
-// A scrap of a whistle, to lead the tune page's invite to them: three holes down, two
-// covered, one open (a lone half-covered hole would read as a light-and-dark switch).
+// A scrap of a whistle, to lead the tune page's invite to them: its body, and three holes
+// down it, two covered, one open (a lone half-covered hole would read as a light-and-dark
+// switch; three dots alone, as a "more" menu).
 function holeColumn() {
   const svg = document.createElementNS(SVG_NS, "svg");
-  for (const [name, value] of Object.entries({ viewBox: "0 0 10 30", class: "holes hole-column", "aria-hidden": "true" })) svg.setAttribute(name, value);
-  ["●", "●", "○"].forEach((mark, i) => holeMark(svg, mark, 5, 5 + i * 10, 3.6));
+  for (const [name, value] of Object.entries({ viewBox: "0 0 12 44", class: "holes hole-column", "aria-hidden": "true" })) svg.setAttribute(name, value);
+  const add = (attrs) => {
+    const node = document.createElementNS(SVG_NS, "rect");
+    for (const [name, value] of Object.entries(attrs)) node.setAttribute(name, value);
+    svg.append(node);
+  };
+  add({ x: .6, y: .6, width: 10.8, height: 42.8, rx: 2, class: "body" });  // the tube
+  add({ x: 3.5, y: 5, width: 5, height: 3, class: "covered" });  // the window, under the mouthpiece
+  ["●", "●", "○"].forEach((mark, i) => holeMark(svg, mark, 6, 18 + i * 9.5, 3.1));
   return svg;
 }
+
+// The tune's notes (MIDI; a chord's highest), as written: worked out once a tune, to say
+// which keys, or which whistles, have every note of it.
+const tunePitches = new WeakMap();
+function pitchesOf(tune) {
+  if (!tunePitches.has(tune)) {
+    const drawn = ABCJS.renderAbc("*", tune.abc)[0];
+    drawn.setUpAudio();
+    const pitches = [];
+    for (const line of drawn.lines) {
+      for (const note of line.staff?.[0]?.voices?.[0] ?? []) {
+        if (note.el_type === "note" && !note.rest && note.midiPitches?.length) pitches.push(Math.max(...note.midiPitches.map((m) => m.pitch)));
+      }
+    }
+    tunePitches.set(tune, pitches);
+  }
+  return tunePitches.get(tune);
+}
+const notOn = (pitches, instrument, shift) => pitches.filter((p) => !fingering(p + shift, instrument)).length;
 
 // A recorder's notes below its lowest are played an octave up (or two), as recorder players
 // do at a session: marked "up" so the jump shows.
@@ -1979,7 +2009,8 @@ function fingering(midi, instrument) {
   return holes && { holes, high: instrument.high(n), up };  // null: not on this instrument
 }
 
-function withFingerings(abc, instrument) {
+// size: the holes' rows, in abcjs's units (a phone draws the music smaller: larger there).
+function withFingerings(abc, instrument, size = 11) {
   const lines = abc.split("\n").filter((line) => !/^w:/.test(line));  // a tune's own lyrics would clash
   abc = lines.join("\n");
   const tune = ABCJS.renderAbc("*", abc)[0];
@@ -2001,7 +2032,7 @@ function withFingerings(abc, instrument) {
         ? fingering(Math.max(...note.midiPitches.map((m) => m.pitch)), instrument) : "tied");
     }
   }
-  const out = [`%%vocalfont ${SCORE_FACE} 11`];
+  const out = [`%%vocalfont ${SCORE_FACE} ${size}`];
   const holes = instrument.holes(0).length;
   lines.forEach((line, i) => {
     out.push(line);
@@ -2024,7 +2055,7 @@ const SWING = 62;
 const canSwing = (tune) => /^M:\s*(C(?!\|)|[24]\/4)\s*$/m.test(tune.abc);  // not 3/4: waltzes aren't swung
 
 // Tablature under the stave. Mandolin and fiddle share their tuning (GDAE; the numbers
-// are frets, or semitones above the open string).
+// are semitones above the open string: a mandolin's frets, a fiddle's fingers).
 const TABS = {
   mandolin: { instrument: "mandolin", tuning: "GDAE", label: () => tr("Mandolin / fiddle", "Mandolin / ffidil") },
   guitar: { instrument: "guitar", tuning: "EADGBE", label: () => tr("Guitar", "Gitâr") },
@@ -2188,7 +2219,8 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   abc = transposeAbc(tune, abc, transpose);
   const tab = TABS[state.practice.tab];
   const fingered = FINGERED[state.practice.tab];
-  if (fingered) abc = withFingerings(abc, fingered);
+  // On a phone, at a session, the holes are drawn larger, to be read on a stand.
+  if (fingered) abc = withFingerings(abc, fingered, paper.clientWidth && paper.clientWidth < 600 ? 13 : 11);
   // The tune's name is the page's heading, just above: on screen the score leaves it out,
   // so the music starts higher. Printed, it keeps it (the heading isn't printed).
   if (!state.printing) abc = abc.replace(/^T:.*\n/gm, "");
@@ -2279,7 +2311,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   const showState = () => {
     const playing = start?.classList.contains("abcjs-pushed");
     if (playing !== audioFocus.playing && state.synth === controller) audioFocus.hold(playing, tune.title);
-    if (playing) heardWithTheMusic(tune);
+    if (playing) { heardWithTheMusic(tune); heardWithTheHoles(); }
     start?.setAttribute("aria-label", playing ? tr("Pause (space bar)", "Oedi (bylchwr)") : tr("Play (space bar)", "Chwarae (bylchwr)"));
     const percent = Math.round((controller.percent ?? 0) * 100);
     if (document.activeElement !== seek) seek.value = percent;
@@ -2723,6 +2755,7 @@ function renderTune(main, group, tune) {
   };
   let drawn = { parts: [] };
   let showPracticeOn = null;  // the practice tools' summary: what's on (see practiceTools)
+  let showFit = null;  // notes not on the whistle or recorder chosen (see fitNote)
   // Drawing it again (a new tempo or key, a phone turned on its side) makes a new player:
   // if the tune was playing, it carries on from the same point in it.
   const redraw = () => {
@@ -2732,6 +2765,7 @@ function renderTune(main, group, tune) {
     // A part kept from last time that the tune no longer has (corrected since): not repeating.
     if (settings.loop >= (drawn.parts.length > 1 ? drawn.parts.length : 0)) settings.loop = -2;
     showPracticeOn?.();
+    showFit?.();
     const player = state.synth;
     if (playingAt !== null && player) {
       player.play().then(() => { if (state.synth === player && player.isStarted) player.seek(playingAt); }).catch(() => {});
@@ -2887,8 +2921,7 @@ function renderTune(main, group, tune) {
   // it's drawn), and how to read it: a string's frets, or a whistle's or recorder's holes,
   // each sign kept on a line with what it means.
   const tabWhat = el("span", { class: "caption", hidden: state.practice.tab !== "none" },
-    tr("Where to put your fingers, under each note. Not sure which whistle? Most are in D.",
-      "Ble i roi eich bysedd, o dan bob nodyn. Ddim yn siŵr pa chwisl? Mae'r rhan fwyaf yn D."));
+    tr("Where to put your fingers, under each note.", "Ble i roi eich bysedd, o dan bob nodyn."));
   const fingerKey = () => {
     const strings = TABS[state.practice.tab];
     const f = FINGERED[state.practice.tab];
@@ -2899,7 +2932,11 @@ function renderTune(main, group, tune) {
     const title = [el("strong", {}, strings ? `${strings.label()} (${strings.tuning})` : f.label()), " ",
       el("button", { type: "button", class: "link-button", "aria-label": tr("Change the holes or tabs", "Newid y tyllau neu'r tablatur"), onclick: toTabMenu },
         tr("Change", "Newid"))];
-    const howUp = strings
+    // A fiddle has no frets: the same numbers are said as its fingers, in first position.
+    const howUp = strings === TABS.mandolin
+      ? tr("A line for each string, the highest at the top. On a mandolin the number is the fret; on a fiddle, 2 is the first finger, 3 or 4 the second, 5 the third (0: open)",
+        "Llinell i bob tant, yr uchaf ar y brig. Ar fandolin, y rhif yw'r ffret; ar ffidil, 2 yw'r bys cyntaf, 3 neu 4 yr ail, 5 y trydydd (0: ar agor)")
+      : strings
       ? tr("A line for each string, the highest at the top; the number is the fret (0: open)",
         "Llinell i bob tant, yr uchaf ar y brig; y rhif yw'r ffret (0: ar agor)")
       : f.recorder
@@ -2912,12 +2949,43 @@ function renderTune(main, group, tune) {
       f.recorder ? sign("◐", tr("half-covered (the thumb: pinched)", "hanner ar gau (y bawd: wedi'i binsio)")) : sign("◐", tr("half-covered", "hanner ar gau")),
       f.recorder ? sign("8va", tr("too low, so an octave up", "rhy isel, felly wythfed yn uwch")) : sign("+", tr("blow harder", "chwythu'n galetach")),
       sign("?", f.recorder ? tr("not on the recorder", "ddim ar y recorder") : tr("not on the whistle", "ddim ar y chwisl")));
+    showFit();
     // On a phone, once the holes have been read on a tune, how to read them folds away, so
     // Play and the music come sooner; the name and Change stay.
-    if (holesFolded) return [el("p", { class: "fingering-name" }, title),
+    if (holesFolded) return [el("p", { class: "fingering-name" }, title), fitNote,
       el("details", { class: "fingering-how fold" }, el("summary", {}, tr("How to read the holes", "Sut i ddarllen y tyllau")),
         el("p", {}, howUp), signs)];
-    return [el("p", { class: "fingering-name" }, title, el("br"), howUp), signs];
+    return [el("p", { class: "fingering-name" }, title, el("br"), howUp), fitNote, signs];
+  };
+  // A tune that goes beyond the whistle or recorder chosen: how many notes aren't on it
+  // (marked ?), and where every note is: the nearest key in the Key menu that has them all
+  // (the written key first), or, for a whistle, another whistle in this key.
+  const fitNote = el("p", { class: "fit-note", hidden: true });
+  showFit = () => {
+    const f = FINGERED[state.practice.tab];
+    const pitches = f && tune.key ? pitchesOf(tune) : [];
+    const now = settings.transpose;
+    const missing = f ? notOn(pitches, f, now) : 0;
+    fitNote.hidden = !missing;
+    if (!missing) return fitNote.replaceChildren();
+    const shift = [0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6].find((s) => s !== now && !notOn(pitches, f, s));
+    const other = f.recorder ? null : Object.keys(FINGERED).find((value) => !FINGERED[value].recorder && !notOn(pitches, FINGERED[value], now));
+    const name = f.label().replace(/^./, (c) => c.toLowerCase());
+    const toKey = shift !== undefined && el("button", { type: "button", class: "link-button", onclick: () => {
+      const keys = document.getElementById("key-select");
+      keys.value = shift;
+      keys.dispatchEvent(new Event("change"));
+    } }, keyName(tune.key.pitch + shift, tune.key.modeName));
+    const toOther = other && el("button", { type: "button", class: "link-button", onclick: () => chooseTab(other) },
+      FINGERED[other].label().replace(/^./, (c) => c.toLowerCase()));
+    const ways = [toKey, toOther].filter(Boolean);
+    const either = ways.length === 2 ? [ways[0], tr(", or on a ", ", neu ar "), ways[1]]
+      : toKey ? [toKey] : toOther ? [tr("on a ", "ar "), toOther] : [];
+    fitNote.replaceChildren(
+      missing === 1 ? tr(`1 note isn't on the ${name} (marked ?).`, `Dydy 1 nodyn ddim ar y ${name} (wedi'i farcio ?).`)
+        : tr(`${missing} notes aren't on the ${name} (marked ?).`, `Dydy ${missing} nodyn ddim ar y ${name} (wedi'u marcio ?).`),
+      ...(ways.length ? [tr(" Play it ", " Chwaraewch hi "), ...(toKey ? [tr("in ", "yn "), ...either] : either),
+        tr(", and every note is there.", ", a bydd pob nodyn yno.")] : []));
   };
   const holesFolded = state.practice.holesSeen && matchMedia("(max-width: 800px)").matches;
   // The way to the menu, down in the practice tools, which may be folded: opened for the
@@ -2932,7 +3000,7 @@ function renderTune(main, group, tune) {
   // screen: the home page's choices, opened in place, so the page doesn't move and the
   // practice tools stay as they were. Gone once any has been chosen here, the music alone too.
   const inviteChoices = el("div", { class: "tab-invite-choices", id: "tab-invite-choices", hidden: true },
-    el("p", { class: "pills-label", id: "tab-invite-label" }, tr("Under the notes, on every tune", "O dan y nodau, ar bob alaw")),
+    el("p", { class: "pills-label", id: "tab-invite-label" }, tr("On every tune", "Ar bob alaw")),
     tabChooser("tab-invite-label", (value, name, byArrows) => fromInvite(value, byArrows)),
     el("p", { class: "caption" }, tr("Not sure which whistle? Most are in D. ", "Ddim yn siŵr pa chwisl? Mae'r rhan fwyaf yn D. "),
       el("button", { type: "button", class: "link-button", onclick: toTabMenu }, tr("Other whistles", "Chwislau eraill"))));
@@ -2945,10 +3013,14 @@ function renderTune(main, group, tune) {
   const tabInvite = el("div", { class: "tab-invite", hidden: state.practice.tab !== "none" || state.practice.tabKnown }, inviteLine, inviteChoices);
   // Chosen in the invite: holes or tabs, and focus to their Change just above the music; or
   // the music alone, said where the invite was, and where the holes or tabs are if wanted later.
-  // Going through them with the arrow keys, each is drawn (and said) and the invite stays.
+  // Going through them with the arrow keys, the one stopped on is drawn (and said) and the invite stays.
+  let arrowing = null;
   const fromInvite = (value, byArrows) => {
+    clearTimeout(arrowing);
+    // Going through them with the arrow keys, the music is drawn for the one stopped on,
+    // not each one passed (a long tune's drawing is slow, and each would be said).
+    if (byArrows) { arrowing = setTimeout(() => chooseTab(value), 400); return; }
     chooseTab(value);
-    if (byArrows) return;
     if (value !== "none") {
       tabInvite.hidden = true;
       fingeringKey.querySelector(".link-button")?.focus();
@@ -2964,7 +3036,6 @@ function renderTune(main, group, tune) {
   const showKey = () => {
     fingeringKey.hidden = state.practice.tab === "none";
     if (!fingeringKey.hidden) fingeringKey.replaceChildren(...fingerKey());
-    if (FINGERED[state.practice.tab] && !state.practice.holesSeen) { state.practice.holesSeen = true; savePractice(); }
   };
   // Said to a screen reader as it's chosen: the menu stays where it is, the holes appear above.
   const tabSaid = el("span", { class: "visually-hidden", "aria-live": "polite" });
@@ -2985,7 +3056,7 @@ function renderTune(main, group, tune) {
         behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
     } },
     // In the pills' order, by how they're read: the music, the holes, or a string's frets.
-    // Ten choices read as three.
+    // Eight choices read as three.
     (() => {
       const option = ([value, label]) => el("option", { value, selected: state.practice.tab === value }, label);
       return [option(["none", tr("Just the music", "Y gerddoriaeth yn unig")]),
@@ -4057,6 +4128,14 @@ function heardWithTheMusic(tune) {
   heardAlone.add(tune);
   state.practice.heard += 1;
   if (state.practice.heard >= HEARD_ENOUGH) state.practice.tabKnown = true;
+  savePractice();
+}
+
+// How to read the holes has been read once a tune has been played with them: from then on,
+// on a phone, it folds away (holesSeen). Only drawn, it may not have been read at all.
+function heardWithTheHoles() {
+  if (!FINGERED[state.practice.tab] || state.practice.holesSeen) return;
+  state.practice.holesSeen = true;
   savePractice();
 }
 

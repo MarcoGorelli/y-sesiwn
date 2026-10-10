@@ -64,9 +64,9 @@
     </header>
     <aside class="sidebar">
       <!-- Welsh or English for the page chrome and the home page; app.js swaps in the data-cy text. -->
-      <div class="lang-switch" role="group" aria-label="Iaith / Language">
-        <button type="button" data-lang="cy" lang="cy">Cymraeg</button>
-        <button type="button" data-lang="en" lang="en">English</button>
+      <div class="lang-switch" role="radiogroup" aria-label="Iaith / Language">
+        <button type="button" role="radio" data-lang="cy" lang="cy">Cymraeg</button>
+        <button type="button" role="radio" data-lang="en" lang="en">English</button>
       </div>
       <div class="sidebar-actions">
         <button type="button" id="surprise-sidebar" data-cy="Alaw ar hap">Surprise me</button>

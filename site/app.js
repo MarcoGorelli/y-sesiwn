@@ -168,9 +168,30 @@ function applyLang() {
       node.setAttribute(attr, tr(node.getAttribute(`data-en-${attr}`), node.getAttribute(`data-cy-${attr}`)));
     }
   }
-  for (const button of document.querySelectorAll(".lang-switch button")) {
-    button.setAttribute("aria-pressed", button.dataset.lang === state.lang);
+  checkRadios(document.querySelector(".lang-switch"), (button) => button.dataset.lang === state.lang);
+}
+
+// A choice of one from a few (the language, the holes or tabs) is radio buttons, so a screen
+// reader says "checked, 1 of 5": one tab stop, the chosen one, and the arrow keys choose the
+// next, as radio buttons do (choose(radio, true): by the arrows, going through them).
+function checkRadios(group, isChosen) {
+  for (const radio of group.querySelectorAll("[role=radio]")) {
+    const on = isChosen(radio);
+    radio.setAttribute("aria-checked", String(on));
+    radio.tabIndex = on ? 0 : -1;
   }
+}
+function radioKeys(group, choose) {
+  group.addEventListener("keydown", (e) => {
+    const radios = [...group.querySelectorAll("[role=radio]")];
+    const at = radios.indexOf(document.activeElement);
+    const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+    const to = e.key === "Home" ? 0 : e.key === "End" ? radios.length - 1 : step ? (at + step + radios.length) % radios.length : -1;
+    if (at < 0 || to < 0 || e.altKey || e.ctrlKey || e.metaKey) return;
+    e.preventDefault();
+    radios[to].focus();
+    choose(radios[to], true);
+  });
 }
 
 function setLang(lang) {
@@ -1249,11 +1270,11 @@ function renderHome(main) {
   document.title = "Y Sesiwn";
   const count = state.groupList.length;  // one entry per tune, whatever its number of versions
   const yours = recentTunes();  // nothing yet on a first visit
-  main.replaceChildren(...[
-    // The welcome and the ways in (the search, then by its notes, then, quieter, browsing
-    // or chance), then what's yours or what the tunes can do; on a wide screen, the
-    // instruments beside them and Coming up under the instruments.
-    el("div", { class: "home-intro" },
+  // The welcome and the ways in (the search, then by its notes, then, quieter, browsing
+  // or chance), then what's yours, the holes or tabs, and what the tunes can do, and
+  // taking it to the session; on a wide screen, the instruments beside them and Coming up
+  // under the instruments.
+  const intro = el("div", { class: "home-intro" },
       el("h1", {}, tr("Croeso! Welcome to Y\u00a0Sesiwn", "Croeso i'r Sesiwn!")),
       el("p", { class: "lead" }, ...tr(
         [el("strong", {}, "Free and open source"), `: sheet music for ${count} Welsh folk tunes, to learn, play and share.`],
@@ -1266,11 +1287,18 @@ function renderHome(main) {
         tr(", or ", ", neu "),
         el("button", { type: "button", class: "link-button", onclick: openRandomTune }, tr("surprise me", "alaw ar hap"))),
       yours,
+      // An invitation, until it's been answered: on a first visit, and after it until any
+      // of its choices (the music alone too) has been chosen, here or on a tune.
+      yours && state.practice.tabKnown ? null : tabWelcome(),
       upcomingSessions(),
-      yours ? null : features()),  // a first visit: what the tune pages can do
-    instruments(" at-end"),  // phones: the picture here instead, by the offline card
-    offlineCard(),
-  ].filter(Boolean));
+      yours ? null : features(),  // a first visit: what the tune pages can do
+      instruments(" at-end"),  // phones: the picture here instead, by the offline card
+      offlineCard());
+  // Coming up spans the rows beside the left column's, and the row after them all takes
+  // what it's taller by, so nothing on the left is pushed apart (style.css).
+  const beside = new Set(["coming-up", "at-top", "at-end"]);
+  intro.style.setProperty("--left-rows", [...intro.children].filter((c) => ![...c.classList].some((n) => beside.has(n))).length);
+  main.replaceChildren(intro);
 }
 
 // The last few tunes opened on this device (localStorage), for the home page: at a
@@ -1538,9 +1566,7 @@ function notesInvite() {
 }
 
 // What the tune pages can do, for a first visit; once a tune has been opened here (or a
-// set made), the home page has Your tunes instead, and this steps aside. The holes or tabs
-// can be chosen here, before the first tune: the music alone is one of the choices, and the
-// one chosen at first.
+// set made), the home page has Your tunes instead, and this steps aside.
 function features() {
   const withChords = state.groupList.filter((g) => g.versions.some((v) => v.chords != null)).length;
   const items = state.lang === "cy" ? [
@@ -1552,39 +1578,85 @@ function features() {
     ["Chords", `Suggested accompaniment for guitar, piano or harp (${withChords} tunes so far).`],
     ["Sets", "Gather tunes to play together, in your keys, and share them as a link or a QR code."],
   ];
+  return el("section", { class: "features" },
+    el("h2", { class: "section-heading" }, tr("What you can do", "Beth allwch chi ei wneud")),
+    el("ul", {}, items.map(([name, what]) => el("li", {}, el("strong", {}, name), el("span", {}, what)))));
+}
+
+// The holes or tabs, chosen before the first tune, just after the ways in: the music alone
+// is one of the choices, and the one chosen at first.
+function tabWelcome() {
   const said = el("p", { class: "caption tab-said", "aria-live": "polite" });
-  const holes = el("li", { class: "tab-feature" },
-    el("strong", {}, tr("Holes or tabs, if you want them", "Tyllau neu dablatur, os hoffech chi")),
-    el("span", {}, tr("Don't read music yet? The holes to cover on a whistle or recorder, or tabs for mandolin, fiddle or guitar, under every note. Not sure which whistle? Most are in D.",
+  return el("section", { class: "tab-welcome", "aria-labelledby": "tab-welcome-title" },
+    el("h2", { id: "tab-welcome-title" }, tr("Holes or tabs, if you want them", "Tyllau neu dablatur, os hoffech chi")),
+    el("p", {}, tr("Don't read music yet? The holes to cover on a whistle or recorder, or tabs for mandolin, fiddle or guitar, under every note. Not sure which whistle? Most are in D.",
       "Ddim yn darllen cerddoriaeth eto? Y tyllau i'w cau ar chwisl neu recorder, neu dablatur ar gyfer mandolin, ffidil neu gitâr, o dan bob nodyn. Ddim yn siŵr pa chwisl? Mae'r rhan fwyaf yn D.")),
     el("p", { class: "pills-label", id: "tab-choice-label" }, tr("Under the notes, on every tune", "O dan y nodau, ar bob alaw")),
     tabChooser("tab-choice-label", (value, name) => said.replaceChildren(...doneText(value === "none"
       ? tr("Just the music, on every tune. Kept on this device.", "Y gerddoriaeth yn unig, ar bob alaw. Wedi'i gadw ar y ddyfais hon.")
       : tr(`${name} under the notes, on every tune. Kept on this device.`, `${name} o dan y nodau, ar bob alaw. Wedi'i gadw ar y ddyfais hon.`)))),
     said);
-  return el("section", { class: "features" },
-    el("h2", { class: "section-heading" }, tr("What you can do", "Beth allwch chi ei wneud")),
-    el("ul", {}, items.map(([name, what]) => el("li", {}, el("strong", {}, name), el("span", {}, what))), holes));
 }
 
-// Holes or tabs under the notes, as a row of pills: the same on the home page and in a
-// tune's way in. "Just the music" is one of them, as much a choice as the others: reading
-// the music is how most players play. Kept for every tune (it's the reader's instrument),
-// and choosing any, the music alone too, is choosing (tabKnown: the invite has done its job).
+// Holes or tabs under the notes, as pills in three rows, by how they're read, each with a
+// scrap of what it looks like: the music, a whistle's holes, a string's frets. The same on
+// the home page and in a tune's way in. "Just the music" is one of them, as much a choice as
+// the others: reading the music is how most players play. Kept for every tune (it's the
+// reader's instrument), and choosing any, the music alone too, is choosing (tabKnown: the
+// invite has done its job). onChoose(value, name, byArrows): going through them with the
+// arrow keys, each is chosen in turn.
 function tabChooser(labelId, onChoose) {
-  const choices = ["none", "whistle-D", "recorder", "mandolin", "guitar"];
-  if (!choices.includes(state.practice.tab)) choices.push(state.practice.tab);  // another whistle, chosen on a tune
+  const holes = ["whistle-D", "recorder"];
+  const tabs = ["mandolin", "guitar"];
+  const kept = state.practice.tab;  // another whistle, chosen on a tune
+  if (FINGERED[kept] && !holes.includes(kept)) holes.push(kept);
+  if (TABS[kept] && !tabs.includes(kept)) tabs.push(kept);
   const name = (value) => (value === "none" ? tr("Just the music", "Y gerddoriaeth yn unig") : (FINGERED[value] ?? TABS[value]).label());
-  const pills = el("div", { class: "pills plain tab-choice", role: "group", "aria-labelledby": labelId },
-    choices.map((value) => el("button", { type: "button", "data-tab": value, "aria-pressed": String(state.practice.tab === value),
-      onclick: () => {
-        state.practice.tab = value;
-        state.practice.tabKnown = true;
-        savePractice();
-        for (const pill of pills.children) pill.setAttribute("aria-pressed", String(pill.dataset.tab === value));
-        onChoose(value, name(value));
-      } }, name(value))));
-  return pills;
+  const choose = (pill, byArrows = false) => {
+    const value = pill.dataset.tab;
+    state.practice.tab = value;
+    state.practice.tabKnown = true;
+    savePractice();
+    checkRadios(group, (p) => p.dataset.tab === value);
+    onChoose(value, name(value), byArrows);
+  };
+  const row = (sample, values) => el("div", { class: "tab-row" }, sample,
+    el("div", { class: "pills plain" }, values.map((value) =>
+      el("button", { type: "button", role: "radio", "data-tab": value, onclick: (e) => choose(e.currentTarget) }, name(value)))));
+  const group = el("div", { class: "tab-choice", role: "radiogroup", "aria-labelledby": labelId },
+    row(tabSample("music"), ["none"]), row(tabSample("holes"), holes), row(tabSample("tabs"), tabs));
+  checkRadios(group, (p) => p.dataset.tab === state.practice.tab);
+  radioKeys(group, choose);
+  return group;
+}
+
+// A scrap of each way of reading, beside its choices: a note on the stave; the holes under
+// it (G on a D whistle: three covered, three open, a gap between the hands); a string's line
+// with its fret numbers.
+function tabSample(kind) {
+  const svg = document.createElementNS(SVG_NS, "svg");
+  for (const [name, value] of Object.entries({ viewBox: "0 0 20 32", class: `tab-sample ${kind}`, "aria-hidden": "true" })) svg.setAttribute(name, value);
+  const add = (tag, attrs, text) => {
+    const node = document.createElementNS(SVG_NS, tag);
+    for (const [name, value] of Object.entries(attrs)) node.setAttribute(name, value);
+    if (text) node.textContent = text;
+    svg.append(node);
+  };
+  if (kind === "music") {
+    for (const y of [6, 11, 16, 21, 26]) add("line", { x1: 0, x2: 20, y1: y, y2: y, class: "line" });
+    add("ellipse", { cx: 8.5, cy: 18.5, rx: 3.3, ry: 2.4, transform: "rotate(-20 8.5 18.5)", class: "ink" });
+    add("line", { x1: 11.5, x2: 11.5, y1: 18, y2: 3, class: "stem" });
+  } else if (kind === "holes") {
+    const g = document.createElementNS(SVG_NS, "g");
+    g.setAttribute("class", "holes");
+    ["●", "●", "●", "○", "○", "○"].forEach((mark, i) => holeMark(g, mark, 10, 3.2 + i * 4.6 + (i >= 3 ? 2.2 : 0), 1.85));
+    svg.append(g);
+  } else {
+    for (const y of [8, 16, 24]) add("line", { x1: 0, x2: 20, y1: y, y2: y, class: "line" });
+    add("text", { x: 5.5, y: 11.2, class: "fret" }, "2");
+    add("text", { x: 14.5, y: 19.2, class: "fret" }, "0");
+  }
+  return svg;
 }
 
 function heroSearch() {
@@ -2843,20 +2915,22 @@ function renderTune(main, group, tune) {
   // practice tools stay as they were. Gone once any has been chosen here, the music alone too.
   const inviteChoices = el("div", { class: "tab-invite-choices", id: "tab-invite-choices", hidden: true },
     el("p", { class: "pills-label", id: "tab-invite-label" }, tr("Under the notes, on every tune", "O dan y nodau, ar bob alaw")),
-    tabChooser("tab-invite-label", (value) => fromInvite(value)),
+    tabChooser("tab-invite-label", (value, name, byArrows) => fromInvite(value, byArrows)),
     el("p", { class: "caption" }, tr("Not sure which whistle? Most are in D. ", "Ddim yn siŵr pa chwisl? Mae'r rhan fwyaf yn D. "),
       el("button", { type: "button", class: "link-button", onclick: toTabMenu }, tr("Other whistles", "Chwislau eraill"))));
   const inviteButton = el("button", { type: "button", class: "link-button", "aria-expanded": "false", "aria-controls": "tab-invite-choices",
     onclick: () => {
       inviteChoices.hidden = !inviteChoices.hidden;
       inviteButton.setAttribute("aria-expanded", String(!inviteChoices.hidden));
-    } }, tr("Show where your fingers go", "Dangos ble mae'r bysedd yn mynd"));
+    } }, tr("Show where your fingers go", "Dangos ble mae'r bysedd yn mynd"), el("span", { class: "chevron", "aria-hidden": "true" }));
   const inviteLine = el("p", { class: "tab-invite-line" }, holeSample("◐"), tr("Don't read music yet? ", "Ddim yn darllen cerddoriaeth eto? "), inviteButton);
   const tabInvite = el("div", { class: "tab-invite", hidden: state.practice.tab !== "none" || state.practice.tabKnown }, inviteLine, inviteChoices);
   // Chosen in the invite: holes or tabs, and focus to their Change just above the music; or
   // the music alone, said where the invite was, and where the holes or tabs are if wanted later.
-  const fromInvite = (value) => {
+  // Going through them with the arrow keys, each is drawn (and said) and the invite stays.
+  const fromInvite = (value, byArrows) => {
     chooseTab(value);
+    if (byArrows) return;
     if (value !== "none") {
       tabInvite.hidden = true;
       fingeringKey.querySelector(".link-button")?.focus();
@@ -2893,7 +2967,7 @@ function renderTune(main, group, tune) {
     // In two kinds, by how they're read: a string's frets, or the holes. Ten choices read as three.
     (() => {
       const option = ([value, label]) => el("option", { value, selected: state.practice.tab === value }, label);
-      return [option(["none", tr("None", "Dim")]),
+      return [option(["none", tr("Just the music", "Y gerddoriaeth yn unig")]),
         el("optgroup", { label: tr("Strings: tabs", "Llinynnau: tablatur") },
           Object.entries(TABS).map(([value, t]) => option([value, t.label()]))),
         el("optgroup", { label: tr("Whistle and recorder: holes", "Chwisl a recorder: tyllau") },
@@ -2908,7 +2982,7 @@ function renderTune(main, group, tune) {
     showKey();
     tabSelect.value = value;
     tabWhat.hidden = value !== "none";
-    const label = value === "none" ? tr("None", "Dim") : (FINGERED[value] ?? TABS[value]).label();
+    const label = value === "none" ? tr("Just the music", "Y gerddoriaeth yn unig") : (FINGERED[value] ?? TABS[value]).label();
     tabSaid.textContent = value === "none" ? label : FINGERED[value]
       ? tr(`${label}: the holes under each note, and how to read them just above the music`, `${label}: y tyllau o dan bob nodyn, a sut i'w darllen ychydig uwchben y gerddoriaeth`)
       : tr(`${label}, under each note`, `${label}, o dan bob nodyn`);
@@ -5191,6 +5265,7 @@ async function start() {
   for (const button of document.querySelectorAll(".lang-switch button")) {
     button.addEventListener("click", () => setLang(button.dataset.lang));
   }
+  radioKeys(document.querySelector(".lang-switch"), (button) => setLang(button.dataset.lang));
   applyLang();
   document.querySelector(".skip-link").addEventListener("click", (e) => {
     e.preventDefault();

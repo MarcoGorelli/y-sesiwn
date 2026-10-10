@@ -332,7 +332,7 @@ def test_tablature_invite(page):
     page.click(".tab-invite-line .link-button")
     assert page.get_attribute(".tab-invite-line .link-button", "aria-expanded") == "true"
     # The music alone is one of the choices, and the one chosen at first
-    assert page.locator(".tab-choice [aria-pressed=true]").inner_text() == "Just the music"
+    assert page.locator(".tab-choice [aria-checked=true]").inner_text() == "Just the music"
     page.click(".tab-choice button:has-text('Whistle in D')")
     page.wait_for_selector(".score .abcjs-lyric")
     assert page.locator(".tab-invite").is_hidden() and page.locator(".fingering-key").is_visible()
@@ -718,7 +718,7 @@ def test_home_page_on_a_phone(browser, site):
     assert page.locator("#hero-search").bounding_box()["y"] < 844 / 2
     # The picture comes near the end instead, after "What you can do".
     assert page.locator(".instruments.at-end").bounding_box()["y"] > page.locator(".features").bounding_box()["y"]
-    assert page.locator(".features li").count() == 4 and page.locator(".features li").last.is_visible()
+    assert page.locator(".features li").count() == 3 and page.locator(".features li").last.is_visible()
     context.close()
 
 
@@ -875,7 +875,7 @@ def test_fits_a_phone_with_everything_open(browser, site, path):
 def test_home_page(page):
     page.goto_site()
     features = page.locator(".features li").all_inner_texts()
-    assert len(features) == 4 and any(f.startswith("Chords\n") for f in features)
+    assert len(features) == 3 and any(f.startswith("Chords\n") for f in features)
     # No red button competes with the search: Surprise me is a plain one, and finding a
     # tune by its notes is a line of text.
     assert page.locator("main button.primary:visible").count() == 0
@@ -898,13 +898,71 @@ def test_home_page(page):
 def test_tablature_chosen_on_the_home_page(page):
     page.goto_site()
     page.wait_for_selector(".features")
-    assert page.locator(".tab-choice [aria-pressed=true]").inner_text() == "Just the music"
+    assert page.locator(".tab-choice [aria-checked=true]").inner_text() == "Just the music"
     page.click(".tab-choice button:has-text('Descant recorder')")
     assert page.inner_text(".tab-said") == "Descant recorder under the notes, on every tune. Kept on this device."
     assert page.evaluate("state.practice") == {"tab": "recorder", "open": None, "tabKnown": True}
     page.goto_site("alaw/llancesau-trefaldwyn/")
     page.wait_for_selector(".score g.holes", state="attached")
     assert page.locator(".tab-invite").is_hidden() and "recorder" in page.locator(".fingering-key").text_content()
+    # And in the practice tools' menu, the music alone is named as it is in the pills.
+    assert page.locator("#tab-select option[value=none]").text_content() == "Just the music"
+
+
+# The holes or tabs are one choice of several: radio buttons, one tab stop, and the arrow
+# keys choose the next (and the language switch the same).
+def test_tablature_choice_is_radio_buttons(page):
+    page.goto_site()
+    page.wait_for_selector(".tab-welcome")
+    group = page.locator(".tab-choice")
+    assert group.get_attribute("role") == "radiogroup" and group.locator("[role=radio]").count() == 5
+    assert group.locator("[tabindex='0']").inner_text() == "Just the music"
+    group.locator("[aria-checked=true]").focus()
+    page.keyboard.press("ArrowRight")
+    assert page.evaluate("document.activeElement.textContent") == "Whistle in D"
+    assert group.locator("[aria-checked=true]").inner_text() == "Whistle in D" and group.locator("[tabindex='0']").count() == 1
+    assert page.evaluate("state.practice.tab") == "whistle-D"
+    page.keyboard.press("End")
+    assert page.evaluate("state.practice.tab") == "guitar"
+    page.keyboard.press("ArrowRight")  # round to the first
+    assert page.evaluate("state.practice.tab") == "none"
+    assert page.get_attribute(".lang-switch", "role") == "radiogroup"
+    page.focus(".lang-switch [aria-checked=true]")
+    page.keyboard.press("ArrowLeft")
+    assert page.inner_text("h1") == "Croeso i'r Sesiwn!"
+    assert page.evaluate("document.activeElement.dataset.lang") == "cy"
+
+
+# On the home page the holes or tabs come just after the ways in, and stay there (with
+# Your tunes) until one of them, the music alone too, has been chosen.
+def test_tablature_welcome_until_chosen(page):
+    page.goto_site()
+    page.wait_for_selector(".tab-welcome")
+    assert page.locator(".tab-welcome").bounding_box()["y"] < page.locator(".features").bounding_box()["y"]
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.goto_site()
+    page.wait_for_selector(".recent-list")
+    assert page.locator(".tab-welcome").is_visible() and page.locator(".features").count() == 0
+    page.click(".tab-choice button:has-text('Just the music')")
+    page.goto_site()
+    page.wait_for_selector(".recent-list")
+    assert page.locator(".tab-welcome").count() == 0
+
+
+# Coming up, beside the left column, doesn't push the offline card away from what's above it.
+def test_home_no_gap_above_the_offline_card(browser, site):
+    context = browser.new_context(viewport={"width": 1440, "height": 900}, service_workers="block")
+    page = context.new_page()
+    page.goto(site + "alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.evaluate("localStorage.setItem('practice', JSON.stringify({tab: 'none', open: null, tabKnown: true}))")
+    page.goto(site)
+    page.wait_for_selector(".recent-list")
+    above = page.locator(".recent").bounding_box()
+    card = page.locator(".offline-card").bounding_box()
+    assert card["y"] - (above["y"] + above["height"]) < 60
+    context.close()
 
 
 # A page's text, sidebar and footer as the reader sees them, except what is English on
@@ -926,15 +984,15 @@ def test_welsh_home_page(page):
     import re
     page.goto_site()
     assert page.evaluate("document.documentElement.lang") == "en"
-    assert page.get_attribute(".lang-switch [data-lang=en]", "aria-pressed") == "true"
+    assert page.get_attribute(".lang-switch [data-lang=en]", "aria-checked") == "true"
     english = page.evaluate(VISIBLE_TEXT)
     page.click(".lang-switch [data-lang=cy]")
     assert page.inner_text("h1") == "Croeso i'r Sesiwn!"
     assert page.evaluate("document.documentElement.lang") == "cy"
-    assert page.get_attribute(".lang-switch [data-lang=cy]", "aria-pressed") == "true"
+    assert page.get_attribute(".lang-switch [data-lang=cy]", "aria-checked") == "true"
     assert page.inner_text("#surprise-sidebar") == "Alaw ar hap"
     assert page.get_attribute("#search-input", "placeholder") == "Chwilio am alaw…"
-    assert page.locator(".features li").count() == 4
+    assert page.locator(".features li").count() == 3
     # Nothing left in English: no sentence of the English page shows up in the Welsh one.
     welsh = page.evaluate(VISIBLE_TEXT)
     names = set(page.locator(".coming-up li a").all_inner_texts())  # sessions' own names stay as they are
@@ -2376,7 +2434,8 @@ def test_skip_link_and_tabbing_past_search(page):
     page.focus("#search-input")
     page.wait_for_selector("#suggestions:not([hidden])")
     page.keyboard.press("Tab")
-    assert page.evaluate("document.activeElement.textContent") == "Cymraeg"
+    # (the language switch is radio buttons: its one tab stop is the language chosen)
+    assert page.evaluate("document.activeElement.textContent") == "English"
 
 
 def test_score_and_player_names(page):

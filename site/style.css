@@ -450,11 +450,14 @@ details.all-tunes[open] > .tune-list { margin: .25rem 0 1.25rem; }
 .controls-summary { display: none; }
 /* Take it with you: at the top of the side column, beside the music: Share and Print / save
    side by side, Add to set across under them */
-/* Print / save is given its own width, so "Argraffu / cadw" stays on one line beside "Rhannu" */
-.tune-actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(max-content, 1fr); gap: .5rem; margin: 0 0 1rem; }
+/* Print / save is given its own width, so "Argraffu / cadw" stays on one line beside "Rhannu":
+   its label doesn't wrap, and its column is at least that wide (min-content, not max-content,
+   so a line across both, "Link copied, in A major, at 80 bpm", can't widen it and squash Share) */
+.tune-actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(min-content, 1fr); gap: .5rem; margin: 0 0 1rem; }
 .tune-actions > *, .tune-actions .print-wrap > button, .tune-actions .add-to-set { width: 100%; max-width: none; }
 /* A longer label ("Ychwanegu at set") wraps inside its button, and its row's buttons stay one height */
 .tune-actions > button, .tune-actions :is(.print-wrap, .add-to-set-wrap) > button { height: 100%; padding-inline: .6rem; text-wrap: balance; }
+.tune-actions .print-wrap > button { text-wrap: nowrap; }  /* after text-wrap: balance, which would undo it */
 /* Add to set's parts sit in the grid themselves, and the new set's name, "In your set…"
    and "Added to…" run across under the buttons */
 .tune-actions .add-to-set-wrap { display: contents; }

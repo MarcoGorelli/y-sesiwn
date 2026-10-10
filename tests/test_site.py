@@ -3233,6 +3233,9 @@ def test_a_moved_key_says_so_when_shared(browser, site):
     page.click(".tune-actions button:text-is('Copy link')")
     page.wait_for_function("document.querySelector('.share-status').innerText.startsWith('Link copied')")  # once the clipboard has it
     assert page.inner_text(".share-status") == "Link copied, in A major, at 80 bpm"
+    # The status line runs across under both buttons without widening Print / save over Share
+    share, print_ = (page.locator(f".tune-actions {s}").bounding_box() for s in (".share", "[aria-controls^=print-menu]"))
+    assert share["width"] > 100 and share["x"] + share["width"] <= print_["x"]
     page.click(".tune-actions .share")
     page.click(".tune-actions button:text-is('QR code')")
     assert "this tune, in A major, at 80 bpm." in page.inner_text(".qr-dialog .caption >> nth=0")

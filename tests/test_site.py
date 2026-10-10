@@ -339,7 +339,7 @@ def test_tablature_invite(page):
     assert page.locator(".practice-tools").evaluate("d => !d.open")
     assert page.input_value("#tab-select") == "whistle-D"
     page.wait_for_timeout(100)  # (a toggle event would come a moment after)
-    assert page.evaluate("state.practice") == {"tab": "whistle-D", "open": None, "tabKnown": True}
+    assert page.evaluate("state.practice") == {"tab": "whistle-D", "open": None, "tabKnown": True, "heard": 0, "holesSeen": True}
     # Change goes down to the menu; opened for it, the tools aren't kept open
     page.click(".fingering-key .link-button")
     page.wait_for_function("document.activeElement.id === 'tab-select'")
@@ -360,10 +360,60 @@ def test_tablature_invite_just_the_music(page):
     assert page.inner_text(".tab-invite").startswith("Just the music.")
     assert page.evaluate("document.activeElement.closest('.tab-invite') !== null")
     assert page.locator(".score .abcjs-lyric").count() == 0
-    assert page.evaluate("state.practice") == {"tab": "none", "open": None, "tabKnown": True}
+    assert page.evaluate("state.practice") == {"tab": "none", "open": None, "tabKnown": True, "heard": 0, "holesSeen": False}
+    # Where they are, if wanted later: a link down to the menu (the tools opened for it aren't kept)
+    page.click(".tab-invite .link-button:has-text('the practice tools')")
+    page.wait_for_function("document.activeElement.id === 'tab-select'")
+    page.wait_for_timeout(100)
+    assert page.evaluate("state.practice.open") is None
     page.reload()
     page.wait_for_selector(".score .abcjs-staff")
     assert page.locator(".tab-invite").is_hidden()
+
+
+# Someone who reads the music isn't made to say so: choosing the music alone in the menu,
+# opening the practice tools, or playing three tunes with the music alone answers the invite.
+@pytest.mark.parametrize("how", ["menu", "tools", "played"])
+def test_tablature_invite_answered_by_reading(page, how):
+    page.goto_site("alaw/llancesau-trefaldwyn/")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.locator(".tab-invite").is_visible()
+    if how == "menu":
+        page.open_tools()
+        page.select_option("#tab-select", "whistle-D")
+        page.evaluate("state.practice.tabKnown = false")
+        page.select_option("#tab-select", "none")
+    elif how == "tools":
+        page.click(".practice-tools > summary")
+    else:
+        page.evaluate("[...state.bySlug.values()].slice(0, 2).forEach(heardWithTheMusic)")
+        assert page.evaluate("state.practice.tabKnown") is False
+        page.evaluate("[...state.bySlug.values()].slice(0, 2).forEach(heardWithTheMusic)")  # the same two: once each
+        assert page.evaluate("state.practice.heard") == 2
+        page.evaluate("heardWithTheMusic([...state.bySlug.values()][2])")
+    page.wait_for_timeout(100)
+    assert page.evaluate("JSON.parse(localStorage.getItem('practice')).tabKnown") is True
+    page.reload()
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.locator(".tab-invite").is_hidden()
+
+
+# On a phone, once a tune has shown how to read the holes, the next folds it away (the name
+# and Change stay); printed, it's there.
+def test_hole_key_folds_on_a_phone(page):
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.goto_site("alaw/llancesau-trefaldwyn/")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.evaluate("localStorage.setItem('practice', JSON.stringify({tab: 'whistle-D', open: null, tabKnown: true}))")
+    page.reload()
+    page.wait_for_selector(".score g.holes", state="attached")
+    assert page.locator(".fingering-signs").is_visible() and page.locator(".fingering-how").count() == 0
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score g.holes", state="attached")
+    assert page.locator(".fingering-name .link-button").is_visible()
+    assert page.locator(".fingering-how").evaluate("d => !d.open") and page.locator(".fingering-signs").is_hidden()
+    page.click(".fingering-how > summary")
+    assert page.locator(".fingering-signs").is_visible()
 
 
 def test_whistle_on_a_tune(page):
@@ -901,7 +951,7 @@ def test_tablature_chosen_on_the_home_page(page):
     assert page.locator(".tab-choice [aria-checked=true]").inner_text() == "Just the music"
     page.click(".tab-choice button:has-text('Descant recorder')")
     assert page.inner_text(".tab-said") == "Descant recorder under the notes, on every tune. Kept on this device."
-    assert page.evaluate("state.practice") == {"tab": "recorder", "open": None, "tabKnown": True}
+    assert page.evaluate("state.practice") == {"tab": "recorder", "open": None, "tabKnown": True, "heard": 0, "holesSeen": False}
     page.goto_site("alaw/llancesau-trefaldwyn/")
     page.wait_for_selector(".score g.holes", state="attached")
     assert page.locator(".tab-invite").is_hidden() and "recorder" in page.locator(".fingering-key").text_content()
@@ -933,9 +983,9 @@ def test_tablature_choice_is_radio_buttons(page):
     assert page.evaluate("document.activeElement.dataset.lang") == "cy"
 
 
-# On the home page the holes or tabs come just after the ways in, and stay there (with
-# Your tunes) until one of them, the music alone too, has been chosen.
-def test_tablature_welcome_until_chosen(page):
+# On the home page the holes or tabs come just after the ways in, on a first visit; once
+# there's anything of yours they step aside, as What you can do does (the tune has its own).
+def test_tablature_welcome_on_a_first_visit(page):
     page.goto_site()
     page.wait_for_selector(".tab-welcome")
     assert page.locator(".tab-welcome").bounding_box()["y"] < page.locator(".features").bounding_box()["y"]
@@ -943,11 +993,7 @@ def test_tablature_welcome_until_chosen(page):
     page.wait_for_selector(".score .abcjs-staff")
     page.goto_site()
     page.wait_for_selector(".recent-list")
-    assert page.locator(".tab-welcome").is_visible() and page.locator(".features").count() == 0
-    page.click(".tab-choice button:has-text('Just the music')")
-    page.goto_site()
-    page.wait_for_selector(".recent-list")
-    assert page.locator(".tab-welcome").count() == 0
+    assert page.locator(".tab-welcome").count() == 0 and page.locator(".features").count() == 0
 
 
 # Coming up, beside the left column, doesn't push the offline card away from what's above it.
@@ -1696,7 +1742,7 @@ def test_practice_tools_remembered(page):
     assert not page.is_checked(".practice-row label:has-text('Click · on every beat') input")
     assert page.input_value("#tab-select") == "mandolin"
     assert page.locator(".sound-on").is_hidden()
-    assert page.evaluate("state.practice") == {"tab": "mandolin", "open": True, "tabKnown": True}
+    assert page.evaluate("state.practice") == {"tab": "mandolin", "open": True, "tabKnown": True, "heard": 0, "holesSeen": False}
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.is_checked(".practice-row label:has-text('Count-in') input")
@@ -1720,7 +1766,7 @@ def test_practice_tools_remembered(page):
     page.evaluate("localStorage.setItem('practice', JSON.stringify({ tab: 'treble-recorder', open: 'yes' }))")
     page.goto_site("?tune=glandyfi")
     page.wait_for_selector(".score .abcjs-staff")
-    assert page.evaluate("state.practice") == {"tab": "none", "open": None, "tabKnown": False}
+    assert page.evaluate("state.practice") == {"tab": "none", "open": None, "tabKnown": False, "heard": 0, "holesSeen": False}
 
 
 @pytest.mark.parametrize("tab, first", [("mandolin", "0"), ("guitar", "0")])
@@ -2631,7 +2677,7 @@ def test_share_button(browser, site):
 def test_tablature_choices(page):
     page.goto_site("?tune=glandyfi")
     options = page.eval_on_selector_all("#tab-select option", "os => os.map((o) => o.value)")
-    assert options == ["none", "mandolin", "guitar", "whistle-D", "whistle-C", "whistle-G", "whistle-Bb", "recorder"]
+    assert options == ["none", "whistle-D", "whistle-C", "whistle-G", "whistle-Bb", "recorder", "mandolin", "guitar"]
 
 
 # ---- The notes page ---------------------------------------------------------------

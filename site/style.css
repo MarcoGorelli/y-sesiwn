@@ -537,7 +537,7 @@ details[open] > summary::before { transform: rotate(90deg); }
 .tab-invite[hidden], .tab-invite-choices[hidden] { display: none; }
 .tab-invite-line { margin: 0; }
 .tab-invite-line:focus { outline: none; }
-.tab-invite-line .hole-sample { width: 1.05em; height: 1.05em; margin-right: .4em; vertical-align: -.15em; }
+.tab-invite-line .hole-column { width: .5em; height: 1.5em; margin-right: .5em; vertical-align: -.35em; stroke-width: 1.2; }
 .tab-invite .holes { stroke: currentColor; }  /* on the page, not the paper: the text's colour, in both themes */
 .tab-invite .holes .covered { fill: currentColor; }
 .tab-invite .link-button { margin: 0; font-size: inherit; }
@@ -994,6 +994,7 @@ body.practice .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height
 /* Printing a tune: just the sheet music (in the key chosen on the page), full width. */
 @media print {
   body { display: block; padding: 0; background: none; color: #000; }
+  .fingering-how > summary { display: none; }
   .nav, .site-footer, .controls, .tab-invite, .practice-tools, .tune-actions, .versions, .versions-fold, .tune-side, .audio, .card.chords, main > h1 { display: none !important; }
   main { padding: 0; max-width: none; animation: none; }
   .tune-layout { display: block; }
@@ -1194,6 +1195,8 @@ body.practice .set-edit, body.practice .set-shared, body.practice .set-count, bo
 .fingering-key[hidden] { display: none; }
 .fingering-name { margin: 0 0 .3rem; }
 .fingering-name strong { color: var(--score-ink); }
+.fingering-how > summary { width: fit-content; color: var(--paper-link); cursor: pointer; }
+.fingering-how > p { margin: .2rem 0 .3rem; }
 .fingering-key .link-button { margin: 0; font-size: inherit; color: var(--paper-link); }
 .fingering-signs { display: flex; flex-wrap: wrap; gap: .15rem 1.1rem; margin: 0; padding: 0; list-style: none; }
 .fingering-signs li { display: inline-flex; align-items: center; gap: .4rem; white-space: nowrap; }

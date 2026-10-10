@@ -1540,13 +1540,13 @@ function notesInvite() {
 function features() {
   const withChords = state.groupList.filter((g) => g.versions.some((v) => v.chords != null)).length;
   const items = state.lang === "cy" ? [
-    ["Unrhyw gywair, unrhyw dempo", "Trawsgyweiriwch alaw i siwtio'ch offeryn neu'ch llais, a gwrandewch arni gyda'r nodau'n goleuo."],
-    ["Ymarfer", "Ailadroddwch yr alaw neu un rhan gan gyflymu bob tro, gyda thablatur ar gyfer mandolin, ffidil neu gitâr, a byseddu ar gyfer chwisl neu recorder."],
+    ["Unrhyw gywair, unrhyw dempo", "Trawsgyweiriwch alaw i siwtio'ch offeryn neu'ch llais, gwrandewch arni gyda'r nodau'n goleuo, ac ailadroddwch un rhan gan gyflymu bob tro."],
+    ["Tyllau a thablatur", "Newydd i ddarllen cerddoriaeth? Tyllau'r chwisl neu'r recorder, neu dablatur ar gyfer mandolin, ffidil neu gitâr, o dan bob nodyn."],
     ["Cordiau", `Cyfeiliant awgrymedig ar gyfer gitâr, piano neu delyn (${withChords} o alawon hyd yma).`],
     ["Setiau", "Casglwch alawon i'w chwarae gyda'i gilydd, yn eich cyweiriau chi, a'u rhannu fel dolen neu god QR."],
   ] : [
-    ["Any key, any tempo", "Transpose a tune for your instrument or voice, and hear it with the notes lit up."],
-    ["Practise", "Repeat the tune or a part, speeding up each time, with tablature for mandolin, fiddle or guitar, and fingering for whistle or recorder."],
+    ["Any key, any tempo", "Transpose a tune for your instrument or voice, hear it with the notes lit up, and repeat a part, speeding up each time."],
+    ["Holes and tabs", "New to reading music? Whistle or recorder holes, or tabs for mandolin, fiddle or guitar, under every note."],
     ["Chords", `Suggested accompaniment for guitar, piano or harp (${withChords} tunes so far).`],
     ["Sets", "Gather tunes to play together, in your keys, and share them as a link or a QR code."],
   ];
@@ -2770,7 +2770,8 @@ function renderTune(main, group, tune) {
   // it's drawn), and how to read it: a string's frets, or a whistle's or recorder's holes,
   // each sign kept on a line with what it means.
   const tabWhat = el("span", { class: "caption", hidden: state.practice.tab !== "none" },
-    tr("Where to put your fingers, under each note", "Ble i roi eich bysedd, o dan bob nodyn"));
+    tr("Where to put your fingers, under each note. Not sure which whistle? Most are in D.",
+      "Ble i roi eich bysedd, o dan bob nodyn. Ddim yn siŵr pa chwisl? Mae'r rhan fwyaf yn D."));
   const fingerKey = () => {
     const strings = TABS[state.practice.tab];
     const f = FINGERED[state.practice.tab];
@@ -2779,7 +2780,7 @@ function renderTune(main, group, tune) {
       "●○◐".includes(mark) ? holeSample(mark) : [el("span", { class: `sign${mark === "8va" ? " up" : ""}`, "aria-hidden": "true" }, mark),
         el("span", { class: "visually-hidden" }, `${mark} `)], meaning);
     const name = el("p", { class: "fingering-name" }, el("strong", {}, strings ? `${strings.label()} (${strings.tuning})` : f.label()), " ",
-      el("button", { type: "button", class: "link-button", "aria-label": tr("Change the tablature", "Newid y tablatur"), onclick: toTabMenu },
+      el("button", { type: "button", class: "link-button", "aria-label": tr("Change the holes or tabs", "Newid y tyllau neu'r tablatur"), onclick: toTabMenu },
         tr("Change", "Newid")),
       el("br"), strings
         ? tr("A line for each string, the highest at the top; the number is the fret (0: open)",
@@ -2803,12 +2804,12 @@ function renderTune(main, group, tune) {
     tabSelect.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
     tabSelect.focus({ preventScroll: true });
   };
-  // For a learner who doesn't read the stave yet, a way in under the music: the holes or
-  // frets are three steps away otherwise. Gone once any tablature has been chosen here.
+  // For a learner who doesn't read the stave yet, a way in above the music, on the first
+  // screen: the holes or tabs are three steps away otherwise. Gone once any has been chosen here.
   const tabInvite = el("p", { class: "caption tab-invite", hidden: state.practice.tab !== "none" || state.practice.tabKnown },
-    tr("Can't read music? ", "Methu darllen cerddoriaeth? "),
+    tr("New to reading music? ", "Newydd i ddarllen cerddoriaeth? "),
     el("button", { type: "button", class: "link-button", onclick: toTabMenu },
-      tr("Show whistle holes or fiddle frets", "Dangos tyllau'r chwisl neu ffretiau'r ffidil")));
+      tr("Show whistle holes or tabs", "Dangos tyllau'r chwisl neu dablatur")));
   const fingeringKey = el("div", { class: "caption fingering-key", hidden: state.practice.tab === "none" });
   const showKey = () => {
     fingeringKey.hidden = state.practice.tab === "none";
@@ -2844,8 +2845,8 @@ function renderTune(main, group, tune) {
     // In two kinds, by how they're read: a string's frets, or the holes. Ten choices read as three.
     (() => {
       const option = ([value, label]) => el("option", { value, selected: state.practice.tab === value }, label);
-      return [option(["none", tr("No tablature", "Dim tablatur")]),
-        el("optgroup", { label: tr("Strings: frets", "Llinynnau: ffretiau") },
+      return [option(["none", tr("None", "Dim")]),
+        el("optgroup", { label: tr("Strings: tabs", "Llinynnau: tablatur") },
           Object.entries(TABS).map(([value, t]) => option([value, t.label()]))),
         el("optgroup", { label: tr("Whistle and recorder: holes", "Chwisl a recorder: tyllau") },
           Object.entries(FINGERED).map(([value, f]) => option([value, f.label()])))];
@@ -2863,7 +2864,7 @@ function renderTune(main, group, tune) {
   // What's on, and the way to turn it all off, at the end of the tools.
   const offButton = (label, which) => el("button", { type: "button", class: "link-button", onclick: () => turnOff(which) }, label);
   const keptNote = el("p", { class: "caption kept-note" },
-    tr("Kept for this tune, on this device; the tablature for every tune. ", "Wedi'u cadw ar gyfer yr alaw hon, ar y ddyfais hon; y tablatur ar gyfer pob alaw. "),
+    tr("Kept for this tune, on this device; the holes or tabs for every tune. ", "Wedi'u cadw ar gyfer yr alaw hon, ar y ddyfais hon; y tyllau neu'r tablatur ar gyfer pob alaw. "),
     offButton(tr("Turn all off", "Diffodd y cyfan"), "all"));
   const practiceRow = el("div", { class: "practice-row" },
     chordTools ? toolGroup(tr("Hear", "Clywed"), el("div", { class: "playback" }, chordTools.playback)) : null,
@@ -2875,7 +2876,7 @@ function renderTune(main, group, tune) {
     toolGroup(tr("See", "Gweld"),
       chordTools ? el("div", { class: "practice-line" }, chordTools.onScore) : null,
       el("div", { class: "practice-line" },
-        el("div", { class: "control" }, el("label", { for: "tab-select" }, tr("Tablature", "Tablatur")), tabSelect), tabWhat, tabSaid)),
+        el("div", { class: "control" }, el("label", { for: "tab-select" }, tr("Holes or tabs", "Tyllau neu dablatur")), tabSelect), tabWhat, tabSaid)),
     keptNote);
   // What playing will sound like besides the tune, by the player, where Play is pressed: so
   // a click or chords kept for this tune are never a surprise at a session.
@@ -2941,8 +2942,8 @@ function renderTune(main, group, tune) {
     practiceCaption.toggleAttribute("aria-hidden", !on.length);
     practiceCaption.textContent = on.length ? `${tr(" · on: ", " · ymlaen: ")}${on.join(", ")}`
       : tune.chords == null
-        ? tr(" · repeat, speed up, click, tablature", " · ailadrodd, cyflymu, clic, tablatur")
-        : tr(" · chords, repeat, speed up, tablature", " · cordiau, ailadrodd, cyflymu, tablatur");
+        ? tr(" · repeat, speed up, click, holes or tabs", " · ailadrodd, cyflymu, clic, tyllau neu dablatur")
+        : tr(" · chords, repeat, speed up, holes or tabs", " · cordiau, ailadrodd, cyflymu, tyllau neu dablatur");
   };
   const practiceTools = el("details", { class: "practice-tools fold", open: practiceToolsOpen(),
     ontoggle: (e) => { if (!document.body.classList.contains("practice")) { state.practice.open = e.target.open; savePractice(); } } },
@@ -2965,9 +2966,10 @@ function renderTune(main, group, tune) {
     tuneSub(tune, group, versions[1]),
     versions[0],
     controls,
+    tabInvite,
     el("div", { class: "tune-layout" },
       el("div", { class: "tune-main" }, el("div", { class: "score" }, fingeringKey, audio, soundOn, soundNote(), paper),
-        tabInvite, practiceTools, chords),
+        practiceTools, chords),
       // Taking it with you first, in reach beside the music (on a phone, after the practice tools)
       el("div", { class: "tune-side" }, actions,
         el("section", { class: "card" }, el("h2", {}, tr("Details", "Manylion")), details, gloss || null),

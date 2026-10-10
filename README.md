@@ -188,12 +188,12 @@ scheduled runs after 60 days without a commit).
   seeks back to its first note whenever playback reaches a note outside it,
   and abcjs's own loop brings it round after the last part; the speed-up uses
   `setWarp`, which keeps playing from the same place). Then **Count-in**,
-  **Click** and **Swing**; then **Tablature**. **Count-in** (one bar of woodblock
+  **Click** and **Swing**; then **Holes or tabs**. **Count-in** (one bar of woodblock
   clicks before the tune) and **Click** (a woodblock on every felt beat, high
   on the first of the bar) use abcjs's `drum`, `drumIntro` and `drumOff`
   options, with General MIDI percussion 76/77 from abcjs's own sound set in
   `static/soundfont/percussion-mp3/` (FluidR3's percussion samples are
-  near-silent stubs). **Tablature** under the stave for mandolin/fiddle
+  near-silent stubs). **Holes or tabs**: tablature under the stave for mandolin/fiddle
   (GDAE) or guitar, with abcjs's
   tablature plugin.
 - **Report a problem with this tune:** a link on every tune page to a new
@@ -230,7 +230,7 @@ scheduled runs after 60 days without a commit).
   *Chord chart* (title, key and chart only, big). `printAs()` sets
   `body[data-print]` for the print styles and puts things back on
   `afterprint`.
-- **Whistle and recorder fingerings:** the Tablature menu also offers a tin
+- **Whistle and recorder fingerings:** the Holes or tabs menu also offers a tin
   whistle in D, C, G or B♭ (six holes under each note: ● covered, ○ open, ◐ half; + for the
   second octave) and a descant recorder (thumb and seven holes, baroque
   fingering from the American Recorder Society's chart; ◐ is half a double hole

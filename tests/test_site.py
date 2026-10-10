@@ -320,11 +320,13 @@ def test_whistle_fingerings(page):
     assert rows == ["●●●●●●", "", "●●●●●○", "●●●●○○", "●●●○○○", "●●○○○○"]
 
 
-# For a learner who doesn't read the stave: a line under the music, the way to the tablature
+# For a learner who doesn't read the stave: a line above the music, the way to the tablature
 # menu (opening the practice tools), gone once any tablature has been chosen, for good.
 def test_tablature_invite(page):
     page.goto_site("alaw/llancesau-trefaldwyn/")
     page.wait_for_selector(".score .abcjs-staff")
+    # Above the music, so it's seen before the staves (and heard before them)
+    assert page.locator(".tab-invite").bounding_box()["y"] < page.locator(".score").bounding_box()["y"]
     assert page.locator(".practice-tools").evaluate("d => !d.open")
     page.click(".tab-invite .link-button")
     page.wait_for_function("document.activeElement.id === 'tab-select'")

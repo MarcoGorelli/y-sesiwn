@@ -449,7 +449,8 @@ details.all-tunes[open] > .tune-list { margin: .25rem 0 1.25rem; }
 .controls-summary { display: none; }
 /* Take it with you: at the top of the side column, beside the music: Share and Print / save
    side by side, Add to set across under them */
-.tune-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; margin: 0 0 1rem; }
+/* Print / save is given its own width, so "Argraffu / cadw" stays on one line beside "Rhannu" */
+.tune-actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(max-content, 1fr); gap: .5rem; margin: 0 0 1rem; }
 .tune-actions > *, .tune-actions .print-wrap > button, .tune-actions .add-to-set { width: 100%; max-width: none; }
 /* A longer label ("Ychwanegu at set") wraps inside its button, and its row's buttons stay one height */
 .tune-actions > button, .tune-actions :is(.print-wrap, .add-to-set-wrap) > button { height: 100%; padding-inline: .6rem; text-wrap: balance; }
@@ -475,6 +476,7 @@ details.all-tunes[open] > .tune-list { margin: .25rem 0 1.25rem; }
 .music-size .buttons { display: flex; gap: .3rem; }
 .music-size .label { display: block; font-size: .9rem; margin-bottom: .3rem; }  /* above its buttons, as Key and Tempo */
 .music-size button { min-width: 2.4rem; font-weight: 600; }
+.music-size .size-now { display: none; align-self: center; min-width: 2.6rem; text-align: center; font-size: .85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 /* Anything that folds open (details), and menus: a drawn chevron in the text's colour,
    turned to point the way it opens. Red on the folding sections under the music. */
 summary { cursor: pointer; list-style: none; }
@@ -498,6 +500,10 @@ details[open] > summary::before { transform: rotate(90deg); }
 .practice-group { display: grid; gap: .6rem; }
 .practice-group + .practice-group { padding-top: .9rem; border-top: 1px solid var(--border); }
 .practice-group > .label { font-weight: 600; color: var(--text); }
+/* Under the music, for a learner who doesn't read the stave yet: the way to the tablature */
+.tab-invite { margin: .6rem 0 0; color: var(--muted); }
+.tab-invite[hidden] { display: none; }
+.tab-invite .link-button { margin: 0; font-size: inherit; }
 .kept-note { margin: 0; padding-top: .7rem; border-top: 1px solid var(--border); color: var(--muted); }
 .kept-note .link-button { margin: 0; font-size: inherit; }
 .kept-note .link-button[hidden] { display: none; }
@@ -526,7 +532,7 @@ details[open] > summary::before { transform: rotate(90deg); }
 }
 @keyframes weave { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 @media (prefers-reduced-motion: reduce) { .speed-note.arrived::after { animation: none; } }
-.report-line { margin: 1rem 0 0; font-size: .9rem; line-height: 1.4; }
+.report-line { margin: 1rem 0 0; font-size: .9rem; line-height: 1.4; text-wrap: pretty; }  /* no word alone on its line */
 .pills.keys { margin-top: 0; }
 .pills-label { margin: 1.5rem 0 .5rem; font-size: .9rem; font-weight: 600; }
 :is(.pills.keys, .pills.plain) button { font-size: .9rem; }
@@ -545,7 +551,7 @@ details[open] > summary::before { transform: rotate(90deg); }
   .tune-layout { display: flex; flex-direction: column; align-items: stretch; gap: 0; }
   .tune-main, .tune-side { display: contents; }
   .tune-layout :is(.tune-main, .tune-side) > * { order: 2; min-width: 0; }
-  .tune-layout .tune-main > :is(.score, .practice-tools) { order: 0; }
+  .tune-layout .tune-main > :is(.score, .tab-invite, .practice-tools) { order: 0; }
   .tune-layout .tune-side > .tune-actions { order: 1; margin: .75rem 0 0; }
   .tune-layout .tune-side > .card:not(.place) { margin-top: 1.5rem; }
 }
@@ -764,6 +770,13 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .hide-chords .abcjs-chord { display: none; }
 .card.place .wales-map { max-width: 10rem; margin: .25rem auto .5rem; }
 .card.place .caption { margin: 0; }
+/* One column (a phone, a tablet upright): a small map beside the place's name, not a tall card for one dot */
+@media (max-width: 1100px) {
+  .card.place { display: grid; grid-template-columns: 5.5rem 1fr; grid-template-areas: "map name" "map link"; column-gap: 1rem; align-items: center; }
+  .card.place > h2 { grid-area: name; align-self: end; margin: 0; }
+  .card.place .wales-map { grid-area: map; max-width: none; margin: 0; }
+  .card.place .caption { grid-area: link; align-self: start; }
+}
 .map-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2rem; align-items: start; }
 .map-layout figure { margin: 0; position: sticky; top: 1.5rem; }
 .map-layout figcaption { font-size: .75rem; margin-top: .5rem; }
@@ -819,7 +832,7 @@ body.practice h1 { font-size: 1.35rem; }
 body.practice .controls { margin: .5rem 0 1rem; }
 body.practice .tune-layout { grid-template-columns: 1fr; }
 body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 1rem 1.5rem 1.5rem; }
-body.practice :is(.versions, .versions-fold, .tune-actions) { display: none; }
+body.practice :is(.versions, .versions-fold, .tune-actions, .tab-invite) { display: none; }
 /* The player stays in reach as the page follows the music: pinned at the top of the screen,
    or on a phone just under the pinned top bar (whose height app.js keeps in --topbar-h) */
 .score > .audio { position: sticky; top: var(--topbar-h, 0px); z-index: 3; margin: -.5rem -.5rem 0; padding: .5rem;
@@ -940,7 +953,7 @@ body.practice .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height
 /* Printing a tune: just the sheet music (in the key chosen on the page), full width. */
 @media print {
   body { display: block; padding: 0; background: none; color: #000; }
-  .nav, .site-footer, .controls, .practice-tools, .tune-actions, .versions, .versions-fold, .tune-side, .audio, .card.chords, main > h1 { display: none !important; }
+  .nav, .site-footer, .controls, .tab-invite, .practice-tools, .tune-actions, .versions, .versions-fold, .tune-side, .audio, .card.chords, main > h1 { display: none !important; }
   main { padding: 0; max-width: none; animation: none; }
   .tune-layout { display: block; }
   .score { border: none; box-shadow: none; background: none; padding: 0; }
@@ -1065,8 +1078,8 @@ main { view-transition-name: page; }
 .icon.chevron-left { transform: rotate(180deg); }
 .browse-jump .icon { flex: none; }
 /* Each tune's music as on its own page: cream paper, under its number and colourway */
-.set-music { padding-top: .25rem; background: url("carthen.svg") repeat-x top left / auto 7px; }
-.set-tune { margin: 1.25rem 0 1.75rem; scroll-margin-bottom: 4.5rem; }
+/* A carthen strip above every tune, so the next one is plain to see from a music stand */
+.set-tune { margin: .5rem 0 1.75rem; padding-top: 1rem; background: url("carthen.svg") repeat-x top left / auto 7px; scroll-margin-bottom: 4.5rem; }
 .set-tune:last-child { margin-bottom: 1rem; }
 .set-tune-head { display: flex; align-items: center; gap: .75rem; margin: 0 0 .5rem; }
 .set-tune h2 { display: flex; flex-wrap: wrap; align-items: center; gap: 0 .5rem; font-size: 1.15rem; margin: 0; min-width: 0; }
@@ -1100,6 +1113,8 @@ main { view-transition-name: page; }
   .set-actions .music-size .label { display: none; }
   .set-actions .row-break { display: block; flex-basis: 100%; height: 0; margin-top: -.5rem; }  /* Save above the row */
 }
+/* The label's size between − and +, where the row has room for it (in Welsh too) */
+@media (min-width: 480px) and (max-width: 800px) { .set-actions .music-size .size-now { display: block; } }
 /* A small phone: smaller, tighter buttons, so the row stays one row in Welsh too
    ("Rhannu", "Argraffu", "Sgrin lawn", − +) */
 @media (max-width: 420px) {
@@ -1202,7 +1217,7 @@ body.practice .tune-sub { display: none; }
   /* the same, for links in smaller type: the source in a tune's details, the map's, the report,
      the offline card's, back to My sets */
   .card.place .caption a, .report-line a, dd > a:first-child, .offline-card .more a, .set-count a { padding-block: .85rem; }
-  .fingering-key .link-button, .sound-on .link-button, .kept-note .link-button { padding-block: .7rem; margin-block: -.7rem; min-width: 44px; }  /* "Newid" is short */
+  .fingering-key .link-button, .sound-on .link-button, .kept-note .link-button, .tab-invite .link-button { padding-block: .7rem; margin-block: -.7rem; min-width: 44px; }  /* "Newid" is short */
   .notes-invite .link-button { display: inline-flex; align-items: center; min-height: 44px; }
   .segmented label { min-width: 44px; }
   .music-size button { min-width: 44px; }

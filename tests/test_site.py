@@ -320,6 +320,23 @@ def test_whistle_fingerings(page):
     assert rows == ["●●●●●●", "", "●●●●●○", "●●●●○○", "●●●○○○", "●●○○○○"]
 
 
+# For a learner who doesn't read the stave: a line under the music, the way to the tablature
+# menu (opening the practice tools), gone once any tablature has been chosen, for good.
+def test_tablature_invite(page):
+    page.goto_site("alaw/llancesau-trefaldwyn/")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.locator(".practice-tools").evaluate("d => !d.open")
+    page.click(".tab-invite .link-button")
+    page.wait_for_function("document.activeElement.id === 'tab-select'")
+    assert page.locator(".practice-tools").evaluate("d => d.open")
+    page.select_option("#tab-select", "whistle-D")
+    assert page.locator(".tab-invite").is_hidden()
+    page.select_option("#tab-select", "none")
+    page.reload()
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.locator(".tab-invite").is_hidden()
+
+
 def test_whistle_on_a_tune(page):
     page.goto_site("alaw/llancesau-trefaldwyn/")
     page.open_tools()
@@ -843,6 +860,7 @@ def test_home_page(page):
     assert page.locator(".tune-list").count() == 0
     page.click("a.button-link:has-text('Browse all')")
     page.wait_for_selector(".tune-list li", state="attached")
+    assert page.locator("details.all-tunes").evaluate("d => d.open")  # all of them, as it says
     assert page.locator(".tune-list li").count() == len(page.evaluate("state.groupList"))
 
 
@@ -1577,7 +1595,7 @@ def test_practice_tools_remembered(page):
     assert not page.is_checked(".practice-row label:has-text('Click · on every beat') input")
     assert page.input_value("#tab-select") == "mandolin"
     assert page.locator(".sound-on").is_hidden()
-    assert page.evaluate("state.practice") == {"tab": "mandolin", "open": True}
+    assert page.evaluate("state.practice") == {"tab": "mandolin", "open": True, "tabKnown": True}
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.is_checked(".practice-row label:has-text('Count-in') input")
@@ -1601,7 +1619,7 @@ def test_practice_tools_remembered(page):
     page.evaluate("localStorage.setItem('practice', JSON.stringify({ tab: 'treble-recorder', open: 'yes' }))")
     page.goto_site("?tune=glandyfi")
     page.wait_for_selector(".score .abcjs-staff")
-    assert page.evaluate("state.practice") == {"tab": "none", "open": None}
+    assert page.evaluate("state.practice") == {"tab": "none", "open": None, "tabKnown": False}
 
 
 @pytest.mark.parametrize("tab, first", [("mandolin", "0"), ("guitar", "0")])

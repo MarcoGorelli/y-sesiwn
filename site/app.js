@@ -94,7 +94,7 @@ const state = {
   docs: new Map(),      // markdown files, fetched on first use
   // For every tune, kept on this device (savedPractice): the tablature (the reader's
   // instrument), and the practice tools folded or not. The rest is kept per tune (savedTunes).
-  practice: savedPractice("practice", { tab: "none", open: null }),
+  practice: savedPractice("practice", { tab: "none", open: null, tabKnown: false }),
   browseOpen: { types: false, keys: false },  // Browse's More types / More keys, once opened
   lang: savedLang(),    // "cy" or "en", for the whole site (tune names and the tunes' own notes stay as written)
   musicSize: savedSize(),  // the music's size, an index into SIZES (1: as drawn)
@@ -134,7 +134,7 @@ function savedSize() {
 function savedPractice(name, defaults) {
   try {
     const saved = JSON.parse(localStorage.getItem(name));
-    const valid = { tab: (v) => typeof v === "string", open: (v) => v === null || typeof v === "boolean" };
+    const valid = { tab: (v) => typeof v === "string", open: (v) => v === null || typeof v === "boolean", tabKnown: (v) => typeof v === "boolean" };
     return Object.fromEntries(Object.entries(defaults).map(([key, value]) =>
       [key, saved && key in saved && valid[key](saved[key]) ? saved[key] : value]));
   } catch { return { ...defaults }; }
@@ -1259,7 +1259,7 @@ function renderHome(main) {
       heroSearch(count),
       el("div", { class: "home-actions" },
         el("button", { type: "button", onclick: openRandomTune }, tr("Surprise me", "Alaw ar hap")),  // the search comes first
-        el("a", { href: "?page=browse", "data-route": true, class: "button-link" },
+        el("a", { href: "?page=browse&all=1", "data-route": true, class: "button-link" },
           tr(`Browse all ${count} tunes`, `Pori'r ${count} alaw`))),
       instruments(" at-top")),
     yours,
@@ -1443,7 +1443,8 @@ function renderBrowse(main) {
     showJump();
   };
   const toggle = (set, item) => { if (!set.delete(item)) set.add(item); show(); };
-  let allOpen = false;  // the A to Z list, opened while nothing is chosen
+  // The A to Z list, opened while nothing is chosen: open at first when come to from "Browse all 722 tunes".
+  let allOpen = params.has("all");
   for (const type of types) {
     pills.append(el("button", {
       type: "button", "data-type": type.name, style: `--c: ${type.colour}`,
@@ -2030,10 +2031,13 @@ function musicSize(redraw) {
   } }, text);
   const smaller = button(-1, "−", tr("Smaller music", "Cerddoriaeth lai"));
   const bigger = button(1, "+", tr("Bigger music", "Cerddoriaeth fwy"));
-  const group = el("div", { class: "music-size", role: "group" }, label, el("div", { class: "buttons" }, smaller, bigger));
+  // Where the label has no room (a set's row on a phone), the size alone, between the buttons.
+  const now = el("span", { class: "size-now", "aria-hidden": "true" });
+  const group = el("div", { class: "music-size", role: "group" }, label, el("div", { class: "buttons" }, smaller, now, bigger));
   const show = () => {
     const size = `${Math.round(SIZES[state.musicSize] * 100)}%`;
     label.textContent = tr(`Size: ${size}`, `Maint: ${size}`);
+    now.textContent = size;
     group.setAttribute("aria-label", tr(`Size of the music: ${size}`, `Maint y gerddoriaeth: ${size}`));
     smaller.disabled = state.musicSize === 0;
     bigger.disabled = state.musicSize === SIZES.length - 1;
@@ -2775,11 +2779,8 @@ function renderTune(main, group, tune) {
       "●○◐".includes(mark) ? holeSample(mark) : [el("span", { class: `sign${mark === "8va" ? " up" : ""}`, "aria-hidden": "true" }, mark),
         el("span", { class: "visually-hidden" }, `${mark} `)], meaning);
     const name = el("p", { class: "fingering-name" }, el("strong", {}, strings ? `${strings.label()} (${strings.tuning})` : f.label()), " ",
-      el("button", { type: "button", class: "link-button", "aria-label": tr("Change the tablature", "Newid y tablatur"), onclick: () => {
-        practiceTools.open = true;  // the menu is in the practice tools, which may be folded
-        tabSelect.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
-        tabSelect.focus({ preventScroll: true });
-      } }, tr("Change", "Newid")),
+      el("button", { type: "button", class: "link-button", "aria-label": tr("Change the tablature", "Newid y tablatur"), onclick: toTabMenu },
+        tr("Change", "Newid")),
       el("br"), strings
         ? tr("A line for each string, the highest at the top; the number is the fret (0: open)",
           "Llinell i bob tant, yr uchaf ar y brig; y rhif yw'r ffret (0: ar agor)")
@@ -2796,6 +2797,18 @@ function renderTune(main, group, tune) {
         sign("?", f.recorder ? tr("not on the recorder", "ddim ar y recorder") : tr("not on the whistle", "ddim ar y chwisl"))),
     ];
   };
+  // The way to the menu, down in the practice tools, which may be folded.
+  const toTabMenu = () => {
+    practiceTools.open = true;
+    tabSelect.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    tabSelect.focus({ preventScroll: true });
+  };
+  // For a learner who doesn't read the stave yet, a way in under the music: the holes or
+  // frets are three steps away otherwise. Gone once any tablature has been chosen here.
+  const tabInvite = el("p", { class: "caption tab-invite", hidden: state.practice.tab !== "none" || state.practice.tabKnown },
+    tr("Can't read music? ", "Methu darllen cerddoriaeth? "),
+    el("button", { type: "button", class: "link-button", onclick: toTabMenu },
+      tr("Show whistle holes or fiddle frets", "Dangos tyllau'r chwisl neu ffretiau'r ffidil")));
   const fingeringKey = el("div", { class: "caption fingering-key", hidden: state.practice.tab === "none" });
   const showKey = () => {
     fingeringKey.hidden = state.practice.tab === "none";
@@ -2812,8 +2825,10 @@ function renderTune(main, group, tune) {
     onchange: (e) => {
       const was = e.target.getBoundingClientRect().top;
       state.practice.tab = e.target.value;
+      if (state.practice.tab !== "none") state.practice.tabKnown = true;
       savePractice();
       showKey();
+      tabInvite.hidden = true;
       const label = e.target.selectedOptions[0]?.textContent;
       tabSaid.textContent = state.practice.tab === "none" ? label : FINGERED[state.practice.tab]
         ? tr(`${label}: the holes under each note, and how to read them just above the music`, `${label}: y tyllau o dan bob nodyn, a sut i'w darllen ychydig uwchben y gerddoriaeth`)
@@ -2952,7 +2967,7 @@ function renderTune(main, group, tune) {
     controls,
     el("div", { class: "tune-layout" },
       el("div", { class: "tune-main" }, el("div", { class: "score" }, fingeringKey, audio, soundOn, soundNote(), paper),
-        practiceTools, chords),
+        tabInvite, practiceTools, chords),
       // Taking it with you first, in reach beside the music (on a phone, after the practice tools)
       el("div", { class: "tune-side" }, actions,
         el("section", { class: "card" }, el("h2", {}, tr("Details", "Manylion")), details, gloss || null),

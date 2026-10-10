@@ -1554,6 +1554,31 @@ def test_count_in_and_click(page):
     assert page.evaluate(drum)["drums"] > 50  # a click on every beat of the tune
 
 
+def test_practice_tools_remembered(page):
+    # The practice tools are kept on the device, for the next visit and every tune: open or
+    # folded, count-in, click, tablature and the chords. A tablature since taken out: none.
+    page.goto_site("?tune=glandyfi")
+    page.open_tools()
+    page.wait_for_selector(".score .abcjs-staff")
+    page.check(".practice-row label:has-text('Count-in')")
+    page.check(".practice-row label:has-text('Click · on every beat')")
+    page.select_option("#tab-select", "mandolin")
+    page.check(".chord-settings label:has-text('Show chords on the sheet music')")
+    page.check(".chord-settings input[value=both]", force=True)
+    page.goto_site("?tune=cawl-cennin")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.locator(".practice-tools").get_attribute("open") is not None
+    assert page.is_checked(".practice-row label:has-text('Count-in') input")
+    assert page.is_checked(".practice-row label:has-text('Click · on every beat') input")
+    assert page.input_value("#tab-select") == "mandolin"
+    assert page.evaluate("state.practice") == {"countIn": True, "click": True, "tab": "mandolin", "open": True}
+    assert page.evaluate("state.chords") == {"onScore": True, "play": "both"}
+    page.evaluate("localStorage.setItem('practice', JSON.stringify({ tab: 'treble-recorder', click: 'yes' }))")
+    page.goto_site("?tune=glandyfi")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.evaluate("state.practice") == {"countIn": False, "click": False, "tab": "none", "open": None}
+
+
 @pytest.mark.parametrize("tab, first", [("mandolin", "0"), ("guitar", "0")])
 def test_tablature(page, tab, first):
     # Glandyfi starts on D above middle C: the open D string on a mandolin and on a guitar.

@@ -92,9 +92,11 @@ const state = {
   listening: null,      // the microphone, while "Play it to me" listens
   autoListen: false,    // start listening when the notes page opens (from the home page)
   docs: new Map(),      // markdown files, fetched on first use
-  chords: { onScore: false, play: "tune" },  // the chord box's settings, for every tune; play: tune, both or chords
-  practice: { countIn: false, click: false, tab: "none", open: null },
-  browseOpen: { types: false, keys: false },  // Browse's More types / More keys, once opened  // the practice tools, for every tune (open: folded or not)
+  // The chords' and practice tools' settings, for every tune, kept on this device (savedPractice):
+  // chords play: tune, both or chords; practice open: the tools folded or not.
+  chords: savedPractice("chords", { onScore: false, play: "tune" }),
+  practice: savedPractice("practice", { countIn: false, click: false, tab: "none", open: null }),
+  browseOpen: { types: false, keys: false },  // Browse's More types / More keys, once opened
   lang: savedLang(),    // "cy" or "en", for the whole site (tune names and the tunes' own notes stay as written)
   musicSize: savedSize(),  // the music's size, an index into SIZES (1: as drawn)
   redrawScore: null,    // draws the open tune's score again (for printing, see "beforeprint")
@@ -126,6 +128,24 @@ function savedSize() {
     if (Number.isInteger(size) && size >= 0 && size <= 4) return size;
   } catch {}
   return 1;
+}
+
+// The practice tools as they were left last time, on this device: each setting kept only
+// if it's still one of the choices (a tablature since taken out: see TABS).
+function savedPractice(name, defaults) {
+  try {
+    const saved = JSON.parse(localStorage.getItem(name));
+    const valid = { tab: (v) => typeof v === "string", play: (v) => ["tune", "both", "chords"].includes(v),
+      open: (v) => v === null || typeof v === "boolean" };
+    return Object.fromEntries(Object.entries(defaults).map(([key, value]) =>
+      [key, saved && key in saved && (valid[key] ?? ((v) => typeof v === "boolean"))(saved[key]) ? saved[key] : value]));
+  } catch { return { ...defaults }; }
+}
+function savePractice() {
+  try {
+    localStorage.setItem("chords", JSON.stringify(state.chords));
+    localStorage.setItem("practice", JSON.stringify(state.practice));
+  } catch {}
 }
 
 function savedPlayed() {
@@ -1868,6 +1888,8 @@ const TABS = {
   mandolin: { instrument: "mandolin", label: () => tr("Mandolin / fiddle (%T)", "Mandolin / ffidil (%T)") },
   guitar: { instrument: "guitar", label: () => tr("Guitar (%T)", "Gitâr (%T)") },
 };
+// A tablature kept from last time that's no longer one of the choices: none.
+if (!Object.hasOwn(TABS, state.practice.tab) && !Object.hasOwn(FINGERED, state.practice.tab)) state.practice.tab = "none";
 
 // The click: a woodblock on every felt beat (the one the tempo slider counts), high on
 // the first of the bar. abcjs's "drum" pattern is one d per click, then the notes
@@ -2321,11 +2343,11 @@ function chordSettings(tune, redraw) {
       ["chords", tr("Chords only", "Cordiau yn unig"), tr("Chords", "Cordiau")]].map(([value, label, short]) =>
       el("label", {},
         el("input", { type: "radio", name: "chord-playback", value, checked: state.chords.play === value,
-          onchange: () => { state.chords.play = value; redraw(); } }),
+          onchange: () => { state.chords.play = value; savePractice(); redraw(); } }),
         el("span", {}, el("span", { class: "full" }, label), el("span", { class: "short", "aria-hidden": "true" }, short)))));
   const showOnScore = el("label", { class: "switch" },
     el("input", { type: "checkbox", checked: state.chords.onScore,
-      onchange: (e) => { state.chords.onScore = e.target.checked; redraw(); } }), tr("Show chords on the sheet music", "Dangos y cordiau ar y sgôr"));
+      onchange: (e) => { state.chords.onScore = e.target.checked; savePractice(); redraw(); } }), tr("Show chords on the sheet music", "Dangos y cordiau ar y sgôr"));
   return el("div", { class: "practice-line chord-settings" },
     el("div", { class: "playback" }, el("span", { class: "label", id: "chord-playback-label" }, tr("Hear", "Clywed")), playback),
     showOnScore);
@@ -2694,6 +2716,7 @@ function renderTune(main, group, tune) {
     onchange: (e) => {
       const was = e.target.getBoundingClientRect().top;
       state.practice.tab = e.target.value;
+      savePractice();
       showKey();
       const label = e.target.selectedOptions[0]?.textContent;
       tabSaid.textContent = state.practice.tab === "none" ? label : FINGERED[state.practice.tab]
@@ -2727,16 +2750,16 @@ function renderTune(main, group, tune) {
     el("div", { class: "practice-line" },
       // What each does, in a word or two beside it, for someone who hasn't met them
       toggle(el("span", {}, tr("Count-in", "Cyfrif i mewn"), el("span", { class: "what" }, tr(" · a bar of clicks first", " · bar o gliciau yn gyntaf"))),
-        state.practice.countIn, (on) => { state.practice.countIn = on; }),
+        state.practice.countIn, (on) => { state.practice.countIn = on; savePractice(); }),
       toggle(el("span", {}, tr("Click", "Clic"), el("span", { class: "what" }, tr(" · on every beat", " · ar bob curiad"))),
-        state.practice.click, (on) => { state.practice.click = on; }),
+        state.practice.click, (on) => { state.practice.click = on; savePractice(); }),
       canSwing(tune) ? toggle(tr("Swing", "Swing"), settings.swing, (on) => { settings.swing = on; }, "swing",
         tr("Play the quavers long-short, as hornpipes are played", "Chwarae'r cwafers yn hir-byr, fel y chwaraeir pibddawnsiau")) : null),
     el("div", { class: "practice-line" },
       el("div", { class: "control" }, el("label", { for: "tab-select" }, tr("Tablature", "Tablatur")), tabSelect), tabWhat, tabSaid));
   // Folded at first, so the music is the page (the summary says what's inside); then as left.
   const practiceTools = el("details", { class: "practice-tools fold", open: practiceToolsOpen(),
-    ontoggle: (e) => { if (!document.body.classList.contains("practice")) { state.practice.open = e.target.open; } } },
+    ontoggle: (e) => { if (!document.body.classList.contains("practice")) { state.practice.open = e.target.open; savePractice(); } } },
     // What's inside, for the eye; a screen reader hears just the name, then the tools themselves.
     el("summary", {}, el("span", {}, tr("Practice tools", "Offer ymarfer"),
       el("span", { class: "caption", "aria-hidden": "true" }, tune.chords == null

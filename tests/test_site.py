@@ -609,7 +609,7 @@ def test_practice_tools_folded_at_first(browser, site, page):
 
 
 def test_upcoming_sessions(page):
-    # The home page lists the next few sessions in order; then, under "One-off dates", ones
+    # The home page lists the next few sessions in order; then, under "Also coming up: one-off dates", ones
     # on announced dates that aren't among them (up to four weeks ahead: the occasional
     # ones, easy to miss); then how many more there are in the next seven days.
     page.goto_site()
@@ -634,7 +634,7 @@ def test_upcoming_sessions(page):
     }""")
     venue = lambda t: t.split(" · ")[1].split(",")[0]
     assert [venue(t) for t in texts[:3]] == ["Venue 0", "Venue 1", "Venue 2"]  # the next three, in order
-    assert texts[3] == "One-off dates:" and [venue(t) for t in texts[4:6]] == ["Venue 5", "Venue 21"]  # not 40: too far
+    assert texts[3] == "Also coming up: one-off dates" and [venue(t) for t in texts[4:6]] == ["Venue 5", "Venue 21"]  # not 40: too far
     assert texts[6].startswith("And 2 more in the next seven days")  # Venue 3 and 4
     page.click(".coming-up a[href='sesiynau/']")
     page.wait_for_selector(".card.session")

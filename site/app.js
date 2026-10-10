@@ -1773,7 +1773,7 @@ const RECORDER_HOLES = [
 // A whistle's second octave is the first again, blown harder (+).
 const whistle = (name, low) => ({ label: () => tr(`Whistle in ${name}`, `Chwisl ${name}`), low, holes: (n) => (n > 23 ? null : WHISTLE_HOLES[n % 12]), high: (n) => n >= 12 });
 const FINGERED = {
-  "whistle-D": whistle("D", 62), "whistle-C": whistle("C", 60), "whistle-G": whistle("G", 67), "whistle-Bb": whistle("B♭", 70),
+  "whistle-D": whistle("D", 62), "whistle-C": whistle("C", 60), "whistle-G": whistle("G", 67), "whistle-Bb": whistle("Bb", 70),
   recorder: { recorder: true, jumpUp: true, label: () => tr("Descant recorder", "Recorder desgant"), low: 60, holes: (n) => RECORDER_HOLES[n] ?? null, high: () => false },
 };
 // Where a gap goes between the holes, so a column reads as hands do: a whistle's two
@@ -2527,12 +2527,14 @@ function renderTune(main, group, tune) {
       : "";
   };
   let drawn = { parts: [] };
+  let showPracticeOn = null;  // the practice tools' summary: what's on (see practiceTools)
   // Drawing it again (a new tempo or key, a phone turned on its side) makes a new player:
   // if the tune was playing, it carries on from the same point in it.
   const redraw = () => {
     speedHint();
     const playingAt = state.synth?.isStarted ? state.synth.percent ?? 0 : null;
     drawn = drawScore(tune, paper, audio, chords?.querySelector(".chart-box"), onSpeed);
+    showPracticeOn?.();
     const player = state.synth;
     if (playingAt !== null && player) {
       player.play().then(() => { if (state.synth === player && player.isStarted) player.seek(playingAt); }).catch(() => {});
@@ -2681,11 +2683,13 @@ function renderTune(main, group, tune) {
   const fingerKey = () => {
     const f = FINGERED[state.practice.tab];
     const sign = (mark, meaning) => el("li", {},
-      "●○◐".includes(mark) ? holeSample(mark) : el("span", { class: `sign${mark === "8va" ? " up" : ""}`, "aria-hidden": "true" }, mark),
-      el("span", { class: "visually-hidden" }, `${mark} `), meaning);
+      // A hole is said by what it means alone ("covered", not "black circle, covered").
+      "●○◐".includes(mark) ? holeSample(mark) : [el("span", { class: `sign${mark === "8va" ? " up" : ""}`, "aria-hidden": "true" }, mark),
+        el("span", { class: "visually-hidden" }, `${mark} `)], meaning);
     return [
       el("p", { class: "fingering-name" }, el("strong", {}, f.label()), " ",
         el("button", { type: "button", class: "link-button", "aria-label": tr("Change the tablature", "Newid y tablatur"), onclick: () => {
+          practiceTools.open = true;  // the menu is in the practice tools, which may be folded
           tabSelect.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
           tabSelect.focus({ preventScroll: true });
         } }, tr("Change", "Newid")),
@@ -2757,15 +2761,36 @@ function renderTune(main, group, tune) {
         tr("Play the quavers long-short, as hornpipes are played", "Chwarae'r cwafers yn hir-byr, fel y chwaraeir pibddawnsiau")) : null),
     el("div", { class: "practice-line" },
       el("div", { class: "control" }, el("label", { for: "tab-select" }, tr("Tablature", "Tablatur")), tabSelect), tabWhat, tabSaid));
-  // Folded at first, so the music is the page (the summary says what's inside); then as left.
+  // Folded at first, so the music is the page; then as left. The summary says what's inside,
+  // or, once any is on (kept from another tune, or come with a link), which: so a click or
+  // whistle holes on this tune are never a surprise with the tools folded.
+  const practiceCaption = el("span", { class: "caption" });
+  showPracticeOn = () => {
+    const tab = state.practice.tab === "none" ? null
+      : FINGERED[state.practice.tab]?.label() ?? TABS[state.practice.tab].label().replace(/ \(%T\)/, "");
+    const on = [
+      tune.chords != null && state.chords.play === "both" ? tr("hear chords", "clywed cordiau") : null,
+      tune.chords != null && state.chords.play === "chords" ? tr("chords only", "cordiau yn unig") : null,
+      tune.chords != null && state.chords.onScore ? tr("chords on the music", "cordiau ar y sgôr") : null,
+      settings.loop > -2 ? tr("repeat", "ailadrodd") : null,
+      settings.speedUp ? tr("speed up", "cyflymu") : null,
+      settings.swing && canSwing(tune) && tune.type !== "Pibddawns" ? "swing" : null,  // hornpipes are swung anyway
+      state.practice.countIn ? tr("count-in", "cyfrif i mewn") : null,
+      state.practice.click ? tr("click", "clic") : null,
+      tab && tab[0].toLowerCase() + tab.slice(1),
+    ].filter(Boolean);
+    // What's inside is for the eye (a screen reader hears the tools themselves); what's on is for everyone.
+    practiceCaption.toggleAttribute("aria-hidden", !on.length);
+    practiceCaption.textContent = on.length ? `${tr(" · on: ", " · ymlaen: ")}${on.join(", ")}`
+      : tune.chords == null
+        ? tr(" · repeat, speed up, count-in, click, tablature", " · ailadrodd, cyflymu, cyfrif i mewn, clic, tablatur")
+        : tr(" · chords, repeat, speed up, count-in, click, tablature", " · cordiau, ailadrodd, cyflymu, cyfrif i mewn, clic, tablatur");
+  };
   const practiceTools = el("details", { class: "practice-tools fold", open: practiceToolsOpen(),
     ontoggle: (e) => { if (!document.body.classList.contains("practice")) { state.practice.open = e.target.open; savePractice(); } } },
-    // What's inside, for the eye; a screen reader hears just the name, then the tools themselves.
-    el("summary", {}, el("span", {}, tr("Practice tools", "Offer ymarfer"),
-      el("span", { class: "caption", "aria-hidden": "true" }, tune.chords == null
-        ? tr(" · repeat, speed up, count-in, click, tablature", " · ailadrodd, cyflymu, cyfrif i mewn, clic, tablatur")
-        : tr(" · chords, repeat, speed up, count-in, click, tablature", " · cordiau, ailadrodd, cyflymu, cyfrif i mewn, clic, tablatur")))),
+    el("summary", {}, el("span", {}, tr("Practice tools", "Offer ymarfer"), practiceCaption)),
     practiceRow);
+  showPracticeOn();
   const fillLoops = () => {
     loopSelect.replaceChildren(el("option", { value: -2 }, tr("Off", "Dim")),
       el("option", { value: -1, selected: settings.loop === -1 }, tr("The whole tune", "Yr alaw gyfan")),
@@ -3446,6 +3471,7 @@ const soonItem = ({ s, next }, link = null) => el("li", {}, el("strong", {}, soo
 // days, on the sessions page. Filled in once sessions.json has come (the page doesn't wait
 // for it), and hidden when there are none.
 const HOME_SOON = 3, HOME_ALSO = 2;
+const SET_NAV_REST = 4000;  // ms a set's previous / next bar stays up, left alone
 function upcomingSessions() {
   const box = el("section", { class: "coming-up", hidden: true });
   loadSessions().then(({ sessions }) => {
@@ -3459,10 +3485,10 @@ function upcomingSessions() {
     box.replaceChildren(...[
       el("h2", { class: "section-heading" }, tr("Coming up", "I ddod")),
       first.length ? el("ul", {}, first.map(item)) : null,
-      also.length ? el("p", { class: "also" }, tr("One-off dates:", "Dyddiadau arbennig:")) : null,
+      also.length ? el("p", { class: "pills-label" }, tr("Also coming up: one-off dates", "Hefyd i ddod: dyddiadau arbennig")) : null,
       also.length ? el("ul", {}, also.map(item)) : null,
       el("p", {}, el("a", { href: "sesiynau/", "data-route": true }, more
-        ? tr(`And ${more} more in the next seven days: all sessions, on a map`, `A ${more} arall yn y saith diwrnod nesaf: pob sesiwn, ar fap`)
+        ? tr(`And ${more} more in the next seven days: all sessions, on a map`, `${[1, 8, 11].includes(more) ? "Ac" : "A"} ${more} arall yn y saith diwrnod nesaf: pob sesiwn, ar fap`)
         : tr("All sessions, on a map", "Pob sesiwn, ar fap"))),
     ].filter(Boolean));
     box.hidden = false;
@@ -4335,6 +4361,7 @@ function renderSet(main) {
     turned = Date.now();
     window.scrollTo({ top: window.scrollY + all[i].getBoundingClientRect().top - below() });
     showPlace();
+    restLater();
   };
   const turn = (by) => goTo(Math.min(Math.max(place() + by, 0), items.length - 1));
   const where = el("span", { class: "set-nav-where", "aria-live": "polite" });
@@ -4370,9 +4397,26 @@ function renderSet(main) {
         if (Math.abs(y - lastY) < 8) return;
         nav.classList.toggle("tucked", y > lastY && !atEnd && Date.now() - turned > 1000 && !nav.contains(document.activeElement));
         lastY = y;
+        if (!nav.classList.contains("tucked")) restLater();
       });
     }
   };
+  // Left alone (a tablet on a stand, turned with a pedal), it tucks away after a few seconds
+  // too, so it isn't over the bottom line of music; a touch, the mouse or a turn brings it back.
+  let rest = null;
+  const restLater = () => {
+    clearTimeout(rest);
+    nav.classList.remove("tucked");
+    rest = setTimeout(() => {
+      if (!music.isConnected) return;
+      const atEnd = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+      if (!atEnd && !nav.contains(document.activeElement) && !nav.matches(":hover")) nav.classList.add("tucked");
+    }, SET_NAV_REST);
+  };
+  const wake = () => { if (!music.isConnected) { document.removeEventListener("pointermove", wake); document.removeEventListener("touchstart", wake); return; } restLater(); };
+  document.addEventListener("pointermove", wake, { passive: true });
+  document.addEventListener("touchstart", wake, { passive: true });
+  restLater();
   document.addEventListener("keydown", onKey);
   window.addEventListener("scroll", onScroll, { passive: true });
   let touch = null;

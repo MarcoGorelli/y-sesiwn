@@ -236,7 +236,7 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .coming-up ul { list-style: none; padding: 0; margin: 0; }
 .coming-up li { padding: .2rem 0; }
 .coming-up p { margin: .5rem 0 0; }
-.coming-up p.also { margin: .4rem 0 .1rem; color: var(--muted); }
+.coming-up p.pills-label { margin: .9rem 0 .2rem; }
 
 /* "Take it to the session": installing the app and using it offline */
 .offline-card {  /* with a strip of carthen along the top */
@@ -1161,18 +1161,25 @@ body.practice .tune-sub { display: none; }
      rows grow, the text stays as it is. Not links inside a sentence. */
   .tune-list li { padding: 0; }
   .tune-list a, .button-link { display: inline-flex; align-items: center; min-height: 44px; }
+  .tune-list a { min-width: 44px; }  /* short names too: "Môn", "Joio" */
   .site-footer a, .site-footer .link-button { display: inline-block; min-width: 44px; padding: .7rem 0; text-align: center; }
   /* Links that start a line that may wrap (a session coming up, a tune in a set, a link
      under a card): padding on an inline link reaches a finger's height without making its
      line taller, so a wrapped line stays with it; the rows are spaced so they don't meet */
   .coming-up li { padding: .45rem 0; }
-  .coming-up li > a, .set-tune h2 a, .card.place .caption a, .report-line a { padding-block: .65rem; }
-  .fingering-key .link-button { padding-block: .7rem; margin-block: -.7rem; }
+  .coming-up li > a, .set-tune h2 a { padding-block: .65rem; }
+  /* the same, for links in smaller type: the source in a tune's details, the map's, the report,
+     the offline card's, back to My sets */
+  .card.place .caption a, .report-line a, dd > a:first-child, .offline-card .more a, .set-count a { padding-block: .85rem; }
+  .fingering-key .link-button { padding-block: .7rem; margin-block: -.7rem; min-width: 44px; }  /* "Newid" is short */
+  .notes-invite .link-button { display: inline-flex; align-items: center; min-height: 44px; }
+  .segmented label { min-width: 44px; }
   .music-size button { min-width: 44px; }
   .set-item-controls button { min-width: 44px; }
   .switch input { width: 1.75rem; height: 1.75rem; }
   .switch { min-height: 44px; }  /* the whole label is the target */
-  .brand, .tune-kind a { min-height: 44px; align-items: center; }  /* the name, home; a tune's type, the rest of that type */
+  .brand, .tune-kind a { min-height: 44px; align-items: center; }
+  .tune-kind a { min-width: 44px; }  /* the name, home; a tune's type, the rest of that type */
   .tune-kind { align-items: center; }
   .control input[type="range"] { height: 44px; }
   .session-links .action, .session-report > summary, .email-form .check { min-height: 44px; }

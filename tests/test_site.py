@@ -1764,9 +1764,31 @@ def test_count_in_and_click(page):
     assert page.evaluate(drum)["drums"] > 50  # a click on every beat of the tune
 
 
+def test_click_keeps_the_beat_across_a_lead_in(page):
+    # The tune starts with a lead-in, and part A ends on a short bar and part B starts with
+    # one, the two making one 6/8 bar: the clicks carry on every dotted crotchet through
+    # them, none doubled or off the beat. The count-in alone is a bar, less the lead-in.
+    page.goto_site("?tune=y-nant-wrth-fy-nyh")
+    page.open_tools()
+    page.wait_for_selector(".score .abcjs-staff")
+    clicks = """() => {
+      const p = { ...AUDIO_PARAMS, ...clickParams(state.synth.visualObj, state.bySlug.get('y-nant-wrth-fy-nyh')) };
+      const [melody, drums] = state.synth.visualObj.setUpAudio(p).tracks.map((t) => t.filter((e) => e.cmd === 'note'));
+      return { melodyStarts: melody[0].start, starts: drums ? drums.map((e) => e.start) : [] }; }"""
+    page.check(".practice-row label:has-text('Count-in')")
+    count_in = page.evaluate(clicks)
+    assert count_in == {"melodyStarts": 5 / 8, "starts": [0, 3 / 8]}
+    page.uncheck(".practice-row label:has-text('Count-in')")
+    page.check(".practice-row label:has-text('Click · on every beat')")
+    starts = page.evaluate(clicks)["starts"]
+    gaps = [b - a for a, b in zip(starts, starts[1:])]
+    assert len(gaps) > 30 and all(abs(g - 3 / 8) < 1e-3 for g in gaps), " ".join(f"{g * 8:g}" for g in gaps)
+
+
 def test_count_in_lights_the_notes_after_it(browser, site):
-    # The count-in is a bar of clicks before the tune: the notes are lit a bar later too,
-    # in time with the sound (not a bar ahead of it).
+    # The count-in is a bar of clicks before the tune, less its lead-in (Glandyfi's, after
+    # "|:", is a quaver of a 6/8 bar): the notes are lit that much later too, in time with
+    # the sound (not ahead of it, nor a quaver behind).
     context = browser.new_context(service_workers="block")
     page = context.new_page()
     page.add_init_script("localStorage.setItem('practice', JSON.stringify({ countIn: true, click: true }))")
@@ -1776,7 +1798,7 @@ def test_count_in_lights_the_notes_after_it(browser, site):
     page.wait_for_function("state.synth.timer && state.synth.timer.noteTimings.length")
     first, bar = page.evaluate("""() => [state.synth.timer.noteTimings.find((e) => e.type === 'event').milliseconds,
       state.synth.visualObj.millisecondsPerMeasure(state.synth.timer.qpm)]""")
-    assert abs(first - bar) < 5, (first, bar)
+    assert abs(first - bar * 5 / 6) < 5, (first, bar)
     page.click(".abcjs-midi-start")  # pause
     context.close()
 

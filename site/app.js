@@ -2083,6 +2083,57 @@ function clickParams(visualObj, tune) {
   return { drum: `${"d".repeat(beats)} ${notes} ${loud}`, drumBars: 1, drumIntro: countIn ? 1 : 0, drumOff: !click };
 }
 
+// abcjs writes a whole bar of clicks at every bar line, however short the bar. Where a part
+// ends on a short bar and the next starts with a lead-in (the two making one bar, as in Y
+// Nant Wrth Fy Nyh), the clicks overlapped and fell off the beat. So they're laid out again:
+// a short bar carries on the beats of the one before when the two fit in a bar (the lead-in
+// gets none of its own), or else starts afresh, and no click falls past its bar's end.
+// And abcjs measures the lead-in (to shorten the count-in by it) up to the first bar line,
+// which in a tune starting "|: D |" is before any note: so it found none, and the count-in
+// was a bar and a quaver. Here the bar lines before the first note don't count. And abcjs
+// stops a count-in without the click where the tune's notes start: with a lead-in, before
+// the first bar line, before it's written any click (so no count-in at all). Here the click
+// is written all through, and without it only the count-in's bar is kept.
+function clicksOnTheBeat(visualObj) {
+  const barLength = visualObj.getBarLength();
+  visualObj.getPickupLength = () => {
+    let length = 0, tuplet = 1;
+    for (const item of visualObj.lines.flatMap((l) => l.staff?.[0]?.voices?.[0] ?? [])) {
+      if (item.el_type === "bar" && length > 1e-8) return barLength - length < 1e-8 ? 0 : length;
+      if (item.startTriplet) tuplet = item.tripletMultiplier ?? 1;
+      if (item.el_type === "note" && item.rest?.type !== "spacer") length += (item.duration ?? 0) * tuplet;
+      if (item.endTriplet) tuplet = 1;
+      if (length > barLength + 1e-8) return 0;
+    }
+    return 0;
+  };
+  const setUpAudio = visualObj.setUpAudio;
+  visualObj.setUpAudio = (options = {}) => {
+    const audio = setUpAudio.call(visualObj, { ...options, drumOff: false });
+    const drums = audio.tracks.at(-1);
+    if (!drums?.some((e) => e.cmd === "program" && e.instrument === 128)) return audio;
+    const bars = [];  // each bar's clicks, from its high one
+    for (const click of drums.filter((e) => e.cmd === "note")) {
+      if (Number(click.pitch) === 76 || !bars.length) bars.push([click]);
+      else bars.at(-1).push(click);
+    }
+    const eps = 1e-3, kept = [];
+    let into = 0;  // how far into the bar's beats this bar starts
+    const heard = options.drumOff ? bars.slice(0, options.drumIntro ?? 0) : bars;
+    heard.forEach((bar, i) => {
+      const beat = bar[0].duration, whole = bar.reduce((sum, click) => sum + click.duration, 0);
+      const span = i + 1 < bars.length ? bars[i + 1][0].start - bar[0].start : whole;
+      if (into + span > whole + eps) into = 0;
+      bar.forEach((click, k) => {
+        if (k * beat > into - eps && k * beat < into + span - eps) kept.push({ ...click, start: click.start - into });
+      });
+      into = into + span < whole - eps ? into + span : 0;
+    });
+    audio.tracks[audio.tracks.length - 1] = [...drums.filter((e) => e.cmd !== "note"), ...kept];
+    return audio;
+  };
+}
+
 function stopPlayback() {
   if (state.synth) { state.synth.destroy(); state.synth = null; }
   audioFocus.hold(false);
@@ -2262,6 +2313,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
       afterParsing: (parsed) => { if (tablature && !parsed.tablatures) parsed.tablatures = ABCJS.parseOnly(abc, { tablature })[0].tablatures; },
       selectTypes: ["note"], clickListener: playFrom })[0];
   const visualObj = noLoneBar(render(layout), layout, render);
+  clicksOnTheBeat(visualObj);
   // abcjs makes each clickable note a Tab stop: hundreds, between the player and the rest
   // of the page. Keyboards have the space bar to play instead.
   paper.querySelectorAll("svg [tabindex]").forEach((n) => n.removeAttribute("tabindex"));
@@ -2758,6 +2810,7 @@ function renderTune(main, group, tune) {
   // part has been worked up to speed, with a strip of carthen woven in under it.
   const onSpeed = (warp, cap) => {
     speedSaid = "";
+    speedNote.classList.remove("fix");
     const bpm = Math.round((settings.bpm * warp) / 100), goal = settings.speedTo;
     const arrived = warp >= cap;
     speedNote.classList.toggle("arrived", arrived);
@@ -2768,10 +2821,14 @@ function renderTune(main, group, tune) {
   };
   // Before it starts: a "to" no faster than the tempo has nothing to speed up to; or else
   // what ticking (or unticking) Speed up has just changed, said beside it (see startSpeedUp).
-  let speedSaid = "";
+  // What needs putting right (a "to" put back in range, or one with nothing to speed up to)
+  // is in ink, apart from the muted "what just changed".
+  let speedSaid = "", speedFix = false;
   const speedHint = () => {
     speedNote.classList.remove("arrived");
-    speedNote.textContent = settings.speedUp && settings.loop >= -1 && settings.speedTo <= settings.bpm
+    const stuck = settings.speedUp && settings.loop >= -1 && settings.speedTo <= settings.bpm;
+    speedNote.classList.toggle("fix", stuck || (speedFix && !!speedSaid));
+    speedNote.textContent = stuck
       ? tr(`To speed up, start slower (the tempo above) or set a faster “to”.`, `I gyflymu, dechreuwch yn arafach (y tempo uchod) neu gosodwch “i” cyflymach.`)
       : speedSaid;
   };
@@ -2919,16 +2976,17 @@ function renderTune(main, group, tune) {
       speedSaid = settings.speedTo === to ? ""
         : to > 240 ? tr("240 bpm is the fastest.", "240 bpm yw'r cyflymaf.")
         : tr(`Between 30 and 240 bpm: back to the tune's ${tune.bpm}.`, `Rhwng 30 a 240 bpm: yn ôl i ${tune.bpm} yr alaw.`);
+      speedFix = !!speedSaid;
       e.target.value = settings.speedTo;
       speedHint();
       showTempo();
     } });
-  const speedToggle = toggle(el("span", {}, tr("Speed up", "Cyflymu"), el("span", { class: "more" }, tr(" each time round", " bob tro"))), settings.speedUp,
-    (on) => { settings.speedUp = on; speedRange.hidden = !on; if (on) startSpeedUp(); else stopSpeedUp(); showTempo(); });
-  // From and to, under the tick once it's ticked (until then there's nothing to set).
+  const speedUp = toggle(el("span", {}, tr("Speed up", "Cyflymu"), el("span", { class: "more" }, tr(" each time round", " bob tro"))), settings.speedUp,
+    (on) => { settings.speedUp = on; speedRange.hidden = !on; if (on) startSpeedUp(); else stopSpeedUp(); showTempo(); }, "speed-up");
+  // From and to, once it's ticked (until then there's nothing to set): after the tick on a
+  // wide screen, on its own line under Repeat and the tick on a phone, so the tick never moves.
   const speedRange = el("span", { class: "speed-range", hidden: !settings.speedUp },
     tr("from ", "o "), speedFrom, tr(" to ", " i "), speedTo, tr(" bpm", " bpm"));
-  const speedUp = el("div", { class: "speed-up" }, speedToggle, speedRange);
   const setBpm = (bpm) => {  // not kept: speed up isn't either
     settings.bpm = bpm;
     const tempo = controls.querySelector("#tempo");
@@ -2948,6 +3006,7 @@ function renderTune(main, group, tune) {
     const slower = settings.bpm >= goal;
     if (slower) setBpm(Math.max(30, Math.round(goal * .7)));
     undoSpeedUp = { ...was, loop: repeats ? was.loop : null, bpm: slower ? was.bpm : null, at: settings.bpm };
+    speedFix = false;
     speedSaid = slower && repeats ? tr(`Starting at ${settings.bpm} bpm, repeating the whole tune.`, `Yn dechrau ar ${settings.bpm} bpm, gan ailadrodd yr alaw gyfan.`)
       : slower ? tr(`Starting at ${settings.bpm} bpm.`, `Yn dechrau ar ${settings.bpm} bpm.`)
       : repeats ? tr("Repeating the whole tune.", "Yn ailadrodd yr alaw gyfan.") : "";
@@ -2956,6 +3015,7 @@ function renderTune(main, group, tune) {
     const undo = undoSpeedUp;
     undoSpeedUp = null;
     speedSaid = "";
+    speedFix = false;
     if (!undo) return;
     if (undo.loop !== null && settings.loop === -1) { settings.loop = undo.loop; fillLoops(); }
     if (undo.bpm !== null && settings.bpm === undo.at) {
@@ -3165,8 +3225,8 @@ function renderTune(main, group, tune) {
   // the music, in reach of Play, never folded away; the paper stays the player and the music.
   const practiseNow = el("div", { class: "practise-now", role: "group", "aria-label": tr("Repeat and speed up", "Ailadrodd a chyflymu") },
     el("div", { class: "practice-line" },
-      el("div", { class: "control" }, el("label", { for: "loop-select" }, tr("Repeat", "Ailadrodd")), loopSelect), speedUp),
-    speedNote);
+      el("div", { class: "control" }, el("label", { for: "loop-select" }, tr("Repeat", "Ailadrodd")), loopSelect), speedUp, speedRange,
+      speedNote));
   // What playing will sound like besides the tune, by the player, where Play is pressed: so
   // a click or chords kept for this tune are never a surprise at a session.
   const soundOn = el("p", { class: "caption sound-on", hidden: true });

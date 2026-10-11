@@ -1930,6 +1930,7 @@ function drawHoles(text, holes) {
     if (dy) y += dy;
     if (row.textContent === "8va") row.setAttribute("class", "octave-up");
     else if (row.textContent === "+" || row.textContent === "?") row.setAttribute("class", "sign");
+    else if (row.textContent === ".") row.textContent = "";  // the room under the holes (withFingerings)
     if (!"●○◐".includes(row.textContent) || !row.textContent) continue;
     marks.push({ mark: row.textContent, y: y - .35 * size });  // the glyph's middle, above its baseline
     row.textContent = "";
@@ -2045,6 +2046,9 @@ function withFingerings(abc, instrument, size = 11) {
     if (notes.some((f) => f?.high)) row((f) => (f?.high ? "+" : "*"));
     // The holes, a row each; drawn as circles once abcjs has placed them (drawHoles).
     for (let hole = 0; hole < holes; hole++) row((f) => (f === "tied" ? "*" : f ? f.holes[hole] : hole === 0 ? "?" : "*"));
+    // Then a row of room, blanked once drawn (drawHoles), so the holes don't run into the
+    // next line's stave and read as its own. abcjs leaves no room for a row of nothing.
+    row(() => ".");
   });
   return out.join("\n");
 }
@@ -2202,7 +2206,21 @@ function hideMeasuring() {
 
 // Tapping (or clicking) a note plays the tune from there: to practise a passage, or find
 // your place. A note in a repeated part starts from its first time round.
-async function playFrom(abcElem) {
+// Not when the finger was scrolling the page, though: abcjs takes any touch that ends on a
+// note as a tap, even one that moved, or one that only stopped the page sliding on.
+let touchAt = null, touchMoved = false, scrolledAt = 0;
+window.addEventListener("scroll", () => { scrolledAt = Date.now(); }, { passive: true });
+window.addEventListener("touchstart", (e) => {
+  const t = e.touches[0];
+  touchAt = t && { x: t.clientX, y: t.clientY };
+  touchMoved = Date.now() - scrolledAt < 150;  // the page still sliding from a flick
+}, { passive: true, capture: true });
+window.addEventListener("touchmove", (e) => {
+  const t = e.touches[0];
+  if (touchAt && t && Math.hypot(t.clientX - touchAt.x, t.clientY - touchAt.y) > 10) touchMoved = true;
+}, { passive: true, capture: true });
+async function playFrom(abcElem, tuneNumber, classes, analysis, drag, event) {
+  if (touchMoved && !event?.type?.startsWith("mouse")) return;  // abcjs passes the touch, or the touchend
   const ms = [abcElem.currentTrackMilliseconds ?? []].flat()[0];
   const player = state.synth;
   if (ms == null || !player) return;

@@ -95,8 +95,9 @@ const state = {
   // For every tune, kept on this device (savedPractice): the tablature (the reader's
   // instrument), the count-in and click, chords on the music, and the practice tools folded or not; whether the holes or tabs have had
   // their answer (tabKnown), and how many tunes have been played with the music alone before
-  // they had (heard), and whether a tune has shown how to read the holes (holesSeen). The rest is kept per tune (savedTunes).
-  practice: savedPractice("practice", { tab: "none", countIn: false, click: false, chordsOnScore: false, open: null, tabKnown: false, heard: 0, holesSeen: false }),
+  // they had (heard), whether a tune has shown how to read the holes (holesSeen), and whether
+  // another version has been opened from the tabs (versionsSeen). The rest is kept per tune (savedTunes).
+  practice: savedPractice("practice", { tab: "none", countIn: false, click: false, chordsOnScore: false, open: null, tabKnown: false, heard: 0, holesSeen: false, versionsSeen: false }),
   browseOpen: { types: false, keys: false },  // Browse's More types / More keys, once opened
   lang: savedLang(),    // "cy" or "en", for the whole site (tune names and the tunes' own notes stay as written)
   musicSize: savedSize(),  // the music's size, an index into SIZES (1: as drawn)
@@ -137,7 +138,7 @@ function savedPractice(name, defaults) {
   try {
     const saved = JSON.parse(localStorage.getItem(name));
     const valid = { tab: (v) => typeof v === "string", open: (v) => v === null || typeof v === "boolean", tabKnown: (v) => typeof v === "boolean",
-      heard: (v) => Number.isInteger(v) && v >= 0, holesSeen: (v) => typeof v === "boolean",
+      heard: (v) => Number.isInteger(v) && v >= 0, holesSeen: (v) => typeof v === "boolean", versionsSeen: (v) => typeof v === "boolean",
       countIn: (v) => typeof v === "boolean", click: (v) => typeof v === "boolean", chordsOnScore: (v) => typeof v === "boolean" };
     return Object.fromEntries(Object.entries(defaults).map(([key, value]) =>
       [key, saved && key in saved && valid[key](saved[key]) ? saved[key] : value]));
@@ -2316,10 +2317,12 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   paper.dataset.layout = JSON.stringify(layout);
   abc = shortCredits(abc, layout);
   // Full screen on a wide screen draws the music bigger, to fill it, and the credit and the
-  // tempo with it, until they outgrew the tune's name above: they're kept at their usual size.
+  // tempo with it, until they outgrew the tune's name above: the credit is kept at its usual
+  // size. The tempo's "= 112" grows with its note (♩.), read from the stand, but no bigger
+  // than the name (1.35rem): at its usual size beside a big note it looked cut short.
   const grow = paper.clientWidth / ((layout.staffwidth ?? 740) + 30);
   if (document.body.classList.contains("practice") && !state.printing && grow > 1.1) {
-    abc = `%%composerfont * ${Math.round(9 / grow)}\n%%tempofont * ${Math.round(12 / grow)}\n${abc}`;
+    abc = `%%composerfont * ${Math.round(9 / grow)}\n%%tempofont * ${Math.round((12 * Math.min(grow, 1.75)) / grow)}\n${abc}`;
   }
   // The tablature's name is said once, above the music (fingeringKey), not on every line.
   const tablature = tab ? [{ instrument: tab.instrument, label: "" }] : null;
@@ -2755,13 +2758,15 @@ const SOURCE_SITES = { "alawoncymru.com": () => "Alawon Cymru", "trillian.mit.ed
 
 // How someone plays each tune, kept on this device (a whistle player who always plays
 // Glandyfi in A, slowed to 90): { tune folder: what's changed from the tune as written }.
+// The tempos a tune can be played at, everywhere: the slider, "from" and "to", a link's ?tempo=.
+const MIN_BPM = 30, MAX_BPM = 240;
 // key: semitones from the written key; bpm; play (chords: "tune", "both" or "chords");
 // swing. Kept for that tune only. The tablature, count-in, click and chords on the music
 // aren't here: they're how the reader practises, for every tune (state.practice). Repeat
 // and speed up aren't kept at all: they're chosen afresh each time.
 const KEPT = {
   key: (v) => Number.isInteger(v) && v >= -5 && v <= 6,
-  bpm: (v) => Number.isInteger(v) && v >= 30 && v <= 240,
+  bpm: (v) => Number.isInteger(v) && v >= MIN_BPM && v <= MAX_BPM,
   play: (v) => ["tune", "both", "chords"].includes(v),
   swing: (v) => typeof v === "boolean",
 };
@@ -2814,7 +2819,7 @@ function renderTune(main, group, tune) {
   const shift = keyShift(tune, new URLSearchParams(location.search).get("key"));
   if (shift !== null) settings.transpose = shift;
   const tempo = Math.round(Number(new URLSearchParams(location.search).get("tempo")));  // …and its tempo (?tempo=80)
-  if (tempo >= 30 && tempo <= 200) settings.bpm = tempo;
+  if (tempo >= MIN_BPM && tempo <= MAX_BPM) settings.bpm = tempo;
   // …and the address follows the page's key, so it can be copied as it is.
   const showInAddress = () => history.replaceState(null, "", tuneLink(group, tune, settings));
   showInAddress();  // a key chosen earlier (this visit) shows in the address too
@@ -2823,6 +2828,18 @@ function renderTune(main, group, tune) {
   const audio = el("div", { class: "audio" });
   const chords = chordCard(tune);
   const speedNote = el("span", { class: "caption speed-note", "aria-live": "polite" });
+  // While it plays, the page follows the music and the note above scrolls away: the pinned
+  // player says it too, in place of its clock ("85 / 112 bpm", then "Da iawn! 112 bpm" by a
+  // strip of carthen). Seen, not heard: the note above already says it to a screen reader.
+  const barPace = el("span", { class: "bar-pace", "aria-hidden": "true" });
+  const showPace = (bpm, arrived) => {
+    const goal = settings.speedTo;
+    const on = settings.speedUp && settings.loop >= -1 && goal > settings.bpm;
+    barPace.classList.toggle("arrived", !!arrived);
+    barPace.replaceChildren(...(!on ? [] : arrived
+      ? [el("strong", { lang: "cy" }, "Da iawn!"), " ", bpm, el("span", { class: "unit" }, " bpm")]
+      : [bpm, " / ", goal, el("span", { class: "unit" }, " bpm")]));
+  };
   // Speeding up: how far there is to go, then a "da iawn" (well done) when the tune or
   // part has been worked up to speed, with a strip of carthen woven in under it.
   const onSpeed = (warp, cap) => {
@@ -2835,6 +2852,7 @@ function renderTune(main, group, tune) {
       ? tr(`Reached ${bpm} bpm. `, `Wedi cyrraedd ${bpm} bpm. `)
       : tr(`now ${bpm} of ${goal} bpm`, `nawr ${bpm} o ${goal} bpm`));
     if (arrived) speedNote.append(el("strong", { lang: "cy" }, "Da iawn!"));
+    showPace(bpm, arrived);
   };
   // Before it starts: a "to" no faster than the tempo has nothing to speed up to; or else
   // what ticking (or unticking) Speed up has just changed, said beside it (see startSpeedUp).
@@ -2846,7 +2864,7 @@ function renderTune(main, group, tune) {
     const stuck = settings.speedUp && settings.loop >= -1 && settings.speedTo <= settings.bpm;
     speedNote.classList.toggle("fix", stuck || (speedFix && !!speedSaid));
     speedNote.textContent = stuck
-      ? tr(`To speed up, start slower (the tempo above) or set a faster “to”.`, `I gyflymu, dechreuwch yn arafach (y tempo uchod) neu gosodwch “i” cyflymach.`)
+      ? tr(`To speed up, set a slower “from” or a faster “to”.`, `I gyflymu, gosodwch “o” arafach neu “i” cyflymach.`)
       : speedSaid;
   };
   let drawn = { parts: [] };
@@ -2858,6 +2876,9 @@ function renderTune(main, group, tune) {
     speedHint();
     const playingAt = state.synth?.isStarted ? state.synth.percent ?? 0 : null;
     drawn = drawScore(tune, paper, audio, chords?.querySelector(".chart-box"), onSpeed);
+    // A new player starts at the tempo: its bar says so (when speeding up), after its clock.
+    showPace(settings.bpm, false);
+    audio.querySelector(".abcjs-inline-audio")?.append(barPace);
     // A part kept from last time that the tune no longer has (corrected since): not repeating.
     if (settings.loop >= (drawn.parts.length > 1 ? drawn.parts.length : 0)) settings.loop = -2;
     showPracticeOn?.();
@@ -2895,11 +2916,15 @@ function renderTune(main, group, tune) {
     const { pitch, root } = tune.key;
     const mode = modeName(tune.key.modeName);
     // Under the menu, in a line kept for it, so nothing moves when it appears: a page that
-    // opens in the key kept from last time says so (not a key just chosen, or a link's).
+    // opens in the key kept from last time says so (not a key just chosen, or a link's); and
+    // a key moved from the written one says which that was, as the phone's line does.
     const usual = el("span", { class: "caption usual-key" });
     const keptKey = shift === null && kept.key && kept.key === settings.transpose ? kept.key : null;
     const showUsual = () => {
-      usual.textContent = keptKey !== null && settings.transpose === keptKey ? tr("Your key last time", "Eich cywair y tro diwethaf") : "";
+      const written = `${root} ${mode}`;
+      usual.textContent = keptKey !== null && settings.transpose === keptKey
+        ? tr(`Your key last time · original ${written}`, `Eich cywair y tro diwethaf · gwreiddiol ${written}`)
+        : settings.transpose ? tr(`Original: ${written}`, `Gwreiddiol: ${written}`) : "";
     };
     const select = el("select", { id: "key-select", onchange: (e) => {
       settings.transpose = +e.target.value;
@@ -2914,26 +2939,41 @@ function renderTune(main, group, tune) {
     controls.append(el("div", { class: "control" }, el("label", { for: "key-select" }, tr("Key", "Cywair")), select, usual));
   }
   const tempoLabel = el("label", { for: "tempo" });
-  // "from" is the tempo itself: tapped, it goes up to the slider (on a phone, opening the
-  // key and tempo line), so where it's set is never a thing to remember.
-  const speedFrom = el("button", { type: "button", class: "link-button speed-from", onclick: () => {
-    if (getComputedStyle(summary).display !== "none" && !state.controlsOpen) summary.click();
-    const slider = controls.querySelector("#tempo");
-    slider.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
-    slider.focus({ preventScroll: true });
-  } });
+  // "from" is the tempo itself, typed: the exact tempo, which the slider makes fiddly on a
+  // phone. Put back in range, it says so, as "to" does.
+  const speedFrom = el("input", { id: "speed-from", type: "number", min: MIN_BPM, max: MAX_BPM, step: 1, inputmode: "numeric",
+    class: "speed-from", "aria-label": tr("Speed up from (bpm)", "Cyflymu o (bpm)"),
+    onchange: (e) => {
+      const from = Math.round(+e.target.value);
+      const bpm = Number.isFinite(from) && from >= MIN_BPM ? Math.min(MAX_BPM, from) : settings.bpm;
+      speedSaid = bpm === from ? ""
+        : from > MAX_BPM ? tr(`${MAX_BPM} bpm is the fastest.`, `${MAX_BPM} bpm yw'r cyflymaf.`)
+        : tr(`Between ${MIN_BPM} and ${MAX_BPM} bpm.`, `Rhwng ${MIN_BPM} a ${MAX_BPM} bpm.`);
+      speedFix = !!speedSaid;
+      undoSpeedUp = null;
+      setBpm(bpm);
+      e.target.value = settings.bpm;  // (showTempo leaves a "from" being typed in alone)
+      saveTune(tune, "bpm", settings.bpm);
+      redraw();
+    } });
   // As the key: a page that opens at the tempo kept from last time says so (not a link's).
-  const keptBpm = !(tempo >= 30 && tempo <= 200) && kept.bpm != null ? kept.bpm : null;
+  const keptBpm = !(tempo >= MIN_BPM && tempo <= MAX_BPM) && kept.bpm != null ? kept.bpm : null;
   const usualTempo = el("span", { class: "caption usual-key" });
+  // The score's own tempo mark follows the tempo chosen, so once it's moved the written one
+  // is said under the slider (as the key's is), and marked on it.
   const showTempo = () => {
     // Which note is the beat, the score's own tempo mark shows (♩. = 112).
     tempoLabel.textContent = tr(`Tempo: ${settings.bpm} bpm`, `Tempo: ${settings.bpm} bpm`);
-    usualTempo.textContent = keptBpm !== null && settings.bpm === keptBpm ? tr("Your tempo last time", "Eich tempo y tro diwethaf") : "";
+    usualTempo.textContent = keptBpm !== null && settings.bpm === keptBpm
+      ? tr(`Your tempo last time · original ${tune.bpm}`, `Eich tempo y tro diwethaf · gwreiddiol ${tune.bpm}`)
+      : settings.bpm !== tune.bpm ? tr(`Original: ${tune.bpm} bpm`, `Gwreiddiol: ${tune.bpm} bpm`) : "";
+    controls.querySelector("#tempo")?.setAttribute("aria-valuetext", `${settings.bpm} bpm`);
     // Before Speed up is ticked, "from" says where ticking it would start: the tempo, or,
     // if that's already the goal, 70% of it (see startSpeedUp), never "from 100 to 100".
     const goal = settings.speedTo;
-    speedFrom.textContent = String(!settings.speedUp && settings.bpm >= goal ? Math.max(30, Math.round(goal * .7)) : settings.bpm);
-    speedFrom.setAttribute("aria-label", tr(`From ${speedFrom.textContent} bpm: change the tempo`, `O ${speedFrom.textContent} bpm: newid y tempo`));
+    if (document.activeElement !== speedFrom) {
+      speedFrom.value = String(!settings.speedUp && settings.bpm >= goal ? Math.max(MIN_BPM, Math.round(goal * .7)) : settings.bpm);
+    }
     showSummary();
   };
   showTempo();
@@ -2941,10 +2981,11 @@ function renderTune(main, group, tune) {
   practice.textContent = practiceLabel(document.body.classList.contains("practice"));
   controls.append(...[el("div", { class: "control tempo" }, tempoLabel,
     el("input", {
-      id: "tempo", type: "range", min: 30, max: 200, value: settings.bpm,
+      id: "tempo", type: "range", min: MIN_BPM, max: MAX_BPM, value: settings.bpm, list: "tempo-written",
+      "aria-valuetext": `${settings.bpm} bpm`,
       oninput: (e) => { settings.bpm = +e.target.value; showTempo(); },
       onchange: () => { speedSaid = ""; undoSpeedUp = null; saveTune(tune, "bpm", settings.bpm); showInAddress(); redraw(); },
-    }), usualTempo),
+    }), el("datalist", { id: "tempo-written" }, el("option", { value: tune.bpm })), usualTempo),
     // How the music is shown, at the end of the row: its size, and full screen.
     el("div", { class: "view-tools" }, musicSize(redraw), practice)]);
   // Taking it with you: sharing, printing, saving, a set.
@@ -2971,16 +3012,19 @@ function renderTune(main, group, tune) {
   // The versions: tabs on a wider screen; on a phone a small "Version 1 of 4" beside the
   // tune's type, that opens to the list over the music, so the music starts high on the first screen.
   const versionNote = versionNotes(group);
+  // Once a version has been opened from them, the tabs are known: on a wider screen their
+  // "what versions are" line goes, so the music starts higher (it stays in a phone's list).
   const versionLink = (v) => el("a", {
     href: tuneUrl(group.slug, v.version), "data-route": true,
     class: v === tune ? "active" : null, "aria-current": v === tune ? "page" : null,
+    onclick: () => { if (v !== tune && !state.practice.versionsSeen) { state.practice.versionsSeen = true; savePractice(); } },
   }, el("span", {}, tr(`Version ${v.version}`, `Fersiwn ${v.version}`)),
   versionNote.get(v) ? el("small", {}, versionNote.get(v)) : null);
   const whatVersions = () => el("span", { class: "caption versions-what" },
     tr("The same tune from different books or arrangements", "Yr un alaw o lyfrau neu drefniannau gwahanol"));
   const versions = group.versions.length > 1
     ? [el("nav", { class: "versions", "aria-label": tr("Versions of this tune", "Fersiynau'r alaw hon") },
-        group.versions.map(versionLink), whatVersions()),
+        group.versions.map(versionLink), state.practice.versionsSeen ? null : whatVersions()),
       versionsFold(el("summary", {}, tr(`Version ${tune.version} of ${group.versions.length}`, `Fersiwn ${tune.version} o ${group.versions.length}`)),
         el("nav", { class: "versions-list", "aria-label": tr("Versions of this tune", "Fersiynau'r alaw hon") },
           whatVersions(), group.versions.map(versionLink)))]
@@ -2992,19 +3036,20 @@ function renderTune(main, group, tune) {
   const loopSelect = el("select", { id: "loop-select", onchange: (e) => { settings.loop = +e.target.value; speedSaid = ""; undoSpeedUp = null; redraw(); } });
   const toggle = (label, checked, onchange, cls) => el("label", { class: `switch${cls ? ` ${cls}` : ""}` },
     el("input", { type: "checkbox", checked, onchange: (e) => { onchange(e.target.checked); redraw(); } }), label);
-  const speedTo = el("input", { id: "speed-to", type: "number", min: 30, max: 240, step: 1, inputmode: "numeric", value: settings.speedTo,
+  const speedTo = el("input", { id: "speed-to", type: "number", min: MIN_BPM, max: MAX_BPM, step: 1, inputmode: "numeric", value: settings.speedTo,
     "aria-label": tr("Speed up to (bpm)", "Cyflymu i (bpm)"),
     onchange: (e) => {
       const to = Math.round(+e.target.value);
-      settings.speedTo = Number.isFinite(to) && to >= 30 ? Math.min(240, to) : tune.bpm;
+      settings.speedTo = Number.isFinite(to) && to >= MIN_BPM ? Math.min(MAX_BPM, to) : tune.bpm;
       // Put back in range, it says so (a number typed is never changed silently).
       speedSaid = settings.speedTo === to ? ""
-        : to > 240 ? tr("240 bpm is the fastest.", "240 bpm yw'r cyflymaf.")
-        : tr(`Between 30 and 240 bpm: back to the tune's ${tune.bpm}.`, `Rhwng 30 a 240 bpm: yn ôl i ${tune.bpm} yr alaw.`);
+        : to > MAX_BPM ? tr(`${MAX_BPM} bpm is the fastest.`, `${MAX_BPM} bpm yw'r cyflymaf.`)
+        : tr(`Between ${MIN_BPM} and ${MAX_BPM} bpm: back to the tune's ${tune.bpm}.`, `Rhwng ${MIN_BPM} a ${MAX_BPM} bpm: yn ôl i ${tune.bpm} yr alaw.`);
       speedFix = !!speedSaid;
       e.target.value = settings.speedTo;
       speedHint();
       showTempo();
+      if (!state.synth?.isStarted) showPace(settings.bpm, false);  // playing, the next time round says it
     } });
   const speedUp = toggle(el("span", {}, tr("Speed up", "Cyflymu"), el("span", { class: "more" }, tr(" each time round", " bob tro"))), settings.speedUp,
     (on) => { settings.speedUp = on; speedRange.hidden = !on; if (on) startSpeedUp(); else stopSpeedUp(); showTempo(); }, "speed-up");
@@ -3029,7 +3074,7 @@ function renderTune(main, group, tune) {
     if (repeats) { settings.loop = -1; fillLoops(); }
     const goal = settings.speedTo;
     const slower = settings.bpm >= goal;
-    if (slower) setBpm(Math.max(30, Math.round(goal * .7)));
+    if (slower) setBpm(Math.max(MIN_BPM, Math.round(goal * .7)));
     undoSpeedUp = { ...was, loop: repeats ? was.loop : null, bpm: slower ? was.bpm : null, at: settings.bpm };
     speedFix = false;
     speedSaid = slower && repeats ? tr(`Starting at ${settings.bpm} bpm, repeating the whole tune.`, `Yn dechrau ar ${settings.bpm} bpm, gan ailadrodd yr alaw gyfan.`)

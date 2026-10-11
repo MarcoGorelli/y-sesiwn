@@ -564,12 +564,11 @@ details[open] > summary::before { transform: rotate(90deg); }
 .speed-range { display: inline-flex; align-items: center; gap: .35rem; color: var(--muted); }
 .speed-range[hidden] { display: none; }
 .speed-range > span { color: var(--text); font-variant-numeric: tabular-nums; }
-.speed-range .speed-from { margin: 0; font-size: inherit; font-variant-numeric: tabular-nums; }
 /* What it said, a line of its own under the controls, kept while Speed up is ticked, so
    "now 85 of 112 bpm" coming and going as it plays never moves the music. */
 .practise-now .speed-note { flex: 1 0 100%; margin: 0 0 .15rem; min-height: 1.4em; }
 .practise-now:has(.speed-up input:checked) .speed-note:empty { display: block; }
-.practise-now #speed-to { padding-block: .2rem; }  /* no taller than the menu: the row keeps its height */
+.practise-now :is(#speed-from, #speed-to) { padding-block: .2rem; }  /* no taller than the menu: the row keeps its height */
 /* On a phone, one line, so the music still starts on the first screen: "Speed up" (a
    screen reader still hears "each time round"); from and to on a line under both */
 @media (max-width: 800px) {  /* the menu a touch target's height there: the tick's words level with it */
@@ -579,7 +578,7 @@ details[open] > summary::before { transform: rotate(90deg); }
 @media (max-width: 480px) {
   .practise-now .speed-up .more { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
-#speed-to {
+#speed-from, #speed-to {
   width: 4.5rem; padding: .3rem .4rem; text-align: right; font-variant-numeric: tabular-nums;
   border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg);
 }
@@ -667,6 +666,17 @@ details[open] > summary::before { transform: rotate(90deg); }
 .score .abcjs-note_playing { fill: var(--accent); }
 .score .abcjs-note { cursor: pointer; }  /* a tap plays from that note (playFrom in app.js) */
 .score .abcjs-note_selected { fill: currentColor; }  /* …without leaving it marked */
+/* Speeding up, the pinned player says how far it has got, in place of its clock (app.js):
+   "85 / 112 bpm" in ivory, like the handle; worked up to speed, "Da iawn! 112 bpm" by a
+   short strip of carthen, still, as the bar shouldn't move under the music. */
+.score .abcjs-inline-audio .bar-pace { flex: none; display: flex; align-items: center; gap: .45rem; margin: 0 .55rem 0 .35rem;
+  color: var(--ivory); font-size: .85rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.score .abcjs-inline-audio .bar-pace:empty { display: none; }
+.score .abcjs-inline-audio:has(.bar-pace:not(:empty)) .abcjs-midi-clock { display: none; }
+.score .abcjs-inline-audio .bar-pace.arrived::after { content: ""; width: 2.25rem; height: 7px;
+  background: url("carthen.svg") repeat-x left center / auto 7px; border-radius: 1px; }
+body.practice .score .abcjs-inline-audio .bar-pace { font-size: 1rem; }  /* read from the stand */
+@media (max-width: 480px) { .score .abcjs-inline-audio .bar-pace .unit { display: none; } }
 /* Player: play/loop in red while they're on. */
 .score .abcjs-inline-audio .abcjs-btn.abcjs-pushed { background-color: var(--accent); }
 /* Play is the page's main action: a red disc on the slate bar (white on Welsh red, 5.9:1).
@@ -907,6 +917,8 @@ body.practice .nav, body.practice .tune-side, body.practice .card.chords, body.p
 body.practice main { max-width: none; padding: 1rem 1.5rem 2rem; }
 body.practice h1 { font-size: 1.35rem; }
 body.practice .controls { margin: .5rem 0 1rem; }
+/* …but the room under the row for "Original: G major" when it's said (a phone's one line hides it) */
+@media (min-width: 801px) { body.practice .controls:has(.usual-key:not(:empty)) { margin-bottom: 2rem; } }
 body.practice .tune-layout { grid-template-columns: 1fr; }
 body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 1rem 1.5rem 1.5rem; }
 body.practice :is(.versions, .versions-fold, .tune-actions, .tab-invite) { display: none; }

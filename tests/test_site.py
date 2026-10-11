@@ -340,7 +340,7 @@ def test_tablature_invite(page):
     assert page.locator(".practice-tools").evaluate("d => !d.open")
     assert page.input_value("#tab-select") == "whistle-D"
     page.wait_for_timeout(100)  # (a toggle event would come a moment after)
-    assert page.evaluate("state.practice") == {"tab": "whistle-D", "countIn": False, "click": False, "chordsOnScore": False, "open": None, "tabKnown": True, "heard": 0, "holesSeen": False}
+    assert page.evaluate("state.practice") == {"tab": "whistle-D", "countIn": False, "click": False, "chordsOnScore": False, "open": None, "tabKnown": True, "heard": 0, "holesSeen": False, "versionsSeen": False}
     # Change goes down to the menu; opened for it, the tools aren't kept open
     page.click(".fingering-key .link-button")
     page.wait_for_function("document.activeElement.id === 'tab-select'")
@@ -361,7 +361,7 @@ def test_tablature_invite_just_the_music(page):
     assert page.inner_text(".tab-invite").startswith("Just the music.")
     assert page.evaluate("document.activeElement.closest('.tab-invite') !== null")
     assert page.locator(".score .abcjs-lyric").count() == 0
-    assert page.evaluate("state.practice") == {"tab": "none", "countIn": False, "click": False, "chordsOnScore": False, "open": None, "tabKnown": True, "heard": 0, "holesSeen": False}
+    assert page.evaluate("state.practice") == {"tab": "none", "countIn": False, "click": False, "chordsOnScore": False, "open": None, "tabKnown": True, "heard": 0, "holesSeen": False, "versionsSeen": False}
     # Where they are, if wanted later: a link down to the menu (the tools opened for it aren't kept)
     page.click(".tab-invite .link-button:has-text('the practice tools')")
     page.wait_for_function("document.activeElement.id === 'tab-select'")
@@ -990,7 +990,7 @@ def test_tablature_chosen_on_the_home_page(page):
     assert page.locator(".tab-choice [aria-checked=true]").inner_text() == "Just the music"
     page.click(".tab-choice button:has-text('Descant recorder')")
     assert page.inner_text(".tab-said") == "Descant recorder under the notes, on every tune. Kept on this device."
-    assert page.evaluate("state.practice") == {"tab": "recorder", "countIn": False, "click": False, "chordsOnScore": False, "open": None, "tabKnown": True, "heard": 0, "holesSeen": False}
+    assert page.evaluate("state.practice") == {"tab": "recorder", "countIn": False, "click": False, "chordsOnScore": False, "open": None, "tabKnown": True, "heard": 0, "holesSeen": False, "versionsSeen": False}
     page.goto_site("alaw/llancesau-trefaldwyn/")
     page.wait_for_selector(".score g.holes", state="attached")
     assert page.locator(".tab-invite").is_hidden() and "recorder" in page.locator(".fingering-key").text_content()
@@ -1460,24 +1460,25 @@ def test_usual_key_remembered(page, site):
     # not as it's chosen); a shared link's key wins without replacing it.
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-staff")
+    # A key moved says the written one (as a phone's line does), wherever it was chosen.
     page.select_option("#key-select", "2")
-    assert page.inner_text(".usual-key") == ""
+    assert page.inner_text(".usual-key") == "Original: G major"
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.input_value("#key-select") == "2" and page.url == site + "alaw/glandyfi/?key=A"
-    assert page.inner_text(".usual-key") == "Your key last time"
+    assert page.inner_text(".usual-key") == "Your key last time · original G major"
     page.select_option("#key-select", "3")
-    assert page.inner_text(".usual-key") == ""
+    assert page.inner_text(".usual-key") == "Original: G major"
     page.select_option("#key-select", "2")  # back to it: it is last time's key
-    assert page.inner_text(".usual-key") == "Your key last time"
+    assert page.inner_text(".usual-key") == "Your key last time · original G major"
     page.goto_site("alaw/glandyfi/?key=C")
     page.wait_for_selector(".score .abcjs-staff")
-    assert page.input_value("#key-select") == "5" and page.inner_text(".usual-key") == ""
+    assert page.input_value("#key-select") == "5" and page.inner_text(".usual-key") == "Original: G major"
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.input_value("#key-select") == "2"
-    page.select_option("#key-select", "0")  # back to the written key: nothing kept
-    assert page.evaluate("localStorage.getItem('tunes')") == "{}"
+    page.select_option("#key-select", "0")  # back to the written key: nothing kept, nothing said
+    assert page.evaluate("localStorage.getItem('tunes')") == "{}" and page.inner_text(".usual-key") == ""
 
 
 def test_play_from_a_note(page):
@@ -1705,6 +1706,7 @@ def test_speed_up_arrives(browser, site):
     page.wait_for_function("document.querySelector('.speed-note.arrived')", timeout=15000)
     assert page.inner_text(".speed-note") == "Reached 112 bpm. Da iawn!"
     assert page.get_attribute(".speed-note strong", "lang") == "cy"
+    assert page.text_content(".bar-pace.arrived") == "Da iawn! 112 bpm"  # in the pinned player too, where it's seen
     page.click(".abcjs-midi-start")  # pause
     context.close()
 
@@ -1757,11 +1759,12 @@ def test_speed_up_the_whole_tune(browser, site):
     # whole tune from 70% of the tempo up to it.
     page.check("text=Speed up each time")
     assert page.input_value("#loop-select") == "-1"
-    assert " ".join(page.text_content(".speed-range").split()) == "from 78 to bpm" and page.input_value("#speed-to") == "112"
+    assert " ".join(page.text_content(".speed-range").split()) == "from to bpm"
+    assert page.input_value("#speed-from") == "78" and page.input_value("#speed-to") == "112"
     assert page.input_value("#tempo") == "78"
     assert page.inner_text(".speed-note") == "Starting at 78 bpm, repeating the whole tune."  # said beside it, as the tempo is up above
-    page.click(".speed-from")  # "from" is the tempo: it goes to the slider
-    assert page.evaluate("document.activeElement.id") == "tempo"
+    assert page.inner_text(".usual-key >> nth=-1") == "Original: 112 bpm"  # the written tempo, said once it's moved
+    assert page.get_attribute("#tempo", "aria-valuetext") == "78 bpm"
     page.uncheck("text=Speed up each time")  # unticked straight after: both go back
     assert page.input_value("#tempo") == "112" and page.input_value("#loop-select") == "-2"
     assert page.inner_text(".speed-note") == "Back to 112 bpm." and page.locator(".speed-range").is_hidden()
@@ -1769,9 +1772,10 @@ def test_speed_up_the_whole_tune(browser, site):
     assert page.evaluate("localStorage.getItem('tunes')") is None  # speed up, and its slower start, aren't kept
     page.fill("#tempo", "120")  # faster than the goal: says what to do
     page.dispatch_event("#tempo", "change")
-    assert page.inner_text(".speed-note").startswith("To speed up, start slower")
-    page.fill("#tempo", "90")
-    page.dispatch_event("#tempo", "change")
+    assert page.inner_text(".speed-note").startswith("To speed up, set a slower “from”")
+    page.fill("#speed-from", "90")  # "from" is the tempo, typed
+    page.dispatch_event("#speed-from", "change")
+    assert page.input_value("#tempo") == "90" and page.inner_text("label[for=tempo]") == "Tempo: 90 bpm"
     page.fill("#speed-to", "99")
     page.dispatch_event("#speed-to", "change")
     assert page.inner_text(".speed-note") == ""
@@ -1780,10 +1784,16 @@ def test_speed_up_the_whole_tune(browser, site):
     page.evaluate("() => { const e = state.synth.timer.noteTimings.filter((e) => e.type === 'event'); "
                   "state.synth.seek((e.at(-1).milliseconds - 800) / 1000, 'seconds'); }")
     page.wait_for_function("document.querySelector('.speed-note').textContent === 'now 95 of 99 bpm'", timeout=15000)
+    # The pinned player says it too (the note above has scrolled away as the page follows the music)
+    assert page.text_content(".bar-pace") == "95 / 99 bpm" and page.locator(".abcjs-midi-clock").is_hidden()
     page.click(".abcjs-midi-start")  # pause
     page.fill("#speed-to", "1000")  # out of range: the fastest allowed, and it says so
     page.dispatch_event("#speed-to", "change")
     assert page.input_value("#speed-to") == "240" and page.inner_text(".speed-note") == "240 bpm is the fastest."
+    page.fill("#speed-from", "10")  # and "from" as "to": kept as it was, and says so
+    page.dispatch_event("#speed-from", "change")
+    assert page.input_value("#speed-from") == "90" and page.input_value("#tempo") == "90"
+    assert page.inner_text(".speed-note") == "Between 30 and 240 bpm."
     context.close()
 
 
@@ -1866,7 +1876,7 @@ def test_practice_tools_remembered(page):
     assert page.input_value("#tab-select") == "mandolin"
     assert page.inner_text(".sound-on") == "Plays with count-in, click · Change"  # never a surprise
     assert page.evaluate("state.practice") == {"tab": "mandolin", "countIn": True, "click": True, "chordsOnScore": True, "open": True,
-                                               "tabKnown": True, "heard": 0, "holesSeen": False}
+                                               "tabKnown": True, "heard": 0, "holesSeen": False, "versionsSeen": False}
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.is_checked(".practice-row label:has-text('Count-in') input")
@@ -1874,7 +1884,7 @@ def test_practice_tools_remembered(page):
     assert page.is_checked(".practice-row label:has-text('Chords on the sheet music') input")
     assert page.is_checked(".practice-row input[value=both]")
     assert page.input_value("#loop-select") == "-2" and page.input_value("#tempo") == "90"  # repeat not kept
-    assert page.inner_text(".usual-key >> nth=-1") == "Your tempo last time"
+    assert page.inner_text(".usual-key >> nth=-1") == "Your tempo last time · original 112"
     # Said by Play, where it's pressed, with the way to the tools that change it.
     assert page.inner_text(".sound-on") == "Plays with chords, count-in, click · Change"
     page.click(".sound-on .link-button")
@@ -1892,7 +1902,7 @@ def test_practice_tools_remembered(page):
     page.goto_site("?tune=glandyfi")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.evaluate("state.practice") == {"tab": "none", "countIn": False, "click": False, "chordsOnScore": False, "open": None,
-                                               "tabKnown": False, "heard": 0, "holesSeen": False}
+                                               "tabKnown": False, "heard": 0, "holesSeen": False, "versionsSeen": False}
 
 
 @pytest.mark.parametrize("tab, first", [("mandolin", "0"), ("guitar", "0")])
@@ -3478,6 +3488,21 @@ def test_versions_told_apart(page):
     labels = page.locator(".versions a small").all_inner_texts()
     assert labels[0].endswith("“Merch Megan”") and labels[3].endswith("“Merch Megan syml”")
     assert len(set(labels)) == len(labels)
+
+
+def test_versions_said_until_used(page):
+    # What the version tabs are is said beside them until one has been opened from them;
+    # then it goes, so the music starts higher (a phone's list keeps it).
+    page.goto_site("alaw/merch-megan/")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.locator(".versions .versions-what").count() == 1
+    page.click(".versions a >> nth=1")
+    page.wait_for_selector(".versions a.active >> text=Version 2")
+    assert page.evaluate("state.practice.versionsSeen")
+    page.goto_site("alaw/merch-megan/")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.locator(".versions .versions-what").count() == 0
+    assert page.locator(".versions-list .versions-what").count() == 1
 
 
 def test_tunes_not_loading_offers_to_try_again(browser, site):

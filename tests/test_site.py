@@ -339,7 +339,7 @@ def test_tablature_invite(page):
     assert page.locator(".practice-tools").evaluate("d => !d.open")
     assert page.input_value("#tab-select") == "whistle-D"
     page.wait_for_timeout(100)  # (a toggle event would come a moment after)
-    assert page.evaluate("state.practice") == {"tab": "whistle-D", "open": None, "tabKnown": True, "heard": 0, "holesSeen": False}
+    assert page.evaluate("state.practice") == {"tab": "whistle-D", "countIn": False, "click": False, "chordsOnScore": False, "open": None, "tabKnown": True, "heard": 0, "holesSeen": False}
     # Change goes down to the menu; opened for it, the tools aren't kept open
     page.click(".fingering-key .link-button")
     page.wait_for_function("document.activeElement.id === 'tab-select'")
@@ -360,7 +360,7 @@ def test_tablature_invite_just_the_music(page):
     assert page.inner_text(".tab-invite").startswith("Just the music.")
     assert page.evaluate("document.activeElement.closest('.tab-invite') !== null")
     assert page.locator(".score .abcjs-lyric").count() == 0
-    assert page.evaluate("state.practice") == {"tab": "none", "open": None, "tabKnown": True, "heard": 0, "holesSeen": False}
+    assert page.evaluate("state.practice") == {"tab": "none", "countIn": False, "click": False, "chordsOnScore": False, "open": None, "tabKnown": True, "heard": 0, "holesSeen": False}
     # Where they are, if wanted later: a link down to the menu (the tools opened for it aren't kept)
     page.click(".tab-invite .link-button:has-text('the practice tools')")
     page.wait_for_function("document.activeElement.id === 'tab-select'")
@@ -985,7 +985,7 @@ def test_tablature_chosen_on_the_home_page(page):
     assert page.locator(".tab-choice [aria-checked=true]").inner_text() == "Just the music"
     page.click(".tab-choice button:has-text('Descant recorder')")
     assert page.inner_text(".tab-said") == "Descant recorder under the notes, on every tune. Kept on this device."
-    assert page.evaluate("state.practice") == {"tab": "recorder", "open": None, "tabKnown": True, "heard": 0, "holesSeen": False}
+    assert page.evaluate("state.practice") == {"tab": "recorder", "countIn": False, "click": False, "chordsOnScore": False, "open": None, "tabKnown": True, "heard": 0, "holesSeen": False}
     page.goto_site("alaw/llancesau-trefaldwyn/")
     page.wait_for_selector(".score g.holes", state="attached")
     assert page.locator(".tab-invite").is_hidden() and "recorder" in page.locator(".fingering-key").text_content()
@@ -1718,6 +1718,7 @@ def test_speed_up_the_whole_tune(browser, site):
     assert page.input_value("#loop-select") == "-1"
     assert " ".join(page.text_content(".speed-range").split()) == "from 78 to bpm" and page.input_value("#speed-to") == "112"
     assert page.input_value("#tempo") == "78" and page.inner_text(".speed-note") == ""
+    assert page.evaluate("localStorage.getItem('tunes')") is None  # speed up, and its slower start, aren't kept
     page.fill("#tempo", "120")  # faster than the goal: says what to do
     page.dispatch_event("#tempo", "change")
     assert page.inner_text(".speed-note").startswith("To speed up, start slower")
@@ -1754,10 +1755,10 @@ def test_count_in_and_click(page):
 
 
 def test_practice_tools_remembered(page):
-    # How a tune is practised is kept on the device for that tune only: its tempo, the
-    # chords, repeat, count-in and click. Another tune opens as written, so nothing left on at
-    # home sounds at a session. The tablature (the reader's instrument) and the tools open
-    # or folded are kept for every tune; one since taken out: none.
+    # How a tune is played is kept on the device for that tune only: its tempo and the chords
+    # heard. Repeat and speed up are chosen afresh each time, never kept. How the reader practises is kept for every tune: the count-in, the
+    # click, chords on the music, the tablature (their instrument; one since taken out:
+    # none) and the tools open or folded.
     page.goto_site("?tune=glandyfi")
     page.open_tools()
     page.wait_for_selector(".score .abcjs-staff")
@@ -1772,35 +1773,40 @@ def test_practice_tools_remembered(page):
     page.goto_site("?tune=cawl-cennin")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.locator(".practice-tools").get_attribute("open") is not None
-    assert not page.is_checked(".practice-row label:has-text('Count-in') input")
-    assert not page.is_checked(".practice-row label:has-text('Click · on every beat') input")
+    assert page.is_checked(".practice-row label:has-text('Count-in') input")
+    assert page.is_checked(".practice-row label:has-text('Click · on every beat') input")
+    assert page.input_value("#loop-select") == "-2"
     assert page.input_value("#tab-select") == "mandolin"
-    assert page.locator(".sound-on").is_hidden()
-    assert page.evaluate("state.practice") == {"tab": "mandolin", "open": True, "tabKnown": True, "heard": 0, "holesSeen": False}
+    assert page.inner_text(".sound-on") == "Plays with count-in, click · Turn off"  # never a surprise
+    assert page.evaluate("state.practice") == {"tab": "mandolin", "countIn": True, "click": True, "chordsOnScore": True, "open": True,
+                                               "tabKnown": True, "heard": 0, "holesSeen": False}
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.is_checked(".practice-row label:has-text('Count-in') input")
     assert page.is_checked(".practice-row label:has-text('Click · on every beat') input")
     assert page.is_checked(".practice-row label:has-text('Chords on the sheet music') input")
     assert page.is_checked(".practice-row input[value=both]")
-    assert page.input_value("#loop-select") == "-1" and page.input_value("#tempo") == "90"
+    assert page.input_value("#loop-select") == "-2" and page.input_value("#tempo") == "90"  # repeat not kept
     assert page.inner_text(".usual-key >> nth=-1") == "Your tempo last time"
     # Said by Play, where it's pressed; and turned off from there (the tablature stays).
-    assert page.inner_text(".sound-on") == "Plays with chords, repeat, count-in, click · Turn off"
+    assert page.inner_text(".sound-on") == "Plays with chords, count-in, click · Turn off"
     page.click(".sound-on .link-button")
     assert page.locator(".sound-on").is_hidden()
     assert not page.is_checked(".practice-row label:has-text('Click · on every beat') input")
     assert page.input_value("#loop-select") == "-2" and page.input_value("#tab-select") == "mandolin"
-    assert page.evaluate("JSON.parse(localStorage.getItem('tunes'))") == {"glandyfi": {"bpm": 90, "onScore": True}}
+    assert page.evaluate("[state.practice.countIn, state.practice.click]") == [False, False]
+    assert page.evaluate("JSON.parse(localStorage.getItem('tunes'))") == {"glandyfi": {"bpm": 90}}
     # Turn all off: the chords on the music and the tablature too; the tempo stays.
     page.click(".kept-note .link-button")
     assert page.input_value("#tab-select") == "none"
+    assert page.evaluate("state.practice.chordsOnScore") is False
     assert page.evaluate("JSON.parse(localStorage.getItem('tunes'))") == {"glandyfi": {"bpm": 90}}
     assert page.locator(".kept-note .link-button").is_hidden()
     page.evaluate("localStorage.setItem('practice', JSON.stringify({ tab: 'treble-recorder', open: 'yes' }))")
     page.goto_site("?tune=glandyfi")
     page.wait_for_selector(".score .abcjs-staff")
-    assert page.evaluate("state.practice") == {"tab": "none", "open": None, "tabKnown": False, "heard": 0, "holesSeen": False}
+    assert page.evaluate("state.practice") == {"tab": "none", "countIn": False, "click": False, "chordsOnScore": False, "open": None,
+                                               "tabKnown": False, "heard": 0, "holesSeen": False}
 
 
 @pytest.mark.parametrize("tab, first", [("mandolin", "0"), ("guitar", "0")])

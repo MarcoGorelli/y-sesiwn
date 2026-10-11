@@ -67,6 +67,12 @@ def test_types_and_tempos():
     read = lambda slug: b.parse_headers((b.ROOT / "tunes" / slug / "tune.abc").read_text(encoding="utf-8"))
     assert b.tune_type(read("glandyfi")) and b.default_bpm(read("llancesau-trefaldwyn")) == 112  # a jig
     assert b.tune_type(read("llancesau-trefaldwyn")) == "Jig"
+    # Airs are slow and 4/4 airs are counted in four: crotchet = 66, dotted crotchet = 44.
+    afon_elwy = read("afon-elwy")
+    beat = b.beat_unit(afon_elwy["M"][0], b.tune_type(afon_elwy) in b.SLOW_TYPES)
+    assert (beat, b.default_bpm(afon_elwy, beat)) == (b.Fraction(1, 4), 66)
+    assert b.default_bpm(read("beauties-of-ragland"), b.Fraction(3, 8)) == 44
+    assert b.beat_unit("4/4") == b.Fraction(1, 2)  # a reel is still counted in two
     assert b.tune_type(read("bwced")) == "Jig naid"  # R:Slip Jig
     assert b.tune_type(read("slipio")) == "Jig naid"  # R:jig naid
     assert b.tune_type({"R": ["jig"], "M": ["9/8"]}) == "Jig naid"  # a jig is in 6/8

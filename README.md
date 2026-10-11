@@ -112,6 +112,10 @@ scheduled runs after 60 days without a commit).
   searches alternative titles (extra `T:` lines, e.g. *Knights of Snowdon*).
   Partial names match at the start of a word (`mon` finds *Mwynen Môn*, not
   *harmoni*), and an exact name comes first.
+  A book or arranger finds its tunes too (`blodau'r grug`, `meurig`), each with
+  the credit it matched, after those found by name. More than 20 found: the last
+  in the list, **All 143 tunes**, opens a page of every one
+  (`?page=search&q=…`, by name, then by book or arranger).
 - **Find a tune by its notes** (its own page, `?page=notes`, linked from the
   sidebar and from the home page, whose **Play it to me** opens it and starts
   listening straight away): the search is kept in the address
@@ -158,8 +162,9 @@ scheduled runs after 60 days without a commit).
   `?tune=rheged-version-2`) move to the tune's own address and the right tab.
 - **Sheet music** on cream "paper", with a **key** drop-down (the same mode on
   any root, up to half an octave either way, e.g. *E Dorian*), a **tempo**
-  slider (defaults: jigs 112, reels 90, polcas 100, others 100 bpm, in the
-  felt beat: dotted crotchets in 6/8, minims in 4/4), and **playback** with
+  slider (defaults: jigs 112, reels 90, polcas 100, airs and songs slow at crotchet
+  66, others 100 bpm, in the felt beat: dotted crotchets in 6/8, minims in 4/4,
+  crotchets in a 4/4 air), and **playback** with
   the notes highlighted as they play (the space bar plays and pauses). On a
   phone the music is laid out again in shorter lines at a readable size
   (`scoreLayout()` in `app.js`), and **− / +** (at the end of the key and tempo
@@ -168,7 +173,9 @@ scheduled runs after 60 days without a commit).
   device's own share sheet, where it has one), *Print / save*, *QR code* and
   *Add to set*. The address carries the key chosen (`alaw/glandyfi/?key=A`,
   by name, in the tune's own mode), so a copied link, *Share* and the QR code
-  open the tune in that key. The key chosen for a tune is kept on the device
+  open the tune in that key; and the holes or tabs showing (`&tab=whistle-D`),
+  which the person sent it sees on that tune only, their own choice left as it
+  was. The key chosen for a tune is kept on the device
   (`localStorage`) and used next time ("Last used on this device"), and
   tapping a note in the music plays from there.
 - **Accessibility:** tune names are marked Welsh or English (`lang`, from
@@ -377,8 +384,9 @@ scheduled runs after 60 days without a commit).
   sources and the tunes' own notes stay as written.
 - **Look:** a *carthen* (Welsh tapestry blanket) band across the top and
   bottom (`site/carthen.svg`) and under section headings, Welsh slate, and
-  Welsh red for accents. Works in dark mode and on phones (search pinned to
-  the top).
+  Welsh red for accents. Works in dark mode, the device's or chosen on the
+  site (**Auto / Light / Dark**, at the foot of the sidebar and the phone's
+  menu), and on phones (search pinned to the top).
 - **Every tune has its own page**, `alaw/sawdl-y-fuwch/`: `build_site.py`
   writes a real one per tune (the app, with the tune's name, description,
   details and ABC in it), so link previews (WhatsApp, Facebook, …) and search

@@ -146,9 +146,26 @@ function savedPractice(name, defaults) {
 }
 function savePractice() {
   try {
-    localStorage.setItem("practice", JSON.stringify(state.practice));
+    // Holes or tabs from a link are shown, not kept: the reader's own are saved instead.
+    localStorage.setItem("practice", JSON.stringify(linkTab ? { ...state.practice, tab: linkTab.kept } : state.practice));
     localStorage.removeItem("chords");  // kept per tune now (savedTunes)
   } catch {}
+}
+
+// A link's holes or tabs (?tab=whistle-D, from a teacher, say): shown on that tune's page
+// only, in place of the reader's own (kept), which come back on the next page; the reader's
+// own saved choice, and whether they've answered the invite, are left as they were.
+let linkTab = null;  // { kept: the reader's own } while a link's are shown
+function showLinkTab(asked) {
+  const tab = [...Object.keys(FINGERED), ...Object.keys(TABS)].find((name) => name.toLowerCase() === asked?.toLowerCase());
+  if (!tab || tab === state.practice.tab) return;
+  linkTab ??= { kept: state.practice.tab };
+  state.practice.tab = tab;
+}
+function dropLinkTab() {
+  if (!linkTab || new URLSearchParams(location.search).has("tab")) return;
+  state.practice.tab = linkTab.kept;
+  linkTab = null;
 }
 
 function savedPlayed() {
@@ -167,7 +184,7 @@ function applyLang() {
     node.dataset.en ??= node.textContent;
     node.textContent = tr(node.dataset.en, node.dataset.cy);
   }
-  for (const attr of ["placeholder", "title"]) {
+  for (const attr of ["placeholder", "title", "aria-label"]) {
     for (const node of document.querySelectorAll(`[data-cy-${attr}]`)) {
       if (!node.hasAttribute(`data-en-${attr}`)) node.setAttribute(`data-en-${attr}`, node.getAttribute(attr));
       node.setAttribute(attr, tr(node.getAttribute(`data-en-${attr}`), node.getAttribute(`data-cy-${attr}`)));
@@ -205,6 +222,28 @@ function setLang(lang) {
   applyLang();
   countEvent(`language-${lang}`, lang === "cy" ? "Switched to Welsh" : "Switched to English");
   render();  // the page again, in the other language
+}
+
+// Light or dark: "auto" follows the device. index.html's <head> sets data-theme from the
+// saved choice before the page is drawn; this keeps it, the radios and the browser's bar.
+const THEME_BARS = { light: "#fdfbf7", dark: "#111418" };  // --bg in each
+function applyTheme(theme) {
+  const root = document.documentElement;
+  if (theme === "auto") delete root.dataset.theme;
+  else root.dataset.theme = theme;
+  for (const meta of document.querySelectorAll('meta[name="theme-color"]')) {
+    const own = meta.media.includes("dark") ? "dark" : "light";
+    meta.content = THEME_BARS[theme === "auto" ? own : theme];
+  }
+  checkRadios(document.querySelector(".theme-switch"), (button) => button.dataset.theme === theme);
+}
+function setTheme(theme) {
+  try {
+    if (theme === "auto") localStorage.removeItem("theme");
+    else localStorage.setItem("theme", theme);
+  } catch {}
+  applyTheme(theme);
+  countEvent(`theme-${theme}`, `Chose ${theme} colours`);
 }
 
 // Musical names in Welsh: the key menu and details ("D major" -> "D fwyaf").
@@ -306,6 +345,36 @@ function score(query, tune) {
   }
   return best;
 }
+
+// The tunes a book or an arranger's name finds ("Blodau'r Grug", "Meurig"), with the credit
+// that matched: every word typed starts a word of the credit (no near spellings: a name's
+// near miss is a tune; a credit's would be dozens of them). In title order.
+const CREDIT_LABELS = new Set(["Composer / arranger", "Book"]);
+function creditSearch(query) {
+  const typed = words(normalize(query));
+  if (typed.join("").length < 3) return [];
+  return state.groupList.flatMap((group) => {
+    const credit = (group.credits ?? []).find(([, text]) => {
+      const its = text.split(" ");
+      return typed.every((w) => its.some((word) => word.startsWith(w)));
+    });
+    return credit ? [{ group, credit: credit[0] }] : [];
+  });
+}
+
+// Everything a search finds, for the list under the box and the page of all of them
+// (?page=search&q=…): names that have it, then books and arrangers (not tunes already
+// found by name), then names spelt only a little like it: after either of those, just
+// the three closest ("llwyn" isn't followed by every name with "wyn"), else all of them.
+function searchAll(query) {
+  const found = search(query);
+  const named = found.close >= 0 ? found.slice(0, found.close) : found;
+  const byName = new Set(named);
+  const credited = creditSearch(query).filter(({ group }) => !byName.has(group));
+  const close = found.close < 0 ? [] : found.slice(found.close, named.length || credited.length ? found.close + 3 : undefined);
+  return { named, credited, close };
+}
+const SHOWN = 20;  // under the box; the rest on the page of all of them
 
 function search(query) {
   // Tunes (groups of versions) whose names match; any version's titles count.
@@ -956,12 +1025,14 @@ function tuneUrl(group, version = 1) {
 }
 
 // A tune's link with the key and tempo chosen on its page, so "the jig in A, slowly" can
-// be shared: alaw/glandyfi/?key=A&tempo=80 (the key by name, in the tune's own mode).
-function tuneLink(group, tune, settings) {
+// be shared: alaw/glandyfi/?key=A&tempo=80 (the key by name, in the tune's own mode); and
+// on its page, the holes or tabs shown (&tab=whistle-D), so a class is sent the tune with them.
+function tuneLink(group, tune, settings, tab = "none") {
   const query = new URLSearchParams();
   if (tune.version > 1) query.set("v", tune.version);
   if (settings?.transpose && tune.key) query.set("key", keyNote(tune.key.pitch + settings.transpose, tune.key.modeName));
   if (settings?.bpm && settings.bpm !== tune.bpm) query.set("tempo", settings.bpm);  // "learn it at 70"
+  if (tab !== "none") query.set("tab", tab);
   return `alaw/${encodeURIComponent(group.slug)}/${query.size ? `?${query}` : ""}`;
 }
 
@@ -1072,7 +1143,7 @@ function showShortcuts() {
   if (document.querySelector("dialog.shortcuts")) return;
   const keys = (...k) => k.map((x, i) => [i ? " " : "", el("kbd", {}, x)]);
   const rows = [
-    [keys("/"), tr("Search for a tune by name", "Chwilio am alaw yn ôl ei henw")],
+    [keys("/"), tr("Search for a tune by name, book or arranger", "Chwilio am alaw yn ôl ei henw, llyfr neu drefnydd")],
     [keys(tr("Space", "Bylchwr")), tr("Play or pause the tune (on a tune's page)", "Chwarae neu oedi'r alaw (ar dudalen alaw)")],
     [keys("[", "]"), tr("Slower or faster, 5 bpm at a time (on a tune's page)", "Arafach neu gyflymach, 5 bpm ar y tro (ar dudalen alaw)")],
     [keys(",", "."), tr("A semitone lower or higher (on a tune's page)", "Hanner tôn yn is neu'n uwch (ar dudalen alaw)")],
@@ -1152,6 +1223,7 @@ function render() {
   stopPlayback();
   stopListening();
   state.keyNote?.stop();
+  dropLinkTab();  // a link's holes or tabs were for its own page
   const params = new URLSearchParams(location.search);
   const slug = movedTo(addressTune());
   // A tune's own page starts with only that tune (see start()): anything else waits for the rest.
@@ -1166,7 +1238,7 @@ function render() {
   // Older links (?tune=…) and a version's folder move to the tune's own address; an
   // unknown tune (removed, renamed, mistyped) gets a page saying so.
   if (group && (params.has("tune") || !location.pathname.endsWith(`/alaw/${group.slug}/`))) {
-    const keep = new URLSearchParams([...params].filter(([name]) => name === "key" || name === "tempo"));
+    const keep = new URLSearchParams([...params].filter(([name]) => ["key", "tempo", "tab"].includes(name)));
     history.replaceState(null, "", tuneUrl(group.slug, version) + (keep.size ? `${version > 1 ? "&" : "?"}${keep}` : ""));
   }
   const lost = slug && !group;
@@ -1178,6 +1250,7 @@ function render() {
   const notes = page === "notes";
   const browse = page === "browse" || addressType() !== null;
   const contact = page === "contact";
+  const found = page === "search";
   const setPage = page === "set" || params.has("set");
   const setsPage = page === "sets";
   const sessions = /^sesiynau\/?$/.test(sitePath());
@@ -1193,8 +1266,9 @@ function render() {
   }
   if (!tune) setPractice(false);
   main.style.animation = "none"; void main.offsetWidth; main.style.animation = "";  // replay fade-in
-  const home = !tune && !lost && !guide && !map && !offline && !notes && !browse && !contact && !setPage && !setsPage && !sessions;
-  document.body.dataset.page = home ? "home" : "other";  // the home page has its own search box
+  const home = !tune && !lost && !guide && !map && !offline && !notes && !browse && !contact && !found && !setPage && !setsPage && !sessions;
+  // The home page has its own search box; a tune's page gives the music more of the width.
+  document.body.dataset.page = home ? "home" : tune ? "tune" : "other";
   setMenu(false);
   markCurrentLink(sessions ? "sesiynau/" : browse ? "?page=browse" : page && !setPage ? `?page=${page}` : null);
   main.lang = state.lang;
@@ -1207,6 +1281,7 @@ function render() {
   else if (notes) renderNotesPage(main);
   else if (browse) renderBrowse(main);
   else if (contact) renderContact(main);
+  else if (found) renderSearchPage(main, params.get("q") ?? "");
   else if (setPage) renderSet(main);
   else if (setsPage) renderSets(main);
   else if (sessions) renderSessions(main);
@@ -1233,6 +1308,37 @@ const emptyArt = (instrument = "harp") => el("div", { class: "empty-art", "aria-
 
 // A link to a tune the site doesn't have (any more): the tunes with the nearest names,
 // since it has most likely been renamed or merged into another tune's versions.
+// Every tune a search finds (the last of the list under the box, when there are more
+// than fit): by name, then by book or arranger, each with what it was found by.
+function renderSearchPage(main, query) {
+  document.title = tr(`“${query}” · Y Sesiwn`, `“${query}” · Y Sesiwn`);
+  if (!state.complete) {  // a link straight here, before every tune has come
+    main.replaceChildren(el("p", { class: "loading" }, tr("Loading tunes…", "Yn llwytho'r alawon…")));
+    state.loaded?.then(() => { if (new URLSearchParams(location.search).get("page") === "search") render(); }, () => {});
+    return;
+  }
+  const { named, credited, close } = searchAll(query);
+  const n = named.length + credited.length + close.length;
+  const item = (group, credit) => el("li", {},
+    el("a", { href: tuneUrl(group.slug), "data-route": true }, tuneName(group.slug, group.title)),
+    credit ? el("span", { class: "tune-key tune-credit" }, credit)
+      : group.versions[0].key ? el("span", { class: "tune-key" }, shortKey(group.versions[0].key.pitch, group.versions[0].key.modeName)) : null);
+  const part = (heading, list) => list.length ? el("section", {},
+    el("h2", { class: "section-heading" }, heading, el("span", { class: "count" }, ` · ${list.length}`)),
+    el("ul", { class: "tune-list" }, list)) : null;
+  main.replaceChildren(...[
+    el("h1", { tabindex: "-1" }, tr(`Tunes for “${query}”`, `Alawon ar gyfer “${query}”`)),
+    el("p", { class: "lead" }, n ? tr(`${n} tune${n === 1 ? "" : "s"}.`, `${n} alaw.`)
+      : tr("No tune, book or arranger by that name.", "Dim alaw, llyfr na threfnydd o'r enw hwnnw.")),
+    heroSearch(),
+    part(tr("By name", "Yn ôl enw"), named.map((g) => item(g))),
+    part(tr("By book or arranger", "Yn ôl llyfr neu drefnydd"), credited.map(({ group, credit }) => item(group, credit))),
+    part(tr("Close spellings", "Sillafiadau tebyg"), close.map((g) => item(g))),
+    n ? null : el("p", {}, el("a", { href: "?page=notes", "data-route": true }, tr("Find it by its notes", "Ei chanfod o'i nodau")), " · ",
+      el("a", { href: "?page=browse", "data-route": true }, tr("Browse by type and key", "Pori yn ôl math a chywair"))),
+  ].filter(Boolean));
+}
+
 function renderNotFound(main, slug) {
   document.title = tr("Tune not found · Y Sesiwn", "Alaw heb ei chanfod · Y Sesiwn");
   const words = slug.replace(/-version-\d+$/, "").replace(/-/g, " ");
@@ -1458,7 +1564,7 @@ function renderBrowse(main) {
       el("dd", {}, tr(...TYPE_ABOUT[type.name])));
     list.replaceChildren(...everything
       ? [el("details", { class: "all-tunes fold", open: allOpen, ontoggle: (e) => { allOpen = e.target.open; } },
-          el("summary", {}, tr("List them A to Z", "Eu rhestru o A i Y")), el("ul", { class: "tune-list" }, listed.map(item))),
+          el("summary", {}, tr(`All ${n} tunes, A to Z`, `Y ${n} alaw i gyd, o A i Y`)), el("ul", { class: "tune-list" }, listed.map(item))),
         el("section", { class: "types-about", "aria-labelledby": "types-about" },
           el("h2", { class: "section-heading", id: "types-about" }, tr("What the types are", "Beth yw'r mathau")),
           el("dl", {}, types.filter((type) => TYPE_ABOUT[type.name]).map(about)))]
@@ -1677,7 +1783,7 @@ function heroSearch() {
   // Only suggest once something is typed: a list on focus would cover the ways in below.
   attachSearch(input, list, { showAllOnFocus: false });
   return el("div", { class: "search hero-search" },
-    el("label", { for: "hero-search", class: "visually-hidden" }, tr("Search tunes by name", "Chwilio am alawon yn ôl enw")),
+    el("label", { for: "hero-search", class: "visually-hidden" }, tr("Search tunes by name, book or arranger", "Chwilio am alawon yn ôl enw, llyfr neu drefnydd")),
     input, el("kbd", { class: "shortcut", title: tr("Press / to search", "Pwyswch / i chwilio") }, "/"), list);
 }
 
@@ -2820,8 +2926,9 @@ function renderTune(main, group, tune) {
   if (shift !== null) settings.transpose = shift;
   const tempo = Math.round(Number(new URLSearchParams(location.search).get("tempo")));  // …and its tempo (?tempo=80)
   if (tempo >= MIN_BPM && tempo <= MAX_BPM) settings.bpm = tempo;
+  showLinkTab(new URLSearchParams(location.search).get("tab"));  // …and its holes or tabs (?tab=whistle-D)
   // …and the address follows the page's key, so it can be copied as it is.
-  const showInAddress = () => history.replaceState(null, "", tuneLink(group, tune, settings));
+  const showInAddress = () => history.replaceState(null, "", tuneLink(group, tune, settings, state.practice.tab));
   showInAddress();  // a key chosen earlier (this visit) shows in the address too
 
   const paper = el("div");
@@ -2990,8 +3097,8 @@ function renderTune(main, group, tune) {
     el("div", { class: "view-tools" }, musicSize(redraw), practice)]);
   // Taking it with you: sharing, printing, saving, a set.
   const shareStatus = el("p", { class: "caption share-status", "aria-live": "polite" });
-  const carries = () => linkCarries(tune, settings);
-  const share = shareMenu(`share-menu-${tune.slug}`, () => group.title, () => `https://ysesiwn.cymru/${tuneLink(group, tune, settings)}`,
+  const carries = () => linkCarries(tune, settings, state.practice.tab);
+  const share = shareMenu(`share-menu-${tune.slug}`, () => group.title, () => `https://ysesiwn.cymru/${tuneLink(group, tune, settings, state.practice.tab)}`,
     shareStatus, { carries, qrNote: () => { const what = carries();
       return tr(`Scan with a phone's camera to open this tune${what ? `, ${what}` : ""}.`, `Sganiwch gyda chamera ffôn i agor yr alaw hon${what ? `, ${what}` : ""}.`); } });
   const actions = el("div", { class: "tune-actions", role: "group", "aria-label": tr("Take it with you", "Mynd â hi gyda chi") },
@@ -3251,9 +3358,11 @@ function renderTune(main, group, tune) {
   // Choosing the holes or tabs, from the menu or the invite: kept for every tune, drawn,
   // and said (from outside the practice tools, which may be folded).
   const chooseTab = (value) => {
+    linkTab = null;  // the reader's own choice now, not the link's: kept
     state.practice.tab = value;
     state.practice.tabKnown = true;  // any of them, the music alone too, answers the invite
     savePractice();
+    showInAddress();
     showKey();
     tabSelect.value = value;
     tabWhat.hidden = value !== "none";
@@ -3409,14 +3518,16 @@ function renderTune(main, group, tune) {
 
 // What a tune's link carries besides the tune, in words: "in A major, at 80 bpm", or ""
 // when it's as written. Said on Link copied and under the QR code, so the sender knows.
-function linkCarries(tune, settings) {
+function linkCarries(tune, settings, tab = "none") {
   const key = settings.transpose && tune.key
     ? keyName(tune.key.pitch + settings.transpose, tune.key.modeName) : null;
   const bpm = settings.bpm !== tune.bpm ? settings.bpm : null;
-  if (!key && !bpm) return "";
-  return state.lang === "cy"
-    ? [key && `yn ${key}`, bpm && `ar ${bpm} bpm`].filter(Boolean).join(", ")
-    : [key && `in ${key}`, bpm && `at ${bpm} bpm`].filter(Boolean).join(", ");
+  const holes = FINGERED[tab], tabs = TABS[tab];
+  const shown = holes ? tr(`with the holes (${holes.label()})`, `gyda'r tyllau (${holes.label()})`)
+    : tabs ? tr(`with tabs (${tabs.label()})`, `gyda thablatur (${tabs.label()})`) : null;
+  return (state.lang === "cy"
+    ? [key && `yn ${key}`, bpm && `ar ${bpm} bpm`, shown]
+    : [key && `in ${key}`, bpm && `at ${bpm} bpm`, shown]).filter(Boolean).join(", ");
 }
 
 // ---- QR code: this tune's link, for someone across the table to scan ----------------------
@@ -4062,9 +4173,10 @@ function upcomingSessions() {
       first.length ? el("ul", {}, first.map(item)) : null,
       also.length ? el("p", { class: "pills-label" }, tr("Also coming up: one-off dates", "Hefyd i ddod: dyddiadau arbennig")) : null,
       also.length ? el("ul", {}, also.map(item)) : null,
-      el("p", {}, el("a", { href: "sesiynau/", "data-route": true }, more
-        ? tr(`And ${more} more in the next seven days: all sessions, on a map`, `${[1, 8, 11].includes(more) ? "Ac" : "A"} ${more} arall yn y saith diwrnod nesaf: pob sesiwn, ar fap`)
-        : tr("All sessions, on a map", "Pob sesiwn, ar fap"))),
+      // How many more is said; the link is where they all are.
+      el("p", {}, more
+        ? tr(`And ${more} more in the next seven days. `, `${[1, 8, 11].includes(more) ? "Ac" : "A"} ${more} arall yn y saith diwrnod nesaf. `) : null,
+        el("a", { href: "sesiynau/", "data-route": true }, tr("All sessions, on a map", "Pob sesiwn, ar fap"))),
     ].filter(Boolean));
     box.hidden = false;
   }).catch(() => {});
@@ -5378,11 +5490,12 @@ function noteMiss(query, found) {
 // A tune in the search's list: its type's colour, its name, and what it is ("Jig · G major",
 // "Pibddawns (hornpipe) · D major", "Other · G major", as Browse names the types), so two tunes of the same
 // name, or a half-remembered one, can be told apart.
-function suggestion(group) {
+function suggestion(group, credit = null) {
   const type = state.data.types?.find((t) => t.name === group.type);
   const key = group.versions[0].key;
   const gloss = state.lang !== "cy" && GLOSSED.has(group.type) ? el("span", { class: "gloss" }, ` (${EN_TYPE[group.type]})`) : null;
-  const what = [[typeName(group.type), gloss], key && `${key.root} ${modeName(key.modeName)}`]
+  // Found by its book or arranger: that instead of the key, so it's plain why it's there.
+  const what = [[typeName(group.type), gloss], credit ? el("span", { class: "credit" }, credit) : key && `${key.root} ${modeName(key.modeName)}`]
     .filter(Boolean).flatMap((part, i) => (i ? [" · ", part] : [part]));
   return [el("span", { class: "swatch", style: type ? `--c: ${type.colour}` : null, "aria-hidden": "true" }),
     tuneName(group.slug, group.title), what.length ? el("span", { class: "what" }, what) : null];
@@ -5400,8 +5513,9 @@ function attachSearch(input, list, { showAllOnFocus = true, onPick = null } = {}
     statusTimer = setTimeout(() => {
       const n = results.length;
       status.textContent = !query.trim() ? ""
-        : n === 0 ? tr("No tunes match that name.", "Does dim alaw â'r enw hwnnw.")
-        : n >= 20 ? tr("20 tunes or more: keep typing to narrow it down.", "20 alaw neu fwy: daliwch ati i deipio i'w cyfyngu.")
+        : n === 0 ? tr("No tune, book or arranger by that name.", "Dim alaw, llyfr na threfnydd o'r enw hwnnw.")
+        : results.at(-1)?.all ? tr(`${results.at(-1).all} tunes: the arrow keys go through the first ${SHOWN}, and the last shows them all.`,
+          `${results.at(-1).all} alaw: mae'r bysellau saeth yn mynd drwy'r ${SHOWN} cyntaf, ac mae'r olaf yn eu dangos i gyd.`)
         : tr(`${n} tune${n === 1 ? "" : "s"}: the arrow keys go through them.`, `${n} alaw: mae'r bysellau saeth yn mynd drwyddyn nhw.`);
     }, 500);
   };
@@ -5414,25 +5528,31 @@ function attachSearch(input, list, { showAllOnFocus = true, onPick = null } = {}
     input.setAttribute("aria-expanded", "false");
     input.removeAttribute("aria-activedescendant");
   };
-  const open = (group) => {
+  const open = (entry) => {
     input.value = "";
     close();
-    if (onPick) { onPick(group); return; }
+    if (entry.all) { input.blur(); navigate(`?page=search&q=${encodeURIComponent(entry.query)}`); return; }
+    if (onPick) { onPick(entry.group); return; }
     input.blur();
-    navigate(tuneUrl(group.slug));
+    navigate(tuneUrl(entry.group.slug));
   };
   const show = () => {
     const query = input.value;
     if (!query.trim() && !showAllOnFocus) { results = []; close(); return; }
-    // Names spelt only a little like it come after the ones that have it, and with
-    // those, just the three closest: "llwyn" isn't followed by every name with "wyn".
-    let closeFrom = -1;
+    // In searchAll's order. Labels go on the first of a kind: "By book or arranger", "Close spellings".
+    let entries;
+    let total = 0;
     if (query.trim()) {
-      const found = search(query);
-      closeFrom = found.close;
-      results = (closeFrom > 0 ? found.slice(0, closeFrom + 3) : found).slice(0, 20);
-      if (closeFrom >= results.length) closeFrom = -1;
-    } else results = state.groupList;
+      const { named, credited, close } = searchAll(query);
+      entries = [...named.map((group) => ({ group })),
+        ...credited.map(({ group, credit }, i) => ({ group, credit, label: i === 0 && named.length ? tr("By book or arranger", "Yn ôl llyfr neu drefnydd") : null })),
+        ...close.map((group, i) => ({ group, label: i === 0 && (named.length || credited.length) ? tr("Close spellings", "Sillafiadau tebyg") : null }))];
+      total = entries.length;
+      entries = entries.slice(0, SHOWN);
+      // More than fit: the last of the list opens the page of all of them (not when choosing for a set).
+      if (total > SHOWN && !onPick) entries.push({ all: total, query });
+    } else entries = state.groupList.map((group) => ({ group }));
+    results = entries;
     noteMiss(query, results.length);
     say(query);
     active = 0;
@@ -5440,13 +5560,14 @@ function attachSearch(input, list, { showAllOnFocus = true, onPick = null } = {}
     const elsewhere = (href, text) => el("a", { href, "data-route": true, onmousedown: (e) => e.preventDefault(),
       onclick: (e) => { e.preventDefault(); input.value = ""; close(); input.blur(); navigate(href); } }, text);
     list.replaceChildren(...(results.length
-      ? results.map((tune, i) => el("li", {
+      ? results.map((entry, i) => el("li", {
           role: "option", id: `${input.id}-option-${i}`, "aria-selected": String(i === active),
-          class: i && i === closeFrom ? "close" : null, "data-label": i && i === closeFrom ? tr("Close spellings", "Sillafiadau tebyg") : null,
-          onmousedown: (e) => { e.preventDefault(); open(tune); },
-        }, suggestion(tune)))
+          class: entry.all ? "all" : entry.label ? "close" : null, "data-label": entry.label,
+          onmousedown: (e) => { e.preventDefault(); open(entry); },
+        }, entry.all ? [tr(`All ${entry.all} tunes`, `Y ${entry.all} alaw i gyd`), el("span", { class: "chevron", "aria-hidden": "true" })]
+          : suggestion(entry.group, entry.credit)))
       : [el("li", { class: "empty" }, ...(state.complete
-        ? [tr("No tunes match that name.", "Does dim alaw â'r enw hwnnw."), el("span", { class: "try" },
+        ? [tr("No tune, book or arranger by that name.", "Dim alaw, llyfr na threfnydd o'r enw hwnnw."), el("span", { class: "try" },
             elsewhere("?page=notes", tr("Find it by its notes", "Ei chanfod o'i nodau")), " · ",
             elsewhere("?page=browse", tr("Browse by type and key", "Pori yn ôl math a chywair")))]
         : [tr("Loading tunes…", "Yn llwytho'r alawon…")]))]));
@@ -5534,6 +5655,9 @@ function buildGroups() {
     const titles = group.versions.flatMap((v) => v.titles.map((t) => t.replace(VERSION_SUFFIX, "")));
     group.titles = titles.filter((t, i) => titles.findIndex((u) => normalize(u) === normalize(t)) === i);
     group.search = group.titles.map(normalize);
+    // Who arranged it and which book it's from (C: and B:), as printed, for the search.
+    const credits = group.versions.flatMap((v) => v.details.filter(([label]) => CREDIT_LABELS.has(label)).map(([, text]) => text));
+    group.credits = [...new Set(credits)].map((text) => [text, normalize(text)]);
   }
   state.groupList = [...state.groups.values()].sort((a, b) => (a.search[0] < b.search[0] ? -1 : 1));
   // A renamed tune: its old folder name, and its old codes in set links, find the new one.
@@ -5566,6 +5690,11 @@ async function start() {
   }
   radioKeys(document.querySelector(".lang-switch"), (button) => setLang(button.dataset.lang));
   applyLang();
+  for (const button of document.querySelectorAll(".theme-switch button")) {
+    button.addEventListener("click", () => setTheme(button.dataset.theme));
+  }
+  radioKeys(document.querySelector(".theme-switch"), (button) => setTheme(button.dataset.theme));
+  applyTheme(["light", "dark"].includes(document.documentElement.dataset.theme) ? document.documentElement.dataset.theme : "auto");
   document.querySelector(".skip-link").addEventListener("click", (e) => {
     e.preventDefault();
     document.getElementById("main").focus();

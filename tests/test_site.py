@@ -1428,7 +1428,43 @@ def test_search_count_said(page):
     page.fill("#search-input", "glandyfi")
     page.wait_for_function("document.querySelector('.search [role=status]').textContent.startsWith('1 tune')")
     page.fill("#search-input", "zzzqqq")
-    page.wait_for_function("document.querySelector('.search [role=status]').textContent === 'No tunes match that name.'")
+    page.wait_for_function("document.querySelector('.search [role=status]').textContent === 'No tune, book or arranger by that name.'")
+
+
+def test_search_finds_books_and_arrangers(page):
+    # A book or an arranger finds its tunes, with the credit that matched; more than fit
+    # under the box, and the last of the list opens the page of all of them.
+    page.goto_site("?page=browse")
+    page.fill("#search-input", "meurig")
+    page.wait_for_selector("#suggestions li.all")
+    assert "Meurig Williams" in page.inner_text("#suggestions li:first-child .what")
+    assert page.locator("#suggestions li").count() == 21
+    page.click("#suggestions li.all")
+    page.wait_for_selector("main h1:has-text('Tunes for')")
+    assert "q=meurig" in page.url
+    assert page.locator("main .tune-list li").count() > 20
+
+
+def test_a_links_holes_are_for_its_page_only(page):
+    # ?tab= shows those holes on that tune, not saved over the reader's own (the music alone).
+    page.goto_site("alaw/glandyfi/?tab=whistle-D")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert "tab=whistle-D" in page.url
+    assert page.evaluate("state.practice.tab") == "whistle-D"
+    page.goto_site("alaw/gower-reel/")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.evaluate("state.practice.tab") == "none"
+
+
+def test_theme_chosen_on_the_site(page):
+    # Dark chosen on the site wins over a light device, and is kept for the next visit.
+    page.goto_site("")
+    page.click(".theme-switch [data-theme=dark]")
+    assert page.evaluate("getComputedStyle(document.body).backgroundColor") == "rgb(17, 20, 24)"
+    page.goto_site("?page=about")
+    assert page.evaluate("document.documentElement.dataset.theme") == "dark"
+    page.click(".theme-switch [data-theme=auto]")
+    assert page.evaluate("document.documentElement.dataset.theme") is None
 
 
 def test_tune_names_marked_welsh_or_english(page):

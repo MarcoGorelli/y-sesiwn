@@ -41,6 +41,9 @@
     // <link rel="preload">: once sw.js answers for the site, Chrome fetches those twice.)
     window.tunesJson = fetch("tunes.json");
     window.tunesJson.catch(function () {});  // app.js reports a failure
+    // Light or dark as chosen on this device (app.js, setTheme), before anything is drawn, so
+    // the other one never flashes; with no choice, the device's own setting.
+    try { var theme = localStorage.getItem("theme"); if (theme) document.documentElement.dataset.theme = theme; } catch (e) {}
     document.documentElement.classList.add("js");
     setTimeout(function () { if (document.querySelector("#main .static")) document.documentElement.classList.remove("js"); }, 8000);
   </script>
@@ -86,6 +89,13 @@
         <a href="?page=contact" data-route class="more" data-cy="Cysylltu">Contact</a>
         <a href="?page=about" data-route class="more" data-cy="Am Y Sesiwn">About Y Sesiwn</a>
       </nav>
+      <!-- Light or dark: the device's own setting (Auto), or always one, say dark in a dark pub
+           with a phone set to light. On phones it's the last row of the menu. -->
+      <div class="theme-switch" role="radiogroup" aria-label="Light or dark" data-cy-aria-label="Golau neu dywyll">
+        <button type="button" role="radio" data-theme="auto" data-cy="Awto" title="The same as this device" data-cy-title="Yr un fath â'r ddyfais hon">Auto</button>
+        <button type="button" role="radio" data-theme="light" data-cy="Golau">Light</button>
+        <button type="button" role="radio" data-theme="dark" data-cy="Tywyll">Dark</button>
+      </div>
     </aside>
   </div>
   <main id="main" tabindex="-1"><p class="loading">Loading tunes…</p></main>

@@ -42,6 +42,9 @@ BEAT_NAMES = {
 # tempos in the ABC files are ignored.
 DEFAULT_BPM = {"jig": 112, "ril": 90, "reel": 90, "polca": 100, "polka": 100}
 OTHER_BPM = 100
+# Airs and songs are played slowly: crotchet = 66, whatever note is the beat.
+SLOW_TYPES = {"Alaw", "Cân"}
+SLOW_CROTCHETS = 66
 
 # Browsing categories, matched against the first word of R: that fits. Specific
 # dance types come before the generic "alaw" (air) and "cân" (song).
@@ -292,10 +295,11 @@ def tune_type(headers: dict[str, list[str]]) -> str:
     return "Other"
 
 
-def beat_unit(meter: str) -> Fraction:
+def beat_unit(meter: str, slow: bool = False) -> Fraction:
     """The note felt as one beat: 6/8 -> 3/8, 4/4 and 2/2 -> 1/2, 2/4 -> 1/4.
 
-    4/4 is counted in two (minims), as reels and polcas are played.
+    4/4 is counted in two (minims), as reels and polcas are played, except in a
+    slow air or song, which is counted in four.
     """
     meter = {"C": "4/4", "C|": "2/2"}.get(meter.strip(), meter.strip())
     m = re.match(r"^(\d+)/(\d+)$", meter)
@@ -304,15 +308,20 @@ def beat_unit(meter: str) -> Fraction:
     num, den = int(m.group(1)), int(m.group(2))
     if den >= 8 and num % 3 == 0 and num > 3:
         return Fraction(3, den)  # compound time: dotted beats
-    if (num, den) == (4, 4):
+    if (num, den) == (4, 4) and not slow:
         return Fraction(1, 2)
     return Fraction(1, den)
 
 
-def default_bpm(headers: dict[str, list[str]]) -> int:
-    """Default from the tune type (earliest match in R:, e.g. "polca/ymdaith")."""
-    tune_type = normalize(" ".join(headers.get("R", [])))
-    matches = [(tune_type.find(word), bpm) for word, bpm in DEFAULT_BPM.items() if word in tune_type]
+def default_bpm(headers: dict[str, list[str]], beat: Fraction = Fraction(1, 4)) -> int:
+    """Default from the tune type (earliest match in R:, e.g. "polca/ymdaith").
+
+    An air or song is slow: crotchet = 66, so minim = 33 and dotted crotchet = 44.
+    """
+    if tune_type(headers) in SLOW_TYPES:
+        return round(SLOW_CROTCHETS * Fraction(1, 4) / beat)
+    rhythm = normalize(" ".join(headers.get("R", [])))
+    matches = [(rhythm.find(word), bpm) for word, bpm in DEFAULT_BPM.items() if word in rhythm]
     return min(matches)[1] if matches else OTHER_BPM
 
 
@@ -372,7 +381,7 @@ def tune_record(path: Path) -> dict:
     headers = parse_headers(abc)
     titles = headers.get("T") or [path.parent.name]
     parsed = parse_key((headers.get("K") or [""])[0])
-    beat = beat_unit((headers.get("M") or [""])[0])
+    beat = beat_unit((headers.get("M") or [""])[0], tune_type(headers) in SLOW_TYPES)
     rows, gloss = details(headers)
     # Versions of a tune ("Rheged (version 2)") share one page, under the base title.
     m = VERSION.match(titles[0])
@@ -393,7 +402,7 @@ def tune_record(path: Path) -> dict:
         } if parsed else None,
         "beat": str(beat),
         "beatName": BEAT_NAMES.get(beat, str(beat)),
-        "bpm": default_bpm(headers),
+        "bpm": default_bpm(headers, beat),
         "details": rows,
         # Where the melody starts after the lead-in (its repeated notes are collapsed,
         # so count the same way). The app works out the title, the search names and the
@@ -566,7 +575,7 @@ def type_slug(name: str) -> str:
 
 
 def app_page(template: str, *, title: str, description: str, url: str, head: str, main: str,
-             scripts: str = "", up: str = "../../", loading: str = "Loading…") -> str:
+             scripts: str = "", up: str = "../../", loading: str = "Loading…", kind: str = "other") -> str:
     """The app (index.html) in a folder (two down, unless up says otherwise), with its
     own title, description and address in the head, for link previews and search
     engines (which don't run the app), and what they should read in <main> (hidden from
@@ -578,6 +587,8 @@ def app_page(template: str, *, title: str, description: str, url: str, head: str
 
     page = template
     page = swap(page, '<base href="./">', f'<base href="{up}">')
+    # What the app will mark it (body[data-page]), so its layout is right from the start.
+    page = swap(page, "<body>", f'<body data-page="{kind}">')
     page = swap(page, '<script src="app.js" defer></script>', scripts + '<script src="app.js" defer></script>')
     page = swap(page, "<title>Y Sesiwn</title>", f"<title>{esc(title)} · Y Sesiwn</title>")
     page = re.sub(r'(<meta (?:name|property)="(?:og:)?description" content=")[^"]*"',
@@ -650,7 +661,7 @@ def tune_pages(tunes: list[dict], index: dict) -> None:
                  + (f'<p class="caption">Also known as: {esc(", ".join(titles[1:]))}</p>' if len(titles) > 1 else "")
                  + f"<p>{esc(description)}</p><dl>{details}</dl>"
                  + f'<pre>{esc(first["abc"])}</pre><p>{type_link(first["type"])}</p>',
-            loading="Loading the sheet music…"))
+            loading="Loading the sheet music…", kind="tune"))
 
     # A page for each type: its tunes, A to Z.
     for name, kind in types.items():

@@ -714,19 +714,23 @@ def test_long_credit_on_a_phone(browser, site):
 def test_practice_tools_folded_at_first(browser, site, page):
     page.goto_site("?tune=glandyfi")
     page.wait_for_selector(".score .abcjs-staff")
-    assert not page.locator("#loop-select").is_visible()  # folded on a wide screen too, so the music is the page
+    assert not page.locator("#tab-select").is_visible()  # folded on a wide screen too, so the music is the page
+    assert page.locator("#loop-select").is_visible()  # Repeat and Speed up: above the music, never folded
     context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True,
                                   service_workers="block")
     phone = context.new_page()
     phone.goto(site + "alaw/glandyfi/")
     phone.wait_for_selector(".score .abcjs-staff")
-    assert not phone.locator("#loop-select").is_visible()
+    assert not phone.locator("#tab-select").is_visible()
+    # Repeat, above the music and in reach of Play
+    assert phone.evaluate("""document.querySelector('#loop-select').getBoundingClientRect().bottom
+      < document.querySelector('.score').getBoundingClientRect().top + 1""")
     phone.click(".practice-tools summary")
-    assert phone.locator("#loop-select").is_visible()
+    assert phone.locator("#tab-select").is_visible()
     phone.click(".brand")
     phone.go_back()
     phone.wait_for_selector(".score .abcjs-staff")
-    assert phone.locator("#loop-select").is_visible()  # left open
+    assert phone.locator("#tab-select").is_visible()  # left open
     # Under the music on a phone too, so the music starts on the first screen
     assert phone.evaluate("""document.querySelector('.practice-tools').getBoundingClientRect().top
       > document.querySelector('.score').getBoundingClientRect().bottom - 1""")
@@ -735,7 +739,7 @@ def test_practice_tools_folded_at_first(browser, site, page):
     page.wait_for_function("state.practice.open")  # the toggle event comes a moment after the click
     page.evaluate("navigate('alaw/abaty-waltham/')")
     page.wait_for_selector(".score .abcjs-staff")
-    assert page.locator("#loop-select").is_visible()
+    assert page.locator("#tab-select").is_visible()
 
 
 def test_upcoming_sessions(page):
@@ -1717,7 +1721,12 @@ def test_speed_up_the_whole_tune(browser, site):
     page.check("text=Speed up each time")
     assert page.input_value("#loop-select") == "-1"
     assert " ".join(page.text_content(".speed-range").split()) == "from 78 to bpm" and page.input_value("#speed-to") == "112"
-    assert page.input_value("#tempo") == "78" and page.inner_text(".speed-note") == ""
+    assert page.input_value("#tempo") == "78"
+    assert page.inner_text(".speed-note") == "Starting at 78 bpm, repeating the whole tune."  # said beside it, as the tempo is up above
+    page.uncheck("text=Speed up each time")  # unticked straight after: both go back
+    assert page.input_value("#tempo") == "112" and page.input_value("#loop-select") == "-2"
+    assert page.inner_text(".speed-note") == "Back to 112 bpm." and page.locator(".speed-range").is_hidden()
+    page.check("text=Speed up each time")
     assert page.evaluate("localStorage.getItem('tunes')") is None  # speed up, and its slower start, aren't kept
     page.fill("#tempo", "120")  # faster than the goal: says what to do
     page.dispatch_event("#tempo", "change")
@@ -1733,9 +1742,9 @@ def test_speed_up_the_whole_tune(browser, site):
                   "state.synth.seek((e.at(-1).milliseconds - 800) / 1000, 'seconds'); }")
     page.wait_for_function("document.querySelector('.speed-note').textContent === 'now 95 of 99 bpm'", timeout=15000)
     page.click(".abcjs-midi-start")  # pause
-    page.fill("#speed-to", "1000")  # out of range: the fastest allowed
+    page.fill("#speed-to", "1000")  # out of range: the fastest allowed, and it says so
     page.dispatch_event("#speed-to", "change")
-    assert page.input_value("#speed-to") == "240"
+    assert page.input_value("#speed-to") == "240" and page.inner_text(".speed-note") == "240 bpm is the fastest."
     context.close()
 
 
@@ -1777,7 +1786,7 @@ def test_practice_tools_remembered(page):
     assert page.is_checked(".practice-row label:has-text('Click · on every beat') input")
     assert page.input_value("#loop-select") == "-2"
     assert page.input_value("#tab-select") == "mandolin"
-    assert page.inner_text(".sound-on") == "Plays with count-in, click · Turn off"  # never a surprise
+    assert page.inner_text(".sound-on") == "Plays with count-in, click · Change · Turn off"  # never a surprise
     assert page.evaluate("state.practice") == {"tab": "mandolin", "countIn": True, "click": True, "chordsOnScore": True, "open": True,
                                                "tabKnown": True, "heard": 0, "holesSeen": False}
     page.goto_site("alaw/glandyfi/")
@@ -1789,8 +1798,8 @@ def test_practice_tools_remembered(page):
     assert page.input_value("#loop-select") == "-2" and page.input_value("#tempo") == "90"  # repeat not kept
     assert page.inner_text(".usual-key >> nth=-1") == "Your tempo last time"
     # Said by Play, where it's pressed; and turned off from there (the tablature stays).
-    assert page.inner_text(".sound-on") == "Plays with chords, count-in, click · Turn off"
-    page.click(".sound-on .link-button")
+    assert page.inner_text(".sound-on") == "Plays with chords, count-in, click · Change · Turn off"
+    page.click(".sound-on .link-button >> text=Turn off")
     assert page.locator(".sound-on").is_hidden()
     assert not page.is_checked(".practice-row label:has-text('Click · on every beat') input")
     assert page.input_value("#loop-select") == "-2" and page.input_value("#tab-select") == "mandolin"
@@ -2988,14 +2997,14 @@ def test_summary_says_the_key_changes(browser, site):
 
 def test_chord_settings_with_the_practice_tools(page):
     # The paper is the player and the music; a tune's chord settings are among the practice
-    # tools, by what they change: what's heard (Hear), shown on the sheet music or not (See).
+    # tools, together: what's heard, and shown on the sheet music or not.
     page.goto_site("?tune=glandyfi")
     page.wait_for_selector(".score .abcjs-inline-audio")
     assert page.locator(".score .playback").count() == 0
     groups = page.locator(".practice-tools .practice-group")
-    assert [g.get_attribute("aria-label") for g in groups.all()] == ["Hear", "Practise", "See"]
+    assert [g.get_attribute("aria-label") for g in groups.all()] == ["Chords", "Practise", "See"]
     assert groups.nth(0).locator("input[name=chord-playback]").count() == 3
-    assert groups.nth(2).locator("text=Chords on the sheet music").count() == 1
+    assert groups.nth(0).locator("text=Chords on the sheet music").count() == 1
     assert page.locator(".card.chords input[type=checkbox]").count() == 0
     page.goto_site("?tune=cawl-cennin")  # no chords, no chord settings
     page.wait_for_selector(".score .abcjs-inline-audio")

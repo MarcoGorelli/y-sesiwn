@@ -178,7 +178,7 @@ scheduled runs after 60 days without a commit).
   keyboard shortcuts (also in the footer, on a computer).
 - **Full screen** (practice mode): just the controls and a full-width score, full screen
   where supported.
-- **Practice tools** (under the music; folded away on phones), in three lines.
+- **Repeat and Speed up** (above the music, never folded, in reach of Play).
   **Repeat** (off, the whole tune, or one part: parts start at a repeat sign
   or double bar line, as in the chord chart; `tuneParts()`; it replaces abcjs's
   own repeat button), optionally **speeding up** each time round, by 5% of the
@@ -187,7 +187,8 @@ scheduled runs after 60 days without a commit).
   "Reached 100 bpm. *Da iawn!*" when it gets there (`repeatLoop()`: a part
   seeks back to its first note whenever playback reaches a note outside it,
   and abcjs's own loop brings it round after the last part; the speed-up uses
-  `setWarp`, which keeps playing from the same place). Then **Count-in**,
+  `setWarp`, which keeps playing from the same place). Then the **practice
+  tools** (under the music, folded at first): **Count-in**,
   **Click** and **Swing**; then **Holes or tabs**. **Count-in** (one bar of woodblock
   clicks before the tune) and **Click** (a woodblock on every felt beat, high
   on the first of the bar) use abcjs's `drum`, `drumIntro` and `drumOff`
@@ -209,9 +210,10 @@ scheduled runs after 60 days without a commit).
   bar that doesn't start with a chord of its own begins with the one still
   sounding, faintly. It's
   built from abcjs's parsed tune (`chordChart()` in `app.js`), so it follows
-  the key drop-down. Both chord settings are among the practice tools (the
-  paper is just the player and the music): a switch shows the chords on the
-  sheet music (always drawn, hidden by CSS unless on), and **Hear** chooses
+  the key drop-down. Both chord settings are together in the practice tools,
+  under **Chords** (the paper is just the player and the music): a switch shows
+  the chords on the sheet music (always drawn, hidden by CSS unless on), and one
+  chooses
   *Tune only*, *Tune and chords* or *Chords only* (abcjs's `chordsOff` /
   `voicesOff`). Jigs
   (6/8, and 9/8, 12/8) are accompanied like a guitar or bodhrán, on every

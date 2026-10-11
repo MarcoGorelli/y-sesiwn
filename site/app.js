@@ -2736,6 +2736,7 @@ function renderTune(main, group, tune) {
   // Speeding up: how far there is to go, then a "da iawn" (well done) when the tune or
   // part has been worked up to speed, with a strip of carthen woven in under it.
   const onSpeed = (warp, cap) => {
+    speedSaid = "";
     const bpm = Math.round((settings.bpm * warp) / 100), goal = settings.speedTo;
     const arrived = warp >= cap;
     speedNote.classList.toggle("arrived", arrived);
@@ -2744,12 +2745,14 @@ function renderTune(main, group, tune) {
       : tr(`now ${bpm} of ${goal} bpm`, `nawr ${bpm} o ${goal} bpm`));
     if (arrived) speedNote.append(el("strong", { lang: "cy" }, "Da iawn!"));
   };
-  // Before it starts: a "to" no faster than the tempo has nothing to speed up to.
+  // Before it starts: a "to" no faster than the tempo has nothing to speed up to; or else
+  // what ticking (or unticking) Speed up has just changed, said beside it (see startSpeedUp).
+  let speedSaid = "";
   const speedHint = () => {
     speedNote.classList.remove("arrived");
     speedNote.textContent = settings.speedUp && settings.loop >= -1 && settings.speedTo <= settings.bpm
       ? tr(`To speed up, start slower (the tempo above) or set a faster “to”.`, `I gyflymu, dechreuwch yn arafach (y tempo uchod) neu gosodwch “i” cyflymach.`)
-      : "";
+      : speedSaid;
   };
   let drawn = { parts: [] };
   let showPracticeOn = null;  // the practice tools' summary: what's on (see practiceTools)
@@ -2837,7 +2840,7 @@ function renderTune(main, group, tune) {
     el("input", {
       id: "tempo", type: "range", min: 30, max: 200, value: settings.bpm,
       oninput: (e) => { settings.bpm = +e.target.value; showTempo(); },
-      onchange: () => { saveTune(tune, "bpm", settings.bpm); showInAddress(); redraw(); },
+      onchange: () => { speedSaid = ""; undoSpeedUp = null; saveTune(tune, "bpm", settings.bpm); showInAddress(); redraw(); },
     }), usualTempo),
     // How the music is shown, at the end of the row: its size, and full screen.
     el("div", { class: "view-tools" }, musicSize(redraw), practice)]);
@@ -2883,33 +2886,60 @@ function renderTune(main, group, tune) {
   // The practice tools, in three groups by what they change: Hear (the chords with the
   // tune, or alone), Practise (repeat, speeding up each time round, count-in, click, swing)
   // and See (chords on the music, tablature).
-  const loopSelect = el("select", { id: "loop-select", onchange: (e) => { settings.loop = +e.target.value; redraw(); } });
-  const toggle = (label, checked, onchange, cls, title) => el("label", { class: `switch${cls ? ` ${cls}` : ""}`, title },
+  const loopSelect = el("select", { id: "loop-select", onchange: (e) => { settings.loop = +e.target.value; speedSaid = ""; undoSpeedUp = null; redraw(); } });
+  const toggle = (label, checked, onchange, cls) => el("label", { class: `switch${cls ? ` ${cls}` : ""}` },
     el("input", { type: "checkbox", checked, onchange: (e) => { onchange(e.target.checked); redraw(); } }), label);
   const speedTo = el("input", { id: "speed-to", type: "number", min: 30, max: 240, step: 1, inputmode: "numeric", value: settings.speedTo,
     "aria-label": tr("Speed up to (bpm)", "Cyflymu i (bpm)"),
     onchange: (e) => {
       const to = Math.round(+e.target.value);
       settings.speedTo = Number.isFinite(to) && to >= 30 ? Math.min(240, to) : tune.bpm;
+      // Put back in range, it says so (a number typed is never changed silently).
+      speedSaid = settings.speedTo === to ? ""
+        : to > 240 ? tr("240 bpm is the fastest.", "240 bpm yw'r cyflymaf.")
+        : tr(`Between 30 and 240 bpm: back to the tune's ${tune.bpm}.`, `Rhwng 30 a 240 bpm: yn ôl i ${tune.bpm} yr alaw.`);
       e.target.value = settings.speedTo;
       speedHint();
       showTempo();
     } });
-  const speedToggle = toggle(tr("Speed up each time", "Cyflymu bob tro"), settings.speedUp,
-    (on) => { settings.speedUp = on; if (on) startSpeedUp(); showTempo(); });
-  const speedUp = el("div", { class: "speed-up" }, speedToggle,
-    el("span", { class: "speed-range" }, tr("from ", "o "), speedFrom, tr(" to ", " i "), speedTo, tr(" bpm", " bpm")));
+  const speedToggle = toggle(el("span", {}, tr("Speed up", "Cyflymu"), el("span", { class: "more" }, tr(" each time round", " bob tro"))), settings.speedUp,
+    (on) => { settings.speedUp = on; speedRange.hidden = !on; if (on) startSpeedUp(); else stopSpeedUp(); showTempo(); });
+  // From and to, under the tick once it's ticked (until then there's nothing to set).
+  const speedRange = el("span", { class: "speed-range", hidden: !settings.speedUp },
+    tr("from ", "o "), speedFrom, tr(" to ", " i "), speedTo, tr(" bpm", " bpm"));
+  const speedUp = el("div", { class: "speed-up" }, speedToggle, speedRange);
+  const setBpm = (bpm) => {  // not kept: speed up isn't either
+    settings.bpm = bpm;
+    const tempo = controls.querySelector("#tempo");
+    if (tempo) tempo.value = settings.bpm;
+    showTempo();
+    showInAddress();
+  };
   // Ticking Speed up works at once: it repeats the whole tune if nothing is repeating yet,
-  // and, if the tempo is already the goal, starts from 70% of it ("from 78 to 112").
+  // and, if the tempo is already the goal, starts from 70% of it ("from 78 to 112"); and
+  // says so beside it, as the tempo it changed is up above. Unticked straight after, both go back.
+  let undoSpeedUp = null;
   const startSpeedUp = () => {
-    if (settings.loop < -1) { settings.loop = -1; fillLoops(); }
+    const was = { loop: settings.loop, bpm: settings.bpm };
+    const repeats = settings.loop < -1;
+    if (repeats) { settings.loop = -1; fillLoops(); }
     const goal = settings.speedTo;
-    if (settings.bpm >= goal) {
-      settings.bpm = Math.max(30, Math.round(goal * .7));  // not kept: speed up isn't either
-      const tempo = controls.querySelector("#tempo");
-      if (tempo) tempo.value = settings.bpm;
-      showTempo();
-      showInAddress();
+    const slower = settings.bpm >= goal;
+    if (slower) setBpm(Math.max(30, Math.round(goal * .7)));
+    undoSpeedUp = { ...was, loop: repeats ? was.loop : null, bpm: slower ? was.bpm : null, at: settings.bpm };
+    speedSaid = slower && repeats ? tr(`Starting at ${settings.bpm} bpm, repeating the whole tune.`, `Yn dechrau ar ${settings.bpm} bpm, gan ailadrodd yr alaw gyfan.`)
+      : slower ? tr(`Starting at ${settings.bpm} bpm.`, `Yn dechrau ar ${settings.bpm} bpm.`)
+      : repeats ? tr("Repeating the whole tune.", "Yn ailadrodd yr alaw gyfan.") : "";
+  };
+  const stopSpeedUp = () => {
+    const undo = undoSpeedUp;
+    undoSpeedUp = null;
+    speedSaid = "";
+    if (!undo) return;
+    if (undo.loop !== null && settings.loop === -1) { settings.loop = undo.loop; fillLoops(); }
+    if (undo.bpm !== null && settings.bpm === undo.at) {
+      setBpm(undo.bpm);
+      speedSaid = tr(`Back to ${settings.bpm} bpm.`, `Yn ôl i ${settings.bpm} bpm.`);
     }
   };
   // With none chosen, what tablature is; with one, which it is just above the music, with
@@ -2987,6 +3017,12 @@ function renderTune(main, group, tune) {
   // The way to the menu, down in the practice tools, which may be folded: opened for the
   // menu, they aren't kept open for the next tune (only the reader's own fold is).
   let openedForMenu = false;
+  // From "Plays with … · Change" by Play: the tools, opened (as for the menu) and in view.
+  const toTools = () => {
+    if (!practiceTools.open) { openedForMenu = true; practiceTools.open = true; }
+    practiceTools.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    practiceTools.querySelector("summary").focus({ preventScroll: true });
+  };
   const toTabMenu = () => {
     if (!practiceTools.open) { openedForMenu = true; practiceTools.open = true; }
     tabSelect.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
@@ -3082,27 +3118,34 @@ function renderTune(main, group, tune) {
     state.practice.countIn, (on) => { state.practice.countIn = on; savePractice(); });
   const clickToggle = toggle(el("span", {}, tr("Click", "Clic"), el("span", { class: "what" }, tr(" · on every beat", " · ar bob curiad"))),
     state.practice.click, (on) => { state.practice.click = on; savePractice(); });
-  const swingToggle = canSwing(tune) ? toggle(tr("Swing", "Swing"), settings.swing, (on) => { settings.swing = on; saveTune(tune, "swing", on); }, "swing",
-    tr("Play the quavers long-short, as hornpipes are played", "Chwarae'r cwafers yn hir-byr, fel y chwaraeir pibddawnsiau")) : null;
+  const swingToggle = canSwing(tune) ? toggle(el("span", {}, "Swing", el("span", { class: "what" }, tr(" · long-short quavers", " · cwafers hir-byr"))),
+    settings.swing, (on) => { settings.swing = on; saveTune(tune, "swing", on); }, "swing") : null;
   const toolGroup = (label, ...lines) => el("div", { class: "practice-group", role: "group", "aria-label": label },
     el("span", { class: "label", "aria-hidden": "true" }, label), ...lines);
   // What's on, and the way to turn it all off, at the end of the tools.
   const offButton = (label, which) => el("button", { type: "button", class: "link-button", onclick: () => turnOff(which) }, label);
+  // Everything in the tools is kept, on this device: some for every tune, the rest for this one.
+  const forThisTune = [chordTools ? tr("the chords you hear", "y cordiau a glywch") : null, swingToggle ? "swing" : null].filter(Boolean);
   const keptNote = el("p", { class: "caption kept-note" },
-    tr("Kept for this tune, on this device; the count-in, click, chords on the music and holes or tabs for every tune. ", "Wedi'u cadw ar gyfer yr alaw hon, ar y ddyfais hon; y cyfrif i mewn, y clic, y cordiau ar y sgôr a'r tyllau neu'r tablatur ar gyfer pob alaw. "),
+    el("span", {}, tr("Kept on this device, for every tune: ", "Wedi'u cadw ar y ddyfais hon, ar gyfer pob alaw: "),
+      [tr("count-in", "cyfrif i mewn"), tr("click", "clic"), chordTools ? tr("chords on the music", "cordiau ar y sgôr") : null,
+        tr("holes or tabs", "tyllau neu dablatur")].filter(Boolean).join(", "), "."),
+    forThisTune.length ? el("span", {}, tr("For this tune only: ", "Ar gyfer yr alaw hon yn unig: "), forThisTune.join(tr(" and ", " a ")), ".") : null,
     offButton(tr("Turn all off", "Diffodd y cyfan"), "all"));
   const practiceRow = el("div", { class: "practice-row" },
-    chordTools ? toolGroup(tr("Hear", "Clywed"), el("div", { class: "playback" }, chordTools.playback)) : null,
-    toolGroup(tr("Practise", "Ymarfer"),
-      el("div", { class: "practice-line" },
-        el("div", { class: "control" }, el("label", { for: "loop-select" }, tr("Repeat", "Ailadrodd")), loopSelect), speedUp),
-      speedNote,
-      el("div", { class: "practice-line" }, countInToggle, clickToggle, swingToggle)),
+    chordTools ? toolGroup(tr("Chords", "Cordiau"), el("div", { class: "playback" }, chordTools.playback),
+      el("div", { class: "practice-line" }, chordTools.onScore)) : null,
+    toolGroup(tr("Practise", "Ymarfer"), el("div", { class: "practice-line" }, countInToggle, clickToggle, swingToggle)),
     toolGroup(tr("See", "Gweld"),
-      chordTools ? el("div", { class: "practice-line" }, chordTools.onScore) : null,
       el("div", { class: "practice-line" },
         el("div", { class: "control" }, el("label", { for: "tab-select" }, tr("Holes or tabs", "Tyllau neu dablatur")), tabSelect), tabWhat)),
     keptNote);
+  // Repeat and Speed up, which a learner comes back to each time (and aren't kept): above
+  // the music, in reach of Play, never folded away; the paper stays the player and the music.
+  const practiseNow = el("div", { class: "practise-now", role: "group", "aria-label": tr("Repeat and speed up", "Ailadrodd a chyflymu") },
+    el("div", { class: "practice-line" },
+      el("div", { class: "control" }, el("label", { for: "loop-select" }, tr("Repeat", "Ailadrodd")), loopSelect), speedUp),
+    speedNote);
   // What playing will sound like besides the tune, by the player, where Play is pressed: so
   // a click or chords kept for this tune are never a surprise at a session.
   const soundOn = el("p", { class: "caption sound-on", hidden: true });
@@ -3110,8 +3153,6 @@ function renderTune(main, group, tune) {
   const sounds = () => [
     tune.chords != null && settings.chords.play === "both" ? tr("chords", "cordiau") : null,
     tune.chords != null && settings.chords.play === "chords" ? tr("chords only", "cordiau yn unig") : null,
-    settings.loop > -2 ? tr("repeat", "ailadrodd") : null,
-    settings.speedUp ? tr("speed up", "cyflymu") : null,
     settings.swing && canSwing(tune) && !hornpipe ? "swing" : null,
     state.practice.countIn ? tr("count-in", "cyfrif i mewn") : null,
     state.practice.click ? tr("click", "clic") : null,
@@ -3120,7 +3161,7 @@ function renderTune(main, group, tune) {
   // and tempo stay, as chosen.
   const turnOff = (which) => {
     const as = tuneDefaults(tune);
-    Object.assign(settings, { loop: as.loop, speedUp: false, swing: as.swing });
+    settings.swing = as.swing;  // Repeat and Speed up, in sight above the music, stay
     settings.chords.play = "tune";
     for (const name of ["swing", "play"]) saveTune(tune, name, as[name]);
     Object.assign(state.practice, { countIn: false, click: false });
@@ -3132,7 +3173,7 @@ function renderTune(main, group, tune) {
     // The tools as they now are.
     practiceRow.querySelectorAll("input[name=chord-playback]").forEach((r) => { r.checked = r.value === settings.chords.play; });
     if (chordTools) chordTools.onScore.querySelector("input").checked = state.practice.chordsOnScore;
-    for (const [t, on] of [[speedToggle, settings.speedUp], [countInToggle, state.practice.countIn], [clickToggle, state.practice.click], [swingToggle, settings.swing]]) {
+    for (const [t, on] of [[countInToggle, state.practice.countIn], [clickToggle, state.practice.click], [swingToggle, settings.swing]]) {
       if (t) t.querySelector("input").checked = on;
     }
     fillLoops();
@@ -3148,6 +3189,8 @@ function renderTune(main, group, tune) {
     soundOn.hidden = !on.length;
     if (on.length) {
       soundOn.replaceChildren(tr("Plays with ", "Yn chwarae hefyd: "), el("strong", {}, on.join(", ")), " · ",
+        el("button", { type: "button", class: "link-button", "aria-label": tr("Change what plays", "Newid beth sy'n chwarae"), onclick: toTools },
+          tr("Change", "Newid")), " · ",
         offButton(tr("Turn off", "Diffodd"), "sounds"));
     }
   };
@@ -3167,8 +3210,8 @@ function renderTune(main, group, tune) {
     practiceCaption.toggleAttribute("aria-hidden", !on.length);
     practiceCaption.textContent = on.length ? `${tr(" · on: ", " · ymlaen: ")}${on.join(", ")}`
       : tune.chords == null
-        ? tr(" · repeat, speed up, click, holes or tabs", " · ailadrodd, cyflymu, clic, tyllau neu dablatur")
-        : tr(" · chords, repeat, speed up, holes or tabs", " · cordiau, ailadrodd, cyflymu, tyllau neu dablatur");
+        ? tr(" · count-in, click, holes or tabs", " · cyfrif i mewn, clic, tyllau neu dablatur")
+        : tr(" · chords, count-in, click, holes or tabs", " · cordiau, cyfrif i mewn, clic, tyllau neu dablatur");
   };
   const practiceTools = el("details", { class: "practice-tools fold", open: practiceToolsOpen(),
     ontoggle: (e) => {
@@ -3201,7 +3244,7 @@ function renderTune(main, group, tune) {
     tabInvite,
     tabSaid,
     el("div", { class: "tune-layout" },
-      el("div", { class: "tune-main" }, el("div", { class: "score" }, fingeringKey, audio, soundOn, soundNote(), paper),
+      el("div", { class: "tune-main" }, practiseNow, el("div", { class: "score" }, fingeringKey, audio, soundOn, soundNote(), paper),
         practiceTools, chords),
       // Taking it with you first, in reach beside the music (on a phone, after the practice tools)
       el("div", { class: "tune-side" }, actions,

@@ -698,6 +698,10 @@ async function startListening({ onNote, onHear, onStop }) {
   // Made before the permission prompt, while the tap that started this still counts
   // as the user's go-ahead for sound; otherwise some browsers start it suspended.
   const context = new AudioContext();
+  // Until the microphone is allowed, leaving the page (stopListening) cancels it.
+  let cancelled = false;
+  const pending = { stop(reason) { cancelled = true; if (state.listening === pending) state.listening = null; onStop(reason); } };
+  state.listening = pending;
   // Raw sound: phone "voice" processing (echo and noise cancelling, level control) warps notes.
   let stream;
   try {
@@ -705,9 +709,16 @@ async function startListening({ onNote, onHear, onStop }) {
       audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
     });
   } catch (error) {
+    if (state.listening === pending) state.listening = null;
     context.close().catch(() => {});
     if ("audioSession" in navigator) navigator.audioSession.type = "playback";
     throw error;
+  }
+  if (cancelled) {
+    stream.getTracks().forEach((t) => t.stop());
+    context.close().catch(() => {});
+    if ("audioSession" in navigator) navigator.audioSession.type = "playback";
+    return;
   }
   await context.resume().catch(() => {});
   const source = context.createMediaStreamSource(stream);
@@ -742,6 +753,7 @@ async function startListening({ onNote, onHear, onStop }) {
   };
   try {
     await context.audioWorklet.addModule(URL.createObjectURL(new Blob([TAP], { type: "text/javascript" })));
+    if (state.listening !== listening) return;  // stopped meanwhile
     tap = new AudioWorkletNode(context, "y-sesiwn-tap");
     const silent = context.createGain();
     silent.gain.value = 0;  // the worklet needs pulling by the speakers to run, but nothing is played
@@ -760,6 +772,7 @@ async function startListening({ onNote, onHear, onStop }) {
   } catch {
     // No AudioWorklet (older browsers): look at the sound once a screen redraw.
     tap = null;
+    if (state.listening !== listening) return;  // stopped meanwhile
     const analyser = context.createAnalyser();
     analyser.fftSize = samples.length;
     source.connect(analyser);
@@ -1181,10 +1194,10 @@ document.addEventListener("keydown", (event) => {
 });
 
 // Space plays or pauses the tune (hands on the instrument), unless a control has the
-// focus: then it's that control's.
+// focus: then it's that control's. (A heading focused on arriving at the page isn't one.)
 document.addEventListener("keydown", (event) => {
   if (event.key !== " " || event.ctrlKey || event.metaKey || event.altKey) return;
-  if (event.target.closest("input, textarea, select, button, a, summary, [contenteditable], [role='button'], [tabindex]:not(#main)")) return;
+  if (event.target.closest("input, textarea, select, button, a, summary, [contenteditable], [role='button'], [tabindex]:not([tabindex='-1'])")) return;
   const play = document.querySelector(".score .abcjs-midi-start");
   if (!play) return;
   event.preventDefault();
@@ -1534,7 +1547,7 @@ function renderBrowse(main) {
         ? `${n} ${what}${ks.length ? ` yn ${ks.map(keyLabel).join(" neu ")}` : ""}` : `Y ${tunes.length} alaw i gyd`;
     } else {
       const plural = (t) => (t.name === "Other" && ts.length > 1 ? "other tunes" : t.english);
-      const what = n === 1 ? (ts.length === 1 ? ts[0].name.toLowerCase() : "tune")
+      const what = n === 1 ? (ts.length === 1 ? EN_TYPE[ts[0].name] : "tune")
         : !ts.length ? "tunes" : andList(ts.map(plural), "and");
       caption.textContent = ts.length || ks.length
         ? `${n} ${what}${ks.length ? ` in ${andList(ks, "or")}` : ""}` : `All ${tunes.length} tunes`;
@@ -3249,11 +3262,13 @@ function renderTune(main, group, tune) {
     const f = FINGERED[state.practice.tab];
     const pitches = f && tune.key ? pitchesOf(tune) : [];
     const now = settings.transpose;
-    const missing = f ? notOn(pitches, f, now) : 0;
+    // As the music is drawn: in the octave semitones() chooses, not just the key.
+    const drawnAt = (shift) => semitones(tune, shift);
+    const missing = f ? notOn(pitches, f, drawnAt(now)) : 0;
     fitNote.hidden = !missing;
     if (!missing) return fitNote.replaceChildren();
-    const shift = [0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6].find((s) => s !== now && !notOn(pitches, f, s));
-    const other = f.recorder ? null : Object.keys(FINGERED).find((value) => !FINGERED[value].recorder && !notOn(pitches, FINGERED[value], now));
+    const shift = [0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6].find((s) => s !== now && !notOn(pitches, f, drawnAt(s)));
+    const other = f.recorder ? null : Object.keys(FINGERED).find((value) => !FINGERED[value].recorder && !notOn(pitches, FINGERED[value], drawnAt(now)));
     const toKey = shift !== undefined && el("button", { type: "button", class: "link-button", onclick: () => {
       const keys = document.getElementById("key-select");
       keys.value = shift;
@@ -5087,6 +5102,7 @@ function renderSet(main) {
   // Left and right arrows (what most page-turner pedals send), and swipes across the music.
   const onKey = (event) => {
     if (!music.isConnected) { document.removeEventListener("keydown", onKey); window.removeEventListener("scroll", onScroll); return; }
+    if (event.defaultPrevented) return;  // the arrows used already (a radio group: the language, light or dark)
     if (event.ctrlKey || event.metaKey || event.altKey || event.target.closest("input, textarea, select, [contenteditable]")) return;
     if (event.key === "ArrowRight" || event.key === "ArrowLeft") { event.preventDefault(); turn(event.key === "ArrowRight" ? 1 : -1); }
   };

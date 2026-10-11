@@ -429,14 +429,28 @@ def test_whistle_out_of_range(page):
     page.evaluate("localStorage.setItem('practice', JSON.stringify({tab: 'whistle-D', open: null, tabKnown: true}))")
     page.goto_site("alaw/tros-y-garreg/")
     page.wait_for_selector(".score g.holes", state="attached")
-    assert page.inner_text(".fit-note") == "10 notes aren't on this whistle (?). In G minor, every note is there."
+    # (C minor, a tone down, is drawn an octave up: every note on the whistle.)
+    assert page.inner_text(".fit-note") == "10 notes aren't on this whistle (?). In C minor, every note is there."
     page.click(".fit-note .link-button")
     page.wait_for_function("document.querySelector('.fit-note').hidden")
-    assert page.input_value("#key-select") == "5"
+    assert page.input_value("#key-select") == "-2"
     assert page.evaluate("[...document.querySelectorAll('.score .abcjs-lyric .sign')].filter((t) => t.textContent === '?').length") == 0
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score g.holes", state="attached")
     assert page.locator(".fit-note").is_hidden()
+
+
+def test_whistle_fit_note_follows_the_octave_drawn(page):
+    # A key a few semitones up may be drawn an octave down, to sit on the stave (semitones):
+    # what the note says isn't on the whistle is what's drawn with a "?".
+    page.goto_site()
+    page.evaluate("localStorage.setItem('practice', JSON.stringify({tab: 'whistle-D', open: null, tabKnown: true}))")
+    page.goto_site("alaw/a-ei-di-r-deryn-du/?key=D%23")
+    page.wait_for_selector(".score g.holes", state="attached")
+    assert page.evaluate("semitones(state.bySlug.get('a-ei-di-r-deryn-du'), 3)") == -9  # drawn lower
+    marks = page.evaluate("[...document.querySelectorAll('.score .abcjs-lyric .sign')].filter((t) => t.textContent === '?').length")
+    assert marks > 0
+    assert page.inner_text(".fit-note").startswith(f"{marks} notes aren't on this whistle (?).")
 
 
 # A fiddle has no frets: its tablature is read as fingers.
@@ -1638,6 +1652,23 @@ def test_microphone_without_audio_worklet(playwright_instance, site, tmp_path):
     browser.close()
 
 
+def test_leaving_while_the_microphone_is_asked_for(playwright_instance, site):
+    # Leaving the notes page while the browser asks for the microphone: once it's allowed,
+    # nothing listens, and the page left for keeps its own address.
+    browser = playwright_instance.chromium.launch(args=["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"])
+    page = browser.new_context(service_workers="block", permissions=["microphone"]).new_page()
+    page.add_init_script("""const ask = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+      navigator.mediaDevices.getUserMedia = (c) => new Promise((r) => setTimeout(r, 1000)).then(() => ask(c));""")
+    page.goto(site)
+    page.click("button.listen-start")
+    page.wait_for_selector("button.listen.on")
+    page.click(".sidebar-links a[href='?page=browse']")
+    page.wait_for_timeout(2000)  # the microphone allowed meanwhile
+    assert page.evaluate("state.listening") is None
+    assert page.evaluate("location.search") == "?page=browse"
+    browser.close()
+
+
 # ---- Practice: parts, looping, speed-up, count-in, click, tablature ------------------
 
 @pytest.mark.parametrize("slug, parts", [("glandyfi", 2), ("machynlleth", 4), ("ffaniglen", 2), ("morgawr", 3)])
@@ -2748,6 +2779,16 @@ def test_browse_type_counts_follow_the_key(page):
         assert page.locator(f".pills [data-type='{t}']").is_disabled() == (groups.count(t) == 0)
 
 
+def test_browse_one_tune_in_english(page):
+    # One tune of a type is named in English, as several are: "1 polka", as "2 polkas".
+    page.goto_site("?page=browse")
+    key = page.evaluate("""() => { const n = {};
+      for (const g of state.groupList) if (g.type === 'Polca' && g.versions[0].key) { const k = `${g.versions[0].key.root} ${g.versions[0].key.modeName}`; n[k] = (n[k] ?? 0) + 1; }
+      return Object.keys(n).find((k) => n[k] === 1); }""")
+    page.goto_site(f"?page=browse&type=Polca&key={key.replace(' ', '%20')}")
+    assert page.inner_text(".browse-count") == f"1 polka in {key}"
+
+
 def test_browse_several_types_and_keys(page, site):
     # Types add up (jigs and polkas), keys add up (D or G), and the two narrow each other
     # down; clicking a chosen one again takes just that one off.
@@ -2825,6 +2866,18 @@ def test_space_bar_plays(page):
     page.keyboard.press(" ")
     assert page.evaluate("presses") == 1
     page.focus("#key-select")
+    page.keyboard.press(" ")
+    assert page.evaluate("presses") == 1
+
+
+def test_space_bar_plays_after_following_a_link(page):
+    # Opened from a link in the site, the tune's heading has the focus (for screen
+    # readers): Space still plays, as it does on a page loaded afresh.
+    page.goto_site("?page=browse&all=1")
+    page.click(".tune-list a >> nth=0")
+    page.wait_for_selector(".score .abcjs-midi-start")
+    assert page.evaluate("document.activeElement.tagName") == "H1"
+    page.evaluate("window.presses = 0; document.querySelector('.score .abcjs-midi-start').addEventListener('click', () => presses++)")
     page.keyboard.press(" ")
     assert page.evaluate("presses") == 1
 
@@ -3388,6 +3441,16 @@ def test_set_next_and_previous(browser, site):
     page.wait_for_timeout(100)
     assert page.evaluate("scrollY") == before
     context.close()
+
+
+def test_set_arrows_left_to_a_radio_group(page):
+    # The arrow keys in the light or dark switch choose from it, without turning the set's page.
+    page.goto_site("?set=3V~h5A5B&n=Nos%20Iau")
+    page.wait_for_selector(".set-nav")
+    page.focus(".theme-switch [aria-checked='true']")
+    page.keyboard.press("ArrowRight")
+    assert page.inner_text(".set-nav-where") == "3 tunes"
+    page.evaluate("localStorage.removeItem('theme')")
 
 
 def test_set_next_before_the_rest_is_drawn(browser, site):

@@ -1763,6 +1763,23 @@ def test_count_in_and_click(page):
     assert page.evaluate(drum)["drums"] > 50  # a click on every beat of the tune
 
 
+def test_count_in_lights_the_notes_after_it(browser, site):
+    # The count-in is a bar of clicks before the tune: the notes are lit a bar later too,
+    # in time with the sound (not a bar ahead of it).
+    context = browser.new_context(service_workers="block")
+    page = context.new_page()
+    page.add_init_script("localStorage.setItem('practice', JSON.stringify({ countIn: true, click: true }))")
+    page.goto(site + "alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.click(".abcjs-midi-start")
+    page.wait_for_function("state.synth.timer && state.synth.timer.noteTimings.length")
+    first, bar = page.evaluate("""() => [state.synth.timer.noteTimings.find((e) => e.type === 'event').milliseconds,
+      state.synth.visualObj.millisecondsPerMeasure(state.synth.timer.qpm)]""")
+    assert abs(first - bar) < 5, (first, bar)
+    page.click(".abcjs-midi-start")  # pause
+    context.close()
+
+
 def test_practice_tools_remembered(page):
     # How a tune is played is kept on the device for that tune only: its tempo and the chords
     # heard. Repeat and speed up are chosen afresh each time, never kept. How the reader practises is kept for every tune: the count-in, the

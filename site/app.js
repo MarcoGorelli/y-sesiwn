@@ -2290,6 +2290,9 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   }
   const controller = new ABCJS.synth.SynthController();
   const cursor = new Cursor();
+  // The count-in's bar comes before the tune in the sound: the lit notes wait for it too
+  // (abcjs's timings start that many bars in), and so do the jumps made by their times.
+  cursor.extraMeasuresAtBeginning = audioParams.drumIntro ?? 0;
   controller.load(audio, cursor, {
     displayLoop: false, displayRestart: true, displayPlay: true, displayProgress: true,
   });

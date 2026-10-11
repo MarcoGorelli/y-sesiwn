@@ -1859,23 +1859,39 @@ function repeatLoop(controller, part, settings, onSpeed) {
   let jumping = false, inside = false, last = -1;
   const firstNote = () => controller.timer.noteTimings.find((e) => e.type === "event" && e.startChar >= part.from && e.startChar < part.to);
   const cap = () => Math.round((100 * settings.speedTo) / settings.bpm);
+  let faster = false;  // the sound being made again, faster
   // Faster for the next time round, if speeding up (then, for a part, back to its start).
-  const roundAgain = (then = () => {}) => {
+  // abcjs's setWarp makes the sound again and carries on from controller.percent, which
+  // still said the end of the last time round: so the new sound jumped to the tune's last
+  // notes, ended and came round again, racing the player's own loop. Left so once the "to"
+  // was reached (nothing made it again), the tune played on doubled or out of time with the
+  // notes. So it carries on from where this time round starts (`at`, a fraction of the tune);
+  // and only once abcjs's timer has finished with this note (made again inside it, the
+  // timer carried on with none, and failed).
+  const roundAgain = (at, then = () => {}) => {
     if (settings.speedUp && controller.warp < cap()) {
       const warp = Math.min(cap(), controller.warp + 5);
       onSpeed(warp, cap());
-      controller.setWarp(warp).then(then);
+      faster = true;
+      setTimeout(() => {
+        // Paused, or gone to another tune, in the meantime: not started again.
+        if (state.synth !== controller || !controller.isStarted) { faster = false; return; }
+        controller.percent = at;
+        controller.setWarp(warp).then(then).finally(() => { faster = false; });
+      });
     } else {
       then();
     }
   };
   return {
     onEvent(event) {
+      // While the sound is made again, the old player's last notes still come (with no timer).
+      if (faster || !controller.timer) return;
       if (event.startChar == null) return;  // a count-in click
       if (part.whole) {
         // Round again: playback has gone from late in the tune back to its start.
         const end = controller.timer.noteTimings.at(-1)?.milliseconds ?? 0;
-        if (last > end / 2 && event.milliseconds + 1000 < last) roundAgain();
+        if (last > end / 2 && event.milliseconds + 1000 < last) roundAgain(0);
         last = event.milliseconds;
         return;
       }
@@ -1883,8 +1899,9 @@ function repeatLoop(controller, part, settings, onSpeed) {
       if (within) { jumping = false; inside = true; return; }
       if (jumping) return;
       jumping = true;
+      // (its time is looked up again after: a faster sound has faster timings)
       const seek = () => controller.seek(firstNote().milliseconds / 1000, "seconds");
-      if (inside) roundAgain(seek); else seek();
+      if (inside) roundAgain(firstNote().milliseconds / (controller.midiBuffer.duration * 1000), seek); else seek();
       inside = false;
     },
   };
@@ -2897,7 +2914,14 @@ function renderTune(main, group, tune) {
     controls.append(el("div", { class: "control" }, el("label", { for: "key-select" }, tr("Key", "Cywair")), select, usual));
   }
   const tempoLabel = el("label", { for: "tempo" });
-  const speedFrom = el("span");
+  // "from" is the tempo itself: tapped, it goes up to the slider (on a phone, opening the
+  // key and tempo line), so where it's set is never a thing to remember.
+  const speedFrom = el("button", { type: "button", class: "link-button speed-from", onclick: () => {
+    if (getComputedStyle(summary).display !== "none" && !state.controlsOpen) summary.click();
+    const slider = controls.querySelector("#tempo");
+    slider.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    slider.focus({ preventScroll: true });
+  } });
   // As the key: a page that opens at the tempo kept from last time says so (not a link's).
   const keptBpm = !(tempo >= 30 && tempo <= 200) && kept.bpm != null ? kept.bpm : null;
   const usualTempo = el("span", { class: "caption usual-key" });
@@ -2909,6 +2933,7 @@ function renderTune(main, group, tune) {
     // if that's already the goal, 70% of it (see startSpeedUp), never "from 100 to 100".
     const goal = settings.speedTo;
     speedFrom.textContent = String(!settings.speedUp && settings.bpm >= goal ? Math.max(30, Math.round(goal * .7)) : settings.bpm);
+    speedFrom.setAttribute("aria-label", tr(`From ${speedFrom.textContent} bpm: change the tempo`, `O ${speedFrom.textContent} bpm: newid y tempo`));
     showSummary();
   };
   showTempo();
@@ -3077,7 +3102,6 @@ function renderTune(main, group, tune) {
     if (!missing) return fitNote.replaceChildren();
     const shift = [0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6].find((s) => s !== now && !notOn(pitches, f, s));
     const other = f.recorder ? null : Object.keys(FINGERED).find((value) => !FINGERED[value].recorder && !notOn(pitches, FINGERED[value], now));
-    const name = f.label().replace(/^./, (c) => c.toLowerCase());
     const toKey = shift !== undefined && el("button", { type: "button", class: "link-button", onclick: () => {
       const keys = document.getElementById("key-select");
       keys.value = shift;
@@ -3085,14 +3109,15 @@ function renderTune(main, group, tune) {
     } }, keyName(tune.key.pitch + shift, tune.key.modeName));
     const toOther = other && el("button", { type: "button", class: "link-button", onclick: () => chooseTab(other) },
       FINGERED[other].label().replace(/^./, (c) => c.toLowerCase()));
-    const ways = [toKey, toOther].filter(Boolean);
-    const either = ways.length === 2 ? [ways[0], tr(", or on a ", ", neu ar "), ways[1]]
-      : toKey ? [toKey] : toOther ? [tr("on a ", "ar "), toOther] : [];
+    // Short, as it's between the name and Play: the instrument is named on the line above,
+    // and "?" in the signs under it.
+    const either = toKey && toOther ? [tr(" In ", " Yn "), toKey, tr(", or on a ", ", neu ar "), toOther]
+      : toKey ? [tr(" In ", " Yn "), toKey] : toOther ? [tr(" On a ", " Ar "), toOther] : [];
+    const thisOne = f.recorder ? tr("this recorder", "y recorder hwn") : tr("this whistle", "y chwisl hon");
     fitNote.replaceChildren(
-      missing === 1 ? tr(`1 note isn't on the ${name} (marked ?).`, `Dydy 1 nodyn ddim ar y ${name} (wedi'i farcio ?).`)
-        : tr(`${missing} notes aren't on the ${name} (marked ?).`, `Dydy ${missing} nodyn ddim ar y ${name} (wedi'u marcio ?).`),
-      ...(ways.length ? [tr(" Play it ", " Chwaraewch hi "), ...(toKey ? [tr("in ", "yn "), ...either] : either),
-        tr(", and every note is there.", ", a bydd pob nodyn yno.")] : []));
+      missing === 1 ? tr(`1 note isn't on ${thisOne} (?).`, `Dydy 1 nodyn ddim ar ${thisOne} (?).`)
+        : tr(`${missing} notes aren't on ${thisOne} (?).`, `Dydy ${missing} nodyn ddim ar ${thisOne} (?).`),
+      ...(either.length ? [...either, tr(", every note is there.", ", mae pob nodyn yno.")] : []));
   };
   const holesFolded = state.practice.holesSeen && matchMedia("(max-width: 800px)").matches;
   // The way to the menu, down in the practice tools, which may be folded: opened for the
@@ -3203,8 +3228,6 @@ function renderTune(main, group, tune) {
     settings.swing, (on) => { settings.swing = on; saveTune(tune, "swing", on); }, "swing") : null;
   const toolGroup = (label, ...lines) => el("div", { class: "practice-group", role: "group", "aria-label": label },
     el("span", { class: "label", "aria-hidden": "true" }, label), ...lines);
-  // What's on, and the way to turn it all off, at the end of the tools.
-  const offButton = (label, which) => el("button", { type: "button", class: "link-button", onclick: () => turnOff(which) }, label);
   // Everything in the tools is kept, on this device: some for every tune, the rest for this one.
   const forThisTune = [chordTools ? tr("the chords you hear", "y cordiau a glywch") : null, swingToggle ? "swing" : null].filter(Boolean);
   const keptNote = el("p", { class: "caption kept-note" },
@@ -3212,7 +3235,7 @@ function renderTune(main, group, tune) {
       [tr("count-in", "cyfrif i mewn"), tr("click", "clic"), chordTools ? tr("chords on the music", "cordiau ar y sgôr") : null,
         tr("holes or tabs", "tyllau neu dablatur")].filter(Boolean).join(", "), "."),
     forThisTune.length ? el("span", {}, tr("For this tune only: ", "Ar gyfer yr alaw hon yn unig: "), forThisTune.join(tr(" and ", " a ")), ".") : null,
-    offButton(tr("Turn all off", "Diffodd y cyfan"), "all"));
+    el("button", { type: "button", class: "link-button", onclick: () => turnAllOff() }, tr("Turn all off", "Diffodd y cyfan")));
   const practiceRow = el("div", { class: "practice-row" },
     chordTools ? toolGroup(tr("Chords", "Cordiau"), el("div", { class: "playback" }, chordTools.playback),
       el("div", { class: "practice-line" }, chordTools.onScore)) : null,
@@ -3238,18 +3261,13 @@ function renderTune(main, group, tune) {
     state.practice.countIn ? tr("count-in", "cyfrif i mewn") : null,
     state.practice.click ? tr("click", "clic") : null,
   ].filter(Boolean);
-  // Turning off: what's heard (from the player), or everything (from the tools); the key
-  // and tempo stay, as chosen.
-  const turnOff = (which) => {
+  // Turning it all off, from the end of the tools; the key and tempo stay, as chosen.
+  const turnAllOff = () => {
     const as = tuneDefaults(tune);
     settings.swing = as.swing;  // Repeat and Speed up, in sight above the music, stay
     settings.chords.play = "tune";
     for (const name of ["swing", "play"]) saveTune(tune, name, as[name]);
-    Object.assign(state.practice, { countIn: false, click: false });
-    if (which === "all") {
-      state.practice.chordsOnScore = false;
-      state.practice.tab = "none";
-    }
+    Object.assign(state.practice, { countIn: false, click: false, chordsOnScore: false, tab: "none" });
     savePractice();
     // The tools as they now are.
     practiceRow.querySelectorAll("input[name=chord-playback]").forEach((r) => { r.checked = r.value === settings.chords.play; });
@@ -3263,7 +3281,7 @@ function renderTune(main, group, tune) {
     showKey();
     showTempo();
     redraw();
-    tabSaid.textContent = which === "all" ? tr("Practice tools off", "Offer ymarfer wedi'u diffodd") : tr("Playing the tune alone", "Chwarae'r alaw yn unig");
+    tabSaid.textContent = tr("Practice tools off", "Offer ymarfer wedi'u diffodd");
   };
   const showSounds = () => {
     const on = sounds();
@@ -3271,8 +3289,7 @@ function renderTune(main, group, tune) {
     if (on.length) {
       soundOn.replaceChildren(tr("Plays with ", "Yn chwarae hefyd: "), el("strong", {}, on.join(", ")), " · ",
         el("button", { type: "button", class: "link-button", "aria-label": tr("Change what plays", "Newid beth sy'n chwarae"), onclick: toTools },
-          tr("Change", "Newid")), " · ",
-        offButton(tr("Turn off", "Diffodd"), "sounds"));
+          tr("Change", "Newid")));
     }
   };
   // Folded at first, so the music is the page; then as left. The summary says what's inside,

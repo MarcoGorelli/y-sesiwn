@@ -429,7 +429,7 @@ def test_whistle_out_of_range(page):
     page.evaluate("localStorage.setItem('practice', JSON.stringify({tab: 'whistle-D', open: null, tabKnown: true}))")
     page.goto_site("alaw/tros-y-garreg/")
     page.wait_for_selector(".score g.holes", state="attached")
-    assert page.inner_text(".fit-note") == "10 notes aren't on the whistle in D (marked ?). Play it in G minor, and every note is there."
+    assert page.inner_text(".fit-note") == "10 notes aren't on this whistle (?). In G minor, every note is there."
     page.click(".fit-note .link-button")
     page.wait_for_function("document.querySelector('.fit-note').hidden")
     assert page.input_value("#key-select") == "5"
@@ -1709,6 +1709,42 @@ def test_speed_up_arrives(browser, site):
     context.close()
 
 
+def test_speed_up_starts_each_time_round_at_the_start(browser, site):
+    # Each time faster, the sound is made again and goes on from the start of the time
+    # round: it used to go on from the end of the last one (where abcjs still said it was),
+    # play the tune's last notes, end and race the player's own loop, and once at the "to"
+    # (nothing made again) the tune played on doubled, out of time with the notes. With the
+    # click on, as it was found.
+    context = browser.new_context(service_workers="block")
+    page = context.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    # Every sound started: from how far into it.
+    page.add_init_script("""window.offsets = []; const start = AudioBufferSourceNode.prototype.start;
+      AudioBufferSourceNode.prototype.start = function (when, offset) {
+        if (this.buffer?.duration > 10) offsets.push(offset ?? 0); return start.apply(this, arguments); };""")
+    page.goto(site + "?tune=ffidl-ffadl&tempo=95")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.click(".practice-tools summary")  # folded at first
+    page.check(".practice-row label:has-text('Click · on every beat')")
+    page.check("text=Speed up each time")  # the whole tune, from 95 to 100 bpm: one step
+    page.click(".abcjs-midi-start")
+    page.wait_for_function("document.querySelector('.abcjs-note_playing') && state.synth.timer")
+    page.evaluate("() => { const e = state.synth.timer.noteTimings.filter((e) => e.type === 'event'); "
+                  "state.synth.seek((e.at(-1).milliseconds - 800) / 1000, 'seconds'); offsets.length = 0; }")
+    page.wait_for_function("document.querySelector('.speed-note.arrived') && state.synth?.timer?.currentMillisecond() > 1500",
+                           timeout=15000)
+    assert page.evaluate("state.synth.warp") == 105
+    assert page.evaluate("offsets") and max(page.evaluate("offsets")) < 1, page.evaluate("offsets")
+    # The lit notes and the sound together.
+    sound, notes = page.evaluate("""() => [ABCJS.synth.activeAudioContext().currentTime - state.synth.midiBuffer.startTimeSec,
+      state.synth.timer.currentMillisecond() / 1000]""")
+    assert abs(sound - notes) < .25, (sound, notes)
+    page.click(".abcjs-midi-start")  # pause
+    assert not errors, errors
+    context.close()
+
+
 def test_speed_up_the_whole_tune(browser, site):
     # Repeating the whole tune speeds up each time it comes round, up to the "to" bpm; a
     # "to" no faster than the tempo says what to do instead.
@@ -1724,6 +1760,8 @@ def test_speed_up_the_whole_tune(browser, site):
     assert " ".join(page.text_content(".speed-range").split()) == "from 78 to bpm" and page.input_value("#speed-to") == "112"
     assert page.input_value("#tempo") == "78"
     assert page.inner_text(".speed-note") == "Starting at 78 bpm, repeating the whole tune."  # said beside it, as the tempo is up above
+    page.click(".speed-from")  # "from" is the tempo: it goes to the slider
+    assert page.evaluate("document.activeElement.id") == "tempo"
     page.uncheck("text=Speed up each time")  # unticked straight after: both go back
     assert page.input_value("#tempo") == "112" and page.input_value("#loop-select") == "-2"
     assert page.inner_text(".speed-note") == "Back to 112 bpm." and page.locator(".speed-range").is_hidden()
@@ -1826,7 +1864,7 @@ def test_practice_tools_remembered(page):
     assert page.is_checked(".practice-row label:has-text('Click · on every beat') input")
     assert page.input_value("#loop-select") == "-2"
     assert page.input_value("#tab-select") == "mandolin"
-    assert page.inner_text(".sound-on") == "Plays with count-in, click · Change · Turn off"  # never a surprise
+    assert page.inner_text(".sound-on") == "Plays with count-in, click · Change"  # never a surprise
     assert page.evaluate("state.practice") == {"tab": "mandolin", "countIn": True, "click": True, "chordsOnScore": True, "open": True,
                                                "tabKnown": True, "heard": 0, "holesSeen": False}
     page.goto_site("alaw/glandyfi/")
@@ -1837,17 +1875,16 @@ def test_practice_tools_remembered(page):
     assert page.is_checked(".practice-row input[value=both]")
     assert page.input_value("#loop-select") == "-2" and page.input_value("#tempo") == "90"  # repeat not kept
     assert page.inner_text(".usual-key >> nth=-1") == "Your tempo last time"
-    # Said by Play, where it's pressed; and turned off from there (the tablature stays).
-    assert page.inner_text(".sound-on") == "Plays with chords, count-in, click · Change · Turn off"
-    page.click(".sound-on .link-button >> text=Turn off")
+    # Said by Play, where it's pressed, with the way to the tools that change it.
+    assert page.inner_text(".sound-on") == "Plays with chords, count-in, click · Change"
+    page.click(".sound-on .link-button")
+    assert page.evaluate("document.activeElement.matches('.practice-tools > summary')")
+    # Turn all off: the chords heard and on the music, the clicks and the tablature; the tempo stays.
+    page.click(".kept-note .link-button")
     assert page.locator(".sound-on").is_hidden()
     assert not page.is_checked(".practice-row label:has-text('Click · on every beat') input")
-    assert page.input_value("#loop-select") == "-2" and page.input_value("#tab-select") == "mandolin"
     assert page.evaluate("[state.practice.countIn, state.practice.click]") == [False, False]
-    assert page.evaluate("JSON.parse(localStorage.getItem('tunes'))") == {"glandyfi": {"bpm": 90}}
-    # Turn all off: the chords on the music and the tablature too; the tempo stays.
-    page.click(".kept-note .link-button")
-    assert page.input_value("#tab-select") == "none"
+    assert page.input_value("#loop-select") == "-2" and page.input_value("#tab-select") == "none"
     assert page.evaluate("state.practice.chordsOnScore") is False
     assert page.evaluate("JSON.parse(localStorage.getItem('tunes'))") == {"glandyfi": {"bpm": 90}}
     assert page.locator(".kept-note .link-button").is_hidden()

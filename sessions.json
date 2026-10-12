@@ -186,6 +186,22 @@
       "music": "Welsh folk session: come and sing, or jam with the Acordions Dros Annibyniaeth.",
       "music_cy": "Sesiwn werin Gymreig: dewch i ganu, neu i jamio efo'r Acordions Dros Annibyniaeth.",
       "confirmed": "2026-10-12"
+    },
+    {
+      "name": "Sesiwn Conwy Folk",
+      "venue": "Bragdy Eryri",
+      "address": "Unit 2, Vale Road, Llandudno Junction LL31 9SH",
+      "town": "Llandudno Junction",
+      "town_cy": "Cyffordd Llandudno",
+      "county": "Conwy",
+      "lat": 53.2851,
+      "lon": -3.816,
+      "day": "Wednesday",
+      "repeat": "monthly",
+      "nth": 2,
+      "start": "18:00",
+      "end": "21:00",
+      "confirmed": "2026-10-12"
     }
   ]
 }

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Download the tunes on alawoncymru.com: one MIDI file + score image per tune.
+"""Download the tunes on alawoncymru.com: MIDI file, score image and recordings per tune.
 
 Usage:
     scrape.py [--out DIR] [--only SUBSTRING] [--refresh] [--no-download]
@@ -7,12 +7,15 @@ Usage:
 Writes DIR/manifest.json and, per tune, DIR/<slug>/ containing:
     tune.mid     the melody MIDI
     score.gif    the score image shown on the set page
+    tune.mp3     the recording, and tune-slow.mp3 the slow one, when the page has them
     info.json    names, key/type from the index, source URLs, pairing confidence
 
 The site is hand-edited HTML and its index often links to the wrong anchor, so
 tunes are found page by page: each MIDI is paired with the score image whose
 filename it abbreviates best (e.g. MympLlMS.mid <-> MympLlD.gif), helped by the
 #aN anchors, and names come from the index entries pointing at that page.
+Each tune's MP3 links come just before its MIDI link in the same table row
+(recording, then slow recording); a few point at another tune's file.
 Always glance at score.gif before trusting a pairing marked "low".
 """
 import argparse
@@ -135,6 +138,8 @@ def parse_set_page(page):
     toks = []
     for m in re.finditer(r'href="((?!file:)[^"]+\.midi?)"', page, re.I):
         toks.append((m.start(), "mid", m.group(1)))
+    for m in re.finditer(r'href="((?!file:)[^"]+\.mp3)"', page, re.I):
+        toks.append((m.start(), "mp3", m.group(1)))
     for m in re.finditer(r'href="#(a\d+)"', page, re.I):
         toks.append((m.start(), "link", m.group(1)))
     for m in re.finditer(r'<a\s+name="(a\d+)"', page, re.I):
@@ -149,17 +154,25 @@ def parse_set_page(page):
 
 def page_pairs(toks):
     """Pair MIDIs with score images on one set page.
-    Returns [(midi, image, anchor, score)], unpaired midis, unpaired images."""
-    mids, midi_anchor, last = [], {}, None
+    Returns [(midi, image, anchor, score)], unpaired midis, unpaired images,
+    and {midi: [mp3, ...]} (the MP3 links just before each MIDI link)."""
+    mids, midi_anchor, last, mp3s, pending = [], {}, None, {}, []
     for pos, kind, val in toks:
-        if kind == "mid":
+        if kind == "mp3":
+            pending.append(val)
+        elif kind == "mid":
             last = val
             if val not in mids:
                 mids.append(val)
-        elif kind == "link" and last and last not in midi_anchor:
-            midi_anchor[last] = val  # first #aN link in the MIDI's table row
+            mp3s.setdefault(val, pending)
+            pending = []
+        elif kind == "link":
+            pending = []  # a row's #aN link comes after its MIDI
+            if last and last not in midi_anchor:
+                midi_anchor[last] = val  # first #aN link in the MIDI's table row
         elif kind == "img":
             last = None
+            pending = []
     anchors = [(p, v) for p, k, v in toks if k == "anchor"]
     imgs, img_anchor = [], {}
     for p, k, v in toks:
@@ -200,7 +213,8 @@ def page_pairs(toks):
             pairs.append((mi, im, img_anchor.get(im, ""), 0.0))
             used_m.add(mi)
             used_i.add(im)
-    return pairs,[m for m in mids if m not in used_m], [i for i in imgs if i not in used_i]
+    return (pairs, [m for m in mids if m not in used_m], [i for i in imgs if i not in used_i],
+            mp3s)
 
 
 def assign_names(pairs, entries):
@@ -263,7 +277,7 @@ def main():
         except Exception as e:  # noqa: BLE001
             print(f"  ! {page_url}: {e}", file=sys.stderr)
             continue
-        pairs, lone_mids, lone_imgs = page_pairs(toks)
+        pairs, lone_mids, lone_imgs, mp3s = page_pairs(toks)
         names = assign_names(pairs, page_entries)
         join = lambda v: urllib.parse.urljoin(page_url, v)  # noqa: E731
         for i, (mi, im, anc, pair_score) in enumerate(pairs):
@@ -280,6 +294,8 @@ def main():
                 "key_hint": first.get("key_hint", ""), "type": first.get("type", ""),
                 "page_url": page_url, "anchor": anc,
                 "midi_url": join(mi), "score_urls": [join(im)],
+                "mp3_url": None, "mp3_slow_url": None,
+                "_mp3s": [join(a) for a in mp3s.get(mi, [])[:2]],
                 "pairing": "high" if pair_score >= 1.4 and name_score >= 1.0 else "low",
             })
         if lone_mids or lone_imgs:
@@ -297,6 +313,15 @@ def main():
         seen[k] = e
         unique.append(e)
     manifest = unique
+    # recordings: drop links into another tune's folder or to a file an earlier
+    # tune already has (the site sometimes copied a row's links without fixing them)
+    claimed = set()
+    for e in manifest:
+        folder = e["midi_url"].rsplit("/", 1)[0]
+        for key, url in zip(("mp3_url", "mp3_slow_url"), e.pop("_mp3s")):
+            if url.rsplit("/", 1)[0] == folder and url not in claimed:
+                e[key] = url
+                claimed.add(url)
     slugs = set()
     for entry in manifest:
         base_slug = slugify(entry["name"])
@@ -319,6 +344,9 @@ def main():
         for i, s in enumerate(entry["score_urls"]):
             ext = Path(urllib.parse.urlparse(s).path).suffix.lower()
             files.append((s, d / f"score{i + 1 if i else ''}{ext}"))
+        for key, name in (("mp3_url", "tune.mp3"), ("mp3_slow_url", "tune-slow.mp3")):
+            if entry.get(key):
+                files.append((entry[key], d / name))
         for url, dest in files:
             if dest.exists() and dest.stat().st_size and not args.refresh:
                 continue

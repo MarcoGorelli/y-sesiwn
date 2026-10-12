@@ -501,7 +501,8 @@ The first batch was imported from
 short:
 
 1. `scrape.py --out tunes` downloads each tune's MIDI (`tune.mid`), score
-   image (`score.gif`) and metadata (`info.json`) from alawoncymru.com.
+   image (`score.gif`), recordings (`tune.mp3`, `tune-slow.mp3`) and metadata
+   (`info.json`) from alawoncymru.com.
 2. `abctool.py batch tunes` converts every MIDI to `tune.abc`, laying out
    bars, repeats and line breaks to match the score image.
 3. Each tune can then be reviewed against its score and fixed;
@@ -517,6 +518,10 @@ uv run --no-project --with mido python .claude/skills/alawon-abc/scripts/<script
 Useful to know:
 
 - 551 tunes were found; 26 have no ABC (their MIDI link on the site is dead).
+  Those that weren't already in the collection have since been transcribed
+  by hand from their score images (their `Z:` line says so) and checked
+  against the site's MP3 recordings where there is one (*Carol y Blwch*, which
+  the site has in D and in G, is in the collection once, in G).
   92 more were deleted as duplicates, leaving 433 (441 tunes and 523 versions
   with *Blodau'r Grug*, below; *Mwynen Cynwyd, syml* was retitled *Mwynen
   Cynwyd* to match its score). Re-running

@@ -24,11 +24,13 @@ uv run --no-project --with mido python <skill-dir>/scripts/<script>.py ...
 scrape.py --out tunes            # all tunes; --only <text> limits the downloads
 ```
 
-Creates `tunes/<slug>/` with `tune.mid`, `score.gif` and `info.json` (name,
+Creates `tunes/<slug>/` with `tune.mid`, `score.gif`, the site's recordings
+`tune.mp3` and `tune-slow.mp3` (when the page has them) and `info.json` (name,
 aliases, key hint and dance type from the index, source URLs, `pairing`
 confidence) plus `tunes/manifest.json` and `tunes/unpaired.json`. Some MIDI
 links on the site are dead (404 or empty); those tunes have no `tune.mid` and
-are listed by `abctool.py status`.
+are listed by `abctool.py status`. They can be transcribed by hand from
+`score.gif`; listen to `tune.mp3` (or pitch-track it) to check the result.
 
 ## 2. Convert
 

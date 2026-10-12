@@ -1,11 +1,10 @@
 # About Y Sesiwn
 
-Y Sesiwn is a free, open-source collection of Welsh folk tunes for anyone who
-wants to learn them, play them or share them. Every tune has its sheet music,
+Y Sesiwn is a free, open-source collection of Welsh folk tunes. Every tune has its sheet music,
 can be played back at any tempo and changed to any key, and has its own link
 you can send to a friend before a session.
 
-It's an educational, non-commercial project, for anyone interested in Welsh
+It's an educational, non-commercial project for anyone interested in Welsh
 traditional music and culture: players, learners, teachers, and the simply
 curious. Nothing here is sold, and there are no adverts.
 
@@ -35,7 +34,7 @@ tunes and arrangements by many other musicians.
 
 More tunes come from **Brian Martin**'s transcriptions into ABC, kept in
 [John Chambers' ABC archive](https://trillian.mit.edu/~jc/music/abc/mirror/BrianMartin/msg/):
-the ***Blodau'r Grug*** collection (volumes 1–3), Edward Jones's *Choice
+the *Blodau'r Grug* collection (volumes 1–3), Edward Jones's *Choice
 Collection of Fifty-One Welsh Airs*, Mary Richards' collection, and tunes
 from Robin Huw Bowen, Michael Raven, the Cadw Twmpath collection, Cat's Claw
 and others. Each tune's Details say which.

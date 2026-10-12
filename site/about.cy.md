@@ -1,7 +1,6 @@
 # Am Y Sesiwn
 
-Mae'r Sesiwn yn gasgliad am ddim a chod agored o alawon gwerin Cymru, i bawb
-sydd eisiau eu dysgu, eu chwarae neu eu rhannu. Mae gan bob alaw ei sgôr,
+Mae'r Sesiwn yn gasgliad am ddim a chod agored o alawon gwerin Cymru. Mae gan bob alaw ei sgôr,
 gellir ei chwarae ar unrhyw dempo a'i newid i unrhyw gywair, ac mae ganddi ei
 dolen ei hun y gallwch ei hanfon at ffrind cyn sesiwn.
 
@@ -34,7 +33,7 @@ ochr yn ochr ag alawon a threfniannau gan lawer o gerddorion eraill.
 
 Daw rhagor o alawon o drawsgrifiadau ABC **Brian Martin**, a gedwir yn
 [archif ABC John Chambers](https://trillian.mit.edu/~jc/music/abc/mirror/BrianMartin/msg/):
-casgliad ***Blodau'r Grug*** (cyfrolau 1–3), *Choice Collection of Fifty-One
+casgliad *Blodau'r Grug* (cyfrolau 1–3), *Choice Collection of Fifty-One
 Welsh Airs* Edward Jones, casgliad Mary Richards, ac alawon gan Robin Huw
 Bowen, Michael Raven, casgliad Cadw Twmpath, Cat's Claw ac eraill. Mae
 Manylion pob alaw yn dweud o ble.

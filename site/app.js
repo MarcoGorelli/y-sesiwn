@@ -1330,26 +1330,84 @@ function renderSearchPage(main, query) {
     state.loaded?.then(() => { if (new URLSearchParams(location.search).get("page") === "search") render(); }, () => {});
     return;
   }
+  const { types } = state.data;
   const { named, credited, close } = searchAll(query);
-  const n = named.length + credited.length + close.length;
-  const item = (group, credit) => el("li", {},
-    el("a", { href: tuneUrl(group.slug), "data-route": true }, tuneName(group.slug, group.title)),
-    credit ? el("span", { class: "tune-key tune-credit" }, credit)
-      : group.versions[0].key ? el("span", { class: "tune-key" }, shortKey(group.versions[0].key.pitch, group.versions[0].key.modeName)) : null);
-  const part = (heading, list) => list.length ? el("section", {},
-    el("h2", { class: "section-heading" }, heading, el("span", { class: "count" }, ` · ${list.length}`)),
-    el("ul", { class: "tune-list" }, list)) : null;
+  const found = named.length + credited.length;
+  // The credit most of them have, said once above them; the rest say theirs. Or else the
+  // start they all share ("Blodau'r Grug Collection …"), each saying the rest ("Vol. 2").
+  const common = commonCredit(credited);
+  const shared = common ? null : sharedStart(credited.map(({ credit }) => credit));
+  const own = (credit) => (!credit || credit === common ? null : shared ? credit.slice(shared.length).trim() : credit);
+  // Each tune with its key in short; in a list of mixed types, its type before that ("Jig · D"),
+  // as the list under the box has it; and a credit other than the one said above.
+  const item = ({ group, credit }, grouped) => {
+    const key = group.versions[0].key;
+    const what = [grouped ? null : typeName(group.type), key && shortKey(key.pitch, key.modeName)].filter(Boolean).join(" · ");
+    return el("li", {},
+      el("a", { href: tuneUrl(group.slug), "data-route": true }, tuneName(group.slug, group.title)),
+      what ? el("span", { class: "tune-key" }, what) : null,
+      own(credit) ? el("span", { class: `tune-key tune-credit${own(credit).length > 16 ? " own-line" : ""}`, title: credit }, own(credit)) : null);
+  };
+  // A long list is grouped by type, as Browse is, each type under its colourway.
+  const part = (heading, list, caption = null) => {
+    if (!list.length) return null;
+    const groups = types.map((type) => [type, list.filter(({ group }) => group.type === type.name)]).filter(([, g]) => g.length);
+    const grouped = list.length > 8 && groups.length > 1 && groups.reduce((n, [, g]) => n + g.length, 0) === list.length;
+    return el("section", { class: "search-part" },
+      el("h2", { class: "section-heading" }, heading, el("span", { class: "count" }, ` · ${list.length}`)),
+      caption,
+      ...(grouped
+        ? groups.map(([type, g]) => el("section", { class: "type-group", style: `--c: ${type.colour}` }, typeHeading(type, g.length, "h3"),
+            el("ul", { class: "tune-list" }, g.map((f) => item(f, true)))))
+        : [el("ul", { class: "tune-list" }, list.map((f) => item(f, false)))]));
+  };
+  const nothing = tr("No tune, book or arranger by that name.", "Dim alaw, llyfr na threfnydd o'r enw hwnnw.");
   main.replaceChildren(...[
     el("h1", { tabindex: "-1" }, tr(`Tunes for “${query}”`, `Alawon ar gyfer “${query}”`)),
-    el("p", { class: "lead" }, n ? tr(`${n} tune${n === 1 ? "" : "s"}.`, `${n} alaw.`)
-      : tr("No tune, book or arranger by that name.", "Dim alaw, llyfr na threfnydd o'r enw hwnnw.")),
-    heroSearch(),
-    part(tr("By name", "Yn ôl enw"), named.map((g) => item(g))),
-    part(tr("By book or arranger", "Yn ôl llyfr neu drefnydd"), credited.map(({ group, credit }) => item(group, credit))),
-    part(tr("Close spellings", "Sillafiadau tebyg"), close.map((g) => item(g))),
-    n ? null : el("p", {}, el("a", { href: "?page=notes", "data-route": true }, tr("Find it by its notes", "Ei chanfod o'i nodau")), " · ",
+    el("p", { class: "lead" }, !found ? nothing
+      : tr(`${found} tune${found === 1 ? "" : "s"}`, `${found} alaw`)
+        + (close.length ? tr(` · ${close.length} close spelling${close.length === 1 ? "" : "s"}`, ` · ${close.length} sillafiad tebyg`) : "")),
+    heroSearch(query),
+    part(tr("By name", "Yn ôl enw"), named.map((group) => ({ group }))),
+    part(tr("By book or arranger", "Yn ôl llyfr neu drefnydd"), credited, (common || shared) && el("p", { class: "caption search-credit" },
+      shared ? `“${shared} …”`
+        : credited.every(({ credit }) => credit === common)
+          ? tr(`“${common}”, every one.`, `“${common}”, bob un.`)
+          : tr(`“${common}”, unless another is shown.`, `“${common}”, oni ddangosir un arall.`))),
+    part(tr("Close spellings", "Sillafiadau tebyg"), close.map((group) => ({ group }))),
+    found ? null : el("p", {}, el("a", { href: "?page=notes", "data-route": true }, tr("Find it by its notes", "Ei chanfod o'i nodau")), " · ",
       el("a", { href: "?page=browse", "data-route": true }, tr("Browse by type and key", "Pori yn ôl math a chywair"))),
   ].filter(Boolean));
+}
+
+// The credit at least half the tunes a book or arranger found have, if two or more do
+// ("Trefniant Meurig Williams"): said once, over them all, not on every one. Else null.
+function commonCredit(credited) {
+  const counts = new Map();
+  for (const { credit } of credited) counts.set(credit, (counts.get(credit) ?? 0) + 1);
+  const [credit, n] = [...counts].sort((a, b) => b[1] - a[1])[0] ?? [];
+  return n >= 2 && n * 2 >= credited.length ? credit : null;
+}
+
+// The words every credit starts with, if they share two or more and each goes on after
+// them ("Blodau'r Grug Collection" of "… Vol. 1", "… Vol. 2"). Else null.
+function sharedStart(credits) {
+  if (credits.length < 2) return null;
+  const split = credits.map((credit) => credit.split(" "));
+  let n = 0;
+  while (split.every((words) => words.length > n + 1 && words[n] === split[0][n])) n++;
+  // Not leaving a bare number ("2" of "Vol. 2"): its word stays with it.
+  while (n > 0 && split.some((words) => /^\d/.test(words[n]))) n--;
+  return n >= 2 ? split[0].slice(0, n).join(" ") : null;
+}
+
+// A type's heading over its tunes, in its colourway (the --c of what it's in), glossed in
+// English: "Pibddawns (hornpipe) · 12".
+function typeHeading(type, count, tag = "h2") {
+  return el(tag, {}, el("span", { class: "swatch" }),
+    type.name === "Other" ? typeName(type.name) : el("span", { lang: "cy" }, type.name),
+    state.lang !== "cy" && GLOSSED.has(type.name) ? el("span", { class: "gloss" }, ` (${EN_TYPE[type.name]})`) : null,
+    el("span", { class: "count" }, ` · ${count}`));
 }
 
 function renderNotFound(main, slug) {
@@ -1565,10 +1623,6 @@ function renderBrowse(main) {
     const chosenType = (t, i) => el("span", { style: `--c: ${t.colour}` }, i ? ", " : "", el("span", { class: "swatch" }),
       t.name === "Other" ? typeName(t.name) : el("span", { lang: "cy" }, t.name));
     chosenNow.replaceChildren(...ts.map(chosenType), ts.length && ks.length ? " · " : "", ks.map(keyLabel).join(", "));
-    const heading = (type, g) => el("h2", {}, el("span", { class: "swatch" }),
-      type.name === "Other" ? typeName(type.name) : el("span", { lang: "cy" }, type.name),
-      state.lang !== "cy" && GLOSSED.has(type.name) ? el("span", { class: "gloss" }, ` (${EN_TYPE[type.name]})`) : null,
-      el("span", { class: "count" }, ` · ${g.length}`));
     // With nothing chosen, under the folded list: what each type is.
     const about = (type) => el("div", {},
       el("dt", { style: `--c: ${type.colour}` }, el("span", { class: "swatch" }),
@@ -1583,7 +1637,7 @@ function renderBrowse(main) {
           el("dl", {}, types.filter((type) => TYPE_ABOUT[type.name]).map(about)))]
       : groups.length === 1
         ? [el("ul", { class: "tune-list" }, groups[0][1].map(item))]
-        : groups.map(([type, g]) => el("section", { class: "type-group", style: `--c: ${type.colour}` }, heading(type, g),
+        : groups.map(([type, g]) => el("section", { class: "type-group", style: `--c: ${type.colour}` }, typeHeading(type, g.length),
             el("ul", { class: "tune-list" }, g.map(item)))));
     // The less common types and keys stay folded unless one of them is chosen.
     const typesFolded = !typesOpen && !rareTypes.some((t) => chosenTypes.has(t));
@@ -1786,9 +1840,9 @@ function tabSample(kind) {
   return svg;
 }
 
-function heroSearch() {
+function heroSearch(value = "") {
   const input = el("input", {
-    id: "hero-search", type: "search", autocomplete: "off", spellcheck: "false",
+    id: "hero-search", type: "search", autocomplete: "off", spellcheck: "false", value,
     placeholder: tr("Find a tune…", "Chwilio am alaw…"), role: "combobox", "aria-expanded": "false",
     "aria-controls": "hero-suggestions", "aria-autocomplete": "list",
   });
@@ -1914,6 +1968,15 @@ function shortCredits(abc, layout) {
       Math.abs(words.slice(0, i).join(" ").length - text.length / 2) < Math.abs(words.slice(0, best).join(" ").length - text.length / 2) ? i : best, 1);
     return `C:${words.slice(0, at).join(" ")}\nC:${words.slice(at).join(" ")}`;
   });
+}
+
+// A first or second ending ([1, [2) at the start of a line of the ABC, after the bar line
+// that ended the line before, is a bar of its own to abcjs: nothing in it, but counted when
+// the music is laid out again in shorter lines (wrap), so lines came out one bar short and
+// an ending's bracket was left hanging at the end of a line. Laid out again, the ending
+// goes onto its bar line.
+function endingsOnTheirBars(abc, layout) {
+  return layout.wrap ? abc.replace(/(\|)[ \t]*\n[ \t]*(\[\d)/g, "$1$2\n") : abc;
 }
 
 function setTempo(abc, beat, bpm) {
@@ -2307,15 +2370,98 @@ function scoreLayout(paper) {
   return { staffwidth, wrap: { minSpacing: 1.8, maxSpacing: 2.7, preferredMeasuresPerLine: bars } };
 }
 
-// Not one bar left alone on the last line (a whole line of the screen for a final note):
-// drawn again with a bar more on each line, a little closer together. Returns the music drawn.
-function noLoneBar(visualObj, layout, draw) {
+// Not one bar left alone on a line (a whole line of the screen for a few notes), and no
+// first or second ending starting at the very end of a line (its bracket left hanging
+// there). abcjs breaks the lines by its own rules; where they leave either, the lines are
+// broken again here (evenLines), from the widths abcjs measured, or else drawn with a bar
+// more on each line, a little closer together; kept if that's better. Returns the music drawn.
+function noLoneBar(visualObj, layout, draw, abc) {
   if (!layout.wrap || !visualObj) return visualObj;
-  const lines = visualObj.lines.filter((line) => line.staff)
-    .map((line) => line.staff[0].voices[0].filter((x) => x.el_type === "bar").length);
-  const most = Math.max(...lines);
-  if (lines.length < 2 || lines.at(-1) !== 1 || most < 3) return visualObj;
-  return draw({ ...layout, wrap: { ...layout.wrap, minSpacing: 1.5, preferredMeasuresPerLine: most + 1 } }) ?? visualObj;
+  const faults = (music) => {
+    const lines = music.lines.filter((line) => line.staff).map((line) => line.staff[0].voices[0].filter((x) => x.el_type === "bar"));
+    const most = Math.max(...lines.map((bars) => bars.length));
+    return {
+      most,
+      count: lines.length < 2 || most < 2 ? 0
+        : lines.filter((bars) => bars.length === 1 || bars.at(-1)?.startEnding).length,
+    };
+  };
+  const { most, count } = faults(visualObj);
+  if (!count) return visualObj;
+  const breaks = evenLines(visualObj, naturalWidths(abc));
+  const even = breaks && draw({ staffwidth: layout.staffwidth, lineBreaks: [breaks] });
+  if (even && faults(even).count < count) return even;
+  const again = draw({ ...layout, wrap: { ...layout.wrap, minSpacing: 1.5, preferredMeasuresPerLine: most + 1 } });
+  return again && faults(again).count < count ? again : draw(layout) ?? visualObj;
+}
+
+// Where to break the lines of music abcjs laid out (wrap), as abcjs's lineBreaks (the
+// bars each line ends on), from each bar's own width (naturalWidths): lines as evenly
+// full as they'll go (one a little closer together, where that helps), no short bar alone
+// on a line, and no line ending where a first or second ending begins. abcjs measured the
+// bars too, but on the tune's own lines, each stretched or squeezed to the width, so a
+// short line's bars (the last of a part, say) came out twice as wide as they are; its
+// measure is kept only for its scale, what a line has room for. Null for music in more
+// than one block.
+function evenLines(music, natural) {
+  const [measured, ...more] = music.explanation ?? [];
+  if (!measured || more.length || !natural) return null;
+  const widths = natural, n = widths.length;
+  if (measured.widths.measureWidths.length !== n) return null;
+  const ratios = widths.map((w, i) => measured.widths.measureWidths[i] / w).filter((r) => r > 0 && isFinite(r)).sort((a, b) => a - b);
+  if (!ratios.length) return null;
+  // room: a line at abcjs's spacing (wrap's minSpacing, 1.8); tight: as close as the
+  // notes are drawn when there's a bar more on each line (1.5), for a line that needs it.
+  const room = measured.lineBreakPoint / ratios[ratios.length >> 1], tight = (room * 1.8) / 1.5;
+  const bars = music.lines.filter((line) => line.staff).flatMap((line) => line.staff[0].voices[0].filter((x) => x.el_type === "bar"));
+  if (bars.length < n - 1) return null;
+  // best[j]: the least cost of the music up to bar j (its lines, and where the last ended)
+  const best = [{ cost: 0, from: -1 }];
+  for (let j = 1; j <= n; j++) {
+    best[j] = { cost: Infinity, from: 0 };
+    let width = 0;
+    for (let i = j - 1; i >= 0; i--) {
+      width += widths[i];
+      if (width > tight && i < j - 1) break;
+      const full = Math.min(width / room, 1);
+      let cost = j === n ? Math.max(0, 0.5 - full) ** 2 : (1 - full) ** 2;
+      if (width > room && i < j - 1) cost += 3 + (10 * (width - room)) / room;  // closer together
+      if (i === j - 1 && full < 0.55 && n > 1) cost += 4;  // a short bar alone
+      if (j < n && bars[j - 1]?.startEnding) cost += 16;  // an ending's bracket left at the end
+      if (best[i].cost + cost < best[j].cost) best[j] = { cost: best[i].cost + cost, from: i };
+    }
+  }
+  const breaks = [];
+  for (let j = best[n].from; j > 0; j = best[j].from) breaks.unshift(j - 1);
+  return breaks;
+}
+
+// Each bar's width as abcjs draws it at its own spacing: the tune drawn once, out of
+// sight, as one long line that isn't stretched to fit (%%stretchlast false). The
+// holes' rows (w:) are left out; a tune with fields among its notes (a change of key
+// or voice on a line of its own) isn't measured: null.
+function naturalWidths(abc) {
+  const all = abc.split("\n");
+  const k = all.findIndex((line) => /^K:/.test(line));
+  const body = all.slice(k + 1).filter((line) => line.trim() && !/^(%|w:)/.test(line));
+  if (k < 0 || body.some((line) => /^[A-Za-z]:/.test(line))) return null;
+  const one = [...all.slice(0, k + 1).filter((line) => !/^w:/.test(line)), "%%stretchlast false",
+    body.map((line) => line.replace(/\\\s*$/, "")).join(" ")].join("\n");
+  const out = el("div", { class: "measuring", "aria-hidden": "true" });
+  document.body.append(out);
+  try {
+    const line = ABCJS.renderAbc(out, one, { staffwidth: 20000, paddingtop: 0 })[0]?.lines.find((l) => l.staffGroup);
+    if (!line) return null;
+    const widths = [];
+    let start = null;
+    for (const x of line.staffGroup.voices[0].children) {
+      if (start === null && !x.isClef && !x.isKeySig) start = x.x;
+      if (x.type === "bar" && start !== null) { widths.push(x.x - start); start = x.x; }
+    }
+    return widths;
+  } finally {
+    out.remove();
+  }
 }
 
 // The bars on a line of the tune as written (the middle one of its lines, so a short
@@ -2434,7 +2580,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   paper.dataset.bars = ownBarsPerLine(tune.abc);
   const layout = scoreLayout(paper);
   paper.dataset.layout = JSON.stringify(layout);
-  abc = shortCredits(abc, layout);
+  abc = endingsOnTheirBars(shortCredits(abc, layout), layout);
   // Full screen on a wide screen draws the music bigger, to fill it, and the credit and the
   // tempo with it, until they outgrew the tune's name above: the credit is kept at its usual
   // size. The tempo's "= 112" grows with its note (♩.), read from the stand, but no bigger
@@ -2451,7 +2597,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
       // leaves its tablature behind: given back here, before it's drawn.
       afterParsing: (parsed) => { if (tablature && !parsed.tablatures) parsed.tablatures = ABCJS.parseOnly(abc, { tablature })[0].tablatures; },
       selectTypes: ["note"], clickListener: playFrom })[0];
-  const visualObj = noLoneBar(render(layout), layout, render);
+  const visualObj = noLoneBar(render(layout), layout, render, abc);
   clicksOnTheBeat(visualObj);
   // abcjs makes each clickable note a Tab stop: hundreds, between the player and the rest
   // of the page. Keyboards have the space bar to play instead.
@@ -2697,7 +2843,16 @@ function chordChart(visualObj) {
   // Rows of 4 bars (the usual phrase length), or 3 or 5 for a part that divides into
   // those but not 4; each part starts a new row. A second-time ending goes on a row
   // of its own, under the first-time ending, as in a printed chord chart.
+  // Each row starts with the number of its first bar, small, outside the chart, as printed
+  // music numbers its lines: a place to find ("from bar 9") in rows that look alike.
+  // The pick-up isn't a bar; a second-time ending's bars are counted after the first's.
   const rows = [];
+  let counted = 0;
+  const row = (cells, extra = {}) => {
+    const number = extra.numbered === false ? null : el("span", { class: "bar-no", "aria-hidden": "true" }, String(counted + 1));
+    counted += cells.length;
+    return el("div", { class: `chart-row${extra.indent ? " indented" : ""}` }, number, cells);
+  };
   for (let cells of parts.filter((p) => p.length)) {
     let second = cells.findIndex((c) => c.ending && c.ending !== "1");
     // First- and second-time endings with the same chords (the melody differs, the
@@ -2714,17 +2869,16 @@ function chordChart(visualObj) {
     }
     const main = second < 0 ? cells : cells.slice(0, second);
     const n = main.length % 4 === 0 ? 4 : main.length % 3 === 0 ? 3 : main.length % 5 === 0 ? 5 : 4;
-    for (let i = 0; i < main.length; i += n) rows.push(el("div", { class: "chart-row" }, main.slice(i, i + n)));
+    for (let i = 0; i < main.length; i += n) rows.push(row(main.slice(i, i + n)));
     if (second >= 0) {
       const first = cells.findIndex((c) => c.ending === "1");
       const indent = first >= 0 ? first % n : 0;
-      rows.push(el("div", { class: `chart-row${indent ? " indented" : ""}` },
-        Array.from({ length: indent }, () => el("span", { class: "bar spacer", "aria-hidden": "true" })),
-        cells.slice(second)));
+      rows.push(row(cells.slice(second), { indent, numbered: false }));
+      rows.at(-1).prepend(...Array.from({ length: indent }, () => el("span", { class: "bar spacer", "aria-hidden": "true" })));
     }
   }
   // As many columns as the longest row, so bars line up down the chart.
-  const columns = Math.max(1, ...rows.map((row) => row.children.length));
+  const columns = Math.max(1, ...rows.map((row) => row.querySelectorAll(":scope > .bar").length));
   return el("div", { class: "chart", style: `--columns: ${columns}` }, rows);
 }
 
@@ -3011,8 +3165,9 @@ function renderTune(main, group, tune) {
   state.redrawScore = () => { if (paper.isConnected) redraw(); };  // for printing (see "beforeprint")
 
   const controls = el("div", { class: "controls", id: "tune-controls" });
-  // On a phone the key, tempo and size fold into one line ("G major · Tempo 100 · Change"),
-  // so the music comes first; it opens to change them. On a wider screen they're all shown.
+  // On a phone, and in full screen, the key, tempo and size fold into one line ("G major ·
+  // Tempo 100 · Change"), so the music comes first; it opens to change them. Otherwise on a
+  // wider screen they're all shown.
   const summary = el("button", { type: "button", class: "controls-summary", "aria-controls": "tune-controls",
     "aria-expanded": String(state.controlsOpen), onclick: () => {
       state.controlsOpen = !state.controlsOpen;
@@ -3686,9 +3841,9 @@ function setPractice(on) {
   const tools = document.querySelector(".practice-tools");
   if (tools) tools.open = on || practiceToolsOpen();
   state.redrawScore?.();  // in full screen the score leaves out the name, as on a phone
-  // On a phone it's a music stand: the key and tempo folded back into their one line, and
-  // the music from the top of the screen.
-  if (on && matchMedia("(max-width: 800px)").matches) {
+  // It's a music stand: the key and tempo folded back into their one line, and the music
+  // from the top of the screen.
+  if (on) {
     state.controlsOpen = false;
     document.getElementById("tune-controls")?.classList.remove("open");
     document.querySelector(".controls-summary")?.setAttribute("aria-expanded", "false");
@@ -4947,8 +5102,9 @@ function setScore(tune, key) {
     abc = transposeAbc(tune, abc, key);
     paper.dataset.bars = ownBarsPerLine(tune.abc);
     const layout = scoreLayout(paper);
-    const render = (layout) => ABCJS.renderAbc(paper, shortCredits(abc, layout), { responsive: "resize", add_classes: true, paddingtop: 0, format: SCORE_FORMAT, ...layout })[0];
-    paper.visualObj = noLoneBar(render(layout), layout, render);
+    abc = endingsOnTheirBars(shortCredits(abc, layout), layout);
+    const render = (layout) => ABCJS.renderAbc(paper, abc, { responsive: "resize", add_classes: true, paddingtop: 0, format: SCORE_FORMAT, ...layout })[0];
+    paper.visualObj = noLoneBar(render(layout), layout, render, abc);
     hideMeasuring();
     nameScore(paper);
   };
@@ -5560,8 +5716,12 @@ function attachSearch(input, list, { showAllOnFocus = true, onPick = null } = {}
     let total = 0;
     if (query.trim()) {
       const { named, credited, close } = searchAll(query);
+      // The credit most of them share is said once, in the label ("By book or arranger ·
+      // Trefniant Meurig Williams"); those tunes say what they are instead, as names do.
+      const common = commonCredit(credited);
       entries = [...named.map((group) => ({ group })),
-        ...credited.map(({ group, credit }, i) => ({ group, credit, label: i === 0 && named.length ? tr("By book or arranger", "Yn ôl llyfr neu drefnydd") : null })),
+        ...credited.map(({ group, credit }, i) => ({ group, credit: credit === common ? null : credit,
+          label: i === 0 ? [tr("By book or arranger", "Yn ôl llyfr neu drefnydd"), common].filter(Boolean).join(" · ") : null })),
         ...close.map((group, i) => ({ group, label: i === 0 && (named.length || credited.length) ? tr("Close spellings", "Sillafiadau tebyg") : null }))];
       total = entries.length;
       entries = entries.slice(0, SHOWN);

@@ -116,6 +116,8 @@ button, input, select { font: inherit; color: inherit; }
 .skip-link:focus { transform: none; }
 main:focus { outline: none; }  /* focused only by the skip link, not something to press */
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+/* The music drawn out of sight, once, to measure its bars (naturalWidths). */
+.measuring { position: absolute; left: -100000px; top: 0; visibility: hidden; }
 
 /* Left column: brand + search on top, then buttons and links */
 .nav {
@@ -239,7 +241,10 @@ button.primary:hover { color: #fff; filter: brightness(1.1); }
 /* Names spelt only a little like the search: under a quiet line of their own */
 .suggestions li.close { position: relative; margin-top: 1.9rem; }
 .suggestions li.close::before { content: attr(data-label); position: absolute; left: 0; right: 0; bottom: 100%; padding: .2rem 1rem .25rem;
-  border-top: 1px solid var(--border); color: var(--muted); font-size: .8rem; pointer-events: none; }
+  border-top: 1px solid var(--border); color: var(--muted); font-size: .8rem; pointer-events: none;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }  /* one line: a long credit is cut short */
+.suggestions li.close:first-child { margin-top: 1.6rem; }
+.suggestions li.close:first-child::before { border-top: 0; }  /* the first of the list: no line over it */
 .suggestions li.empty { color: var(--muted); cursor: default; }
 /* Found by its book or arranger: that in place of the key, cut short where it's long */
 .suggestions .what { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
@@ -434,13 +439,19 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 }
 /* Browse: the tunes under their types, each type under its own woven swatch */
 .type-group { margin-top: 2rem; }
-.type-group h2 { display: flex; align-items: baseline; flex-wrap: wrap; font-size: 1.15rem; margin: 0 0 .25rem; }
-.type-group h2 .swatch { transform: translateY(.1em); }
+.type-group :is(h2, h3) { display: flex; align-items: baseline; flex-wrap: wrap; font-size: 1.15rem; margin: 0 0 .25rem; }
+.type-group :is(h2, h3) .swatch { transform: translateY(.1em); }
 /* With nothing chosen: one folding row per type, divided by hairlines */
-.type-group h2 :is(.gloss, .count) { color: var(--muted); font-weight: 400; white-space: pre; }
+.type-group :is(h2, h3) :is(.gloss, .count) { color: var(--muted); font-weight: 400; white-space: pre; }
 .tune-key { flex: none; margin-left: .45em; color: var(--muted); font-size: .85rem; }
 .tune-credit { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }  /* a book's name, cut short */
 .section-heading .count { color: var(--muted); font-weight: 400; white-space: pre; }
+/* The page of all a search finds: each part's types closer under its heading, and the credit they share said once */
+.search-part .type-group { margin-top: 1.25rem; }
+.search-credit { margin: .35rem 0 0; }
+/* A long credit under the tune's name, so the name keeps its line */
+.search-part .tune-list li { flex-wrap: wrap; }
+.search-part .tune-credit.own-line { flex: 1 0 100%; margin: 0 0 .2rem; }
 .browse-count { margin: 1.25rem 0 0; font-weight: 600; color: var(--text); scroll-margin-top: 1rem; }
 .caption.modes[hidden] { display: none; }
 details.all-tunes { margin-top: 1rem; border-block: 1px solid var(--border); }
@@ -519,8 +530,13 @@ details.all-tunes[open] > .tune-list { margin: .25rem 0 1.25rem; }
 @media (hover: hover) { .tune-kind a:hover { color: var(--accent-ink); text-decoration: underline; } }
 .tune-kind :is(.gloss, .meter) { color: var(--muted); font-weight: 400; white-space: pre; }
 .view-tools .music-size { margin-left: 0; }
-/* On a phone: the key, tempo and size as one line, which opens to change them */
-.controls-summary { display: none; }
+/* On a phone, and full screen: the key, tempo and size as one line, which opens to change them */
+.controls-summary { display: none; min-width: 0; align-items: center; justify-content: space-between; gap: .5rem; text-align: left; padding-inline: .75rem; }
+.controls-summary .now { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.controls-summary .change { display: flex; align-items: center; gap: .3em; color: var(--muted); font-size: .9rem; }  /* red is for Play */
+.controls-summary .change::after { content: ""; width: .7em; height: .7em; background: currentColor;
+  mask: var(--chevron) center / contain no-repeat; transform: rotate(90deg); transition: transform .15s; }
+.controls-summary[aria-expanded="true"] .change::after { transform: rotate(-90deg); }
 /* Take it with you: at the top of the side column, beside the music: Share and Print / save
    side by side, Add to set across under them */
 /* Print / save is given its own width, so "Argraffu / cadw" stays on one line beside "Rhannu":
@@ -725,7 +741,7 @@ details[open] > summary::before { transform: rotate(90deg); }
 .score .abcjs-inline-audio .bar-pace:empty { display: none; }
 .score .abcjs-inline-audio:has(.bar-pace:not(:empty)) .abcjs-midi-clock { display: none; }
 .score .abcjs-inline-audio .bar-pace.arrived::after { content: ""; width: 2.25rem; height: 7px;
-  background: url("carthen.svg") repeat-x left center / auto 7px; border-radius: 1px; }
+  background: url("carthen.svg") repeat-x left center / auto 7px; border-radius: 2px; }
 body.practice .score .abcjs-inline-audio .bar-pace { font-size: 1rem; }  /* read from the stand */
 @media (max-width: 480px) { .score .abcjs-inline-audio .bar-pace .unit { display: none; } }
 /* Player: play/loop in red while they're on. */
@@ -833,7 +849,10 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 /* Suggested chords: a chart for accompanists, and switches for the score and playback */
 .card.chords { margin-top: 1.5rem; }
 .chart { display: grid; gap: .3rem; font-weight: 600; font-size: 1.1rem; max-width: 44rem; }
-.chart-row { display: grid; grid-template-columns: repeat(var(--columns), minmax(max-content, 1fr)); border-left: 1px solid var(--muted); }
+.chart-row { display: grid; grid-template-columns: repeat(var(--columns), minmax(max-content, 1fr)); border-left: 1px solid var(--muted); position: relative; }
+/* Each row's first bar number, small, in the margin: room kept for it to the left */
+.chart { padding-left: 1.6rem; }
+.chart .bar-no { position: absolute; right: calc(100% + .4rem); top: .35rem; font-size: .75rem; font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; }
 .chart .bar {
   display: flex; align-items: baseline; gap: .15rem; min-height: 1.8rem; padding: .15rem .4rem;
   border-right: 1px solid var(--muted); white-space: nowrap;
@@ -970,7 +989,15 @@ body.practice main { max-width: none; padding: 1rem 1.5rem 2rem; }
 body.practice h1 { font-size: 1.35rem; }
 body.practice .controls { margin: .5rem 0 1rem; }
 /* …but the room under the row for "Original: G major" when it's said (a phone's one line hides it) */
-@media (min-width: 801px) { body.practice .controls:has(.usual-key:not(:empty)) { margin-bottom: 2rem; } }
+@media (min-width: 801px) {
+  body.practice .controls.open:has(.usual-key:not(:empty)) { margin-bottom: 2rem; }
+  /* A music stand on a laptop or tablet too: the key, tempo and size folded into the phone's
+     one line, beside Exit full screen; opened, the line and then the row of them as usual */
+  body.practice .controls-summary { display: flex; gap: 1.25rem; }
+  body.practice .controls:not(.open) { align-items: center; }
+  body.practice .controls:not(.open) > .control, body.practice .controls:not(.open) .music-size { display: none; }
+  body.practice .controls.open .controls-summary { flex: 1 0 100%; justify-content: start; width: fit-content; max-width: max-content; }
+}
 body.practice .tune-layout { grid-template-columns: 1fr; }
 body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 1rem 1.5rem 1.5rem; }
 body.practice :is(.versions, .versions-fold, .tune-actions, .tab-invite) { display: none; }
@@ -1055,13 +1082,8 @@ body.practice .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height
   .controls { gap: .75rem 1.25rem; margin-bottom: 1rem; align-items: center; }
   .controls:not(.open) { flex-wrap: nowrap; gap: .5rem; }
   .controls:not(.open):has(.usual-key) { margin-bottom: 1rem; }  /* folded, the captions can't show: no room kept */
-  .controls-summary { display: flex; flex: 1 1 0; min-width: 0; align-items: center; justify-content: space-between; gap: .5rem; text-align: left; padding-inline: .75rem; }
-  .controls-summary .now { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .controls-summary { display: flex; flex: 1 1 0; }
   .controls:not(.open) .practice-toggle { flex: none; padding-inline: .75rem; }
-  .controls-summary .change { display: flex; align-items: center; gap: .3em; color: var(--muted); font-size: .9rem; }  /* red is for Play */
-  .controls-summary .change::after { content: ""; width: .7em; height: .7em; background: currentColor;
-    mask: var(--chevron) center / contain no-repeat; transform: rotate(90deg); transition: transform .15s; }
-  .controls-summary[aria-expanded="true"] .change::after { transform: rotate(-90deg); }
   .controls:not(.open) > .control, .controls:not(.open) .music-size { display: none; }
   .controls .view-tools { display: contents; }
   /* Opened: a fixed grid, so nothing moves when a caption appears ("Your key last time") */
@@ -1114,6 +1136,7 @@ body.practice .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height
   body[data-print="chart"] .chart { font-size: 1.5rem; max-width: none; gap: .6rem; }
   body[data-print="chart"] .chart .bar { min-height: 2.6rem; border-color: #000; }
   body[data-print="chart"] .chart-row { border-color: #000; }
+  body[data-print="chart"] .chart .bar-no { font-size: .9rem; top: .8rem; color: #555; }
   body[data-print="chart"] .chart .held { color: #777; }
   body[data-print="chart"] .card.chords .caption { margin-top: 1.2rem; }
 }

@@ -201,7 +201,7 @@ def chart_rows(page):
     """The chord chart as text: one string per row, "_" for a blank (indent) cell."""
     page.wait_for_selector(".chart .bar")
     return page.evaluate("""() => [...document.querySelectorAll('.chart-row')].map((r) => [...r.children]
-      .map((c) => c.classList.contains('spacer') ? '_' : c.innerText.replace(/\\s+/g, '')).join(' '))""")
+      .filter((c) => !c.classList.contains('bar-no')).map((c) => c.classList.contains('spacer') ? '_' : c.innerText.replace(/\\s+/g, '')).join(' '))""")
 
 
 @pytest.mark.parametrize("slug", ["ffaniglen", "glandyfi", "machynlleth", "morgawr", "ty-a-gardd", "dic-y-cymro"])
@@ -1451,12 +1451,63 @@ def test_search_finds_books_and_arrangers(page):
     page.goto_site("?page=browse")
     page.fill("#search-input", "meurig")
     page.wait_for_selector("#suggestions li.all")
-    assert "Meurig Williams" in page.inner_text("#suggestions li:first-child .what")
+    # The credit most of them share is said once, over them; they say their type and key.
+    first = page.locator("#suggestions li:first-child")
+    assert first.get_attribute("data-label") == "By book or arranger · Trefniant Meurig Williams"
+    assert "major" in first.inner_text() or "minor" in first.inner_text()
     assert page.locator("#suggestions li").count() == 21
     page.click("#suggestions li.all")
     page.wait_for_selector("main h1:has-text('Tunes for')")
     assert "q=meurig" in page.url
+    # The page keeps the words searched in its box, says the shared credit once, and groups the
+    # tunes by type, as Browse does; close spellings are counted apart.
+    assert page.input_value("main #hero-search") == "meurig"
+    assert page.inner_text(".search-credit") == "“Trefniant Meurig Williams”, unless another is shown."
+    assert page.locator(".search-part .type-group h3").count() > 3
     assert page.locator("main .tune-list li").count() > 20
+    assert "close spelling" in page.inner_text("main .lead")
+    credits = page.eval_on_selector_all(".search-part .tune-credit", "cs => cs.map((c) => c.textContent)")
+    assert credits and "Trefniant Meurig Williams" not in credits
+
+
+def test_search_page_says_a_books_name_once(page):
+    # Blodau'r Grug's three volumes: the book named once, each tune saying which volume.
+    page.goto_site("?page=search&q=blodau%20grug")
+    page.wait_for_selector(".search-part")
+    assert page.inner_text(".search-credit") == "“Blodau'r Grug Collection …”"
+    assert page.locator(".search-part .tune-credit").first.inner_text().startswith("Vol. ")
+
+
+def test_chord_chart_bar_numbers(page):
+    # Each row of the chord chart starts with its first bar's number, as printed music does.
+    page.goto_site("alaw/aberdaugleddau/")
+    page.wait_for_selector(".chart .bar")
+    numbers = page.eval_on_selector_all(".chart-row .bar-no", "ns => ns.map((n) => n.textContent)")
+    assert numbers[:3] == ["1", "5", "9"]
+    assert page.get_attribute(".chart-row .bar-no", "aria-hidden") == "true"  # the words version says the bars
+
+
+def test_no_ending_left_hanging_on_a_phone(browser, site):
+    # A slow air on a phone: a first-time ending at the start of a line of the ABC isn't an
+    # empty bar of its own (lines a bar short, its bracket at the end of a line), and no bar
+    # is left alone in the middle of the music.
+    context = browser.new_context(service_workers="block", **PHONE)
+    page = context.new_page()
+    page.goto(site + "alaw/agoriad-y-blodau/")
+    page.wait_for_selector(".score .abcjs-staff")
+    # abcjs marks each bar line and ending bracket with its line (abcjs-l2) and its place
+    # on it (abcjs-m1).
+    bars, endings = page.evaluate("""() => {
+      const at = (e) => e.getAttribute('class').match(/abcjs-l(\\d+) abcjs-m(\\d+)/).slice(1).map(Number);
+      return [[...document.querySelectorAll('.score svg .abcjs-bar')].map(at),
+        [...document.querySelectorAll('.score svg .abcjs-ending')].map(at)]; }""")
+    per_line = {}
+    for line, _ in bars:
+        per_line[line] = per_line.get(line, 0) + 1
+    assert len(per_line) > 4
+    assert min(per_line.values()) >= 2, per_line
+    assert endings and all(place < per_line[line] - 1 for line, place in endings), (endings, per_line)
+    context.close()
 
 
 def test_a_links_holes_are_for_its_page_only(page):
@@ -3136,6 +3187,24 @@ def test_print_list_and_chart_words(page):
     words = page.text_content(".chart-box .visually-hidden")
     assert words.startswith("Bar 1: repeat from here, G.") and "; repeat." in words
     assert page.get_attribute(".chart-box .chart", "aria-hidden") == "true"
+
+
+def test_full_screen_folds_the_key_and_tempo_on_a_laptop(page):
+    # Full screen is a music stand on a wider screen too: the key, tempo and size fold into
+    # the phone's one line, which opens to change them.
+    page.set_viewport_size({"width": 1366, "height": 900})
+    page.goto_site("alaw/aberdaugleddau/")
+    page.wait_for_selector(".score .abcjs-inline-audio")
+    assert not page.is_visible(".controls-summary")
+    page.click(".practice-toggle")
+    assert page.is_visible(".controls-summary")
+    assert page.inner_text(".controls-summary .now") == "G, 112 bpm"
+    assert not page.is_visible("#tune-controls .control select")
+    page.click(".controls-summary")
+    assert page.is_visible("#tune-controls .control select")
+    page.click(".practice-toggle")
+    assert not page.is_visible(".controls-summary")
+    assert page.is_visible("#tune-controls .control select")
 
 
 def test_full_screen_leaves_practice_tools_as_they_were(browser, site):

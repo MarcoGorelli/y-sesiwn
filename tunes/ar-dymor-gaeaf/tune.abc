@@ -1,0 +1,18 @@
+X:1
+T:Ar Dymor Gaeaf
+T:In the Winter Season
+R:carol Plygain
+S:http://alawoncymru.com/alawon/Tunes/ArDymGae/ArDymGae.html
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
+C:Trefniant Meurig Williams
+N:The score plays part A twice, part B, then part A again (D.C. al Fine).
+M:6/4
+L:1/8
+Q:1/4=120
+K:G
+|: G2 | "G"B4 A2 "C"c4 B2 | "C"A3 G F2 E4 A2 | "G"G3 F G2 B4 A2 | "G"G6- G4 :| d2 |
+"G"d2 c2 B2 "D"A4 B2 | "C"c2 A2 d2 "G"B4 B2 | "D"A4 d2 "A"f4 e2 | "D"d6 c4 G2 |
+"G"B4 A2 "C"c4 B2 | "C"A3 G F2 E4 A2 | "G"G3 F G2 B4 A2 | "G"G6- G4 |]

@@ -1,0 +1,15 @@
+X:1
+T:Deio Bach
+R:alaw
+S:http://alawoncymru.com/alawon/Tunes/SetDeioBach/SetDeioBach.html
+Z:Transcribed from the Alawon Cymru score (its MIDI file is missing)
+%%chords From the Alawon Cymru score
+C:Trefniant Meurig Williams
+N:The score plays part A twice, part B, then part A again (D.C. al Fine).
+M:2/4
+L:1/8
+Q:1/4=80
+K:G
+|: "G"G3 G | "C"E G3 | "C"G3 G | "G"E D3 | "G"B3 B | "C"c3 c | "D"B2 A2 | "G"G4 :|
+"G"B3 B | "D"AB cB | "G"A B3 | "G"B3 B | "D"AB cB | "D"A4 |
+"G"G3 G | "C"E G3 | "C"G3 G | "G"E D3 | "G"B3 B | "C"c3 c | "D"B2 A2 | "G"G4 |]

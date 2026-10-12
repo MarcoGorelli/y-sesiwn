@@ -1,0 +1,20 @@
+X:1
+T:Jig Ar Dymor Gaeaf
+R:jig
+S:http://alawoncymru.com/alawon/Tunes/ArDymGae/ArDymGae.html
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
+C:Addasiad Meurig Williams
+N:The score plays part A twice, part B, then part A again (D.C. al Fine).
+M:6/8
+L:1/8
+Q:3/8=67
+K:G
+|: G | "G"BAB "C"c2 B | "C"AGA "D"FEF | "G"GFG "D"AGA | "G"BAG "D"A2 B |
+"G"BAB "C"c2 B | "C"AGA "D"FEF | "G"GFG "D"ABA | "G"G3- G2 :| d |
+"G"dcB "D"A2 B | "C"cAd "G"B2 B | "D"cBA AcB | "D"A3- A2 d |
+"G"dBc d2 B | "D"cBA "G"d2 d | "A"^ccd edc | "D"d3- d2 G |
+"G"BAB "C"c2 B | "C"AGA "D"FEF | "G"GFG "D"AGA | "G"BAG "D"A2 B |
+"G"BAB "C"c2 B | "C"AGA "D"FEF | "G"GFG "D"ABA | "G"G3- G2 |]

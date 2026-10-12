@@ -22,6 +22,10 @@ def test_tune_file(path: Path):
     assert len(b.melody(abc)) >= 8, "the note search needs the melody"
     body = b.music(abc)
     assert "\n\n" not in abc.split("\nK:", 1)[1].strip(), "a blank line ends an ABC tune"
+    for line in abc.split("\nK:", 1)[1].splitlines():  # the header ends at K:
+        field = line[:1]
+        assert not (line[1:2] == ":" and field in b.HEADER_LABELS.keys() - {"K", "M"}), \
+            f"{line!r}: move it above K:, or it's left out of the Details box"
     for text in re.findall(r'"([^"]*)"', body):  # chord symbols, or text starting with ^ _ < > @
         assert re.match(r"[\^_<>@]|[A-G]", text), f'"{text}": text above the stave is written "^{text}"'
 

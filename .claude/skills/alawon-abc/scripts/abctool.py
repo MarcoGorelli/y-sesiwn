@@ -28,6 +28,7 @@ import difflib
 import json
 import re
 import sys
+import unicodedata
 from fractions import Fraction as F
 from pathlib import Path
 
@@ -1105,6 +1106,30 @@ def load_tune(midi, track=None, transpose=0, bars=None, pickup=None):
     return tune, pk, " ".join(opts)
 
 
+# Time signatures each tune type is written in. The index's type is sometimes
+# another tune's, or just wrong (Clogwyni Glas Fetlar, in 3/4, is listed as a jig).
+TYPE_METERS = [
+    (("jig naid", "slip"), {(9, 8)}),
+    (("jig",), {(6, 8), (12, 8)}),
+    (("walts", "waltz", "miniwet", "minuet"), {(3, 4), (3, 8), (6, 4)}),
+    (("polca", "polka", "ril", "reel"), {(2, 4), (4, 4), (2, 2)}),
+    (("pibdd", "hornpipe"), {(2, 4), (4, 4), (2, 2), (3, 2), (12, 8)}),
+]
+
+
+def rhythm_warning(rhythm, meter):
+    """A warning when the tune type (its first word that has rules) doesn't fit the meter."""
+    r = unicodedata.normalize("NFKD", rhythm).encode("ascii", "ignore").decode().lower()
+    for word in re.findall(r"[a-z]+(?: naid)?", r):
+        for prefixes, meters in TYPE_METERS:
+            if word.startswith(prefixes):
+                if meter in meters:
+                    return None
+                return (f"WARNING: R:{rhythm} is unusual in {meter[0]}/{meter[1]}: check the "
+                        "type against the score (the index's type may be another tune's)")
+    return None
+
+
 def cmd_convert(a):
     tune, pickup, directive = load_tune(a.midi, a.track, a.transpose, a.bars, a.pickup)
     info = load_info(a.midi)
@@ -1119,6 +1144,9 @@ def cmd_convert(a):
     ok, msgs = check(text, tune)
     if warning:
         msgs.insert(0, warning)
+    meter_warning = rhythm_warning(info.get("type", ""), tuple(tune.meters[0][1]))
+    if meter_warning:
+        msgs.insert(0, meter_warning)
     extra = f", other note tracks: {tune.note_tracks}" if len(tune.note_tracks) > 1 else ""
     print(f"{out}: {meta['bars']} bars, pickup {F(meta['pickup'], tune.tpb * 4)}, "
           f"K:{meta['key']}, track {tune.track}{extra} -> check {'OK' if ok else 'FAILED'}")

@@ -108,15 +108,17 @@ def name_keys(name):
 
 # ---------------------------------------------------------------- index page
 
-KEY_RE = re.compile(r"^(.*?)\s*\(\s*([A-G][#b]?m?\s*[~*^]?)\s*\)\s*(?:\((.*?)\))?", re.S)
+KEY = r"[A-G][#b]?m?\s*[~*^]?"
+KEY_RE = re.compile(rf"^(.*?)\s*\(\s*({KEY}(?:\s*,\s*{KEY})*)\s*\)\s*(?:\((.*?)\))?", re.S)  # (Dm*,Am*)
 
 
 def parse_index(page):
     """Index entries are <br>-separated lines like
-    'Abergenni (Em~) (dawns llys)' with (possibly several, broken) links."""
+    'Abergenni (Em~) (dawns llys)' with (possibly several, broken) links.
+    Some links are mistyped as href="mailto:GogLwydl/GogLwydl.html#a1"."""
     entries = []
     for chunk in re.split(r"<br\s*/?>", page, flags=re.I):
-        hrefs = re.findall(r'href="([^"#:]+\.html?)(?:#(a\d+))?"', chunk, re.I)
+        hrefs = re.findall(r'href="(?:mailto:)?([^"#:]+\.html?)(?:#(a\d+))?"', chunk, re.I)
         if not hrefs:
             continue
         m = KEY_RE.match(clean(chunk))
@@ -130,6 +132,15 @@ def parse_index(page):
                         "type": (m.group(3) or "").strip(),
                         "page": page_ref, "anchor": anchor})
     return entries
+
+
+def index_type(entry, entries):
+    """The tune type for an index entry. The index lists many tunes two or three
+    times, sometimes with different types (Mwynen Môn #a1: polca, polca, jig):
+    take the commonest among the same name and anchor, the last listed of a tie."""
+    types = [e["type"] for e in entries if e["type"] and e["anchor"] == entry["anchor"]
+             and norm(e["name"]) == norm(entry["name"])] or [entry["type"]]
+    return max(reversed(types), key=types.count)
 
 
 # ------------------------------------------------------------------ set page
@@ -234,6 +245,16 @@ def assign_names(pairs, entries):
             out[i].append((entries[j], s))
             used_p.add(i)
             used_e.add(j)
+    for i in list(out):  # a name given twice yields to an unused entry for this anchor
+        e = out[i][0][0]
+        if sum(norm(v[0][0]["name"]) == norm(e["name"]) for v in out.values()) < 2:
+            continue
+        used_names = {norm(v[0][0]["name"]) for v in out.values()}
+        j = next((j for j, x in enumerate(entries) if j not in used_e and x["anchor"]
+                  and x["anchor"] == pairs[i][2] and norm(x["name"]) not in used_names), None)
+        if j is not None:  # e.g. Dere i Jigio on Cainc y Cathreiwr's #a1
+            out[i] = [(entries[j], 0.0)]
+            used_e.add(j)
     for j, e in enumerate(entries):  # aliases go to their best pair
         if j in used_e:
             continue
@@ -291,7 +312,8 @@ def main():
             name_score = named[0][1] if named else 0.0
             manifest.append({
                 "name": name, "aliases": aliases,
-                "key_hint": first.get("key_hint", ""), "type": first.get("type", ""),
+                "key_hint": first.get("key_hint", ""),
+                "type": index_type(first, page_entries) if first else "",
                 "page_url": page_url, "anchor": anc,
                 "midi_url": join(mi), "score_urls": [join(im)],
                 "mp3_url": None, "mp3_slow_url": None,

@@ -4,6 +4,7 @@
 # playwright the same version as the dev container's image (.devcontainer/Dockerfile),
 # whose browsers are made for it (tests/test_build.py checks).
 pytest==9.1.1
+pytest-xdist==3.8.0  # runs the tests in parallel
 playwright==1.63.0
 axe-playwright-python==0.1.8  # the axe accessibility checker, bundled
 zxing-cpp==3.1.1  # reads the QR codes back

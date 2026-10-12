@@ -1261,8 +1261,8 @@ def test_new_version_straight_away(browser, site):
     # Someone who has used the site before opens a link after an update: online, they get
     # the new version at once, not their saved copy (which may not know a new kind of
     # link); offline, the saved copy.
-    from conftest import ROOT
-    app = ROOT / "_site" / "app.js"
+    import build_site
+    app = build_site.OUT / "app.js"
     original = app.read_text(encoding="utf-8")
     context = browser.new_context()  # service worker allowed
     page = context.new_page()
@@ -1300,8 +1300,8 @@ def test_a_deploy_updates_the_offline_copy(browser, site):
     # Someone who has visited before comes back after a deploy: the files that changed
     # are saved anew, even with the old ones still in the browser's own cache.
     import time
-    from conftest import ROOT
-    out = ROOT / "_site"
+    import build_site
+    out = build_site.OUT
     originals = {name: (out / name).read_text(encoding="utf-8") for name in ["app.js", "style.css", "sw.js"]}
     context = browser.new_context()  # service worker allowed
     page = context.new_page()
@@ -1315,11 +1315,13 @@ def test_a_deploy_updates_the_offline_copy(browser, site):
         (out / "style.css").write_text(originals["style.css"] + "\n/* deployed */\n", encoding="utf-8")
         (out / "sw.js").write_text(re.sub(r'const VERSION = "[^"]+"', 'const VERSION = "deployed"', originals["sw.js"]), encoding="utf-8")
         page.reload()
-        for _ in range(100):  # until the new copy is saved and the old one gone
+        for _ in range(150):  # until the new copy is saved and the old one gone
             keys = page.evaluate("caches.keys()")
             if "site-deployed" in keys and not [k for k in keys if k.startswith("site-") and k != "site-deployed"]:
                 break
             page.wait_for_timeout(200)
+        else:
+            raise AssertionError(f"the new copy wasn't saved: {keys}")
         context.set_offline(True)
         page.goto(site + "?tune=glandyfi")
         page.wait_for_selector(".score .abcjs-staff")
@@ -1336,8 +1338,8 @@ def test_a_page_left_open_gets_a_deploy(browser, site):
     # being read, but on the next page opened; that page comes from the new saved copy,
     # even with no signal by then.
     import time
-    from conftest import ROOT
-    out = ROOT / "_site"
+    import build_site
+    out = build_site.OUT
     originals = {name: (out / name).read_text(encoding="utf-8") for name in ["app.js", "sw.js"]}
     context = browser.new_context()  # service worker allowed
     page = context.new_page()
@@ -1382,8 +1384,8 @@ def test_address_with_something_stuck_to_it(page, site, junk, opens, address):
 
 def test_not_found_page_takes_junk_off(page, site):
     # On a computer GitHub Pages shows 404.html for such an address: it goes on to the page.
-    from conftest import ROOT
-    body = (ROOT / "_site" / "404.html").read_text(encoding="utf-8")
+    import build_site
+    body = (build_site.OUT / "404.html").read_text(encoding="utf-8")
     page.route(site + "alaw/glandyfi/%C2%A0", lambda route: route.fulfill(status=404, body=body, content_type="text/html"))
     page.goto(site + "alaw/glandyfi/%C2%A0")
     page.wait_for_url(site + "alaw/glandyfi/")
@@ -2358,13 +2360,17 @@ def test_contact_page(page):
 
 def test_address_is_hidden(page, site):
     # Not in any file of the site or the repository, nor in a page until someone sends.
+    import itertools
+    import build_site
     from conftest import ROOT
     found = []
-    for path in ROOT.rglob("*"):
+    # The built site too, which is somewhere else when the tests run in parallel.
+    built = [] if build_site.OUT.is_relative_to(ROOT) else build_site.OUT.rglob("*")
+    for path in itertools.chain(ROOT.rglob("*"), built):
         if ".git" in path.parts or not path.is_file() or path.stat().st_size > 5_000_000:
             continue
         if ADDRESS.encode() in path.read_bytes():
-            found.append(str(path.relative_to(ROOT)))
+            found.append(str(path))
     assert found == []
     for path in ["", "?page=add", "?page=contact", "?page=about"]:
         page.goto_site(path)
@@ -3405,6 +3411,27 @@ def test_playback_carries_on_through_a_change(page):
     before = page.evaluate("state.synth.percent")
     page.fill("#tempo", "150")
     page.dispatch_event("#tempo", "change")
+    page.wait_for_function(f"state.synth.isStarted && state.synth.percent >= {before}", timeout=15000)
+    page.click(".abcjs-midi-start")  # pause
+
+
+def test_playback_carries_on_through_two_quick_changes(page):
+    # A second change while the first's player is still getting ready (a slow phone, the
+    # arrow keys on the tempo pressed twice): the tune still carries on.
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.click(".abcjs-midi-start")
+    page.wait_for_function("state.synth.isStarted && state.synth.percent > 0.05", timeout=15000)
+    before = page.evaluate("state.synth.percent")
+    page.evaluate("""() => {  // the sound takes a second to get ready from now on
+        const resume = AudioContext.prototype.resume;
+        AudioContext.prototype.resume = function () {
+            return new Promise((ok) => setTimeout(ok, 1000)).then(() => resume.call(this));
+        };
+    }""")
+    for bpm in ["150", "160"]:
+        page.fill("#tempo", bpm)
+        page.dispatch_event("#tempo", "change")
     page.wait_for_function(f"state.synth.isStarted && state.synth.percent >= {before}", timeout=15000)
     page.click(".abcjs-midi-start")  # pause
 

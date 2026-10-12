@@ -1,7 +1,8 @@
 """Shared setup for the tests: build the site once, serve it, and open a browser.
 
     pip install -r requirements-dev.txt && python -m playwright install chromium
-    python -m pytest            # everything (a few minutes)
+    python -m pytest            # everything, in parallel (see pytest.ini)
+    python -m pytest -n0        # everything, one test at a time (e.g. to debug one)
     python -m pytest -m "not browser"   # just the quick build checks
 """
 import functools
@@ -23,8 +24,14 @@ SERVED = []  # every answer the test server gives: (path, status), for tests tha
 
 
 @pytest.fixture(scope="session")
-def site():
-    """Build _site/ and serve it on a free local port; yields the base URL."""
+def site(worker_id, tmp_path_factory):
+    """Build _site/ and serve it on a free local port; yields the base URL.
+
+    With the tests run in parallel (pytest-xdist), each worker builds its own copy in its
+    temporary folder: some tests change the built files (a pretend deploy), and must not
+    change them under another worker's tests."""
+    if worker_id != "master":
+        build_site.OUT = tmp_path_factory.getbasetemp() / "_site"
     build_site.main()
     class Quiet(http.server.SimpleHTTPRequestHandler):
         def log_request(self, code="-", size="-"):

@@ -3157,10 +3157,13 @@ function renderTune(main, group, tune) {
   let showPracticeOn = null;  // the practice tools' summary: what's on (see practiceTools)
   let showFit = null;  // notes not on the whistle or recorder chosen (see fitNote)
   // Drawing it again (a new tempo or key, a phone turned on its side) makes a new player:
-  // if the tune was playing, it carries on from the same point in it.
+  // if the tune was playing, it carries on from the same point in it. So does one drawn
+  // again while it's still getting its sound ready to carry on (two quick tempo changes).
+  let starting = null;  // { player, at }: the player carrying on, until it has
   const redraw = () => {
     speedHint();
-    const playingAt = state.synth?.isStarted ? state.synth.percent ?? 0 : null;
+    const playingAt = state.synth?.isStarted ? state.synth.percent ?? 0
+      : starting && starting.player === state.synth ? starting.at : null;
     drawn = drawScore(tune, paper, audio, chords?.querySelector(".chart-box"), onSpeed);
     // A new player starts at the tempo: its bar says so (when speeding up), after its clock.
     showPace(settings.bpm, false);
@@ -3171,7 +3174,9 @@ function renderTune(main, group, tune) {
     showFit?.();
     const player = state.synth;
     if (playingAt !== null && player) {
-      player.play().then(() => { if (state.synth === player && player.isStarted) player.seek(playingAt); }).catch(() => {});
+      starting = { player, at: playingAt };
+      player.play().then(() => { if (state.synth === player && player.isStarted) player.seek(playingAt); }).catch(() => {})
+        .finally(() => { if (starting?.player === player) starting = null; });
     }
   };
   state.redrawScore = () => { if (paper.isConnected) redraw(); };  // for printing (see "beforeprint")

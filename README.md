@@ -550,11 +550,20 @@ Useful to know:
   `Sawdl y Fuwch (version 2)` → `sawdl-y-fuwch-version-2`). The 26 folders
   with no `tune.abc` (dead MIDI links) keep the scraper's names.
 - Some tunes named on the site aren't in the collection, because the scraper
-  paired their name with another tune's MIDI: *Diafol yn y Llwyn*, *Neidod y
-  Pant*, *Rali Twm Siôn*, and second versions of *Dere i Jigio*, *Sawdl y
-  Fuwch*, *Meillionen Meirionnydd*, *Triban Morgannwg Syml* and *Hoffedd Miss
-  Blisset*. The folders that carried those names now have the title of the
-  music they actually contain.
+  paired their name with another tune's MIDI: *Diafol yn y Llwyn*, *Rali Twm
+  Siôn*, and second versions of *Dere i Jigio*, *Sawdl y Fuwch*, *Meillionen
+  Meirionnydd*, *Triban Morgannwg Syml* and *Hoffedd Miss Blisset*. The folders
+  that carried those names now have the title of the music they actually
+  contain.
+- `unpaired.json` lists the score images and MIDIs the scraper couldn't pair.
+  Three of those images were tunes missing from the collection, added later
+  from their MIDIs: *Neidio'r Pant* (`NaidYPantM.mid`), *Cân y Coliar* (the
+  page links its MIDI as a file on the author's computer; `CanyCol.mid` is on
+  the server) and *Ymdaith Gŵyl Dewi* (its row links Ymdaith yr Hen Gymry's
+  MIDI; `YmdGwDeM.mid` is on the server). The rest are harmony parts,
+  fragments, or tunes already in the collection, except *Rhediad y Ceirw - yn
+  fwy syml* (a simpler version, no MIDI) and the Stacey set's fuller *Y Gaseg
+  Felen* (no MIDI).
 - `ffoi-o-r-wcrain/score.gif` shows a different tune (*Shche Ne Vmerla
   Ukrainy*) from its ABC; the ABC's title was kept.
 - **Credits (`C:`) come from the score images** too: the credit printed at the

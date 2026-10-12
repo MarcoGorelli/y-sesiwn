@@ -105,6 +105,45 @@ def test_places():
         assert 0 <= place["x"] <= width and 0 <= place["y"] <= height, place["name"]
 
 
+# Words in a tune's name that suggest a place (in Welsh or English), for test_place_names_decided.
+PLACE_WORDS = re.compile(
+    r"\b(Llan\w*|Aber\w*|Caer\w*|Pont\w*|Cwm\w*|Tre[fn]\w*|Bryn\w*|Rhyd\w*|Ynys\w*|Glan\w*|Nant\w*|Porth\w*|Pen[- ]?\w+|"
+    r"Castell|Castle|Vale|Bridge|Abbey|Ffestiniog|Gwynedd|Gwent|Glamorgan|Morgannwg|Clwyd|Dyfi|Dovey|Teifi|Hafren|Gwy|Wye|Wysg|Usk|"
+    r"Menai|Mona|Môn|Anglesey|Snowdon|Eryri|Idris|Bala|Corris|Mawddwy|Ragland|Rhaglan|Tintern|Llanthony|Newport|Pool|"
+    r"Denbigh|Dinbych|Kidwelli|Cydweli|Cardigan|Aberdare|Cwmbach|Aman|Neyland|Beacons|Brecon|Gower|Gŵyr|Chester|Harlech|Conwy|"
+    r"Bangor|Carmarthen|Swansea|Cardiff|Merthyr|Tydfil|Dowlais|Rhondda|Caersws|Machynlleth|Dolgellau|Barmouth|Bermo|Pwllheli|"
+    r"Margam|Nedd|Neath|Holywell|Rhuddlan|Caerleon|Chepstow|Hirwaun|Tywyn|Wrecsam|Wrexham|Monmouth|Mynwy|Powys|Ceredigion|"
+    r"Pembroke|Penfro|Tenby|Rhuthun|Ruthin|Mwnge|Prestych|Wig|Wick|Darowen|Rheidol|Elwy|Camlad)\b", re.I)
+
+
+def tune_names():
+    """Each tune (its folder name, without "-version-2") and every title any version has."""
+    names = {}
+    for p in TUNES:
+        record = b.tune_record(p)
+        names.setdefault(record["group"], set()).update(record["titles"])
+    return names
+
+
+def test_every_tune_has_a_pronunciation_or_is_english():
+    # A new tune needs a decision: how to say its Welsh name ("say"), or that it's English
+    # ("english"), so a Welsh name is never left without its guide (or read out as English).
+    data = json.loads((b.ROOT / "pronunciation.json").read_text(encoding="utf-8"))
+    missing = sorted(set(tune_names()) - set(data["say"]) - set(data["english"]))
+    assert not missing, ("pronunciation.json: add these tunes to \"say\" (how to say a Welsh name) "
+                         f"or to \"english\": {', '.join(missing)}")
+
+
+def test_place_names_decided():
+    # A tune whose name looks like a place is on the map, or listed as not a place ("not_places").
+    data = json.loads((b.ROOT / "places.json").read_text(encoding="utf-8"))
+    decided = {t for place in data["places"] for t in place["tunes"]} | set(data["not_places"])
+    undecided = sorted(group for group, titles in tune_names().items()
+                       if group not in decided and any(PLACE_WORDS.search(t) for t in titles))
+    assert not undecided, ("places.json: put these tunes on the map under their place, "
+                           f"or in \"not_places\": {', '.join(undecided)}")
+
+
 def test_built_site(site):
     out = b.OUT
     index = json.loads((out / "tunes.json").read_text(encoding="utf-8"))

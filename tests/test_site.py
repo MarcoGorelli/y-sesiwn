@@ -1510,6 +1510,22 @@ def test_no_ending_left_hanging_on_a_phone(browser, site):
     context.close()
 
 
+def test_a_slow_air_fits_a_phone_in_full_screen(browser, site):
+    # On the music stand a phone shows the whole of a slow air under the pinned player: the
+    # lines closer together, and the hidden chords not keeping room above every line.
+    context = browser.new_context(service_workers="block", **PHONE)
+    page = context.new_page()
+    page.goto(site + "alaw/agoriad-y-blodau/")
+    page.wait_for_selector(".score .abcjs-inline-audio")
+    page.click(".practice-toggle")
+    page.wait_for_function("document.body.classList.contains('practice')")
+    page.wait_for_selector(".score .abcjs-staff")
+    music, player, screen = page.evaluate("""() => [document.querySelector('.score .abcjs-container').getBoundingClientRect().height,
+      document.querySelector('.score > .audio').offsetHeight, innerHeight]""")
+    assert music + player <= screen, (music, player, screen)
+    context.close()
+
+
 def test_a_links_holes_are_for_its_page_only(page):
     # ?tab= shows those holes on that tune, not saved over the reader's own (the music alone).
     page.goto_site("alaw/glandyfi/?tab=whistle-D")

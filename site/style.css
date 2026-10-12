@@ -828,7 +828,8 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .wales-map circle { fill: var(--muted); } }
 :root[data-theme="dark"] .wales-map circle { fill: var(--muted); }
 .wales-map circle.target { fill: transparent; stroke: none; cursor: pointer; r: calc(5px / var(--z)); }
-.map-zoom { position: absolute; top: .4rem; right: .4rem; z-index: 4; display: grid; gap: .3rem; }
+/* Over the sea at the top left, clear of every place (the north-east corner has Caer and Bangor Is-y-coed) */
+.map-zoom { position: absolute; top: .4rem; left: .4rem; z-index: 4; display: grid; gap: .3rem; }
 .map-zoom button { width: 2.1rem; height: 2.1rem; padding: 0; font-size: 1.15rem; line-height: 1; box-shadow: 0 1px 3px var(--shadow-soft); }
 .map-popup {
   position: absolute; z-index: 5; width: max-content; max-width: 16rem;

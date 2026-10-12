@@ -420,17 +420,25 @@ MAP = {"lon0": -5.669900, "lat0": 53.435690, "k": 0.610145, "scale": 100}
 
 def pronunciations(groups: set[str]) -> dict[str, str]:
     """pronunciation.json: how to say each Welsh tune name, by the tune's folder name."""
-    say = json.loads((ROOT / "pronunciation.json").read_text(encoding="utf-8"))["say"]
-    unknown = set(say) - groups
+    data = json.loads((ROOT / "pronunciation.json").read_text(encoding="utf-8"))
+    say, english = data["say"], set(data.get("english", []))
+    unknown = (set(say) | english) - groups
     if unknown:
         raise SystemExit(f"pronunciation.json: no tune called {', '.join(sorted(unknown))}")
+    both = set(say) & english
+    if both:
+        raise SystemExit(f"pronunciation.json: both said and English: {', '.join(sorted(both))}")
     return say
 
 
 def places(groups: set[str]) -> list[dict]:
     """places.json, with each place's position on site/wales.svg."""
     result = []
-    for place in json.loads((ROOT / "places.json").read_text(encoding="utf-8"))["places"]:
+    data = json.loads((ROOT / "places.json").read_text(encoding="utf-8"))
+    unknown = set(data.get("not_places", [])) - groups
+    if unknown:
+        raise SystemExit(f"places.json: no tune called {', '.join(sorted(unknown))} (not_places)")
+    for place in data["places"]:
         unknown = set(place["tunes"]) - groups
         if unknown:
             raise SystemExit(f"places.json: no tune called {', '.join(sorted(unknown))}")

@@ -2351,6 +2351,11 @@ const SCORE_FORMAT = Object.fromEntries([["title", "20"], ["subtitle", "16"], ["
   ["tablabel", "16"], ["tabnumber", "11"], ["tabgrace", "8"]]
   .map(([name, size]) => [`${name}font`, `${SCORE_FACE} ${size}`]));
 
+// Chords are always drawn (playback reads them from the music), but hidden unless asked
+// for: then drawn tiny, so the room above each line kept for them doesn't spread the music out.
+const HIDDEN_CHORDS_FORMAT = { ...SCORE_FORMAT, gchordfont: `${SCORE_FACE} 1` };
+const STAND_STAFFSEP = 20;  // between lines of music in full screen, closer than abcjs's own
+
 // On a narrow screen a tune's own lines (four bars or so, as in the books) shrink to fit
 // it, too small to read; there abcjs lays the music out again in shorter lines, at a
 // readable size. Wider screens keep the tune's own line breaks.
@@ -2373,9 +2378,10 @@ function scoreLayout(paper) {
 // Not one bar left alone on a line (a whole line of the screen for a few notes), and no
 // first or second ending starting at the very end of a line (its bracket left hanging
 // there). abcjs breaks the lines by its own rules; where they leave either, the lines are
-// broken again here (evenLines), from the widths abcjs measured, or else drawn with a bar
-// more on each line, a little closer together; kept if that's better. Returns the music drawn.
-function noLoneBar(visualObj, layout, draw, abc) {
+// broken again here (evenLines), from each bar's own width, or, for music that can't be
+// measured so, drawn with a bar more on each line, a little closer together; kept if
+// that's better. Returns the music drawn.
+function noLoneBar(visualObj, layout, draw, abc, format) {
   if (!layout.wrap || !visualObj) return visualObj;
   const faults = (music) => {
     const lines = music.lines.filter((line) => line.staff).map((line) => line.staff[0].voices[0].filter((x) => x.el_type === "bar"));
@@ -2388,9 +2394,12 @@ function noLoneBar(visualObj, layout, draw, abc) {
   };
   const { most, count } = faults(visualObj);
   if (!count) return visualObj;
-  const breaks = evenLines(visualObj, naturalWidths(abc));
+  const breaks = evenLines(visualObj, naturalWidths(abc, format));
   const even = breaks && draw({ staffwidth: layout.staffwidth, lineBreaks: [breaks] });
   if (even && faults(even).count < count) return even;
+  // Measured, the lines can't be better without crowding them: as abcjs had them. (Its own
+  // measure, for "a bar more on each line", takes a short line's bars for wide ones.)
+  if (breaks) return draw(layout) ?? visualObj;
   const again = draw({ ...layout, wrap: { ...layout.wrap, minSpacing: 1.5, preferredMeasuresPerLine: most + 1 } });
   return again && faults(again).count < count ? again : draw(layout) ?? visualObj;
 }
@@ -2398,21 +2407,20 @@ function noLoneBar(visualObj, layout, draw, abc) {
 // Where to break the lines of music abcjs laid out (wrap), as abcjs's lineBreaks (the
 // bars each line ends on), from each bar's own width (naturalWidths): lines as evenly
 // full as they'll go (one a little closer together, where that helps), no short bar alone
-// on a line, and no line ending where a first or second ending begins. abcjs measured the
+// on a line, and no line ending where a first or second ending begins. (abcjs measured the
 // bars too, but on the tune's own lines, each stretched or squeezed to the width, so a
-// short line's bars (the last of a part, say) came out twice as wide as they are; its
-// measure is kept only for its scale, what a line has room for. Null for music in more
-// than one block.
+// short line's bars, the last of a part, say, came out twice as wide as they are.) Null
+// for music in more than one block.
+const ROOM = 1.3;
 function evenLines(music, natural) {
   const [measured, ...more] = music.explanation ?? [];
   if (!measured || more.length || !natural) return null;
   const widths = natural, n = widths.length;
   if (measured.widths.measureWidths.length !== n) return null;
-  const ratios = widths.map((w, i) => measured.widths.measureWidths[i] / w).filter((r) => r > 0 && isFinite(r)).sort((a, b) => a - b);
-  if (!ratios.length) return null;
-  // room: a line at abcjs's spacing (wrap's minSpacing, 1.8); tight: as close as the
-  // notes are drawn when there's a bar more on each line (1.5), for a line that needs it.
-  const room = measured.lineBreakPoint / ratios[ratios.length >> 1], tight = (room * 1.8) / 1.5;
+  // room: what a line takes, in bars' own widths: notes drawn up to about a quarter closer
+  // than their own spacing, as abcjs draws a full line; tight: closer still, for a line
+  // that needs it (to keep an ending's bracket off its end, or a bar from being alone).
+  const room = (measured.staffWidth - measured.widths.left) * ROOM, tight = room * 1.2;
   const bars = music.lines.filter((line) => line.staff).flatMap((line) => line.staff[0].voices[0].filter((x) => x.el_type === "bar"));
   if (bars.length < n - 1) return null;
   // best[j]: the least cost of the music up to bar j (its lines, and where the last ended)
@@ -2437,10 +2445,10 @@ function evenLines(music, natural) {
 }
 
 // Each bar's width as abcjs draws it at its own spacing: the tune drawn once, out of
-// sight, as one long line that isn't stretched to fit (%%stretchlast false). The
+// sight, in the score's fonts, as one long line that isn't stretched to fit (%%stretchlast false). The
 // holes' rows (w:) are left out; a tune with fields among its notes (a change of key
 // or voice on a line of its own) isn't measured: null.
-function naturalWidths(abc) {
+function naturalWidths(abc, format) {
   const all = abc.split("\n");
   const k = all.findIndex((line) => /^K:/.test(line));
   const body = all.slice(k + 1).filter((line) => line.trim() && !/^(%|w:)/.test(line));
@@ -2450,7 +2458,7 @@ function naturalWidths(abc) {
   const out = el("div", { class: "measuring", "aria-hidden": "true" });
   document.body.append(out);
   try {
-    const line = ABCJS.renderAbc(out, one, { staffwidth: 20000, paddingtop: 0 })[0]?.lines.find((l) => l.staffGroup);
+    const line = ABCJS.renderAbc(out, one, { staffwidth: 20000, paddingtop: 0, format })[0]?.lines.find((l) => l.staffGroup);
     if (!line) return null;
     const widths = [];
     let start = null;
@@ -2589,15 +2597,19 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   if (document.body.classList.contains("practice") && !state.printing && grow > 1.1) {
     abc = `%%composerfont * ${Math.round(9 / grow)}\n%%tempofont * ${Math.round((12 * Math.min(grow, 1.75)) / grow)}\n${abc}`;
   }
+  // On the music stand the lines of music sit closer together, so more of the tune is in
+  // sight at once (a slow air on a phone, the whole of it).
+  if (document.body.classList.contains("practice") && !state.printing) abc = `%%staffsep ${STAND_STAFFSEP}\n${abc}`;
+  const format = state.practice.chordsOnScore || state.printing ? SCORE_FORMAT : HIDDEN_CHORDS_FORMAT;
   // The tablature's name is said once, above the music (fingeringKey), not on every line.
   const tablature = tab ? [{ instrument: tab.instrument, label: "" }] : null;
   const render = (layout) => ABCJS.renderAbc(paper, accompaniment(abc, settings.chords.play === "both"),
-    { responsive: "resize", add_classes: true, paddingtop: 0, format: SCORE_FORMAT, ...layout, ...(tablature ? { tablature } : {}),
+    { responsive: "resize", add_classes: true, paddingtop: 0, format, ...layout, ...(tablature ? { tablature } : {}),
       // Laying the music out again in shorter lines (wrap), abcjs reads the tune again and
       // leaves its tablature behind: given back here, before it's drawn.
       afterParsing: (parsed) => { if (tablature && !parsed.tablatures) parsed.tablatures = ABCJS.parseOnly(abc, { tablature })[0].tablatures; },
       selectTypes: ["note"], clickListener: playFrom })[0];
-  const visualObj = noLoneBar(render(layout), layout, render, abc);
+  const visualObj = noLoneBar(render(layout), layout, render, abc, format);
   clicksOnTheBeat(visualObj);
   // abcjs makes each clickable note a Tab stop: hundreds, between the player and the rest
   // of the page. Keyboards have the space bar to play instead.
@@ -5103,8 +5115,8 @@ function setScore(tune, key) {
     paper.dataset.bars = ownBarsPerLine(tune.abc);
     const layout = scoreLayout(paper);
     abc = endingsOnTheirBars(shortCredits(abc, layout), layout);
-    const render = (layout) => ABCJS.renderAbc(paper, abc, { responsive: "resize", add_classes: true, paddingtop: 0, format: SCORE_FORMAT, ...layout })[0];
-    paper.visualObj = noLoneBar(render(layout), layout, render, abc);
+    const render = (layout) => ABCJS.renderAbc(paper, abc, { responsive: "resize", add_classes: true, paddingtop: 0, format: HIDDEN_CHORDS_FORMAT, ...layout })[0];
+    paper.visualObj = noLoneBar(render(layout), layout, render, abc, HIDDEN_CHORDS_FORMAT);
     hideMeasuring();
     nameScore(paper);
   };

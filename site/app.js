@@ -3182,8 +3182,8 @@ function renderTune(main, group, tune) {
   state.redrawScore = () => { if (paper.isConnected) redraw(); };  // for printing (see "beforeprint")
 
   const controls = el("div", { class: "controls", id: "tune-controls" });
-  // On a phone, and in full screen, the key, tempo and size fold into one line ("G major ·
-  // Tempo 100 · Change"), so the music comes first; it opens to change them. Otherwise on a
+  // On a phone, and in full screen, the key, tempo and size fold into one line ("G, 100 bpm,
+  // size 100% · Change"), so the music comes first; it opens to change them. Otherwise on a
   // wider screen they're all shown.
   const summary = el("button", { type: "button", class: "controls-summary", "aria-controls": "tune-controls",
     "aria-expanded": String(state.controlsOpen), onclick: () => {
@@ -3200,7 +3200,10 @@ function renderTune(main, group, tune) {
     el("span", { class: "now" }, [tune.key && shortKey(tune.key.pitch + settings.transpose, tune.key.modeName)
       + (nextKey ? ` → ${shortKey(nextKey.pitch + settings.transpose, nextKey.modeName)}` : "")
       + (settings.transpose ? tr(` (from ${shortKey(tune.key.pitch, tune.key.modeName)})`, ` (o ${shortKey(tune.key.pitch, tune.key.modeName)})`) : ""),
-      `${settings.bpm} bpm`].filter(Boolean).join(", ")),  // "E dor, 112 bpm", in both languages
+      `${settings.bpm} bpm`,
+      // …and the size, so it's plain that Size is in there too (it looked like key and tempo only)
+      tr(`size ${Math.round(SIZES[state.musicSize] * 100)}%`, `maint ${Math.round(SIZES[state.musicSize] * 100)}%`)]
+      .filter(Boolean).join(", ")),  // "E dor, 112 bpm, size 100%"
     el("span", { class: "change" }, tr("Change", "Newid")));
   controls.classList.toggle("open", state.controlsOpen);
   controls.append(summary);
@@ -3279,7 +3282,7 @@ function renderTune(main, group, tune) {
       onchange: () => { speedSaid = ""; undoSpeedUp = null; saveTune(tune, "bpm", settings.bpm); showInAddress(); redraw(); },
     }), el("datalist", { id: "tempo-written" }, el("option", { value: tune.bpm })), usualTempo),
     // How the music is shown, at the end of the row: its size, and full screen.
-    el("div", { class: "view-tools" }, musicSize(redraw), practice)]);
+    el("div", { class: "view-tools" }, musicSize(() => { showSummary(); redraw(); }), practice)]);
   // Taking it with you: sharing, printing, saving, a set.
   const shareStatus = el("p", { class: "caption share-status", "aria-live": "polite" });
   const carries = () => linkCarries(tune, settings, state.practice.tab);

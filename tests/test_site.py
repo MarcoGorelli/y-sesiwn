@@ -3061,7 +3061,7 @@ PHONE = {"user_agent": ANDROID, "is_mobile": True, "has_touch": True, "viewport"
 
 
 def test_phone_controls_fold_into_one_line(browser, site):
-    # On a phone the key, tempo and size are one line ("G, 112 bpm · Change"), with
+    # On a phone the key, tempo and size are one line ("G, 112 bpm, size 100% · Change"), with
     # full screen beside it, so the music starts high on the first screen; it opens to change them.
     context = browser.new_context(service_workers="block", **PHONE)
     page = context.new_page()
@@ -3081,6 +3081,9 @@ def test_phone_controls_fold_into_one_line(browser, site):
     assert summary.inner_text().startswith("A (from G), 112 bpm")  # moved, so it says from what
     page.select_option("#key-select", "0")  # back to the written key, marked "(original)" in the menu
     assert summary.inner_text().startswith("G, 112 bpm")
+    # The size is said in it too, so it's plain that Size is in there, not only the key and tempo
+    page.click(".music-size button[aria-label='Bigger music']")
+    assert page.inner_text(".controls-summary .now") == "G, 112 bpm, size 125%"
     context.close()
 
 
@@ -3220,7 +3223,7 @@ def test_full_screen_folds_the_key_and_tempo_on_a_laptop(page):
     assert not page.is_visible(".controls-summary")
     page.click(".practice-toggle")
     assert page.is_visible(".controls-summary")
-    assert page.inner_text(".controls-summary .now") == "G, 112 bpm"
+    assert page.inner_text(".controls-summary .now") == "G, 112 bpm, size 100%"
     assert not page.is_visible("#tune-controls .control select")
     page.click(".controls-summary")
     assert page.is_visible("#tune-controls .control select")
@@ -3255,7 +3258,7 @@ def test_summary_says_the_key_changes(browser, site):
     page = context.new_page()
     page.goto(site + "alaw/walts-dinefwr/")
     page.wait_for_selector(".score .abcjs-inline-audio")
-    assert page.inner_text(".controls-summary .now") == "G → D, 100 bpm"
+    assert page.inner_text(".controls-summary .now") == "G → D, 100 bpm, size 100%"
     page.goto(site + "alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-inline-audio")
     assert "→" not in page.inner_text(".controls-summary .now")

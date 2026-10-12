@@ -170,6 +170,22 @@
       "music": "Traditional Welsh music: bring an instrument and join in, or just sit and enjoy the tunes and the energy.",
       "music_cy": "Cerddoriaeth Gymreig draddodiadol: dewch ag offeryn ac ymuno, neu eisteddwch a mwynhau'r alawon a'r egni.",
       "confirmed": "2026-10-04"
+    },
+    {
+      "name": "Sesiwn Werin",
+      "venue": "Anglesey Arms",
+      "address": "The Promenade, Caernarfon LL55 1SG",
+      "town": "Caernarfon",
+      "county": "Gwynedd",
+      "lat": 53.1397,
+      "lon": -4.2784,
+      "day": "Monday",
+      "repeat": "weekly",
+      "start": "19:00",
+      "end": "22:00",
+      "music": "Welsh folk session: come and sing, or jam with the Acordions Dros Annibyniaeth.",
+      "music_cy": "Sesiwn werin Gymreig: dewch i ganu, neu i jamio efo'r Acordions Dros Annibyniaeth.",
+      "confirmed": "2026-10-12"
     }
   ]
 }

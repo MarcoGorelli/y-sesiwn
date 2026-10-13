@@ -49,6 +49,10 @@ Am deitlau:
   enwi eich tab chi.
 - Mae llinellau tempo (`Q:`) yn cael eu hanwybyddu: llithrydd tempo'r ap sy'n
   penderfynu.
+- Os yw'r gerddoriaeth wedi'i hysgrifennu mewn nodau ddwywaith mor hir ag arfer
+  (polca yn 2/4 sy'n grosietau gan mwyaf, yn cael ei theimlo fel dau finim i'r
+  bar, nid dau grosiet), ychwanegwch linell `%%beat 1/2` i'r pennawd, fel ei bod
+  yn dechrau ar y cyflymder iawn.
 
 Mae cordiau'n ddewisol. Rhowch bob un mewn dyfynodau dwbl yn union cyn y
 nodyn y mae'n dechrau arno (`"G"B2 G GFG | "D7"A2 A ABc |`), a dywedwch o ble

@@ -77,6 +77,12 @@ def test_types_and_tempos():
     assert (beat, b.default_bpm(afon_elwy, beat)) == (b.Fraction(1, 4), 66)
     assert b.default_bpm(read("beauties-of-ragland"), b.Fraction(3, 8)) == 44
     assert b.beat_unit("4/4") == b.Fraction(1, 2)  # a reel is still counted in two
+    # A polca written in notes twice as long as usual says so (%%beat 1/2): minim = 100,
+    # as fast as the same tune written the usual way (Polca Redowa, version 2).
+    redowa = b.tune_record(b.ROOT / "tunes" / "polca-redowa" / "tune.abc")
+    assert (redowa["beat"], redowa["bpm"]) == ("1/2", 100)
+    assert b.tune_record(b.ROOT / "tunes" / "polca-redowa-version-2" / "tune.abc")["beat"] == "1/4"
+    assert b.own_beat("X:1\nK:G\n") is None
     assert b.tune_type(read("bwced")) == "Jig naid"  # R:Slip Jig
     assert b.tune_type(read("slipio")) == "Jig naid"  # R:jig naid
     assert b.tune_type({"R": ["jig"], "M": ["9/8"]}) == "Jig naid"  # a jig is in 6/8

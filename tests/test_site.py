@@ -20,7 +20,7 @@ def test_every_tune_draws(page):
       const empty = [];
       for (const tune of state.data.tunes) {
         for (const play of ["tune", "both", "chords"]) {
-          const abc = accompaniment(setTempo(stripFields(tune.abc, "SZBNAH"), tune.beat, tune.bpm), play === "both");
+          const abc = accompaniment(setTempo(stripFields(tune.abc, "SZBNAH"), tune.beat, tune.bpm), play);
           const lines = ABCJS.renderAbc("*", abc)[0].lines;
           const notes = lines.flatMap((l) => l.staff?.[0].voices[0] ?? []).filter((e) => e.el_type === "note");
           if (!notes.length) empty.push(`${tune.slug} (${play})`);
@@ -3653,6 +3653,55 @@ def test_tempo_and_key_shortcuts(page):
     page.keyboard.press(".")
     assert page.input_value("#tempo") == "117" and page.input_value("#key-select") == "1"
     assert page.url.endswith("alaw/glandyfi/?key=Ab&tempo=117")
+
+
+def test_slower_and_faster_buttons(page):
+    # An exact tempo without dragging the slider: 5 bpm a tap, kept in the address, and
+    # no further than the slider goes.
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    slower, faster = page.locator(".tempo-step").nth(0), page.locator(".tempo-step").nth(1)
+    assert slower.get_attribute("aria-label") == "Slower, 5 bpm"
+    slower.click()
+    slower.click()
+    assert page.input_value("#tempo") == "102" and page.inner_text("label[for=tempo]") == "Tempo: 102 bpm"
+    assert page.url.endswith("alaw/glandyfi/?tempo=102")
+    faster.click()
+    assert page.input_value("#tempo") == "107"
+    page.goto_site("alaw/glandyfi/?tempo=240")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.locator(".tempo-step").nth(1).is_disabled() and page.locator(".tempo-step").nth(0).is_enabled()
+
+
+def test_chords_not_played_leave_no_console_warnings(page):
+    # A jig's strum (%%MIDI gchord) is added only when the chords are heard: with the tune
+    # alone, abcjs made its single chord notes with no note to play, a warning for each.
+    said = []
+    page.on("console", lambda m: said.append(m.text))
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.wait_for_load_state("networkidle")
+    assert not [m for m in said if "Can't find note" in m]
+
+
+def test_search_results_a_to_z_whatever_the_capitals(page):
+    page.goto_site("?page=search&q=ffarwel")
+    page.wait_for_selector(".search-part")
+    names = page.locator(".search-part").first.locator("ul a").all_inner_texts()
+    assert names.index("Ffarwel i Aberystwyth") < names.index("Ffarwel Ned Puw")
+    # The page's own box, with the words searched for; not the sidebar's as well.
+    assert page.is_visible("#hero-search") and not page.is_visible("#search-input")
+
+
+def test_phone_version_menu_says_which_version(browser, site):
+    context = browser.new_context(service_workers="block", **PHONE)
+    page = context.new_page()
+    page.goto(site + "alaw/merch-megan/")
+    page.wait_for_selector(".score .abcjs-staff")
+    summary = page.locator(".versions-fold > summary")
+    assert summary.locator("small").inner_text() == "Alawon Cymru · G major · “Merch Megan”"
+    assert summary.evaluate("(s) => s.scrollWidth <= s.clientWidth + 1")  # cut short, not past its edge
+    context.close()
 
 
 def test_browse_grouped_by_type_with_keys(page):

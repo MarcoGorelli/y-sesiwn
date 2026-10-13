@@ -157,7 +157,7 @@ main:focus { outline: none; }  /* focused only by the skip link, not something t
 :root[data-theme="dark"] .brand img { filter: brightness(1.8) saturate(.85); }
 .sidebar-actions { display: grid; gap: .5rem; }
 .menu-button { display: none; }  /* phones only */
-body[data-page="home"] .topbar .search { display: none; }  /* the home page has its own, bigger one */
+body:is([data-page="home"], [data-page="search"]) .topbar .search { display: none; }  /* the home page has its own, bigger one; so do search results, with the words searched for */
 body[data-page="home"] :is(#surprise-sidebar, .menu-surprise) { display: none; }  /* and its own Surprise me */
 .menu-surprise { display: none; }  /* phones only: in the menu (on a wider screen it's in the sidebar) */
 .lang-switch, .theme-switch { display: flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; align-self: flex-start; font-size: .85rem; }
@@ -518,6 +518,10 @@ details.all-tunes[open] > .tune-list { margin: .25rem 0 1.25rem; }
 .usual-key { position: absolute; top: calc(100% + .2rem); left: 0; font-size: .8rem; white-space: nowrap; }
 .controls:has(.usual-key) { margin-bottom: 2rem; }
 .control input[type="range"] { width: 100%; height: 2rem; accent-color: var(--chosen); }  /* slate: a setting, not an accent */
+/* Slower and faster either side of the slider, as Size's − and +: an exact tempo by tapping */
+.tempo-line { display: flex; align-items: center; gap: .5rem; }
+.tempo-line input[type="range"] { flex: 1 1 auto; min-width: 0; }
+.tempo-step { flex: none; min-width: 2.4rem; font-weight: 600; }
 /* How the music is shown (size, full screen): at the end of the row, apart from the rest */
 .view-tools { display: flex; align-items: end; gap: .75rem; margin-left: auto; }
 /* Under the tune's name: its type in its colourway, and its time signature */
@@ -789,6 +793,10 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
   .versions-fold > summary { display: flex; align-items: center; gap: .4rem; min-height: 2.75rem; padding: 0 .65rem;
     border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); cursor: pointer; list-style: none;
     font-size: .9rem; font-weight: 600; white-space: nowrap; }
+  /* "Version 1 of 4", and under it what this one is (its book, its key), cut short to fit */
+  .versions-fold { flex: 1 1 0; max-width: max-content; }  /* beside the type, as wide as there's room for */
+  .versions-fold .which { display: grid; min-width: 0; line-height: 1.2; }
+  .versions-fold .which small { color: var(--muted); font-size: .75rem; font-weight: 400; overflow: hidden; text-overflow: ellipsis; }
   .versions-fold > summary::-webkit-details-marker { display: none; }
   .versions-fold > summary::before { display: none; }  /* its chevron is on the right, as on the key and tempo line */
   .versions-fold > summary::after { content: ""; flex: none; width: .7em; height: .7em; background: var(--muted);

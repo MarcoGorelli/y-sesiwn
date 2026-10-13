@@ -313,6 +313,17 @@ def beat_unit(meter: str, slow: bool = False) -> Fraction:
     return Fraction(1, den)
 
 
+def own_beat(abc: str) -> Fraction | None:
+    """The beat a tune's `%%beat 1/2` line gives, or None.
+
+    For music written in notes twice as long as usual (Alawon Cymru's "Set Polcas
+    Bob": a polca in 2/4 felt in minims, not crotchets), so its default tempo is
+    counted on the note that's felt as the beat.
+    """
+    m = re.search(r"^%%beat\s+(\d+)/(\d+)\s*$", abc, re.M)
+    return Fraction(int(m.group(1)), int(m.group(2))) if m and int(m.group(1)) else None
+
+
 def default_bpm(headers: dict[str, list[str]], beat: Fraction = Fraction(1, 4)) -> int:
     """Default from the tune type (earliest match in R:, e.g. "polca/ymdaith").
 
@@ -381,7 +392,7 @@ def tune_record(path: Path) -> dict:
     headers = parse_headers(abc)
     titles = headers.get("T") or [path.parent.name]
     parsed = parse_key((headers.get("K") or [""])[0])
-    beat = beat_unit((headers.get("M") or [""])[0], tune_type(headers) in SLOW_TYPES)
+    beat = own_beat(abc) or beat_unit((headers.get("M") or [""])[0], tune_type(headers) in SLOW_TYPES)
     rows, gloss = details(headers)
     # Versions of a tune ("Rheged (version 2)") share one page, under the base title.
     m = VERSION.match(titles[0])

@@ -383,7 +383,7 @@ function search(query) {
   const scored = state.groupList
     .map((tune) => [score(q, tune), tune])
     .filter(([s]) => s >= 0.7)
-    .sort((x, y) => y[0] - x[0] || (x[1].title < y[1].title ? -1 : 1));
+    .sort((x, y) => y[0] - x[0] || (x[1].search[0] < y[1].search[0] ? -1 : 1));  // A to Z, as the list of all of them
   const found = scored.map(([, tune]) => tune);
   // Where the names only spelt a little like it start (after every name that has it): -1, none.
   found.close = scored.findIndex(([s]) => s < 1);
@@ -566,7 +566,7 @@ function searchByNotes(text) {
     const off = atStartToo ? fromStart : anywhere;
     close.push({ tune, score: 0, where: atStartToo ? off : off + 1, close: true, how: "close", off, nearStart: atStartToo });
   }
-  const byRank = (a, b) => b.score - a.score || a.where - b.where || (a.tune.title < b.tune.title ? -1 : 1);
+  const byRank = (a, b) => b.score - a.score || a.where - b.where || (normalize(a.tune.title) < normalize(b.tune.title) ? -1 : 1);
   // One entry per tune: its best-matching version.
   const seen = new Set();
   const best = (list) => list.sort(byRank).filter((r) => !seen.has(r.tune.group) && seen.add(r.tune.group));
@@ -1280,8 +1280,8 @@ function render() {
   if (!tune) setPractice(false);
   main.style.animation = "none"; void main.offsetWidth; main.style.animation = "";  // replay fade-in
   const home = !tune && !lost && !guide && !map && !offline && !notes && !browse && !contact && !found && !setPage && !setsPage && !sessions;
-  // The home page has its own search box; a tune's page gives the music more of the width.
-  document.body.dataset.page = home ? "home" : tune ? "tune" : "other";
+  // The home page has its own search box (as search results do); a tune's page gives the music more of the width.
+  document.body.dataset.page = home ? "home" : tune ? "tune" : found ? "search" : "other";
   setMenu(false);
   markCurrentLink(sessions ? "sesiynau/" : browse ? "?page=browse" : page && !setPage ? `?page=${page}` : null);
   main.lang = state.lang;
@@ -2595,7 +2595,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   // than the name (1.35rem): at its usual size beside a big note it looked cut short.
   const grow = paper.clientWidth / ((layout.staffwidth ?? 740) + 30);
   if (document.body.classList.contains("practice") && !state.printing && grow > 1.1) {
-    abc = `%%composerfont * ${Math.round(9 / grow)}\n%%tempofont * ${Math.round((12 * Math.min(grow, 1.75)) / grow)}\n${abc}`;
+    abc = `%%composerfont * ${Math.round(13 / grow)}\n%%tempofont * ${Math.round((12 * Math.min(grow, 1.75)) / grow)}\n${abc}`;
   }
   // On the music stand the lines of music sit closer together, so more of the tune is in
   // sight at once (a slow air on a phone, the whole of it).
@@ -2603,7 +2603,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   const format = state.practice.chordsOnScore || state.printing ? SCORE_FORMAT : HIDDEN_CHORDS_FORMAT;
   // The tablature's name is said once, above the music (fingeringKey), not on every line.
   const tablature = tab ? [{ instrument: tab.instrument, label: "" }] : null;
-  const render = (layout) => ABCJS.renderAbc(paper, accompaniment(abc, settings.chords.play === "both"),
+  const render = (layout) => ABCJS.renderAbc(paper, accompaniment(abc, settings.chords.play),
     { responsive: "resize", add_classes: true, paddingtop: 0, format, ...layout, ...(tablature ? { tablature } : {}),
       // Laying the music out again in shorter lines (wrap), abcjs reads the tune again and
       // leaves its tablature behind: given back here, before it's drawn.
@@ -2748,12 +2748,16 @@ const PART_END = new Set([...REPEAT_END, "bar_thin_thin", "bar_thin_thick"]);  /
 // chord), which sounds like a waltz in two. Guitars and bodhráns drive a jig with
 // every quaver, "Down up down, Down up down": here each beat starts with the bass
 // and the full chord (b), the middle quaver is a single light chord note (I), and
-// the last quaver the full chord again (c). A tune's own %%MIDI lines win.
+// the last quaver the full chord again (c). A tune's own %%MIDI lines win. With the
+// chords not played ("tune"), nothing is added: abcjs still lays out a strum then, its
+// single chord notes (I) with no note to play (a warning in the console for each).
 const CHORD_VOLUME = 32;
 const BASS_VOLUME = 50;
 const STRUMS = { "6/8": "bIcbIc", "9/8": "bIcbIcbIc", "12/8": "bIcbIcbIcbIc" };
 
-function accompaniment(abc, withTune) {
+function accompaniment(abc, play) {
+  if (play === "tune") return abc;
+  const withTune = play === "both";
   const lines = [];
   const has = (name) => new RegExp(`^%%MIDI\\s+${name}`, "m").test(abc);
   if (withTune && !has("chordvol")) lines.push(`%%MIDI chordvol ${CHORD_VOLUME}`);
@@ -2966,7 +2970,7 @@ function printButton(tune, paper, settings) {
   const saveAbc = () => download(fileName("abc"), "text/vnd.abc", transposed(tune.abc));
   const saveMidi = () => {
     const abc = transposed(setTempo(stripFields(tune.abc, "SZBNAH"), tune.beat, settings.bpm));
-    const [bytes] = ABCJS.synth.getMidiFile(accompaniment(abc, settings.chords.play === "both"), {
+    const [bytes] = ABCJS.synth.getMidiFile(accompaniment(abc, settings.chords.play), {
       midiOutputType: "binary", ...AUDIO_PARAMS,
       chordsOff: tune.chords == null || settings.chords.play === "tune", voicesOff: tune.chords != null && settings.chords.play === "chords" });
     download(fileName("mid"), "audio/midi", bytes);
@@ -3252,6 +3256,18 @@ function renderTune(main, group, tune) {
       redraw();
     } });
   // As the key: a page that opens at the tempo kept from last time says so (not a link's).
+  // Slower and faster, 5 bpm a tap (as [ and ] are): an exact tempo ("practise at 80") without
+  // dragging the slider by a pixel on a phone. Kept, and in the address, as the slider's is.
+  const tempoStep = (step, text, name) => el("button", { type: "button", class: "tempo-step", "aria-label": name, onclick: () => {
+    const bpm = Math.min(MAX_BPM, Math.max(MIN_BPM, settings.bpm + step));
+    if (bpm === settings.bpm) return;
+    speedSaid = ""; undoSpeedUp = null;
+    setBpm(bpm);
+    saveTune(tune, "bpm", settings.bpm);
+    redraw();
+  } }, text);
+  const slower = tempoStep(-5, "−", tr("Slower, 5 bpm", "Arafach, 5 bpm"));
+  const faster = tempoStep(5, "+", tr("Faster, 5 bpm", "Cyflymach, 5 bpm"));
   const keptBpm = !(tempo >= MIN_BPM && tempo <= MAX_BPM) && kept.bpm != null ? kept.bpm : null;
   const usualTempo = el("span", { class: "caption usual-key" });
   // The score's own tempo mark follows the tempo chosen, so once it's moved the written one
@@ -3263,6 +3279,8 @@ function renderTune(main, group, tune) {
       ? tr(`Your tempo last time · original ${tune.bpm}`, `Eich tempo y tro diwethaf · gwreiddiol ${tune.bpm}`)
       : settings.bpm !== tune.bpm ? tr(`Original: ${tune.bpm} bpm`, `Gwreiddiol: ${tune.bpm} bpm`) : "";
     controls.querySelector("#tempo")?.setAttribute("aria-valuetext", `${settings.bpm} bpm`);
+    slower.disabled = settings.bpm <= MIN_BPM;
+    faster.disabled = settings.bpm >= MAX_BPM;
     // Before Speed up is ticked, "from" says where ticking it would start: the tempo, or,
     // if that's already the goal, 70% of it (see startSpeedUp), never "from 100 to 100".
     const goal = settings.speedTo;
@@ -3275,12 +3293,12 @@ function renderTune(main, group, tune) {
   const practice = el("button", { type: "button", class: "practice-toggle", onclick: () => setPractice(!document.body.classList.contains("practice")) });
   practice.textContent = practiceLabel(document.body.classList.contains("practice"));
   controls.append(...[el("div", { class: "control tempo" }, tempoLabel,
-    el("input", {
+    el("div", { class: "tempo-line" }, slower, el("input", {
       id: "tempo", type: "range", min: MIN_BPM, max: MAX_BPM, value: settings.bpm, list: "tempo-written",
       "aria-valuetext": `${settings.bpm} bpm`,
       oninput: (e) => { settings.bpm = +e.target.value; showTempo(); },
       onchange: () => { speedSaid = ""; undoSpeedUp = null; saveTune(tune, "bpm", settings.bpm); showInAddress(); redraw(); },
-    }), el("datalist", { id: "tempo-written" }, el("option", { value: tune.bpm })), usualTempo),
+    }), faster), el("datalist", { id: "tempo-written" }, el("option", { value: tune.bpm })), usualTempo),
     // How the music is shown, at the end of the row: its size, and full screen.
     el("div", { class: "view-tools" }, musicSize(() => { showSummary(); redraw(); }), practice)]);
   // Taking it with you: sharing, printing, saving, a set.
@@ -3320,7 +3338,10 @@ function renderTune(main, group, tune) {
   const versions = group.versions.length > 1
     ? [el("nav", { class: "versions", "aria-label": tr("Versions of this tune", "Fersiynau'r alaw hon") },
         group.versions.map(versionLink), state.practice.versionsSeen ? null : whatVersions()),
-      versionsFold(el("summary", {}, tr(`Version ${tune.version} of ${group.versions.length}`, `Fersiwn ${tune.version} o ${group.versions.length}`)),
+      // …which says what this one is (its book, its key where they differ), as the tabs do.
+      versionsFold(el("summary", {}, el("span", { class: "which" },
+          el("span", {}, tr(`Version ${tune.version} of ${group.versions.length}`, `Fersiwn ${tune.version} o ${group.versions.length}`)),
+          versionNote.get(tune) ? [el("span", { class: "visually-hidden" }, ", "), el("small", {}, versionNote.get(tune))] : null)),
         el("nav", { class: "versions-list", "aria-label": tr("Versions of this tune", "Fersiynau'r alaw hon") },
           whatVersions(), group.versions.map(versionLink)))]
     : [];

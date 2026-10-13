@@ -32,6 +32,13 @@
   --scrim: #0006;             /* behind a dialog */
   --shadow-float: #00000026;  /* things that float over the page */
   --shadow-soft: #0000001f;
+  --shadow-rest: #0000000f;   /* things lying on the page: cards, the paper, the pinned top bar */
+  --swatch-edge: #00000022;   /* round a tune type's woven swatch */
+  --muted-on-slate: #6b737c;  /* the player's greyed Play, on its slate */
+  /* A button on the cream paper: the same in both themes, as the paper is */
+  --paper-button: #ffffff;
+  --paper-button-ink: #262b31;
+  --paper-button-edge: #dcdfe3;
   --art-dim: none;            /* the drawn instruments on their quilt: dimmed at night, as the paper is */
   /* Red and black striped Welsh flannel (as in a pais or betgwn), down the edge of a call-out */
   --flannel: linear-gradient(to right, #C8102E 0 2.5px, #1d1d1b 2.5px 4px, #C8102E 4px 7px) left / 7px 100% no-repeat;
@@ -104,14 +111,14 @@ body {
   font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 a { color: var(--link); }
-::selection { background: var(--accent); color: #fff; }
+::selection { background: var(--accent); color: var(--on-accent); }
 h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 .5rem; }
 h2 { font-size: 1.35rem; margin: 2rem 0 .75rem; }
 button, input, select { font: inherit; color: inherit; }
 ::placeholder { color: var(--muted); opacity: 1; }  /* the browser's grey is too faint at night */
 .skip-link {  /* out of sight until it has keyboard focus */
-  position: absolute; top: .5rem; left: .5rem; z-index: 100; padding: .5rem .9rem; border-radius: 6px;
-  background: var(--accent); color: #fff; font-weight: 600; text-decoration: none; transform: translateY(-200%);
+  position: absolute; top: .5rem; left: .5rem; z-index: 100; padding: .65rem .9rem; border-radius: 6px;
+  background: var(--accent); color: var(--on-accent); font-weight: 600; text-decoration: none; transform: translateY(-200%);
 }
 .skip-link:focus { transform: none; }
 main:focus { outline: none; }  /* focused only by the skip link, not something to press */
@@ -155,6 +162,7 @@ main:focus { outline: none; }  /* focused only by the skip link, not something t
    than set on a tile */
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .brand img { filter: brightness(1.8) saturate(.85); } }
 :root[data-theme="dark"] .brand img { filter: brightness(1.8) saturate(.85); }
+.brand img { flex: none; }  /* the harp keeps its size beside a name in large text */
 .sidebar-actions { display: grid; gap: .5rem; }
 .menu-button { display: none; }  /* phones only */
 body:is([data-page="home"], [data-page="search"]) .topbar .search { display: none; }  /* the home page has its own, bigger one; so do search results, with the words searched for */
@@ -193,8 +201,8 @@ button {
    :hover look until the next tap elsewhere, as if it were still chosen. */
 @media (hover: hover) { button:hover:not(:disabled) { border-color: var(--accent-ink); color: var(--accent-ink); } }
 button:disabled { opacity: .5; cursor: default; }
-button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-button.primary:hover { color: #fff; filter: brightness(1.1); }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+button.primary:hover { color: var(--on-accent); filter: brightness(1.1); }
 :focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
 
 /* Search boxes (sidebar and the big one on the home page) */
@@ -205,7 +213,7 @@ button.primary:hover { color: #fff; filter: brightness(1.1); }
   border: 1.5px solid var(--border);
   border-radius: 999px;
   background: var(--search-icon) no-repeat .85rem center / 1.15rem, var(--card-bg);
-  box-shadow: 0 1px 2px #0000000d;
+  box-shadow: 0 1px 2px var(--shadow-rest);
   transition: border-color .15s, box-shadow .15s;
 }
 .search input::-webkit-search-cancel-button { display: none; }
@@ -253,7 +261,7 @@ button.primary:hover { color: #fff; filter: brightness(1.1); }
 .suggestions li.all .chevron { width: .7em; height: .7em; margin: 0; transform: none; }  /* to the right: another page */
 
 .hero-search { max-width: 40rem; margin: 1.5rem 0 1rem; }
-.hero-search input { font-size: 1.15rem; padding: 1rem 3rem 1rem 3.1rem; background-position: 1.1rem center; background-size: 1.35rem; box-shadow: 0 2px 10px #0000000f; }
+.hero-search input { font-size: 1.15rem; padding: 1rem 3rem 1rem 3.1rem; background-position: 1.1rem center; background-size: 1.35rem; box-shadow: 0 2px 10px var(--shadow-rest); }
 .hero-search .shortcut { top: 1.85rem; right: 1.1rem; }
 
 /* Main */
@@ -270,7 +278,7 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 
 .pills { display: flex; flex-wrap: wrap; gap: .5rem; }
 .pills button { border-radius: 999px; }
-.pills button { display: inline-flex; align-items: center; }
+.pills button { display: inline-flex; flex-wrap: wrap; align-items: center; max-width: 100%; }  /* in very large text, its words wrap inside it */
 .pills button[hidden] { display: none; }
 .pills button .count { white-space: pre; }
 .pills :is(.more-keys, .more-types) .chevron { transform: none; margin-right: -.1em; }  /* opens to the right, as a closed fold */
@@ -312,7 +320,7 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
   max-width: 40rem; margin: 1.75rem 0 .5rem; padding: calc(1rem + 7px) 1.2rem 1.1rem;
   background: url("carthen.svg") repeat-x top left / auto 7px, var(--card-bg);
   border: 1px solid var(--border); border-radius: var(--radius);
-  box-shadow: 0 1px 3px #0000000f;
+  box-shadow: 0 1px 3px var(--shadow-rest);
 }
 .offline-card h2 { margin: 0 0 .35rem; font-size: 1.15rem; }
 .offline-card p { margin: 0 0 .7rem; }
@@ -324,7 +332,7 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 /* Under a tune's player (on the cream paper): the words, then the same button, small */
 .score > .sound-note { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .75rem; }
 .score > .sound-note[hidden] { display: none; }
-.score > .sound-note .save-sounds { padding: .3rem .7rem; font-size: .85rem; background: #fff; color: #262b31; border-color: #dcdfe3; }
+.score > .sound-note .save-sounds { padding: .3rem .7rem; font-size: .85rem; background: var(--paper-button); color: var(--paper-button-ink); border-color: var(--paper-button-edge); }
 .offline-card .more { font-size: .9rem; margin: .3rem 0 0; }
 .offline-card.full { margin-top: 0; }
 .share-icon { width: 1.15em; height: 1.15em; vertical-align: -.2em; color: var(--link); }
@@ -381,7 +389,7 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .preview-play svg { width: 1.1rem; height: 1.1rem; }
 .preview-play .play-icon { margin-left: .15rem; }  /* optically centred */
 .notes-search .listen { font-size: 1.1rem; padding: .6rem 1.1rem; margin-bottom: .8rem; }
-.notes-search .listen:not(.on) { background: var(--accent); border-color: var(--accent); color: #fff; }
+.notes-search .listen:not(.on) { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 .notes-how { margin-top: 2rem; }
 .notes-how li::marker { color: var(--accent-ink); }
 
@@ -414,7 +422,7 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 @media (hover: hover) { .piano .white:hover { background: var(--ivory-hover); border-color: var(--key-edge); color: var(--accent); } }
 @media (hover: hover) { .piano .black:hover { background: var(--ebony-hover); border-color: var(--ebony-edge); } }
 .piano .white:active, .piano .black:active, .piano .key.heard { background: var(--accent); }
-.notes-search .listen.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.notes-search .listen.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 .listen-status { margin: .2rem 0 .3rem; font-size: .9rem; }
 .mic-icon, .stop-icon { width: 1.1em; height: 1.1em; vertical-align: -.2em; }
 .note-edit { display: flex; gap: .4rem; margin: .1rem 0 .3rem; }
@@ -431,7 +439,7 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
   width: .95em; height: .95em; margin-right: .5em;
   border-radius: 2px;
   background: var(--c);
-  box-shadow: inset 0 0 0 1px #00000022;
+  box-shadow: inset 0 0 0 1px var(--swatch-edge);
 }
 .swatch::after {
   content: ""; position: absolute; inset: 21%; transform: rotate(45deg);
@@ -709,7 +717,7 @@ details[open] > summary::before { transform: rotate(90deg); }
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: .75rem 1rem 1rem;
-  box-shadow: 0 1px 3px #0000000f;
+  box-shadow: 0 1px 3px var(--shadow-rest);
 }
 .score .abcjs-inline-audio { background-color: var(--slate); border-radius: 6px; height: 42px; }
 /* The position bar: a slim groove in a taller strip (the strip is what's pressed, so it's
@@ -732,7 +740,7 @@ details[open] > summary::before { transform: rotate(90deg); }
 /* Keyboard focus on the player in ivory, like the slider's: the page's red ring is too faint
    on the slate bar, and lost on the red Play disc */
 /* No signal, no sounds yet: Play greyed, plainly not ready (not a dimmed red that looks pressable) */
-.score .abcjs-inline-audio .abcjs-midi-start:disabled { box-shadow: inset 0 0 0 30px var(--muted-on-slate, #6b737c); opacity: .7; cursor: not-allowed; }
+.score .abcjs-inline-audio .abcjs-midi-start:disabled { box-shadow: inset 0 0 0 30px var(--muted-on-slate); opacity: .7; cursor: not-allowed; }
 .score .abcjs-inline-audio .abcjs-btn:focus-visible { outline: 2px solid var(--ivory); outline-offset: 2px; }
 .score .abcjs-note_playing { fill: var(--accent); }
 .score .abcjs-note { cursor: pointer; }  /* a tap plays from that note (playFrom in app.js) */
@@ -1049,7 +1057,7 @@ body.practice .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height
     position: sticky; top: 0; z-index: 30;
     grid-template-columns: auto 1fr; align-items: center; gap: .75rem;
     background: var(--sidebar-bg); padding: .6rem 1rem;
-    border-bottom: 1px solid var(--border); box-shadow: 0 2px 8px #0000000f;
+    border-bottom: 1px solid var(--border); box-shadow: 0 2px 8px var(--shadow-rest);
   }
   .brand { font-size: 1.25rem; gap: .4rem; }
   .brand img { width: 26px; height: 26px; }
@@ -1275,7 +1283,7 @@ main { view-transition-name: page; }
 }
 .set-tune-head .preview-play { margin-left: auto; }
 .set-heading { margin: 0; }
-.set-paper { background: var(--paper); color: var(--score-ink); border: 1px solid var(--border); border-radius: var(--radius); padding: .75rem 1rem 1rem; min-height: 8rem; box-shadow: 0 1px 3px #0000000f; }
+.set-paper { background: var(--paper); color: var(--score-ink); border: 1px solid var(--border); border-radius: var(--radius); padding: .75rem 1rem 1rem; min-height: 8rem; box-shadow: 0 1px 3px var(--shadow-rest); }
 .set-undo[hidden] { display: none; }
 .nowrap { white-space: nowrap; }
 .set-undo { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .6rem; max-width: 40rem; margin: .75rem 0 0; }
@@ -1377,8 +1385,7 @@ body.practice .tune-sub { display: none; }
   .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height: 44px; padding: 12px 11px 12px 14px; margin: 0 10px 0 10px; }
   .score .abcjs-inline-audio .abcjs-midi-progress-background { --groove: 8px; --handle: 26px; height: 44px; }
   .score .abcjs-inline-audio .abcjs-midi-progress-indicator { top: 9px; }
-  .set-item-controls button { min-width: 2.5rem; min-height: 2.5rem; }
-  .set-item-controls select { min-height: 2.5rem; }
+  .set-item-controls button, .set-item-controls select { min-height: 44px; }
   .link-button { padding: .5rem 0; }
   .say-key summary { display: inline-block; padding-block: .8rem; margin-block: -.8rem; }  /* a 44px target that doesn't make its line taller */
   /* At a session it's one thumb, often in the dark: 44px for every control (WCAG 2.5.5).
@@ -1401,6 +1408,10 @@ body.practice .tune-sub { display: none; }
      line taller, so a wrapped line stays with it; the rows are spaced so they don't meet */
   .coming-up li { padding: .45rem 0; }
   .coming-up li > a, .set-tune h2 a { padding-block: .65rem; }
+  /* A tune in a set's running order: the row is the finger's height, the name its target */
+  .set-list li { padding-block: 0; }
+  .set-list li > a { display: inline-flex; align-items: center; min-height: 44px; }
+  .github-way > summary { padding-block: .4rem; }  /* "Or add it yourself on GitHub" */
   /* the same, for links in smaller type: the source in a tune's details, the map's, the report,
      the offline card's, back to My sets */
   .card.place .caption a, .report-line a, dd > a:first-child, .offline-card .more a, .set-count a { padding-block: .85rem; }

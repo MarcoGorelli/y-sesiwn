@@ -24,6 +24,12 @@ colors:
   ebony: "#262b31"
   ebony-edge: "#111111"
   player-track: "#2a323b"
+  muted-on-slate: "#6b737c"
+  paper-button: "#ffffff"
+  paper-button-ink: "#262b31"
+  paper-button-edge: "#dcdfe3"
+  shadow-rest: "#0000000f"
+  swatch-edge: "#00000022"
   night-bg: "#111418"
   night-sidebar: "#1a1f25"
   night-card: "#171b21"
@@ -212,7 +218,9 @@ A warm off-white room framed in Welsh slate, with Welsh flag red used sparingly 
 - **Land Grey** (`land-grey`): the map of Wales.
 - **Flannel Black** (`flannel-black`): the black stripe in the flannel edge.
 - **Ivory and Ebony** (`ivory`, `ebony`, with `key-edge`, `ebony-edge`; hover `carthen-cream` and `slate`): the piano keyboard, the same in both themes. Key labels are Muted Slate (5.5:1 on ivory).
-- **Player Track** (`player-track`): the player's position bar on its slate.
+- **Player Track** (`player-track`): the player's position bar on its slate. **Muted on Slate** (`muted-on-slate`): Play greyed on the slate bar, when there are no sounds yet.
+- **Paper Button** (`paper-button`, `paper-button-ink`, `paper-button-edge`): a button on the cream paper (Save the sounds, under the player): white, ink and hairline, the same in both themes, as the paper is.
+- **Swatch Edge** (`swatch-edge`, `#00000022`): the 1px inset edge round a tune type's woven swatch.
 
 ### Named Rules
 **The Flag Not Paint Rule.** Welsh red marks what is active, focused, chosen or important. It never fills large areas or backgrounds.
@@ -266,11 +274,11 @@ Practice mode (Full screen) drops the sidebar, side card, footer, version tabs a
 Mostly flat: surfaces are separated by hairline borders and tonal steps (off-white page, pale-slate sidebar, white cards, cream paper). Shadows are faint and functional: a barely-there lift on paper and cards at rest, and a deeper shadow only on things that float over content (search suggestions, map popups).
 
 ### Shadow Vocabulary
-- **Resting** (`box-shadow: 0 1px 3px #0000000f`): score paper, offline card.
-- **Search** (`box-shadow: 0 1px 2px #0000000d`; hero search `0 2px 10px #0000000f`): the search fields.
+- **Resting** (`box-shadow: 0 1px 3px var(--shadow-rest)`; `--shadow-rest` is `#0000000f`): score paper, a set's paper, offline card.
+- **Search** (`box-shadow: 0 1px 2px var(--shadow-rest)`; hero search `0 2px 10px var(--shadow-rest)`): the search fields.
 - **Floating** (`box-shadow: 0 4px 14px var(--shadow-float)`; `--shadow-float` is `#00000026`): search suggestions, map popups, menus. Small floating controls (map zoom, the set's previous/next bar) use `--shadow-soft` (`#0000001f`).
 - **Scrim** (`--scrim`, `#0006`): behind dialogs.
-- **Top bar** (`box-shadow: 0 2px 8px #0000000f`): the sticky phone top bar.
+- **Top bar** (`box-shadow: 0 2px 8px var(--shadow-rest)`): the sticky phone top bar.
 - **Focus ring** (`0 0 0 3px` red wash): focused search inputs.
 
 ### Named Rules

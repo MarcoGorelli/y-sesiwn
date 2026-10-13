@@ -929,6 +929,45 @@ def test_map_pinch_on_a_phone(browser, site):
     context.close()
 
 
+def test_drags_on_a_phone(browser, site):
+    # A real one-finger drag (Chrome's touch emulation) along the player's position bar,
+    # before anything has played, then Play: it starts there, not at the beginning. And
+    # the piano's keys, wider than a phone, scroll sideways in their strip, not the page.
+    context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True,
+                                  service_workers="block")
+    page = context.new_page()
+    cdp = context.new_cdp_session(page)
+    touch = lambda kind, points: cdp.send("Input.dispatchTouchEvent", {"type": kind, "touchPoints": points})
+
+    def drag(x, y, dx):
+        touch("touchStart", [{"x": x, "y": y, "id": 0}])
+        for d in range(5, abs(dx), 5):
+            touch("touchMove", [{"x": x + (d if dx > 0 else -d), "y": y, "id": 0}])
+        touch("touchEnd", [])
+
+    page.goto(site + "?tune=glandyfi")
+    page.locator(".seek-track").scroll_into_view_if_needed()
+    box = page.locator(".seek").bounding_box()
+    drag(box["x"] + 5, box["y"] + box["height"] / 2, int(box["width"] * .6))
+    at = int(page.input_value(".seek"))
+    assert 40 <= at <= 80 and page.evaluate("scrollX") == 0
+    page.wait_for_timeout(600)  # after a swipe, Chrome takes the next tap as "stop scrolling", not a click
+    page.locator(".abcjs-midi-start").tap()
+    page.wait_for_function("document.querySelector('.abcjs-midi-start').classList.contains('abcjs-pushed')")
+    assert page.evaluate("state.synth.percent") * 100 >= at - 5
+    page.locator(".abcjs-midi-start").tap()  # pause
+
+    page.goto(site + "?page=notes")
+    strip = page.locator(".piano-wrap")
+    strip.scroll_into_view_if_needed()
+    box = strip.bounding_box()
+    drag(box["x"] + box["width"] - 30, box["y"] + box["height"] * .85, -200)
+    page.wait_for_timeout(600)
+    assert page.eval_on_selector(".piano-wrap", "e => e.scrollLeft") > 100
+    assert page.evaluate("scrollX") == 0 and page.input_value(".notes-search input") == ""  # scrolled, no key played
+    context.close()
+
+
 def test_map_on_a_phone(browser, site):
     # Tapping a dot opens its popup, which stays open after the finger lifts (issue #8);
     # tapping elsewhere closes it.

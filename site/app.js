@@ -2676,15 +2676,23 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   const start = audio.querySelector(".abcjs-midi-start");
   const bar = audio.querySelector(".abcjs-midi-progress-background");
   const clock = audio.querySelector(".abcjs-midi-clock");
+  // A place chosen on the slider before anything has played (abcjs can't jump until its
+  // sound is ready): Play starts there. Without it, the slider went back to the start.
+  let startAt = null;
   const seek = el("input", { type: "range", class: "seek", min: 0, max: 100, step: 1, value: 0,
     "aria-label": tr("Position in the tune", "Lle yn yr alaw"),
-    oninput: (e) => { controller.seek(Math.min(.999, +e.target.value / 100)); showState(); } });
+    oninput: (e) => {
+      const at = Math.min(.999, +e.target.value / 100);
+      if (controller.timer) controller.seek(at); else startAt = at;
+      showState();
+    } });
   const showState = () => {
     const playing = start?.classList.contains("abcjs-pushed");
+    if (playing && startAt !== null && controller.timer) { controller.seek(startAt); startAt = null; }
     if (playing !== audioFocus.playing && state.synth === controller) audioFocus.hold(playing, tune.title);
     if (playing) { heardWithTheMusic(tune); heardWithTheHoles(); }
     start?.setAttribute("aria-label", playing ? tr("Pause (space bar)", "Oedi (bylchwr)") : tr("Play (space bar)", "Chwarae (bylchwr)"));
-    const percent = Math.round((controller.percent ?? 0) * 100);
+    const percent = Math.round((startAt ?? controller.percent ?? 0) * 100);
     if (document.activeElement !== seek) seek.value = percent;
     seek.setAttribute("aria-valuetext", `${clock?.textContent.trim() || "0:00"} (${percent}%)`);
   };
@@ -2697,6 +2705,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   }
   // A new player: Play waits for a signal if there are no sounds to play (fillSoundNote).
   queueMicrotask(() => paper.closest(".score")?.querySelectorAll(".sound-note").forEach(fillSoundNote));
+  audio.querySelector(".abcjs-midi-reset")?.addEventListener("click", () => { startAt = null; showState(); });
   for (const node of [start, clock].filter(Boolean)) {
     new MutationObserver(showState).observe(node, { attributes: true, attributeFilter: ["class"], childList: true, characterData: true, subtree: true });
   }

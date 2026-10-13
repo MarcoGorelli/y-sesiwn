@@ -35,7 +35,6 @@
     "jig-llwytcoed": "llwytcoed-version-3",
     "glamorganshire-march": "triban-gwyr-morganwg-version-2",
     "griffith-ap-cynan-s-delight": "diddanwch-gruffydd-ap-cynan-version-2",
-    "ril-clawdd-offa": "clawdd-offa-version-3",
     "the-delight-of-the-men-of-dovey": "difyrrwch-gwyr-dyfi-version-4",
     "hufen-melyn-32-bar": "hufen-melyn-version-2",
     "jig-titrwm": "titrwm-tatrwm-version-2",
@@ -52,6 +51,7 @@
     "cynset-evan-glan-teifi": "rhuban-morfudd-version-3",
     "nyth-y-gog-version-3": "nyth-y-gwcw",
     "nyth-y-gog-version-4": "nyth-y-gwcw-version-2",
-    "llanthony-abbey": "abaty-llanthony-version-2"
+    "llanthony-abbey": "abaty-llanthony-version-2",
+    "clawdd-offa-version-3": "ril-clawdd-offa"
   }
 }

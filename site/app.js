@@ -328,13 +328,14 @@ function score(query, tune) {
   // 2 for the exact name, 1 if the title has the query at the start of a word ("mon" finds "Mwynen Môn",
   // not "harmoni"), otherwise the average word-by-word similarity, so small typos
   // and other spellings ("trefalwdyn", "Risiart") still match.
-  // Among those, the tune's own name before its other names, and a name that starts with
+  // Among those, the tune's own name before its other names ("pwt ar y bys" lists "Pwt ar y Bys"
+  // before "Pibddawns Pwt ar y Bys", which is also called that), and a name that starts with
   // the query before one with a later word that does: "pont" lists "Pont Cleddau" before
   // "Cwicstep y Bontnewydd" (found by its other name, "The Pontnewydd Quickstep").
   let best = 0;
   const queryWords = words(query);
   for (const [i, title] of tune.search.entries()) {
-    if (title === query) return 2;  // the exact name comes first
+    if (title === query) return i ? 2 : 2.2;  // the exact name comes first, the tune's own before another's other name
     if (` ${title}`.includes(` ${query}`)) {
       best = Math.max(best, 1 + (i ? 0 : 0.2) + (title.startsWith(query) ? 0.1 : 0));
       continue;

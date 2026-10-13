@@ -3700,6 +3700,25 @@ def test_music_stand_on_a_phone(browser, site):
     context.close()
 
 
+# Back up for a repeat, further than the screen goes: followed, from the line just played.
+# A line far off on its own isn't (the reader has gone elsewhere on the page).
+def test_following_the_music_back_up_for_a_repeat(browser, site):
+    context = browser.new_context(service_workers="block", **{**PHONE, "viewport": {"width": 360, "height": 640}})
+    page = context.new_page()
+    page.goto(site + "alaw/cader-idris/?tab=recorder")
+    page.wait_for_selector(".score .holes")
+    page.evaluate("document.querySelector('.score .abcjs-note.abcjs-l3').scrollIntoView({ block: 'center' })")
+    page.wait_for_timeout(100)
+    before = page.evaluate("scrollY")
+    follow = "(from) => followMusic(document.querySelector('.score .abcjs-note.abcjs-l0'), from ? document.querySelector('.score .abcjs-note.abcjs-l3') : null)"
+    page.evaluate(follow, False)
+    page.wait_for_timeout(100)
+    assert page.evaluate("scrollY") == before
+    page.evaluate(follow, True)
+    page.wait_for_function(f"scrollY < {before} - 200")
+    context.close()
+
+
 def test_tempo_and_key_shortcuts(page):
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-staff")

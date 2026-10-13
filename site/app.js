@@ -2011,11 +2011,17 @@ class Cursor {  // highlights the notes as they play, and keeps playback inside 
     document.querySelectorAll(".abcjs-note_playing").forEach((n) => n.classList.remove("abcjs-note_playing"));
     if (event) event.elements.flat().forEach((n) => n.classList.add("abcjs-note_playing"));
     // A new line of music: keep it in view.
-    if (event && event.line !== this.line) { this.line = event.line; const note = event.elements.flat()[0]; if (note) followMusic(note); }
+    // (Back up for a repeat, it's followed from the line just played.)
+    if (event && event.line !== this.line) {
+      this.line = event.line;
+      const note = event.elements.flat()[0];
+      if (note) followMusic(note, this.note);
+      this.note = note;
+    }
     if (event && this.loop) this.loop.onEvent(event);
   }
   onStart() { soundPlayed(); }
-  onFinished() { this.onEvent(null); this.line = undefined; }
+  onFinished() { this.onEvent(null); this.line = this.note = undefined; }
 }
 
 // ---- Practice: loop a part, speed up, count-in, click, tablature -------------------------
@@ -2502,7 +2508,7 @@ for (const type of ["wheel", "touchmove"]) {
 const SCROLL_KEYS = new Set(["PageUp", "PageDown", "ArrowUp", "ArrowDown", "Home", "End"]);
 window.addEventListener("keydown", (e) => { if (SCROLL_KEYS.has(e.key) && !e.target.closest?.("input, select, textarea, [role=slider]")) handsOnPage = Date.now(); });
 window.addEventListener("pointerdown", (e) => { if (e.target === document.documentElement) handsOnPage = Date.now(); });
-function followMusic(note) {
+function followMusic(note, from = null) {
   if (Date.now() - handsOnPage < 4000) return;
   const box = note.getBoundingClientRect();
   if (!box.height) return;
@@ -2515,7 +2521,9 @@ function followMusic(note) {
     .filter((x) => ["sticky", "fixed"].includes(getComputedStyle(x).position))
     .reduce((bottom, x) => Math.max(bottom, x.getBoundingClientRect().bottom), 0);
   const top = pinned + 8, bottom = window.innerHeight * 0.7;
-  const seen = box.bottom > top - 150 && box.top < window.innerHeight + 150;  // the music, or just past it
+  // The music, or just past it; or the line just played, so a repeat goes back up with it.
+  const near = (b) => b.height && b.bottom > top - 150 && b.top < window.innerHeight + 150;
+  const seen = near(box) || (from?.isConnected && near(from.getBoundingClientRect()));
   if (!seen || (box.top >= top && box.bottom <= bottom)) return;
   window.scrollTo({ top: window.scrollY + box.top - top - 48,
     behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });

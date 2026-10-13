@@ -2150,6 +2150,9 @@ function drawHoles(text, holes) {
   g.setAttribute("class", "holes");
   marks.forEach(({ mark }, i) => holeMark(g, mark, x, marks[0].y + step * (i + .5 * gaps.filter((at) => at <= i).length), r));
   text.after(g);
+  // Nothing left to read in it (no "8va", "+" or "?"): gone, since an empty text's box sits
+  // at the top of the music, and the note's with it, so following the music scrolled up there.
+  if (!text.textContent.trim()) text.remove();
 }
 // One hole: covered (●) filled, open (○) a ring, half-covered (◐) a ring with its left half filled.
 function holeMark(parent, mark, cx, cy, r) {

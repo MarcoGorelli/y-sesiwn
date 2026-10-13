@@ -321,6 +321,17 @@ def test_whistle_fingerings(page):
     assert rows == ["●●●●●●.", ".", "●●●●●○.", "●●●●○○.", "●●●○○○.", "●●○○○○."]
 
 
+# Each note's box, holes and all, is where the note is: following the music while it plays
+# goes by it. (A recorder note's holes, with no "8va" to say, left an empty text behind,
+# boxed at the top of the music, so following scrolled the page up there.)
+def test_fingered_notes_box_where_they_are(page):
+    page.goto_site("alaw/walts-dinefwr/?tab=recorder")
+    page.wait_for_selector(".score .holes")
+    tops = page.evaluate("""() => [...document.querySelectorAll('.score .abcjs-note')].map((n) =>
+      n.getBoundingClientRect().top - n.querySelector('.abcjs-notehead').getBoundingClientRect().top)""")
+    assert tops and min(tops) > -60
+
+
 # For a learner who doesn't read the stave: a line above the music that opens the choices
 # in place (the practice tools stay folded, now and on the next tune), gone once any has
 # been chosen, the music alone too, for good.

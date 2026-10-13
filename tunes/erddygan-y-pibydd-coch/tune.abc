@@ -7,7 +7,7 @@ Z:MIDI transcribed with alawon-abc
 %%alawon-reviewed
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams o addasiad Bob Evans
-N:Transcribed from the score. The alawoncymru recording plays it in 3/2 and plays part of the B music differently.
+N:Transcribed from the score, which the alawoncymru recordings follow. The alawoncymru MIDI file has a different version of bars 6-10 of part B: A2 G2 F>G | A>F G2 E>F | G>E F2 D>E | F>D G>E F>D | E>A,.
 M:3/4
 L:1/8
 Q:1/4=90

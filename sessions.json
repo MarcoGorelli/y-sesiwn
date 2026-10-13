@@ -1,5 +1,5 @@
 {
-  "_comment": "Sessions where Welsh tunes are played, for the Sessions page (sesiynau/). Each: venue, address, town (town_cy if its Welsh name differs), county (a Welsh principal area in English, or \"Outside Wales\"), lat, lon, day (Monday … Sunday), repeat (\"weekly\", or \"monthly\" with nth: 1-4, or -1 for the last; or \"dates\" for a session on announced dates, with dates: [\"2026-10-22\", …] in order and no day: add each new date as it's announced, and leave past ones in), start and end (24-hour \"19:00\"; end optional), and confirmed (the date someone last checked it's running as listed). Optional: kind (\"tune club\" for a club where people learn tunes together; a session otherwise), name (the session's own name), from and until (a season), music and music_cy (what's played), link (the session's or venue's page). Check a session again whenever someone writes in about it, and update confirmed.",
+  "_comment": "Sessions where Welsh tunes are played, for the Sessions page (sesiynau/). Each: venue, address, town (town_cy if its Welsh name differs), county (a Welsh principal area in English, or \"Outside Wales\"), lat, lon, day (Monday … Sunday), repeat (\"weekly\"; \"fortnightly\", with from: the date of one it meets on; or \"monthly\" with nth: 1-4, or -1 for the last; or \"dates\" for a session on announced dates, with dates: [\"2026-10-22\", …] in order and no day: add each new date as it's announced, and leave past ones in), start and end (24-hour \"19:00\"; end optional), and confirmed (the date someone last checked it's running as listed). Optional: kind (\"tune club\" for a club where people learn tunes together; a session otherwise), name (the session's own name), from and until (a season), music and music_cy (what's played), link (the session's or venue's page). Check a session again whenever someone writes in about it, and update confirmed.",
   "sessions": [
     {
       "name": "Noson Lawen: Folk in the Bar",
@@ -189,8 +189,8 @@
     },
     {
       "name": "Sesiwn Conwy Folk",
-      "venue": "Bragdy Eryri",
-      "address": "Unit 2, Vale Road, Llandudno Junction LL31 9SH",
+      "venue": "The Laundry",
+      "address": "Snowdon Craft Beer, Unit 2, Vale Road, Llandudno Junction LL31 9SH",
       "town": "Llandudno Junction",
       "town_cy": "Cyffordd Llandudno",
       "county": "Conwy",
@@ -201,7 +201,93 @@
       "nth": 2,
       "start": "18:00",
       "end": "21:00",
-      "confirmed": "2026-10-12"
+      "music": "In The Laundry, the taproom of Snowdon Craft Beer (Bragdy Yr Wyddfa). Contact details through Conwy Fringe.",
+      "music_cy": "Yn The Laundry, ystafell dap Bragdy Yr Wyddfa (Snowdon Craft Beer). Manylion cyswllt drwy Conwy Fringe.",
+      "link": "https://conwyfringe.org",
+      "confirmed": "2026-10-13"
+    },
+    {
+      "venue": "The Boatyard",
+      "address": "Garth Road, Bangor LL57 2SF",
+      "town": "Bangor",
+      "county": "Gwynedd",
+      "lat": 53.2353,
+      "lon": -4.1221,
+      "day": "Tuesday",
+      "repeat": "weekly",
+      "start": "20:00",
+      "music": "Every Tuesday, more or less, not far from the pier. The start time varies: around 8pm, sometimes later. It ends when they close.",
+      "music_cy": "Pob nos Fawrth, mwy neu lai, dim yn bell o'r pier. Mae'r amser dechrau'n amrywio: tua 8yh, weithiau'n hwyrach. Mae'n gorffen pan maen nhw'n cau.",
+      "confirmed": "2026-10-13"
+    },
+    {
+      "name": "Noson Werin y Fic",
+      "venue": "Y Fic",
+      "address": "Stryd Fawr, Bethesda LL57 3AN",
+      "town": "Bethesda",
+      "county": "Gwynedd",
+      "lat": 53.1803,
+      "lon": -4.0628,
+      "day": "Thursday",
+      "repeat": "fortnightly",
+      "from": "2026-10-15",
+      "start": "20:00",
+      "music": "Trad session: Welsh, Breton, French and Scandinavian tunes.",
+      "music_cy": "Sesiwn draddodiadol: alawon o Gymru, Llydaw, Ffrainc a Llychlyn.",
+      "confirmed": "2026-10-13"
+    },
+    {
+      "venue": "Pont y Pair Inn",
+      "address": "Holyhead Road, Betws-y-Coed LL24 0BN",
+      "town": "Betws-y-Coed",
+      "town_cy": "Betws-y-coed",
+      "county": "Conwy",
+      "lat": 53.0936,
+      "lon": -3.8066,
+      "day": "Sunday",
+      "repeat": "monthly",
+      "nth": 3,
+      "start": "15:00",
+      "confirmed": "2026-10-13"
+    },
+    {
+      "venue": "The Raven Inn",
+      "address": "Ffordd Rhiw Iâl, Llanarmon-yn-Iâl, Mold CH7 4QE",
+      "town": "Llanarmon-yn-Iâl",
+      "county": "Denbighshire",
+      "lat": 53.0971,
+      "lon": -3.2104,
+      "day": "Wednesday",
+      "repeat": "monthly",
+      "nth": -1,
+      "start": "19:30",
+      "confirmed": "2026-10-13"
+    },
+    {
+      "venue": "Druid Inn",
+      "address": "Ruthin Road, Llanferres, Mold CH7 5SN",
+      "town": "Llanferres",
+      "county": "Denbighshire",
+      "lat": 53.1335,
+      "lon": -3.2154,
+      "day": "Wednesday",
+      "repeat": "monthly",
+      "nth": 1,
+      "start": "19:30",
+      "confirmed": "2026-10-13"
+    },
+    {
+      "venue": "Yr Uncorn",
+      "address": "Smithfield Square, Dolgellau LL40 1ES",
+      "town": "Dolgellau",
+      "county": "Gwynedd",
+      "lat": 52.7422,
+      "lon": -3.8846,
+      "day": "Saturday",
+      "repeat": "monthly",
+      "nth": 3,
+      "start": "16:30",
+      "confirmed": "2026-10-13"
     }
   ]
 }

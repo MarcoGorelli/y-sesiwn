@@ -4102,7 +4102,7 @@ function renderMap(main) {
 }
 
 // ---- Sessions: where Welsh tunes are played (sessions.json, from build_site.py) -----------
-// A session runs every week, or on the nth (or last) weekday of the month, within its
+// A session runs every week, every other week, or on the nth (or last) weekday of the month, within its
 // season if it has one; its next date is worked out here. Each shows when someone last
 // confirmed it, and asks anyone who's been lately to say it's still as described.
 
@@ -4140,6 +4140,7 @@ function nextSession(session, today = new Date()) {
   for (let i = 0; i < 400; i++, day.setDate(day.getDate() + 1)) {
     if (until && day > until) return null;
     if (day.getDay() !== weekday) continue;
+    if (session.repeat === "fortnightly" && Math.round((day - dateOf(session.from)) / 86400000) % 14 !== 0) continue;
     if (session.repeat === "monthly") {
       const last = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 7).getMonth() !== day.getMonth();
       if (session.nth === -1 ? !last : Math.ceil(day.getDate() / 7) !== session.nth) continue;
@@ -4162,7 +4163,8 @@ function sessionTime({ start, end }) {
   return `${a.text}${a.pm === b.pm ? "" : suffix(a.pm)}–${b.text}${suffix(b.pm)}`;
 }
 
-// "Every Tuesday", "2nd Friday of the month"; "Bob dydd Mawrth", "Ail ddydd Gwener y mis";
+// "Every Tuesday", "Every other Thursday", "2nd Friday of the month"; "Bob dydd Mawrth",
+// "Bob yn ail ddydd Iau", "Ail ddydd Gwener y mis";
 // for a session on announced dates, the next one ("Thursday 22 October").
 function sessionDays(session, today = new Date()) {
   const { day, repeat, nth } = session;
@@ -4172,6 +4174,7 @@ function sessionDays(session, today = new Date()) {
       : tr("No date announced yet", "Dim dyddiad wedi'i gyhoeddi eto");
   }
   if (repeat === "weekly") return tr(`Every ${day}`, `Bob dydd ${CY_DAYS[day]}`);
+  if (repeat === "fortnightly") return tr(`Every other ${day}`, `Bob yn ail ddydd ${CY_DAYS[day]}`);
   const en = { 1: "1st", 2: "2nd", 3: "3rd", 4: "4th", [-1]: "Last" }[nth];
   const cy = { 1: `Dydd ${CY_DAYS[day]} cyntaf y mis`, 2: `Ail ddydd ${CY_DAYS[day]} y mis`, 3: `Trydydd dydd ${CY_DAYS[day]} y mis`,
     4: `Pedwerydd dydd ${CY_DAYS[day]} y mis`, [-1]: `Dydd ${CY_DAYS[day]} olaf y mis` }[nth];
@@ -4216,6 +4219,7 @@ function sessionCalendar(session, first) {
   let end = session.end;
   if (!end) end = `${String((h + 2) % 24).padStart(2, "0")}:${String(m).padStart(2, "0")}`;  // no end time: two hours
   const rule = session.repeat === "weekly" ? `FREQ=WEEKLY;BYDAY=${ICS_DAYS[session.day]}`
+    : session.repeat === "fortnightly" ? `FREQ=WEEKLY;INTERVAL=2;BYDAY=${ICS_DAYS[session.day]}`
     : `FREQ=MONTHLY;BYDAY=${session.nth}${ICS_DAYS[session.day]}`;
   const until = session.until ? `;UNTIL=${session.until.replaceAll("-", "")}T235959Z` : "";
   // A session on announced dates: an event for each date to come, none repeating.
@@ -4429,11 +4433,14 @@ async function renderSessions(main) {
       const sides = [[x + gap, y - h / 2], [x - gap - w, y - h / 2], [x - w / 2, y - gap - h], [x - w / 2, y + gap],
         [x + gap, y - h - 2], [x + gap, y + 2], [x - gap - w, y - h - 2], [x - gap - w, y + 2]]
         .map(([left, top]) => [left, left + w, top, top + h]).filter((box) => inside(box) && !hits(box, taken));
-      shown.push({ label, sides });
+      shown.push({ label, sides, x, y });
     });
     // Placed one by one, a name with no clear place moves the ones before it (a search
     // that goes back, cut short in a hopeless tangle: then each takes whichever place runs
-    // into the fewest names already placed).
+    // into the fewest names already placed). The names with fewest places to go, and then
+    // those with most dots near them, go first, so the search seldom has far to go back.
+    const near = ({ x, y }) => taken.filter((t) => Math.abs(t[0] + 5 - x) < 120 && Math.abs(t[2] + 5 - y) < 40).length;
+    shown.sort((p, q) => p.sides.length - q.sides.length || near(q) - near(p));
     const placed = [];
     let steps = 0;
     const place = (k) => {

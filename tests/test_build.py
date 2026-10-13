@@ -362,6 +362,12 @@ def test_session_events():
     assert b.next_session({**ty_tawe, "nth": -1}, date(2026, 10, 2)) == date(2026, 10, 30)
     assert b.next_session({**ty_tawe, "repeat": "weekly"}, date(2026, 10, 2)) == date(2026, 10, 2)
     assert b.next_session({**ty_tawe, "until": "2026-10-01"}, date(2026, 10, 2)) is None
+    fortnightly = {**ty_tawe, "repeat": "fortnightly", "from": "2026-10-16"}  # a Friday
+    assert b.next_session(fortnightly, date(2026, 10, 2)) == date(2026, 10, 16)  # not before it starts
+    assert b.next_session(fortnightly, date(2026, 10, 17)) == date(2026, 10, 30)  # every other Friday
+    assert b.next_session(fortnightly, date(2026, 10, 31)) == date(2026, 11, 13)  # across the clocks' change
+    assert b.describe_session(fortnightly) == "Every other Friday, from 21:00"
+    assert b.session_events([fortnightly], date(2026, 10, 2))[0]["eventSchedule"]["repeatFrequency"] == "P2W"
     events = b.session_events(sessions, date(2026, 10, 2))
     e = next(e for e in events if e["location"]["name"] == "Tŷ Tawe")
     assert e["startDate"] == "2026-10-09T21:00" and e["eventSchedule"]["byMonthWeek"] == 2
@@ -417,7 +423,9 @@ def test_sessions_on_dates(tmp_path, monkeypatch, capsys):
     ({"repeat": "dates", "dates": ["2026-10-22"]}, "has no day"),
     ({"repeat": "dates", "dates": ["22/10/2026"], "day": None}, "a list of dates like"),
     ({"repeat": "dates", "dates": ["2026-11-19", "2026-10-22"], "day": None}, "in order"),
-    ({"repeat": "fortnightly"}, 'repeat should be "weekly", "monthly" or "dates"'),
+    ({"repeat": "yearly"}, 'repeat should be "weekly", "fortnightly", "monthly" or "dates"'),
+    ({"repeat": "fortnightly"}, "a fortnightly session needs from"),
+    ({"repeat": "fortnightly", "from": "2026-10-15"}, "from should be a Wednesday"),
 ])
 def test_session_mistakes(tmp_path, monkeypatch, change, says):
     # A mistake in sessions.json stops the build, saying what's wrong.

@@ -756,7 +756,8 @@ def session_data(today: "date | None" = None) -> list[dict]:
             on_dates and (not isinstance(dates, list) or not all(isinstance(d, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", d) for d in dates))
             and 'dates should be a list of dates like "2026-10-22"',
             on_dates and isinstance(dates, list) and dates != sorted(set(dates)) and "dates should be in order, each once",
-            s["repeat"] not in ("weekly", "monthly", "dates") and 'repeat should be "weekly", "monthly" or "dates"',
+            s["repeat"] not in ("weekly", "fortnightly", "monthly", "dates") and 'repeat should be "weekly", "fortnightly", "monthly" or "dates"',
+            s["repeat"] == "fortnightly" and not s.get("from") and "a fortnightly session needs from: the date of one it meets on",
             s.get("kind", "session") not in ("session", "tune club") and 'kind should be "tune club" (or left out, for a session)',
             s["repeat"] == "monthly" and s.get("nth") not in (1, 2, 3, 4, -1) and "a monthly session needs nth: 1-4, or -1 for the last",
             *[s.get(t) and not re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", s[t]) and f'{t} should be a 24-hour time like "19:30"'
@@ -767,6 +768,8 @@ def session_data(today: "date | None" = None) -> list[dict]:
         for problem in problems:
             if problem:
                 raise SystemExit(f"{where}: {problem}")
+        if s["repeat"] == "fortnightly" and DAYS[date.fromisoformat(s["from"]).weekday()] != s["day"]:
+            raise SystemExit(f"{where}: from should be a {s['day']}, the day it meets")
         if on_dates:
             upcoming = [d for d in dates if date.fromisoformat(d) >= today]
             if not upcoming:
@@ -793,7 +796,7 @@ def upcoming_dates(s: dict, today: "date") -> list["date"]:
 
 
 def describe_session(s: dict, today: "date | None" = None) -> str:
-    """'Every Tuesday, 19:00-21:00', '2nd Friday of the month, from 21:00' or
+    """'Every Tuesday, 19:00-21:00', 'Every other Thursday, from 20:00', '2nd Friday of the month, from 21:00' or
     'Thursday 22 October 2026, from 19:30', for the static page."""
     from datetime import date
     nth = {1: "1st", 2: "2nd", 3: "3rd", 4: "4th", -1: "Last"}
@@ -803,7 +806,8 @@ def describe_session(s: dict, today: "date | None" = None) -> str:
         if not dates:
             return "On dates announced as they come; none to come yet"
         return f"{', '.join(f'{DAYS[d.weekday()]} {d.day} {d:%B %Y}' for d in dates)}, {time}"
-    when = f"Every {s['day']}" if s["repeat"] == "weekly" else f"{nth[s['nth']]} {s['day']} of the month"
+    when = {"weekly": f"Every {s['day']}", "fortnightly": f"Every other {s['day']}"}.get(s["repeat"]) \
+        or f"{nth[s['nth']]} {s['day']} of the month"
     return f"{when}, {time}"
 
 
@@ -819,7 +823,10 @@ def next_session(s: dict, today: "date") -> "date | None":
             return None
         if day.weekday() == DAYS.index(s["day"]):
             last = (day + timedelta(days=7)).month != day.month
-            if s["repeat"] == "weekly" or (s["nth"] == -1 and last) or (s["nth"] != -1 and (day.day - 1) // 7 + 1 == s["nth"]):
+            if s["repeat"] == "fortnightly":
+                if (day - date.fromisoformat(s["from"])).days % 14 == 0:
+                    return day
+            elif s["repeat"] == "weekly" or (s["nth"] == -1 and last) or (s["nth"] != -1 and (day.day - 1) // 7 + 1 == s["nth"]):
                 return day
         day += timedelta(days=1)
     return None
@@ -851,7 +858,7 @@ def session_events(sessions: list[dict], today: "date") -> list[dict]:
                 events.append(event)
             continue
         schedule = {"@type": "Schedule", "byDay": f"https://schema.org/{s['day']}", "startTime": s["start"],
-                    "scheduleTimezone": "Europe/London", "repeatFrequency": "P1W" if s["repeat"] == "weekly" else "P1M"}
+                    "scheduleTimezone": "Europe/London", "repeatFrequency": {"weekly": "P1W", "fortnightly": "P2W"}.get(s["repeat"], "P1M")}
         if s.get("end"): schedule["endTime"] = s["end"]
         if s["repeat"] == "monthly": schedule["byMonthWeek"] = s["nth"]
         if s.get("from"): schedule["startDate"] = s["from"]

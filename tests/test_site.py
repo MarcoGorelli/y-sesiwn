@@ -2129,6 +2129,9 @@ def test_session_dates(page):
     assert when({"day": "Friday", "repeat": "monthly", "nth": 1}, "2026-10-03") == "2026-11-6"
     assert when({"day": "Tuesday", "repeat": "weekly", "from": "2026-10-06", "until": "2026-12-29"}) == "2026-10-6"
     assert when({"day": "Tuesday", "repeat": "weekly", "from": "2026-10-06", "until": "2026-12-29"}, "2026-12-30") is None
+    fortnightly = {"day": "Thursday", "repeat": "fortnightly", "from": "2026-10-15"}
+    assert when(fortnightly) == "2026-10-15"  # not before it starts
+    assert when(fortnightly, "2026-10-16") == "2026-10-29" and when(fortnightly, "2026-10-30") == "2026-11-12"  # clocks change between
     times = page.evaluate("""() => [sessionTime({ start: "19:00", end: "21:00" }), sessionTime({ start: "20:30", end: "23:00" }),
       sessionTime({ start: "11:00", end: "13:00" }), sessionTime({ start: "21:00" })]""")
     assert times == ["7–9pm", "8:30–11pm", "11am–1pm", "from 9pm"]
@@ -2141,7 +2144,8 @@ def test_session_dates(page):
     assert page.evaluate(days, [on_dates, "2026-12-01"]) == "No date announced yet"
     page.click(".lang-switch [data-lang=cy]")
     assert page.evaluate("""() => [sessionDays({ day: "Friday", repeat: "monthly", nth: 2 }), sessionDays({ day: "Tuesday", repeat: "weekly" }),
-      sessionTime({ start: "21:00" })]""") == ["Ail ddydd Gwener y mis", "Bob dydd Mawrth", "o 9yh"]
+      sessionTime({ start: "21:00" }),
+      sessionDays({ day: "Thursday", repeat: "fortnightly" })]""") == ["Ail ddydd Gwener y mis", "Bob dydd Mawrth", "o 9yh", "Bob yn ail ddydd Iau"]
     assert page.evaluate(days, [on_dates, "2026-12-01"]) == "Dim dyddiad wedi'i gyhoeddi eto"
 
 
@@ -2224,6 +2228,9 @@ def test_session_calendar(page):
     assert "RRULE:FREQ=WEEKLY" not in ics and "RRULE:FREQ=MONTHLY" not in ics and ics.count("BEGIN:VEVENT") == 2
     assert "DTSTART;TZID=Europe/London:20261022T193000" in ics and "DTEND;TZID=Europe/London:20261119T213000" in ics
     assert "UID:y-llew-coch-llandeilo-20261119@ysesiwn.cymru" in ics
+    ics = page.evaluate("""() => sessionCalendar({ id: "y-fic-bethesda-thursday", venue: "Y Fic", address: "Stryd Fawr",
+      day: "Thursday", repeat: "fortnightly", from: "2026-10-15", start: "20:00" }, new Date(2026, 9, 15))""").replace("\r\n ", "")
+    assert "RRULE:FREQ=WEEKLY;INTERVAL=2;BYDAY=TH" in ics and "DTSTART;TZID=Europe/London:20261015T200000" in ics
 
 
 @pytest.mark.parametrize("path, button", [

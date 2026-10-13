@@ -593,6 +593,9 @@ def test_no_chord_box_without_chords(page):
     ("risiart annwyl", "Rhisiart Annwyl"),             # another spelling
     ("pont", "Pont Cleddau"),                          # a name that starts with it, before another name of a tune ("The Pontnewydd Quickstep")
     ("pwt ar y bys", "Pwt ar y Bys"),                  # the exact name of a tune, before the same as another's other name
+    ("llwyn onn version 2", "Llwyn Onn"),              # a version, as a tune's page names it
+    ("llwyn-onn-version-2", "Llwyn Onn"),              # a folder's name
+    ("llwytcoed-version-3", "Jig Llwytcoed"),          # a folder's name, renamed since (moved.json)
 ])
 def test_search_by_name(page, query, expected):
     page.goto_site()

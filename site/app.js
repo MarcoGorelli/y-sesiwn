@@ -379,10 +379,15 @@ const SHOWN = 20;  // under the box; the rest on the page of all of them
 
 function search(query) {
   // Tunes (groups of versions) whose names match; any version's titles count.
-  const q = normalize(query);
-  if (!q) return state.groupList;
+  // "Llwyn Onn version 2", as a tune's page names its versions, is Llwyn Onn; a folder's
+  // name ("llwytcoed-version-3", even one renamed since: moved.json) is that tune, first.
+  const typed = normalize(query);
+  if (!typed) return state.groupList;
+  const q = typed.replace(/ (version|fersiwn) \d+$/, "") || typed;
+  const slug = movedTo(typed.replace(/ /g, "-"));
+  const own = state.groups.get(slug) ?? state.groups.get(state.bySlug.get(slug)?.group);
   const scored = state.groupList
-    .map((tune) => [score(q, tune), tune])
+    .map((tune) => [tune === own ? 3 : score(q, tune), tune])
     .filter(([s]) => s >= 0.7)
     .sort((x, y) => y[0] - x[0] || (x[1].search[0] < y[1].search[0] ? -1 : 1));  // A to Z, as the list of all of them
   const found = scored.map(([, tune]) => tune);

@@ -2518,7 +2518,7 @@ def test_set_from_tune_pages(page):
     page.click(".set-edit > summary")
     assert page.locator(".set-list li > a").all_inner_texts() == ["Llancesau Trefaldwyn", "Glandyfi", "Nyth y Gog"]
     assert "?set=5A3V~h7o&n=My%20set&my=" in page.url  # Glandyfi (version 2) up two: ~h
-    assert page.locator(".set-list li").nth(1).locator("select").input_value() == "2"
+    assert page.locator(".set-list li").nth(1).locator("select.set-key-select").input_value() == "2"
     page.locator(".set-list li").nth(1).locator("button[aria-label='Move up']").click()
     page.locator(".set-list li").nth(2).locator("button[aria-label^='Remove']").click()
     # A tune taken out can be put back, in its place and key.
@@ -2658,6 +2658,27 @@ def test_add_to_set_by_search(page):
     assert len(kept[0]["c"]) == 6  # three tunes, two characters each
 
 
+def test_changing_a_version_in_a_set(page):
+    # A tune with several versions has a menu of them in the set, as its tabs name them;
+    # another version stays in the key it was being played in.
+    page.goto_site("?set=3V~h5A&n=Nos%20Iau")
+    page.wait_for_selector(".set-list li", state="attached")
+    page.click(".set-edit > summary")
+    first, second = page.locator(".set-list li").nth(0), page.locator(".set-list li").nth(1)
+    assert second.locator("select.set-version-select").input_value() == "0"  # Llancesau Trefaldwyn, version 1
+    menu = first.locator("select.set-version-select")
+    assert menu.input_value() == "1"
+    options = menu.locator("option").all_inner_texts()
+    assert [o.split(" · ")[0] for o in options] == ["Version 1", "Version 2", "Version 3"]
+    assert "Blodau'r Grug" in options[1]
+    menu.select_option("0")
+    assert first.locator("select.set-version-select").input_value() == "0"
+    assert first.locator("select.set-key-select").input_value() == "2"  # still in A
+    assert " ".join(page.locator(".set-tune h2").first.inner_text().split()) == "1. Glandyfi · A major"
+    assert page.locator(".set-tune h2 a").first.get_attribute("href") == "alaw/glandyfi/?key=A"
+    assert "?set=3V" not in page.url and "~h5A&n=Nos%20Iau" in page.url
+
+
 @pytest.mark.parametrize("link", [
     "?set=3V~h5Azz&n=Nos%20Iau",                      # zz: a code no tune has
     "?page=set&s=6m42r~2.bne0o.zzzzz&name=Nos%20Iau",  # the first form of set links still works
@@ -2672,7 +2693,7 @@ def test_shared_set(browser, site, link):
     assert page.inner_text("main h1") == "Nos Iau"
     assert page.locator(".set-list li > a").all_text_contents() == ["Glandyfi", "Llancesau Trefaldwyn"]
     assert "1 tune in this set isn't on the site any more" in page.inner_text("main")  # an unknown code
-    assert page.locator(".set-list li select").first.input_value() == "2"
+    assert page.locator(".set-list li select.set-key-select").first.input_value() == "2"
     page.click("text=Save to my sets")
     page.wait_for_selector(".set-name")
     assert "&my=" in page.url
@@ -2711,7 +2732,7 @@ def test_set_codes_that_change(page):
     page.goto_site(f"?set=.{short_id}~a5A&n=Old")
     page.wait_for_selector(".set-list li", state="attached")
     assert page.locator(".set-list li > a").all_text_contents() == ["Machynlleth", "Llancesau Trefaldwyn"]
-    assert page.locator(".set-list li select").first.input_value() == "-5"
+    assert page.locator(".set-list li select.set-key-select").first.input_value() == "-5"
     assert "?set=5Z~a5A&n=Old" in page.url
     page.evaluate("""localStorage.setItem('sets', JSON.stringify([{ id: 'old1', name: 'Old', s: '6m42r~2.bne0o' }]))""")
     page.goto_site("?page=sets")
@@ -3427,7 +3448,7 @@ def test_moved_tune(page, site):
     assert page.inner_text("h1") == "Glandyfi" and page.input_value("#key-select") == "2"
     page.goto_site("?set=zz~h")
     page.wait_for_selector(".set-list li", state="attached")
-    assert page.text_content(".set-list li a") == "Glandyfi" and page.input_value(".set-list select") == "2"
+    assert page.text_content(".set-list li a") == "Glandyfi" and page.input_value(".set-list select.set-key-select") == "2"
 
 
 def test_tune_page_without_tunes_json(page, site):

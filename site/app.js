@@ -281,6 +281,10 @@ const GLOSSED = new Set(Object.keys(EN_TYPE).filter((name) => name !== "Other" &
 
 function el(tag, attrs = {}, ...children) {
   const node = document.createElement(tag);
+  // Every control shows what the app has chosen, so the browser mustn't fill them back in
+  // as they were last time (gone back to a page, or a tab the phone had put away): the Repeat
+  // menu said "The whole tune", while nothing was repeating. A control's own autocomplete stays.
+  if (tag === "select" || tag === "input") node.setAttribute("autocomplete", "off");
   for (const [name, value] of Object.entries(attrs)) {
     if (value === false || value == null) continue;
     if (name.startsWith("on")) node.addEventListener(name.slice(2), value);

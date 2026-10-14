@@ -2095,6 +2095,21 @@ def test_practice_tools_remembered(page):
                                                "tabKnown": False, "heard": 0, "holesSeen": False, "versionsSeen": False}
 
 
+def test_controls_not_refilled_going_back(page):
+    # Gone back to a tune, the browser doesn't put back the Repeat and Speed up chosen last
+    # time (they aren't kept): the controls say what's playing, so "The whole tune" repeats it.
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.select_option("#loop-select", "-1")
+    page.check("text=Speed up each time")
+    page.goto_site("?page=about")
+    page.go_back()
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.evaluate("state.settings.get('glandyfi').loop") == -2
+    assert page.input_value("#loop-select") == "-2"
+    assert not page.is_checked("text=Speed up each time")
+
+
 @pytest.mark.parametrize("tab, first", [("mandolin", "0"), ("guitar", "0")])
 @pytest.mark.parametrize("width", [1280, 390])
 def test_tablature(page, tab, first, width):

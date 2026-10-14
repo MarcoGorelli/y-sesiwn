@@ -407,7 +407,7 @@ def test_sessions(site):
     assert "<loc>https://ysesiwn.cymru/sesiynau/</loc>" in (out / "sitemap.xml").read_text(encoding="utf-8")
 
 
-def test_session_events():
+def test_session_events(site):
     # The sessions page tells search engines about each session as a repeating event.
     from datetime import date
     sessions = b.session_data()

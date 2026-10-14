@@ -281,6 +281,10 @@ const GLOSSED = new Set(Object.keys(EN_TYPE).filter((name) => name !== "Other" &
 
 function el(tag, attrs = {}, ...children) {
   const node = document.createElement(tag);
+  // Every control shows what the app has chosen, so the browser mustn't fill them back in
+  // as they were last time (gone back to a page, or a tab the phone had put away): the Repeat
+  // menu said "The whole tune", while nothing was repeating. A control's own autocomplete stays.
+  if (tag === "select" || tag === "input") node.setAttribute("autocomplete", "off");
   for (const [name, value] of Object.entries(attrs)) {
     if (value === false || value == null) continue;
     if (name.startsWith("on")) node.addEventListener(name.slice(2), value);
@@ -5217,6 +5221,22 @@ function keyOptions(tune, key) {
     shift === 0 ? `${root} ${mode} ${tr("(original)", "(gwreiddiol)")}` : keyName(pitch + shift, tune.key.modeName)));
 }
 
+// A set's version menu: each version as its tab on the tune's page says it ("Version 2 ·
+// Ceredigion"), so they can be told apart without leaving the set.
+function versionOptions(group, tune) {
+  const notes = versionNotes(group);
+  return group.versions.map((v, i) => el("option", { value: i, selected: v === tune },
+    tr(`Version ${v.version}`, `Fersiwn ${v.version}`) + (notes.get(v) ? ` · ${notes.get(v)}` : "")));
+}
+
+// Another version of a tune in a set: in the key it was being played in, if that's a key
+// the menu offers it (the same mode, -5 … +6 semitones from its own); otherwise its own.
+function otherVersion({ tune, key }, other) {
+  if (!tune.key || !other.key || tune.key.modeName !== other.key.modeName) return { tune: other, key: 0 };
+  const shift = ((((tune.key.pitch + key - other.key.pitch) % 12) + 12 + 5) % 12) - 5;
+  return { tune: other, key: shift };
+}
+
 // ?page=set: a set, from its link. Editing it changes the link (and, for your own
 // sets, what's kept in this browser).
 function renderSet(main) {
@@ -5276,12 +5296,14 @@ function renderSet(main) {
     list.replaceChildren(...items.map((item, i) => {
       const group = state.groups.get(item.tune.group);
       const several = group.versions.length > 1;
-      const keySelect = el("select", { "aria-label": tr(`Key for ${item.tune.base}`, `Cywair ${item.tune.base}`),
+      const keySelect = el("select", { class: "set-key-select", "aria-label": tr(`Key for ${item.tune.base}`, `Cywair ${item.tune.base}`),
         onchange: (e) => { item.key = +e.target.value; save(); draw(); } }, keyOptions(item.tune, item.key));
+      const versionSelect = several ? el("select", { class: "set-version-select", "aria-label": tr(`Version of ${item.tune.base}`, `Fersiwn ${item.tune.base}`),
+        onchange: (e) => { Object.assign(item, otherVersion(item, group.versions[+e.target.value])); save(); draw(); } },
+        versionOptions(group, item.tune)) : null;
       return el("li", {}, swatch(item.tune),
         el("a", { href: inItsKey(item), "data-route": true }, tuneName(item.tune.group, item.tune.base)),
-        several ? el("span", { class: "caption" }, tr(` (version ${item.tune.version})`, ` (fersiwn ${item.tune.version})`)) : null,
-        el("span", { class: "set-item-controls" }, keySelect,
+        el("span", { class: "set-item-controls" }, versionSelect, keySelect,
           el("button", { type: "button", "aria-label": tr("Move up", "Symud i fyny"), disabled: i === 0, onclick: () => move(i, -1) }, icon("arrow-up")),
           el("button", { type: "button", "aria-label": tr("Move down", "Symud i lawr"), disabled: i === items.length - 1, onclick: () => move(i, 1) }, icon("arrow-down")),
           el("button", { type: "button", "aria-label": tr(`Remove ${item.tune.base}`, `Tynnu ${item.tune.base}`),

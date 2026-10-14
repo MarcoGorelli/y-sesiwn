@@ -1258,6 +1258,7 @@ main { view-transition-name: page; }
 .set-list .swatch, .set-tune h2 .swatch { margin-right: 0; }
 .set-item-controls { display: inline-flex; gap: .3rem; align-items: center; margin-left: auto; }
 .set-item-controls select { padding: .25rem .4rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); max-width: 11rem; }
+.set-item-controls .set-version-select { max-width: 10rem; text-overflow: ellipsis; }
 .set-item-controls button { padding: .2rem .55rem; display: inline-flex; align-items: center; justify-content: center; }
 .set-item-controls button:disabled { opacity: .55; }
 /* Drawn icons (masks, so they take the text colour) */
@@ -1297,7 +1298,8 @@ main { view-transition-name: page; }
 .link-button { border: 0; background: none; padding: 0; color: var(--link, var(--accent)); text-decoration: underline; margin-left: auto; font-size: .9rem; }
 .add-status:empty { display: none; }
 @media (max-width: 800px) {
-  .set-item-controls { flex-basis: 100%; margin-left: 1.9rem; }  /* under the name, lined up with it */
+  .set-item-controls { flex-basis: 100%; margin-left: 1.9rem; flex-wrap: wrap; min-width: 0; }  /* under the name, lined up with it */
+  .set-item-controls .set-version-select { flex-basis: 100%; max-width: 100%; min-width: 0; }  /* a line of its own: its notes are long */
   /* Share, Print, Full screen and − + on one row, so the music starts higher */
   .set-actions > button, .set-actions .print-wrap > button { padding-inline: .7rem; }
   .set-actions .music-size .label { display: none; }

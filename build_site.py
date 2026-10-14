@@ -523,6 +523,321 @@ def moved_tunes(slugs: set[str], numbers: dict[str, int]) -> list[dict]:
     return result
 
 
+# ---- Chords carried across from Alawon Cymru ---------------------------------------
+# Alawon Cymru's scores have chords; the books mostly don't. Where a tune's Alawon Cymru
+# version is the only one with chords, another version that has the same form and much
+# the same melody gets them too (in its own key), marked as Alawon Cymru's.
+
+CARRIED_CHORDS = "From Alawon Cymru's version of this tune"  # app.js: CY_CHORD_SOURCES
+BODY_TOKEN = re.compile(r"""
+  (?P<text>"[^"]*")                                          # chord name or annotation
+ |(?P<grace>\{[^}]*\})|(?P<deco>![^!]*!|\+[^+]*\+)|(?P<short>[~.HLMOPSTuv])
+ |(?P<field>\[[A-Za-z]:[^\]]*\])                              # [K:G], [M:3/4]
+ |(?P<bar>(?::*\[?\|+\]?:*|::+)(?:\s*\[?(?P<ending>\d+(?:[,-]\d+)*))?)  # |, :|2, ::, |]
+ |\[(?P<label>\d+(?:[,-]\d+)*)                                # [2: an ending
+ |\((?P<tuplet>\d)(?::(?P<q>\d*))?(?::(?P<r>\d*))?           # (3, (3:2:3
+ |\[(?P<chord>[^\]|]*)\](?P<chord_len>\d*/*\d*)               # [ceg]2
+ |(?P<acc>\^\^|\^|__|_|=)?(?P<letter>[A-Ga-g])(?P<marks>[,']*)(?P<len>\d*/*\d*)
+ |(?P<rest>[zx])(?P<rest_len>\d*/*\d*)
+ |(?P<unsure>Z)                                               # a rest of several bars
+ |(?P<broken>[<>]+)
+ |(?P<space>\s+)
+ |.""", re.X)
+TUPLET_TIME = {2: 3, 3: 2, 4: 3, 6: 2, 8: 3}  # (p: p notes in the time of this many
+CHORD_NAME = re.compile(r"^([A-G])([#b]?)([^/]*)(?:/([A-G])([#b]?))?$")
+SHARP_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+FLAT_NAMES = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
+
+
+def note_length(text: str) -> Fraction:
+    """'3/2' -> 3/2, '/' -> 1/2, '' -> 1, in units of L:."""
+    m = re.fullmatch(r"(\d*)(/*)(\d*)", text)
+    n = Fraction(int(m.group(1) or 1))
+    if m.group(2):
+        n /= int(m.group(3)) if m.group(3) else 2 ** len(m.group(2))
+    return n
+
+
+def ending_numbers(text: str) -> set[int]:
+    """'1,3' -> {1, 3}; '1-3' -> {1, 2, 3}."""
+    out = set()
+    for part in text.split(","):
+        first, _, last = part.partition("-")
+        out.update(range(int(first), int(last or first) + 1))
+    return out
+
+
+class Bar:
+    def __init__(self, ending: set[int] = frozenset(), start_repeat: bool = False):
+        self.notes: list[dict] = []  # each: at (where its chord name would go), start, length (in bars), pitch, chords
+        self.ending, self.start_repeat = set(ending), start_repeat
+        self.end_repeat = self.double = self.line_end = False
+
+
+def score_bars(abc: str) -> tuple[list[Bar], Fraction] | None:
+    """The tune's bars as written, and a bar's length in whole notes; None for what
+    this doesn't follow (several voices, a change of metre, a rest of several bars)."""
+    bar_len = meter_length(abc)
+    if not bar_len or re.search(r"^V:", abc, re.M):
+        return None
+    unit = (parse_headers(abc).get("L") or [""])[0].strip()
+    unit = Fraction(unit) if re.fullmatch(r"\d+/\d+", unit) else Fraction(1, 8 if bar_len >= Fraction(3, 4) else 16)
+    lines = abc.split("\n")
+    k = next(i for i, line in enumerate(lines) if line.startswith("K:"))
+    signature = key_signature(lines[k][2:])
+    offset = sum(len(line) + 1 for line in lines[: k + 1])
+    bars, bar = [], Bar()
+    accidentals: dict[tuple[str, int], int] = {}
+    tuplet, left = Fraction(1), 0
+    broken, last, prefix, chords = None, None, None, []
+
+    def pitch(acc: str | None, letter: str, marks: str) -> int:
+        octave = (1 if letter.islower() else 0) + marks.count("'") - marks.count(",")
+        name = letter.upper()
+        if acc:
+            accidentals[(name, octave)] = ACCIDENTALS[acc]
+        return 60 + 12 * octave + PITCH[name] + accidentals.get((name, octave), signature.get(name, 0))
+
+    for line in lines[k + 1:]:
+        here, offset = offset, offset + len(line) + 1
+        if line.startswith("K:"):
+            signature = key_signature(line[2:])
+            continue
+        if line.startswith("M:"):
+            return None
+        if re.match(r"^(%|[A-Za-z]:)", line):
+            continue
+        for m in BODY_TOKEN.finditer(re.sub(r"%.*", "", line)):
+            if m["text"] or m["grace"] or m["deco"] or m["short"]:
+                prefix = here + m.start() if prefix is None else prefix
+                if m["text"] and re.match(r"[A-G]", m["text"][1:]):
+                    chords.append(m["text"][1:-1])
+            elif m["field"]:
+                if m["field"].startswith("[M:"):
+                    return None
+                if m["field"].startswith("[K:"):
+                    signature = key_signature(m["field"][3:-1])
+            elif m["bar"] is not None:
+                token, prefix = m["bar"], None
+                accidentals.clear()
+                end = token.lstrip().startswith(":")
+                if bar.notes:
+                    bar.end_repeat = end
+                    bar.double = end or bool(re.search(r"\|\||\|\]|\[\||::", token))
+                    bars.append(bar)
+                    bar = Bar()
+                elif end and bars:
+                    bars[-1].end_repeat = bars[-1].double = True
+                bar.start_repeat = bar.start_repeat or token.rstrip().endswith(":")
+                if m["ending"]:
+                    bar.ending = ending_numbers(m["ending"])
+            elif m["label"]:
+                bar.ending = ending_numbers(m["label"])
+            elif m["tuplet"]:
+                p = int(m["tuplet"])
+                tuplet = Fraction(int(m["q"]) if m["q"] else TUPLET_TIME.get(p, 2), p)
+                left = int(m["r"]) if m["r"] else p
+            elif m["unsure"]:
+                return None
+            elif m["broken"]:
+                broken = m["broken"]
+            elif m["chord"] is not None or m["letter"] or m["rest"]:
+                if m["chord"] is not None:
+                    inside = list(re.finditer(r"(\^\^|\^|__|_|=)?([A-Ga-g])([,']*)(\d*/*\d*)", m["chord"]))
+                    if not inside:
+                        continue
+                    length = note_length(inside[0][4]) * note_length(m["chord_len"])
+                    sound = max(pitch(*n.groups()[:3]) for n in inside)
+                elif m["letter"]:
+                    length, sound = note_length(m["len"]), pitch(m["acc"], m["letter"], m["marks"])
+                else:
+                    length, sound = note_length(m["rest_len"]), None
+                length *= unit / bar_len
+                if left:
+                    length, left = length * tuplet, left - 1
+                if broken and last:
+                    short = Fraction(1, 2 ** len(broken))
+                    last["length"] *= 2 - short if broken[0] == ">" else short
+                    length *= short if broken[0] == ">" else 2 - short
+                broken = None
+                last = {"at": here + m.start() if prefix is None else prefix, "length": length, "pitch": sound, "chords": chords}
+                bar.notes.append(last)
+                prefix, chords = None, []
+            elif m["space"]:
+                prefix = None
+        (bar if bar.notes else bars[-1] if bars else bar).line_end = True
+    if bar.notes:
+        bars.append(bar)
+    if not bars:
+        return None
+    bars[-1].double = True
+    for b in bars:
+        b.length = Fraction(0)
+        for note in b.notes:
+            note["start"], b.length = b.length, b.length + note["length"]
+    return bars, bar_len
+
+
+def played_order(bars: list[Bar]) -> list[int]:
+    """The written bars in the order they're played: repeats and endings followed."""
+    label: set[int] = set()  # an ending goes on to a repeat or double bar line, the line's end or the next ending
+    for b in bars:
+        if b.ending or b.start_repeat:
+            label = b.ending
+        b.ending = label
+        if b.end_repeat or b.double or b.line_end:
+            label = set()
+    order, i, start, turn = [], 0, 0, 1
+    while i < len(bars) and len(order) < 10 * len(bars):
+        b = bars[i]
+        if b.start_repeat and turn == 1:
+            start = i
+        if b.ending and turn not in b.ending:
+            i += 1
+            continue
+        if not b.ending and turn > 1 and i > start and bars[i - 1].ending:
+            turn, start = 1, i
+        order.append(i)
+        if b.end_repeat:
+            if turn == 1 or turn + 1 in set().union(*(x.ending for x in bars[i + 1:i + 8])):
+                turn, i = turn + 1, start
+                continue
+            turn, start = 1, i + 1
+        elif b.double:
+            turn, start = 1, i + 1
+        i += 1
+    return order
+
+
+def played_notes(bars: list[Bar], whole: Fraction) -> list[tuple[Fraction, dict]]:
+    """Each note as played, with when it starts: in whole notes from the first downbeat
+    (a lead-in starts before 0), a bar being `whole` long."""
+    order = played_order(bars)
+    t = -bars[order[0]].length * whole if bars[order[0]].length < 1 else Fraction(0)
+    out = []
+    for i in order:
+        out += [(t + note["start"] * whole, note) for note in bars[i].notes]
+        t += bars[i].length * whole
+    return out
+
+
+def sounding(notes: list[tuple[Fraction, dict]], whole: Fraction, end: Fraction) -> list[int | None]:
+    """The pitch heard every 1/48 of a whole note (None for a rest), from 0 to end."""
+    out, k = [], 0
+    for g in range(int(end * 48)):
+        t = Fraction(g, 48)
+        while k + 1 < len(notes) and notes[k + 1][0] <= t:
+            k += 1
+        start, note = notes[k]
+        out.append(note["pitch"] if start <= t < start + note["length"] * whole else None)
+    return out
+
+
+def alike(a: list[int | None], b: list[int | None], shift: int) -> float:
+    """How much of the time the two play the same note (b `shift` semitones up)."""
+    either = sum(x is not None or y is not None for x, y in zip(a, b))
+    same = sum(x is not None and y is not None and (x + shift - y) % 12 == 0 for x, y in zip(a, b))
+    return same / either if either else 0
+
+
+def transpose_chord(name: str, shift: int, flats: bool) -> str:
+    m = CHORD_NAME.match(name)
+    if not m or not shift:
+        return name
+    names = FLAT_NAMES if flats else SHARP_NAMES
+    move = lambda root, acc: names[(PITCH[root] + {"#": 1, "b": -1}.get(acc, 0) + shift) % 12]
+    return move(m[1], m[2]) + m[3] + (f"/{move(m[4], m[5])}" if m[4] else "")
+
+
+def carried_chords(source: str, abc: str) -> tuple[float, str] | None:
+    """abc with source's chords on it, and how alike their melodies are, if the two have
+    the same form (bar for bar as played, allowing for lead-ins written differently and
+    bars twice or half as long) and much the same melody: the same note at least 3/4 of
+    the time, and at least half the time in any two bars. Every chord must start with a
+    note. Else None."""
+    a, b = score_bars(source), score_bars(abc)
+    if not a or not b:
+        return None
+    (a_bars, a_whole), (b_bars, b_whole) = a, b
+    a_notes = played_notes(a_bars, a_whole)
+    a_end = sum(a_bars[i].length for i in played_order(a_bars)) * a_whole
+    b_end = sum(b_bars[i].length for i in played_order(b_bars)) * b_whole
+    if not b_end:
+        return None
+    scale = min((Fraction(1, 2), Fraction(1), Fraction(2)), key=lambda s: abs(a_end / b_end - s))
+    b_whole *= scale
+    b_notes = played_notes(b_bars, b_whole)
+    b_end *= scale
+    if abs(a_end - b_end) >= max(a_whole, b_whole):
+        return None
+    end = min(a_end, b_end)
+    a_heard, b_heard = sounding(a_notes, a_whole, end), sounding(b_notes, b_whole, end)
+    shift = max(range(12), key=lambda s: alike(a_heard, b_heard, s))
+    window = int(2 * min(a_whole, b_whole) * 48)
+    stretches = [alike(a_heard[i:i + window], b_heard[i:i + window], shift)
+                 for i in range(0, max(1, len(a_heard) - window + 1), max(1, window // 2))]
+    similar = alike(a_heard, b_heard, shift)
+    if similar < 0.75 or min(stretches) < 0.5:
+        return None
+    starts: dict[Fraction, dict] = {}
+    for t, note in b_notes:
+        starts.setdefault(t, note)
+    placed: dict[int, str] = {}  # id of the note -> its chord
+    notes_by_id = {id(note): note for _, note in b_notes}
+    for t, note in a_notes:
+        for chord in note["chords"]:
+            if t not in starts:
+                return None
+            placed.setdefault(id(starts[t]), chord)
+    flats = any(v < 0 for v in key_signature((parse_headers(abc).get("K") or [""])[0]).values())
+    edits, current = [], None
+    for bar in b_bars:
+        for i, note in enumerate(bar.notes):
+            chord = placed.get(id(note))
+            if chord is None or (chord == current and i):  # the same chord again, mid-bar
+                continue
+            current = chord
+            edits.append((notes_by_id[id(note)]["at"], f'"{transpose_chord(chord, shift, flats)}"'))
+    if not edits:
+        return None
+    for at, text in sorted(edits, reverse=True):
+        abc = abc[:at] + text + abc[at:]
+    return similar, re.sub(r"^K:", f"%%chords {CARRIED_CHORDS}\nK:", abc, count=1, flags=re.M)
+
+
+def carry_chords(tunes: list[dict]) -> None:
+    """Where a tune's only versions with chords are Alawon Cymru's, give its other
+    versions those chords if they fit (carried_chords): from the one whose melody is
+    most like theirs, if there are several."""
+    groups: dict[str, list[dict]] = {}
+    for tune in tunes:
+        groups.setdefault(tune["group"], []).append(tune)
+    for versions in groups.values():
+        with_chords = [t for t in versions if t["chords"] is not None]
+        if not with_chords or any(t["source"] != "Alawon Cymru" for t in with_chords):
+            continue
+        for tune in versions:
+            if tune["chords"] is None:
+                fits = [c for source in with_chords if (c := carried_chords(source["abc"], tune["abc"]))]
+                if fits:
+                    tune["abc"], tune["chords"] = max(fits, key=lambda c: c[0])[1], CARRIED_CHORDS
+
+
+def show_versions(tunes: list[dict]) -> None:
+    """Number each tune's versions in the order they're shown ("shown"): Alawon Cymru's
+    after those from books and players, which are usually the better ones to learn from,
+    and before any we don't know the source of; otherwise by version. A version's own
+    number ("version") stays as it is, as its folder, ?v= and set links depend on it."""
+    groups: dict[str, list[dict]] = {}
+    for tune in tunes:
+        groups.setdefault(tune["group"], []).append(tune)
+    for versions in groups.values():
+        rank = lambda t: 1 if t["source"] == "Alawon Cymru" else 2 if t["source"] in ("", "Source unknown") else 0
+        versions.sort(key=lambda t: (rank(t), t["version"]))
+        for shown, tune in enumerate(versions, 1):
+            tune["shown"] = shown
+
+
 def main() -> None:
     tunes = [tune_record(p) for p in sorted((ROOT / "tunes").glob("*/tune.abc"))]
     numbers = load_numbers()
@@ -537,8 +852,10 @@ def main() -> None:
         if tune["id"] in ids:  # very unlikely (1 in about 60 million per pair); rename a folder if it happens
             raise SystemExit(f"{tune['slug']} and {ids[tune['id']]} have the same set code {tune['id']}")
         ids[tune["id"]] = tune["slug"]
-    first_versions = [t for t in tunes if t["version"] == 1]
-    counts = {t: sum(tune["type"] == t for tune in first_versions) for t in TYPE_ORDER}
+    carry_chords(tunes)
+    show_versions(tunes)
+    first_shown = [t for t in tunes if t["shown"] == 1]  # a tune is the type of the version it opens on
+    counts = {t: sum(tune["type"] == t for tune in first_shown) for t in TYPE_ORDER}
     index = {
         "repo": REPO_URL,
         "types": [
@@ -637,7 +954,7 @@ def tune_pages(tunes: list[dict], index: dict) -> None:
     for tune in tunes:
         groups.setdefault(tune["group"], []).append(tune)
     for versions in groups.values():
-        versions.sort(key=lambda t: t["version"])
+        versions.sort(key=lambda t: t["shown"])
     types = {t["name"]: t for t in index["types"]}
     type_link = lambda name: f'<a href="{TYPE_DIR}/{type_slug(name)}/">{esc(type_heading(types[name]))}</a>'
 
@@ -653,7 +970,7 @@ def tune_pages(tunes: list[dict], index: dict) -> None:
         about = f"a{'n' if kind[0] in 'aeiou' else ''} Welsh {kind}" + (f" in {key}" if key else "")
         chords = any(v["chords"] is not None for v in versions)
         cy_key = f" yn {first['key']['root']} {CY_MODES.get(first['key']['modeName'], first['key']['modeName'])}" if key else ""
-        description = (f"{name}: {about}. Sheet music{', suggested chords' if chords else ''} "
+        description = (f"{name}: {about}. Sheet music{', example chords' if chords else ''} "
                        f"and playback in any key, at any tempo"
                        + (f" ({len(versions)} versions)" if len(versions) > 1 else "") + ". "
                        + f"Alaw werin o Gymru ({CY_TYPE[first['type']]}{cy_key}): y sgôr"
@@ -704,7 +1021,7 @@ def tune_pages(tunes: list[dict], index: dict) -> None:
     by_slug = {t["slug"]: t for t in tunes}
     for move in index["moved"]:
         new = by_slug[move["to"]]
-        to = f"../{new['group']}/" + (f"?v={new['version']}" if new["version"] > 1 else "")  # from alaw/<old>/
+        to = f"../{new['group']}/" + (f"?v={new['version']}" if new["shown"] > 1 else "")  # from alaw/<old>/
         url = f"{SITE_URL}{TUNE_DIR}/{to[3:]}"
         write_page(OUT / TUNE_DIR / move["from"], (
             '<!doctype html>\n<html lang="en">\n<head>\n  <meta charset="utf-8">\n'

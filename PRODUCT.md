@@ -20,7 +20,7 @@ Y Sesiwn (https://ysesiwn.cymru/) is a free, open-source collection of Welsh fol
 ## Positioning
 - **Welsh-specific:** a curated Welsh repertoire with credits as printed on the original scores (Welsh credit words glossed), versions of the same tune grouped together, pronunciation guides for Welsh names, and a directory of sessions in Wales.
 - **Bilingual, at parity:** Welsh and English are equal; neither is a translation afterthought.
-- **Learning tools:** change key and tempo, loop a part and speed it up, count-in and click, tablature, suggested chords, and find a tune by playing its first notes to the microphone.
+- **Learning tools:** change key and tempo, loop a part and speed it up, count-in and click, tablature, example chords, and find a tune by playing its first notes to the microphone.
 - **Free, offline, no tracking:** static, open source, no adverts, nothing sold; works offline after the first visit and can be installed to a phone's home screen.
 
 ## Operating Context

@@ -1,6 +1,6 @@
 "use strict";
 // Y Sesiwn: everything runs in the browser from tunes.json (see build_site.py).
-// Pages: ./ (home), alaw/<folder>/ (a tune; ?v=2 for its second version), ?page=add / ?page=fix
+// Pages: ./ (home), alaw/<folder>/ (a tune; ?v=2 for its "(version 2)"), ?page=add / ?page=fix
 // (guides), ?page=contact, … Every address is relative to <base href> in index.html.
 
 const AUDIO_PARAMS = {
@@ -967,7 +967,7 @@ function notesSearch({ autoListen = false } = {}) {
       return el("li", {},
         el("a", { href: tuneUrl(tune.group, tune.version), "data-route": true }, tuneName(tune.group, tune.base)),
         // "starts like this" is what the line above already says; only a different match is labelled.
-        el("span", { class: "caption" }, [several ? tr(` (version ${tune.version})`, ` (fersiwn ${tune.version})`) : "",
+        el("span", { class: "caption" }, [several ? tr(` (version ${tune.shown})`, ` (fersiwn ${tune.shown})`) : "",
           result.how === "start" ? "" : ` · ${matchText(result)}`].join("")),
         i < previews ? tunePreview(tune) : null);
     }));
@@ -1043,8 +1043,10 @@ function notesSearch({ autoListen = false } = {}) {
 const nameLang = (group) => (state.data.say?.[group] ? "cy" : "en");
 const tuneName = (group, text) => el("span", { lang: nameLang(group) }, text);
 
-function tuneUrl(group, version = 1) {
-  return `alaw/${encodeURIComponent(group)}/${version > 1 ? `?v=${version}` : ""}`;
+// A version's link names it (?v=, by its own number) unless it's the one shown first.
+function tuneUrl(group, version) {
+  const first = state.groups.get(group)?.versions[0];
+  return `alaw/${encodeURIComponent(group)}/${version && version !== first?.version ? `?v=${version}` : ""}`;
 }
 
 // A tune's link with the key and tempo chosen on its page, so "the jig in A, slowly" can
@@ -1052,7 +1054,7 @@ function tuneUrl(group, version = 1) {
 // on its page, the holes or tabs shown (&tab=whistle-D), so a class is sent the tune with them.
 function tuneLink(group, tune, settings, tab = "none") {
   const query = new URLSearchParams();
-  if (tune.version > 1) query.set("v", tune.version);
+  if (tune !== group.versions[0]) query.set("v", tune.version);
   if (settings?.transpose && tune.key) query.set("key", keyNote(tune.key.pitch + settings.transpose, tune.key.modeName));
   if (settings?.bpm && settings.bpm !== tune.bpm) query.set("tempo", settings.bpm);  // "learn it at 70"
   if (tab !== "none") query.set("tab", tab);
@@ -1255,14 +1257,17 @@ function render() {
     return;
   }
   let group = state.groups.get(slug);
-  let version = Number(params.get("v")) || 1;
+  let version = Number(params.get("v")) || null;
   const file = state.bySlug.get(slug);
-  if (!group && file) [group, version] = [state.groups.get(file.group), file.version];  // a version's own folder
+  // A version's own folder, or a moved tune (which is that version, even when its new
+  // folder is also the tune's address: "glandyfi" is version 1, not the first shown).
+  if (file && (!group || slug !== addressTune())) [group, version] = [state.groups.get(file.group), file.version];
   // Older links (?tune=…) and a version's folder move to the tune's own address; an
   // unknown tune (removed, renamed, mistyped) gets a page saying so.
   if (group && (params.has("tune") || !location.pathname.endsWith(`/alaw/${group.slug}/`))) {
     const keep = new URLSearchParams([...params].filter(([name]) => ["key", "tempo", "tab"].includes(name)));
-    history.replaceState(null, "", tuneUrl(group.slug, version) + (keep.size ? `${version > 1 ? "&" : "?"}${keep}` : ""));
+    const url = tuneUrl(group.slug, version);
+    history.replaceState(null, "", url + (keep.size ? `${url.includes("?") ? "&" : "?"}${keep}` : ""));
   }
   const lost = slug && !group;
   const tune = group ? group.versions.find((v) => v.version === version) ?? group.versions[0] : null;
@@ -1759,11 +1764,11 @@ function features() {
   const withChords = state.groupList.filter((g) => g.versions.some((v) => v.chords != null)).length;
   const items = state.lang === "cy" ? [
     ["Unrhyw gywair, unrhyw dempo", "Trawsgyweiriwch alaw i siwtio'ch offeryn neu'ch llais, gwrandewch arni gyda'r nodau'n goleuo, ac ailadroddwch un rhan gan gyflymu bob tro."],
-    ["Cordiau", `Cyfeiliant awgrymedig ar gyfer gitâr, piano neu delyn (${withChords} o alawon hyd yma).`],
+    ["Cordiau", `Enghraifft o gyfeiliant ar gyfer gitâr, piano neu delyn (${withChords} o alawon hyd yma).`],
     ["Setiau", "Casglwch alawon i'w chwarae gyda'i gilydd, yn eich cyweiriau chi, a'u rhannu fel dolen neu god QR."],
   ] : [
     ["Any key, any tempo", "Transpose a tune for your instrument or voice, hear it with the notes lit up, and repeat a part, speeding up each time."],
-    ["Chords", `Suggested accompaniment for guitar, piano or harp (${withChords} tunes so far).`],
+    ["Chords", `Example accompaniment for guitar, piano or harp (${withChords} tunes so far).`],
     ["Sets", "Gather tunes to play together, in your keys, and share them as a link or a QR code."],
   ];
   return el("section", { class: "features" },
@@ -2954,12 +2959,13 @@ function chordChart(visualObj) {
 
 // Where a tune's chords come from (its %%chords line), in Welsh.
 const CY_CHORD_SOURCES = { "From the Alawon Cymru score": "O sgôr Alawon Cymru",
-  "From the setting on The Session": "O'r gosodiad ar The Session", "Supplied by Neil Browning": "Gan Neil Browning" };
+  "From the setting on The Session": "O'r gosodiad ar The Session", "Supplied by Neil Browning": "Gan Neil Browning",
+  "From Alawon Cymru's version of this tune": "O fersiwn Alawon Cymru o'r alaw hon" };  // build_site.py: CARRIED_CHORDS
 
 function chordCard(tune) {
   if (tune.chords == null) return null;
   return el("section", { class: "card chords" },
-    el("h2", {}, tr("Suggested chords", "Cordiau awgrymedig")),
+    el("h2", {}, tr("Example chords", "Cordiau enghreifftiol")),
     el("p", { class: "print-key" }),
     el("div", { class: "chart-box" }),
     el("p", { class: "caption" },
@@ -3019,9 +3025,11 @@ function printButton(tune, paper, settings) {
   const transposed = (abc) => transposeAbc(tune, abc, settings.transpose);
   const fileName = (ext) => {
     const key = settings.transpose && tune.key ? `-in-${keyNote(tune.key.pitch + settings.transpose, tune.key.modeName).replace("#", "sharp")}` : "";
-    return `${tune.slug}${key}.${ext}`;
+    return `${tune.group}${tune.shown > 1 ? `-version-${tune.shown}` : ""}${key}.${ext}`;
   };
-  const saveAbc = () => download(fileName("abc"), "text/vnd.abc", transposed(tune.abc));
+  // Named as its tab is, "(version 3)", not by its folder's number.
+  const titled = (abc) => abc.replace(/^T:(.*?)(?: \(version \d+\))?$/m, (_, title) => `T:${title}${tune.shown > 1 ? ` (version ${tune.shown})` : ""}`);
+  const saveAbc = () => download(fileName("abc"), "text/vnd.abc", transposed(titled(tune.abc)));
   const saveMidi = () => {
     const abc = transposed(setTempo(stripFields(tune.abc, "SZBNAH"), tune.beat, settings.bpm));
     const [bytes] = ABCJS.synth.getMidiFile(accompaniment(abc, settings.chords.play), {
@@ -3385,7 +3393,7 @@ function renderTune(main, group, tune) {
     href: tuneUrl(group.slug, v.version), "data-route": true,
     class: v === tune ? "active" : null, "aria-current": v === tune ? "page" : null,
     onclick: () => { if (v !== tune && !state.practice.versionsSeen) { state.practice.versionsSeen = true; savePractice(); } },
-  }, el("span", {}, tr(`Version ${v.version}`, `Fersiwn ${v.version}`)),
+  }, el("span", {}, tr(`Version ${v.shown}`, `Fersiwn ${v.shown}`)),
   versionNote.get(v) ? el("small", {}, versionNote.get(v)) : null);
   const whatVersions = () => el("span", { class: "caption versions-what" },
     tr("The same tune from different books or arrangements", "Yr un alaw o lyfrau neu drefniannau gwahanol"));
@@ -3394,7 +3402,7 @@ function renderTune(main, group, tune) {
         group.versions.map(versionLink), state.practice.versionsSeen ? null : whatVersions()),
       // …which says what this one is (its book, its key where they differ), as the tabs do.
       versionsFold(el("summary", {}, el("span", { class: "which" },
-          el("span", {}, tr(`Version ${tune.version} of ${group.versions.length}`, `Fersiwn ${tune.version} o ${group.versions.length}`)),
+          el("span", {}, tr(`Version ${tune.shown} of ${group.versions.length}`, `Fersiwn ${tune.shown} o ${group.versions.length}`)),
           versionNote.get(tune) ? [el("span", { class: "visually-hidden" }, ", "), el("small", {}, versionNote.get(tune))] : null)),
         el("nav", { class: "versions-list", "aria-label": tr("Versions of this tune", "Fersiynau'r alaw hon") },
           whatVersions(), group.versions.map(versionLink)))]
@@ -5226,7 +5234,7 @@ function keyOptions(tune, key) {
 function versionOptions(group, tune) {
   const notes = versionNotes(group);
   return group.versions.map((v, i) => el("option", { value: i, selected: v === tune },
-    tr(`Version ${v.version}`, `Fersiwn ${v.version}`) + (notes.get(v) ? ` · ${notes.get(v)}` : "")));
+    tr(`Version ${v.shown}`, `Fersiwn ${v.shown}`) + (notes.get(v) ? ` · ${notes.get(v)}` : "")));
 }
 
 // Another version of a tune in a set: in the key it was being played in, if that's a key
@@ -5460,7 +5468,7 @@ function renderSet(main) {
   // (version and key), and the link.
   const asList = () => [name, ...items.map(({ tune, key }) => {
     const group = state.groups.get(tune.group);
-    const version = group.versions.length > 1 ? tr(` (version ${tune.version})`, ` (fersiwn ${tune.version})`) : "";
+    const version = group.versions.length > 1 ? tr(` (version ${tune.shown})`, ` (fersiwn ${tune.shown})`) : "";
     const inKey = tune.key ? `: ${keyName(tune.key.pitch + key, tune.key.modeName)}` : "";
     return `• ${tune.base}${version}${inKey}`;
   }), shareLink()].join("\n");
@@ -5655,7 +5663,7 @@ function renderContact(main) {
   document.title = tr("Contact · Y Sesiwn", "Cysylltu · Y Sesiwn");
   const tune = state.bySlug.get(movedTo(new URLSearchParams(location.search).get("about")));
   const group = tune && state.groups.get(tune.group);
-  const about = tune ? `${group.title}${group.versions.length > 1 ? tr(` (version ${tune.version})`, ` (fersiwn ${tune.version})`) : ""}` : "";
+  const about = tune ? `${group.title}${group.versions.length > 1 ? tr(` (version ${tune.shown})`, ` (fersiwn ${tune.shown})`) : ""}` : "";
   const subject = el("input", { type: "text", name: "subject", value: about ? tr(`About ${about}`, `Am ${about}`) : null });
   const message = el("textarea", { name: "message", rows: 8, required: true });
   const page = tune ? `https://ysesiwn.cymru/${tuneUrl(group.slug, tune.version)}` : null;
@@ -5946,7 +5954,7 @@ function buildGroups() {
     state.groups.get(tune.group).versions.push(tune);
   }
   for (const group of state.groups.values()) {
-    group.versions.sort((a, b) => a.version - b.version);
+    group.versions.sort((a, b) => a.shown - b.shown);  // Alawon Cymru's last (build_site.py: show_versions)
     group.type = group.versions[0].type;
     const titles = group.versions.flatMap((v) => v.titles.map((t) => t.replace(VERSION_SUFFIX, "")));
     group.titles = titles.filter((t, i) => titles.findIndex((u) => normalize(u) === normalize(t)) === i);

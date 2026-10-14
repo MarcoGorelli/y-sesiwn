@@ -67,6 +67,49 @@ def test_chords_source():
     assert b.chords_source(read("cawl-cennin")) is None
 
 
+def test_versions_shown_alawon_cymru_last(site):
+    # A tune's versions are shown with Alawon Cymru's after the books' and before any of
+    # unknown source; each keeps its own number (its folder, ?v= and set links).
+    index = json.loads((b.OUT / "tunes.json").read_text(encoding="utf-8"))
+    shown = lambda group: [(t["version"], t["source"]) for t in sorted(
+        (t for t in index["tunes"] if t["group"] == group), key=lambda t: t["shown"])]
+    assert shown("nyth-y-gog") == [(2, "Cat's Claw"), (1, "Alawon Cymru")]
+    assert shown("glandyfi") == [(2, "Blodau'r Grug Collection Vol. 1"), (3, "The Session"), (1, "Alawon Cymru")]
+    assert shown("byth-adre") == [(1, "Alawon Cymru"), (2, "")]
+
+
+def test_chords_carried_from_alawon_cymru(site):
+    # A version without chords gets those of the tune's Alawon Cymru version, if it has the
+    # same form and much the same melody: in its own key, and saying where they're from.
+    index = json.loads((b.OUT / "tunes.json").read_text(encoding="utf-8"))
+    tunes = {t["slug"]: t for t in index["tunes"]}
+    read = lambda slug: (b.ROOT / "tunes" / slug / "tune.abc").read_text(encoding="utf-8")
+    nyth = tunes["nyth-y-gog-version-2"]
+    assert nyth["chords"] == b.CARRIED_CHORDS == "From Alawon Cymru's version of this tune"
+    assert "%%chords From Alawon Cymru's version of this tune\nK:Em\n" in nyth["abc"]
+    assert 'BA|"Em"GFGFE2 ge|"G"dBAG "D"FAGF|' in nyth["abc"]
+    assert b.chords_source(read("nyth-y-gog-version-2")) is None  # the file keeps what the book has
+    # Alawon Cymru's is in G, the book's in D: the chords move with it.
+    assert 'A2|"D"d2d>dd2f>e|"D"d2A2"A"d2e2|' in tunes["ymdeithdon-capten-reed-version-2"]["abc"]
+    # Bars twice as long (4/4 for 2/4): a chord the same as the one before, mid-bar, isn't repeated.
+    assert '|:"G"B>AGD EED2|"D"DBA2 "G"DAG2|' in tunes["bois-y-chwarel-version-2"]["abc"]
+    # Not carried: a different B part (Tŷ Crwn), a chord that would start mid-note
+    # (Rhyfelgyrch Capten Morgan), a different form (Difyrrwch Gwŷr Caernarfon's D.C.).
+    for slug in ["ty-crwn-version-2", "rhyfelgyrch-capten-morgan-version-2", "difyrrwch-gwyr-caernarfon-version-2"]:
+        assert tunes[slug]["chords"] is None and tunes[slug]["abc"] == read(slug)
+    # With two Alawon Cymru versions, from the one more like it (Ffaniglen's version 1, the
+    # same note 92% of the time to version 3's 87%); none where another source has chords
+    # of its own (Byth Adre).
+    assert tunes["ffaniglen-version-2"]["chords"] == b.CARRIED_CHORDS
+    assert b.carried_chords(tunes["ffaniglen"]["abc"], read("ffaniglen-version-2"))[1] == tunes["ffaniglen-version-2"]["abc"]
+    assert tunes["byth-adre-version-2"]["chords"] == ""
+
+
+def test_chord_names_transposed():
+    assert b.transpose_chord("G", 7, False) == "D" and b.transpose_chord("Em7", 2, False) == "F#m7"
+    assert b.transpose_chord("D/F#", -2, True) == "C/E" and b.transpose_chord("A", 1, True) == "Bb"
+
+
 def test_types_and_tempos():
     read = lambda slug: b.parse_headers((b.ROOT / "tunes" / slug / "tune.abc").read_text(encoding="utf-8"))
     assert b.tune_type(read("glandyfi")) and b.default_bpm(read("llancesau-trefaldwyn")) == 112  # a jig
@@ -253,14 +296,19 @@ def test_moved_tunes(tmp_path, monkeypatch):
 
 
 def test_moved_tune_pages(tmp_path, monkeypatch):
-    # The old address of a moved tune is a page sending people on to the new one.
+    # The old address of a moved tune is a page sending people on to the new one: to its
+    # version (Alawon Cymru's, shown after the book's), or the tune's own address for
+    # the version it opens on.
     monkeypatch.setattr(b, "moved_tunes", lambda slugs, numbers: [
-        {"from": "hen-enw", "to": "sawdl-y-fuwch-version-2", "code": "zz", "id": "zzzzz"}])
+        {"from": "hen-enw", "to": "sawdl-y-fuwch", "code": "zz", "id": "zzzzz"},
+        {"from": "enw-arall", "to": "sawdl-y-fuwch-version-2", "code": "zy", "id": "zzzzy"}])
     monkeypatch.setattr(b, "OUT", tmp_path / "_site")
     b.main()
     page = (b.OUT / "alaw" / "hen-enw" / "index.html").read_text(encoding="utf-8")
-    assert '<meta http-equiv="refresh" content="0; url=../sawdl-y-fuwch/?v=2">' in page
-    assert '<link rel="canonical" href="https://ysesiwn.cymru/alaw/sawdl-y-fuwch/?v=2">' in page
+    assert '<meta http-equiv="refresh" content="0; url=../sawdl-y-fuwch/?v=1">' in page
+    assert '<link rel="canonical" href="https://ysesiwn.cymru/alaw/sawdl-y-fuwch/?v=1">' in page
+    page = (b.OUT / "alaw" / "enw-arall" / "index.html").read_text(encoding="utf-8")
+    assert '<meta http-equiv="refresh" content="0; url=../sawdl-y-fuwch/">' in page
 
 
 def test_decorations_are_not_notes():
@@ -309,15 +357,15 @@ def test_tune_pages(site):
     assert "<title>Llancesau Trefaldwyn · Y Sesiwn</title>" in page
     assert f'<meta property="og:url" content="{url}">' in page and f'<link rel="canonical" href="{url}">' in page
     assert '<meta property="og:title" content="Llancesau Trefaldwyn · Y Sesiwn">' in page
-    description = ("Llancesau Trefaldwyn: a Welsh jig in D major. Sheet music, suggested chords and playback in any key, at any tempo (2 versions). "
+    description = ("Llancesau Trefaldwyn: a Welsh jig in D major. Sheet music, example chords and playback in any key, at any tempo (2 versions). "
                    "Alaw werin o Gymru (jig yn D fwyaf): y sgôr, cordiau a chwarae mewn unrhyw gywair.")
     assert f'<meta name="description" content="{description}">' in page
     assert f'<meta property="og:description" content="{description}">' in page
     data = json.loads(re.search(r'<script type="application/ld\+json">(.*?)</script>', page).group(1))
     assert data["name"] == "Llancesau Trefaldwyn" and data["musicalKey"] == "D major"
     assert "<h1>Llancesau Trefaldwyn</h1>" in page and "K:D" in page  # readable without the app
-    source = "http://alawoncymru.com/alawon/Tunes/"
-    assert f'<dt>Source</dt><dd><a href="{source}' in page and "<dt>Notes</dt>" not in page
+    source = "https://trillian.mit.edu/"  # the version it opens on, Cat's Claw's (Alawon Cymru's is last)
+    assert f'<dt>Source</dt><dd><a href="{source}' in page
     # A title with an apostrophe, safely written into the page.
     page = (out / "alaw" / "codi-r-hwyl" / "index.html").read_text(encoding="utf-8")
     assert "<title>Codi&#x27;r Hwyl · Y Sesiwn</title>" in page and "<h1>Codi&#x27;r Hwyl</h1>" in page
@@ -337,7 +385,7 @@ def test_type_pages(site):
     page = (out / "math" / "ril" / "index.html").read_text(encoding="utf-8")
     assert "<title>Welsh reels (Rîl) · Y Sesiwn</title>" in page and '<base href="../../">' in page
     assert '<link rel="canonical" href="https://ysesiwn.cymru/math/ril/">' in page
-    reels = {t["group"] for t in index["tunes"] if t["version"] == 1 and t["type"] == "Rîl"}
+    reels = {t["group"] for t in index["tunes"] if t["shown"] == 1 and t["type"] == "Rîl"}
     assert set(re.findall(r'<a href="alaw/([^/]+)/">', page)) == reels
     assert "abcjs-basic-min.js" not in page  # no music on it
     home = (out / "index.html").read_text(encoding="utf-8")

@@ -159,7 +159,12 @@ scheduled runs after 60 days without a commit).
   grouped with their tune (`build_site.py` adds `group`, `base`, `version` and
   a `source` label, e.g. *Alawon Cymru* or the `B:` book); the page has a tab
   per version (`alaw/rheged/?v=2`), and browsing, counts and search show one
-  entry per tune. Older links (`?tune=rheged`, or a version's folder,
+  entry per tune. The versions are shown with Alawon Cymru's after the books'
+  and players' (usually better to learn from) and before any of unknown source,
+  numbered in that order (`shown`); a tune's
+  address opens the first shown, and `?v=` names a version by its own number,
+  from its title and folder, which never changes, so old links and sets keep
+  their version. Older links (`?tune=rheged`, or a version's folder,
   `?tune=rheged-version-2`) move to the tune's own address and the right tab.
 - **Sheet music** on cream "paper", with a **key** drop-down (the same mode on
   any root, up to half an octave either way, e.g. *E Dorian*), a **tempo**
@@ -207,7 +212,7 @@ scheduled runs after 60 days without a commit).
   tablature plugin.
 - **Report a problem with this tune:** a link on every tune page to a new
   GitHub issue with the tune's name, page and file filled in.
-- **Suggested chords:** tunes with chord symbols in their ABC (`"G"B2 G`)
+- **Example chords:** tunes with chord symbols in their ABC (`"G"B2 G`)
   get a chord chart under the sheet music, for accompanists: one cell per
   bar, in rows of 4 (3 or 5 for a part that divides into those but not 4),
   each part (after a repeat sign or double bar line) starting a new row, a
@@ -234,6 +239,14 @@ scheduled runs after 60 days without a commit).
   `accompaniment()` in `app.js` adds these lines unless the tune sets its own. A `%%chords <text>` line says where they come from; the build
   passes it on as `chords` (`null` when a tune has no chords). The first
   chords were copied from the Alawon Cymru score images.
+  Where a tune's only versions with chords are Alawon Cymru's, the build
+  (`carry_chords()`) copies them (from the one most alike, if there are several)
+  onto its other versions that have the same form
+  (bar for bar as played, allowing for a lead-in written differently or bars
+  twice as long) and much the same melody (the same note ¾ of the time, and
+  half the time in any two bars), transposed to their key, with the `%%chords`
+  line saying they're from Alawon Cymru's version. Only the built `tunes.json`
+  has them: the tune files keep what their books have.
 - **Print:** a button on the tune page; the print styles leave just the
   sheet music, in the key chosen on the page. For a tune with chords it's a
   menu: *Sheet music*, *Sheet music with chords* (above the stave), or

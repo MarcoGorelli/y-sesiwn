@@ -179,7 +179,7 @@ def test_transposing_keeps_a_sensible_range(page):
 
 
 def test_chord_chart(page):
-    page.goto_site("?tune=glandyfi")
+    page.goto_site("alaw/glandyfi/?v=1")  # Alawon Cymru's score
     page.open_tools()
     page.wait_for_selector(".chart .bar")
     # Two chords in a bar each get half of it (G on beat 1, D on beat 2 of 6/8).
@@ -197,6 +197,19 @@ def test_chord_chart(page):
     assert volumes["melody"] == [0] and max(volumes["chords"]) > 0
 
 
+def test_chords_carried_say_so(page):
+    # A book's version with Alawon Cymru's chords: the chord card says where they're from.
+    page.goto_site("alaw/nyth-y-gog/")
+    page.wait_for_selector(".chart .bar")
+    card = page.locator(".card.chords")
+    assert card.locator("h2").inner_text() == "Example chords"
+    assert "From Alawon Cymru's version of this tune." in card.inner_text()
+    page.click(".lang-switch [data-lang=cy]")
+    page.wait_for_selector(".chart .bar")
+    assert card.locator("h2").inner_text() == "Cordiau enghreifftiol"
+    assert "O fersiwn Alawon Cymru o'r alaw hon." in card.inner_text()
+
+
 def chart_rows(page):
     """The chord chart as text: one string per row, "_" for a blank (indent) cell."""
     page.wait_for_selector(".chart .bar")
@@ -207,7 +220,7 @@ def chart_rows(page):
 @pytest.mark.parametrize("slug", ["ffaniglen", "glandyfi", "machynlleth", "morgawr", "ty-a-gardd", "dic-y-cymro"])
 def test_chord_chart_rows_of_four(page, slug):
     # Even rows of 4 bars, whatever the lines of the sheet music (Ffaniglen's has 5 and 3).
-    page.goto_site(f"?tune={slug}")
+    page.goto_site(f"alaw/{slug}/?v=1")  # version 1: Alawon Cymru's, with its chords
     assert {len(row.split()) for row in chart_rows(page)} == {4}
 
 
@@ -225,7 +238,7 @@ def test_chord_chart_endings(page):
 ])
 def test_chord_chart_same_endings(page, slug, first_rows):
     # Endings whose chords are the same (only the melody differs) become a plain repeat.
-    page.goto_site(f"?tune={slug}")
+    page.goto_site(f"alaw/{slug}/?v=1")
     rows = chart_rows(page)
     assert rows[:2] == first_rows
     assert not any("1." in r or "2." in r for r in rows)
@@ -524,7 +537,7 @@ def test_source_as_text_or_link(page):
     page.wait_for_selector(".score .abcjs-staff")
     source = page.locator(".tune-side .card dd").filter(has_text="recording of Rowan Kodratoff")
     assert source.count() == 1 and source.locator("a").count() == 0
-    page.goto_site("alaw/glandyfi/")
+    page.goto_site("alaw/glandyfi/?v=1")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.inner_text(".tune-side .card dd a") == "Alawon Cymru (alawoncymru.com)"  # named, not the whole address
     assert page.get_attribute(".tune-side .card dd a", "href").startswith("http://alawoncymru.com/")
@@ -588,6 +601,14 @@ def test_save_abc_and_midi(page):
         assert data[:4] == b"MThd" and info.value.suggested_filename == "glandyfi-in-A.mid"
         sizes[play] = len(data)
     assert sizes["Tune and chords"] > sizes["Tune only"]
+    # A version other than the first is named as its tab is, not by its folder's number.
+    page.goto_site("alaw/glandyfi/?v=1")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.click("text=Print / save")
+    with page.expect_download() as info:
+        page.click("[id^=print-menu] >> text='Save as ABC'")
+    assert info.value.suggested_filename == "glandyfi-version-3.abc"
+    assert "\nT:Glandyfi (version 3)\n" in open(info.value.path(), encoding="utf-8").read()
 
 
 def test_no_chord_box_without_chords(page):
@@ -626,7 +647,7 @@ def test_tunes_sharing_a_name(page):
     found = page.locator("#hero-suggestions li > span[lang]").all_inner_texts()
     assert {"Morfa Rhuddlan", "Morfa Rhuddlan (Mary Richards)", "Morfa Rhuddlan (Robin Huw Bowen)"} <= set(found)
     versions = page.evaluate("state.groups.get('morfa-rhuddlan').versions.map((v) => v.source)")
-    assert versions == ["Alawon Cymru", "51 Welsh Airs", "Antient British Music (John Parry and Evan Williams, 1742)"]
+    assert versions == ["51 Welsh Airs", "Antient British Music (John Parry and Evan Williams, 1742)", "Alawon Cymru"]  # Alawon Cymru's last
 
 
 def test_search_keys(page):
@@ -1461,10 +1482,10 @@ def test_share_in_a_key(page, site):
     assert page.url == site + "alaw/glandyfi/?key=F&tempo=150"
     page.select_option("#key-select", "0")
     assert page.url == site + "alaw/glandyfi/?tempo=150"
-    page.goto_site("alaw/glandyfi/?v=2&key=Bb&tempo=70&bpm=120")  # ?tempo= opens it at that tempo; anything else is ignored
+    page.goto_site("alaw/glandyfi/?v=1&key=Bb&tempo=70&bpm=120")  # ?tempo= opens it at that tempo; anything else is ignored
     page.wait_for_selector(".score .abcjs-staff")
     assert page.input_value("#key-select") == "3" and page.input_value("#tempo") == "70"
-    assert page.url == site + "alaw/glandyfi/?v=2&key=Bb&tempo=70"
+    assert page.url == site + "alaw/glandyfi/?v=1&key=Bb&tempo=70"
     page.goto_site("?tune=glandyfi&key=D")  # an older link: moves to the tune's address, key kept
     page.wait_for_selector(".score .abcjs-staff")
     assert page.url == site + "alaw/glandyfi/?key=D&tempo=150"  # at the tempo kept for it (chosen above)
@@ -1674,10 +1695,10 @@ def test_tune_page_address(page, site):
     failed = []
     page.on("response", lambda r: failed.append(r.url) if r.status >= 400 else None)
     page.on("requestfailed", lambda r: failed.append(r.url))
-    page.goto(site + "alaw/glandyfi/?v=2")
+    page.goto(site + "alaw/glandyfi/?v=1")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.inner_text("main h1") == "Glandyfi"
-    assert page.locator(".versions a.active span").inner_text() == "Version 2"
+    assert page.locator(".versions a.active span").inner_text() == "Version 3"  # Alawon Cymru's, shown last
     assert failed == []  # every file found from two folders down
     # Links from it lead back to the site's root, and to the other tunes' own pages.
     page.click(".versions a >> nth=0")
@@ -1698,8 +1719,10 @@ def test_tune_page_address(page, site):
 
 @pytest.mark.parametrize("old, new", [
     ("?tune=glandyfi", "alaw/glandyfi/"),
-    ("?tune=glandyfi&v=2", "alaw/glandyfi/?v=2"),
-    ("?tune=glandyfi-version-2", "alaw/glandyfi/?v=2"),  # a version's own folder
+    ("?tune=glandyfi&v=1", "alaw/glandyfi/?v=1"),
+    ("?tune=glandyfi&v=2", "alaw/glandyfi/"),  # the version it opens on (the book's)
+    ("?tune=glandyfi-version-3", "alaw/glandyfi/?v=3"),  # a version's own folder
+    ("?tune=glandyfi-version-2", "alaw/glandyfi/"),
 ])
 def test_old_tune_links(page, site, old, new):
     page.goto_site(old)
@@ -2086,7 +2109,7 @@ def test_practice_tools_remembered(page):
     assert page.evaluate("[state.practice.countIn, state.practice.click]") == [False, False]
     assert page.input_value("#loop-select") == "-2" and page.input_value("#tab-select") == "none"
     assert page.evaluate("state.practice.chordsOnScore") is False
-    assert page.evaluate("JSON.parse(localStorage.getItem('tunes'))") == {"glandyfi": {"bpm": 90}}
+    assert page.evaluate("JSON.parse(localStorage.getItem('tunes'))") == {"glandyfi-version-2": {"bpm": 90}}  # the version it opens on
     assert page.locator(".kept-note .link-button").is_hidden()
     page.evaluate("localStorage.setItem('practice', JSON.stringify({ tab: 'treble-recorder', open: 'yes' }))")
     page.goto_site("?tune=glandyfi")
@@ -2105,7 +2128,7 @@ def test_controls_not_refilled_going_back(page):
     page.goto_site("?page=about")
     page.go_back()
     page.wait_for_selector(".score .abcjs-staff")
-    assert page.evaluate("state.settings.get('glandyfi').loop") == -2
+    assert page.evaluate("state.settings.get('glandyfi-version-2').loop") == -2  # the version it opens on
     assert page.input_value("#loop-select") == "-2"
     assert not page.is_checked("text=Speed up each time")
 
@@ -2146,18 +2169,18 @@ def test_tablature_on_bigger_music(page):
 
 def test_report_link(page):
     # One way to report a problem: the contact form, with the tune (and version) filled in.
-    page.goto_site("alaw/glandyfi/?v=2")
+    page.goto_site("alaw/glandyfi/?v=1")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.locator(".report-line a").count() == 1
     page.click("a.report")
     page.wait_for_selector(".email-form")
-    assert page.input_value("[name=subject]") == "About Glandyfi (version 2)"
+    assert page.input_value("[name=subject]") == "About Glandyfi (version 3)"  # as its tab says (Alawon Cymru's, last)
 
 
 def test_tune_details(page):
     # The key and the arranger are on the key menu and the score, so not repeated in
     # Details; the source stays, as its address.
-    page.goto_site("alaw/glandyfi/")
+    page.goto_site("alaw/glandyfi/?v=1")
     page.wait_for_selector(".score .abcjs-staff")
     labels = page.locator(".tune-side .card dt").all_inner_texts()
     assert "Key" not in labels and "Composer / arranger" not in labels
@@ -2415,16 +2438,16 @@ def test_send_a_tune_without_abc(page):
 
 
 def test_contact_page(page):
-    page.goto_site("?tune=glandyfi&v=2")
+    page.goto_site("?tune=glandyfi&v=1")
     page.click("a.report")
     page.wait_for_selector(".email-form")
-    assert page.input_value("[name=subject]") == "About Glandyfi (version 2)"
+    assert page.input_value("[name=subject]") == "About Glandyfi (version 3)"
     page.evaluate(CATCH_MAIL)
     page.fill("[name=message]", "Bar 3 of the B part sounds wrong to me.")
     page.click(".email-form button[type=submit]")
     to, subject, body = sent_mail(page)
-    assert to == ADDRESS and subject == "Y Sesiwn: About Glandyfi (version 2)"
-    assert body.startswith("Bar 3 of the B part") and "https://ysesiwn.cymru/alaw/glandyfi/?v=2" in body
+    assert to == ADDRESS and subject == "Y Sesiwn: About Glandyfi (version 3)"
+    assert body.startswith("Bar 3 of the B part") and "https://ysesiwn.cymru/alaw/glandyfi/?v=1" in body
     # From the sidebar: no tune, no subject needed.
     page.click(".sidebar-links a[href='?page=contact']")
     page.wait_for_selector(".email-form")
@@ -2466,14 +2489,14 @@ def test_qr_code(browser, site, scheme):
     page = context.new_page()
     requests = []
     page.on("request", lambda r: requests.append(r.url))
-    page.goto(site + "alaw/glandyfi/?v=2")
+    page.goto(site + "alaw/glandyfi/?v=1")
     page.wait_for_selector(".score .abcjs-staff")
     assert not [u for u in requests if "qrcode" in u]  # only loaded when asked for
     page.click(".tune-actions .share")
     page.click(".tune-actions button:text-is('QR code')")
     page.wait_for_selector("dialog.qr-dialog[open] svg.qr")
     image = Image.open(io.BytesIO(page.locator("dialog svg.qr").screenshot()))
-    assert [r.text for r in zxingcpp.read_barcodes(image)] == ["https://ysesiwn.cymru/alaw/glandyfi/?v=2"]
+    assert [r.text for r in zxingcpp.read_barcodes(image)] == ["https://ysesiwn.cymru/alaw/glandyfi/?v=1"]
     page.keyboard.press("Escape")
     page.wait_for_selector("dialog.qr-dialog", state="detached")
     page.click(".tune-actions .share")  # again, and closed with its button
@@ -2513,11 +2536,13 @@ def test_set_from_tune_pages(page):
     heads = page.locator(".set-tune h2")
     assert [" ".join(t.split()) for t in heads.all_inner_texts()] == [
         "1. Llancesau Trefaldwyn · D major", "2. Glandyfi · A major", "3. Nyth y Gog · E minor"]
-    assert heads.nth(1).locator("a").get_attribute("href") == "alaw/glandyfi/?v=2&key=A"
+    assert heads.nth(1).locator("a").get_attribute("href") == "alaw/glandyfi/?key=A"  # version 2, the one it opens on
     assert page.get_attribute(".set-tune:nth-child(2) .preview-play", "aria-label") == "Play Glandyfi in A major"
     page.click(".set-edit > summary")
     assert page.locator(".set-list li > a").all_inner_texts() == ["Llancesau Trefaldwyn", "Glandyfi", "Nyth y Gog"]
-    assert "?set=5A3V~h7o&n=My%20set&my=" in page.url  # Glandyfi (version 2) up two: ~h
+    # The versions each opened on (Llancesau Trefaldwyn's and Nyth y Gog's version 2, the
+    # books', before Alawon Cymru's); Glandyfi (version 2) up two: ~h
+    assert "?set=5B3V~h7q&n=My%20set&my=" in page.url
     assert page.locator(".set-list li").nth(1).locator("select.set-key-select").input_value() == "2"
     page.locator(".set-list li").nth(1).locator("button[aria-label='Move up']").click()
     page.locator(".set-list li").nth(2).locator("button[aria-label^='Remove']").click()
@@ -2530,9 +2555,9 @@ def test_set_from_tune_pages(page):
     page.fill(".set-name", "Nos Iau")
     page.press(".set-name", "Tab")
     assert page.locator(".set-list li > a").all_inner_texts() == ["Glandyfi", "Llancesau Trefaldwyn"]
-    assert "?set=3V~h5A&n=Nos%20Iau" in page.url
+    assert "?set=3V~h5B&n=Nos%20Iau" in page.url
     kept = page.evaluate("JSON.parse(localStorage.getItem('sets'))")
-    assert [(x["name"], x["c"]) for x in kept] == [("Nos Iau", "3V~h5A")]
+    assert [(x["name"], x["c"]) for x in kept] == [("Nos Iau", "3V~h5B")]
     page.locator(".set-paper").first.scroll_into_view_if_needed()
     page.wait_for_selector(".set-paper svg")
     # My sets lists it; it can be deleted there.
@@ -2665,17 +2690,18 @@ def test_changing_a_version_in_a_set(page):
     page.wait_for_selector(".set-list li", state="attached")
     page.click(".set-edit > summary")
     first, second = page.locator(".set-list li").nth(0), page.locator(".set-list li").nth(1)
-    assert second.locator("select.set-version-select").input_value() == "0"  # Llancesau Trefaldwyn, version 1
+    # Llancesau Trefaldwyn's 5A is its version 1, Alawon Cymru's: shown second, after Cat's Claw's
+    assert second.locator("select.set-version-select").input_value() == "1"
     menu = first.locator("select.set-version-select")
-    assert menu.input_value() == "1"
+    assert menu.input_value() == "0"  # Glandyfi's 3V is its version 2, Blodau'r Grug's: shown first
     options = menu.locator("option").all_inner_texts()
     assert [o.split(" · ")[0] for o in options] == ["Version 1", "Version 2", "Version 3"]
-    assert "Blodau'r Grug" in options[1]
-    menu.select_option("0")
-    assert first.locator("select.set-version-select").input_value() == "0"
+    assert "Blodau'r Grug" in options[0] and "Alawon Cymru" in options[2]
+    menu.select_option("2")
+    assert first.locator("select.set-version-select").input_value() == "2"
     assert first.locator("select.set-key-select").input_value() == "2"  # still in A
     assert " ".join(page.locator(".set-tune h2").first.inner_text().split()) == "1. Glandyfi · A major"
-    assert page.locator(".set-tune h2 a").first.get_attribute("href") == "alaw/glandyfi/?key=A"
+    assert page.locator(".set-tune h2 a").first.get_attribute("href") == "alaw/glandyfi/?v=1&key=A"
     assert "?set=3V" not in page.url and "~h5A&n=Nos%20Iau" in page.url
 
 
@@ -2712,15 +2738,15 @@ def test_copy_set_as_a_list(browser, site):
     page.click("text=Copy as a list")
     assert page.evaluate("navigator.clipboard.readText()") == (
         "Nos Iau\n"
-        "• Glandyfi (version 2): A major\n"
-        "• Llancesau Trefaldwyn (version 1): D major\n"
+        "• Glandyfi (version 1): A major\n"  # numbered as their tabs are
+        "• Llancesau Trefaldwyn (version 2): D major\n"
         "https://ysesiwn.cymru/?set=3V~h5A&n=Nos%20Iau")
     assert page.inner_text(".set-shared") == "List copied"
     page.click(".lang-switch [data-lang=cy]")
     page.wait_for_selector(".set-list li", state="attached")
     page.click(".set-actions .share")
     page.click("text=Copïo fel rhestr")
-    assert "• Glandyfi (fersiwn 2): A fwyaf" in page.evaluate("navigator.clipboard.readText()")
+    assert "• Glandyfi (fersiwn 1): A fwyaf" in page.evaluate("navigator.clipboard.readText()")
     context.close()
 
 
@@ -3296,7 +3322,7 @@ def test_sound_note_under_the_player(browser, site):
 def test_print_list_and_chart_words(page):
     # Print / save is a plain list of buttons (no menu roles promised): Esc closes it and
     # puts focus back on its button. The chord chart is read bar by bar, in words.
-    page.goto_site("?tune=glandyfi")
+    page.goto_site("alaw/glandyfi/?v=1")  # Alawon Cymru's score
     page.wait_for_selector(".score .abcjs-staff")
     toggle = page.locator("[aria-controls^=print-menu]")
     assert toggle.get_attribute("aria-haspopup") is None and page.locator("[role=menu], [role=menuitem]").count() == 0
@@ -3320,7 +3346,7 @@ def test_full_screen_folds_the_key_and_tempo_on_a_laptop(page):
     assert not page.is_visible(".controls-summary")
     page.click(".practice-toggle")
     assert page.is_visible(".controls-summary")
-    assert page.inner_text(".controls-summary .now") == "G, 112 bpm, size 100%"
+    assert page.inner_text(".controls-summary .now") == "C, 112 bpm, size 100%"  # Blodau'r Grug's, in C
     assert not page.is_visible("#tune-controls .control select")
     page.click(".controls-summary")
     assert page.is_visible("#tune-controls .control select")
@@ -3444,7 +3470,9 @@ def test_moved_tune(page, site):
     page.evaluate("localStorage.setItem('keys', JSON.stringify({ 'hen-glandyfi': 2 }))")
     page.goto_site("?tune=hen-glandyfi")
     page.wait_for_selector(".score .abcjs-staff")
-    assert page.url.endswith("/alaw/glandyfi/?key=A")  # Glandyfi is in G: 2 up, as kept for its old name
+    # Glandyfi is in G: 2 up, as kept for its old name; and the version it moved to (its
+    # folder "glandyfi" is version 1, Alawon Cymru's, not the one the tune opens on).
+    assert page.url.endswith("/alaw/glandyfi/?v=1&key=A")
     assert page.inner_text("h1") == "Glandyfi" and page.input_value("#key-select") == "2"
     page.goto_site("?set=zz~h")
     page.wait_for_selector(".set-list li", state="attached")
@@ -3831,7 +3859,7 @@ def test_search_results_a_to_z_whatever_the_capitals(page):
 def test_phone_version_menu_says_which_version(browser, site):
     context = browser.new_context(service_workers="block", **PHONE)
     page = context.new_page()
-    page.goto(site + "alaw/merch-megan/")
+    page.goto(site + "alaw/merch-megan/?v=1")
     page.wait_for_selector(".score .abcjs-staff")
     summary = page.locator(".versions-fold > summary")
     assert summary.locator("small").inner_text() == "Alawon Cymru · G major · “Merch Megan”"
@@ -3891,7 +3919,7 @@ def test_versions_told_apart(page):
     page.goto_site("alaw/merch-megan/")
     page.wait_for_selector(".score .abcjs-staff")
     labels = page.locator(".versions a small").all_inner_texts()
-    assert labels[0].endswith("“Merch Megan”") and labels[3].endswith("“Merch Megan syml”")
+    assert labels[2].endswith("“Merch Megan”") and labels[3].endswith("“Merch Megan syml”")  # Alawon Cymru's two, last
     assert len(set(labels)) == len(labels)
 
 

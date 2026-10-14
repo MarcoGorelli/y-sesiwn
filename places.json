@@ -90,7 +90,7 @@
     {"name": "Treffynnon", "lat": 53.274, "lon": -3.223, "tunes": ["y-galon-cawen"]},
     {"name": "Trefforest", "lat": 51.59, "lon": -3.32, "tunes": ["walts-trefforest"]},
     {"name": "Tyndyrn", "lat": 51.697, "lon": -2.677, "tunes": ["tintern-ruins"]},
-    {"name": "Tywyn", "lat": 52.595, "lon": -4.07, "tunes": ["difyrrwch-corbet-ynysmaengwyn", "castell-tywyn"]},
+    {"name": "Tywyn", "lat": 52.595, "lon": -4.07, "tunes": ["difyrrwch-corbet-ynysmaengwyn", "castell-tywyn", "deio-y-dywyn"]},
     {"name": "Y Waun", "lat": 52.932, "lon": -3.056, "tunes": ["erddigan-caer-waen"]},
     {"name": "Waunlwyd", "lat": 51.76, "lon": -3.2, "tunes": ["ymgyrchdon-y-waunlwyd"]},
     {"name": "Y Wig", "lat": 51.447, "lon": -3.556, "tunes": ["llanciau-r-wig"]},

@@ -2005,6 +2005,10 @@ function nameScore(paper, about = "", tuneTitle = "") {
   if (score.hasAttribute("aria-label")) score.setAttribute("aria-label", name(score.getAttribute("aria-label")));
 }
 
+// How long before a new line's first note the page moves on to it: that note is in sight as
+// it's played, and the end of the line before is in mind by then.
+const FOLLOW_AHEAD = 400;
+
 class Cursor {  // highlights the notes as they play, and keeps playback inside a looped part
   constructor(loop = null) { this.loop = loop; }
   onEvent(event) {
@@ -2012,16 +2016,34 @@ class Cursor {  // highlights the notes as they play, and keeps playback inside 
     if (event) event.elements.flat().forEach((n) => n.classList.add("abcjs-note_playing"));
     // A new line of music: keep it in view.
     // (Back up for a repeat, it's followed from the line just played.)
-    if (event && event.line !== this.line) {
-      this.line = event.line;
-      const note = event.elements.flat()[0];
-      if (note) followMusic(note, this.note);
-      this.note = note;
+    if (event && event.line !== this.playing) { this.playing = event.line; this.follow(event, this.note); }
+    // Near the end of a line, the next one comes into view before it's played: within
+    // FOLLOW_AHEAD of it, or from the line's last note if that's no longer than half a bar.
+    const next = event && this.after(event, (e) => e.line !== event.line);
+    if (next) {
+      const wait = next.milliseconds - event.milliseconds;
+      if (wait <= FOLLOW_AHEAD || (wait <= event.millisecondsPerMeasure / 2 && this.after(event) === next)) {
+        this.follow(next, event.elements.flat()[0]);
+      }
     }
     if (event && this.loop) this.loop.onEvent(event);
   }
+  follow(event, from) {
+    if (event.line === this.line) return;
+    this.line = event.line;
+    const note = event.elements.flat()[0];
+    if (note) followMusic(note, from);
+    this.note = note;
+  }
+  // The next note played after this one (if given, the next that's on another line): none past
+  // a looped part's end, where playback goes back round instead.
+  after(event, where = () => true) {
+    const next = this.timings?.()?.find((e) => e.type === "event" && e.elements?.length && e.milliseconds > event.milliseconds && where(e));
+    if (!next || (this.part && !(next.startChar >= this.part.from && next.startChar < this.part.to))) return null;
+    return next;
+  }
   onStart() { soundPlayed(); }
-  onFinished() { this.onEvent(null); this.line = this.note = undefined; }
+  onFinished() { this.onEvent(null); this.line = this.playing = this.note = undefined; }
 }
 
 // ---- Practice: loop a part, speed up, count-in, click, tablature -------------------------
@@ -2674,6 +2696,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   }
   const controller = new ABCJS.synth.SynthController();
   const cursor = new Cursor();
+  cursor.timings = () => controller.timer?.noteTimings;
   // The count-in's bar comes before the tune in the sound: the lit notes wait for it too
   // (abcjs's timings start that many bars in), and so do the jumps made by their times.
   cursor.extraMeasuresAtBeginning = audioParams.drumIntro ?? 0;
@@ -2742,6 +2765,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   if (part) {
     // The player's own loop brings playback round again after the last part.
     cursor.loop = repeatLoop(controller, part, settings, onSpeed);
+    cursor.part = part;
     if (!controller.isLooping) controller.toggleLoop();
   }
   // Fetch and decode this tune's notes now, so pressing play doesn't wait. The

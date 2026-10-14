@@ -3700,6 +3700,32 @@ def test_music_stand_on_a_phone(browser, site):
     context.close()
 
 
+# The page moves on to a new line just before its first note, so that note is in sight as
+# it's played: while the line before is still playing.
+def test_following_the_music_moves_on_before_the_line(browser, site):
+    context = browser.new_context(service_workers="block", **PHONE)
+    page = context.new_page()
+    page.goto(site + "alaw/walts-dinefwr/?tempo=200")
+    page.wait_for_selector(".score .abcjs-inline-audio")
+    page.evaluate("""() => {
+      window.followed = [];
+      const follow = followMusic;
+      followMusic = (note, from) => {
+        const line = (n) => +[...(n?.classList ?? [])].find((c) => /^abcjs-l\\d+$/.test(c))?.slice(7);
+        followed.push([line(note), line(document.querySelector('.abcjs-note_playing'))]);
+        follow(note, from);
+      };
+    }""")
+    page.click(".score .abcjs-midi-start")
+    page.wait_for_function("followed.length >= 3", timeout=30000)
+    page.click(".score .abcjs-midi-start")
+    followed = page.evaluate("followed")
+    assert followed[0] == [0, 0]
+    for line, playing in followed[1:3]:
+        assert playing == line - 1
+    context.close()
+
+
 # Back up for a repeat, further than the screen goes: followed, from the line just played.
 # A line far off on its own isn't (the reader has gone elsewhere on the page).
 def test_following_the_music_back_up_for_a_repeat(browser, site):

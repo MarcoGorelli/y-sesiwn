@@ -7,6 +7,7 @@ Z:MIDI transcribed with alawon-abc
 %%alawon-reviewed
 %%chords From the Alawon Cymru score
 N:The score plays part A twice, part B, then part A again (D.C. al Fine).
+N:The MIDI varies the last A (AB cB AG, GA BA GF); this follows the score and the Glan Camlad recording, which repeat A unchanged.
 M:3/4
 L:1/8
 Q:1/4=120
@@ -14,5 +15,5 @@ K:G
 |: D2 | "G"G2 B2 d>c | B2 G2 G2 | "C"A2 cB AG | "D"F2 D2 D2 | "G"G2 BA GF |
 "C"E2 C2 E2 | D2 "G"G2 "D"F2 | "G"G4 :| Bc | "G"d2 Bc de | "G"d2 "D"c2 "G"B2 |
 "D"c2 AB cd | "D"c2 "G"B2 "D"A2 | "Em"B2 GA Bc | B2 A2 G2 | "D"F2 d2 "A"^c2 | "D"d4 D2 |
-"G"G2 B2 d>c | B2 G2 G2 | "C"AB cB AG | "D"F2 D2 D2 |
-"G"GA BA GF | "C"E2 C2 E2 | D2 "G"G2 "D"F2 | "G"G4 |]
+"G"G2 B2 d>c | B2 G2 G2 | "C"A2 cB AG | "D"F2 D2 D2 |
+"G"G2 BA GF | "C"E2 C2 E2 | D2 "G"G2 "D"F2 | "G"G4 |]

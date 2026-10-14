@@ -8,6 +8,7 @@ Z:MIDI transcribed with alawon-abc
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 N:The score ends the last part the second time with g3 a b3 d' | c'2 a2 a4.
+N:The second time through, the score has e2 e2 e2 f2 where this has e2 e2 e3 f (after e4 c2 d2); this follows the MIDI file.
 M:2/2
 L:1/8
 Q:1/2=100

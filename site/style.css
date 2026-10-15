@@ -530,6 +530,14 @@ details.all-tunes[open] > .tune-list { margin: .25rem 0 1.25rem; }
 .tempo-line { display: flex; align-items: center; gap: .5rem; }
 .tempo-line input[type="range"] { flex: 1 1 auto; min-width: 0; }
 .tempo-step { flex: none; min-width: 2.4rem; font-weight: 600; }
+/* How it plays (the chords heard, swing): kept for this tune, so beside its key and tempo;
+   named above as they are, its menu and tick on one line */
+.how-it-plays > .label { display: block; font-size: .9rem; margin-bottom: .3rem; }
+.plays-line { display: flex; align-items: center; gap: 1rem; }
+.how-it-plays .switch { display: flex; margin: 0; font-size: inherit; min-height: 2.2rem; }
+/* With it, the row is fuller: the tempo gives way first, so Size and Full screen stay on it */
+.controls:has(.how-it-plays) { column-gap: 2rem; }
+.controls:has(.how-it-plays) .control.tempo { flex-basis: 12rem; }
 /* How the music is shown (size, full screen): at the end of the row, apart from the rest */
 .view-tools { display: flex; align-items: end; gap: .75rem; margin-left: auto; }
 /* Under the tune's name: its type in its colourway, and its time signature */
@@ -707,6 +715,8 @@ details[open] > summary::before { transform: rotate(90deg); }
   .controls { gap: 1rem 1.5rem; }
   .control.tempo { flex-basis: 12rem; }
   .view-tools { margin-left: 0; }
+  /* How it plays starts the second line, before Size and Full screen: beside the tempo it runs off the end */
+  .controls:has(.how-it-plays) .control.tempo { flex-basis: 20rem; }
 }
 @media (min-width: 960px) and (max-width: 1100px) {
   .tune-layout .tune-side > .tune-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }  /* room for all three in a row */
@@ -902,33 +912,11 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .score > .sound-on[hidden] { display: none; }
 .sound-on strong { font-weight: 600; color: var(--score-ink); }
 .sound-on .link-button { margin: 0; font-size: inherit; color: var(--paper-link); }  /* on the cream paper in both themes, as below */
-.playback { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .5rem; min-width: 0; }
-.playback .label { color: inherit; }  /* a label like Repeat's and Tablature's */
-/* Three buttons in a row, one pressed: which parts playback plays */
-.segmented { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-.segmented label { position: relative; cursor: pointer; }
-.segmented label + label { border-left: 1px solid var(--border); }
-.segmented input { position: absolute; opacity: 0; pointer-events: none; }
-.segmented span { display: block; padding: .3rem .7rem; background: var(--card-bg); white-space: nowrap; transition: background-color .15s; }
-/* The full and short words inside a choice: just text, not segments of their own */
-.segmented span span { display: inline; padding: 0; background: none; min-height: 0; flex: none; }
-.segmented .short { display: none; }
 @media (max-width: 420px) {
-  .playback .segmented .full { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .playback .segmented .short { display: inline; }
-  .playback .segmented label { flex: 1 1 auto; }  /* each as wide as its words */
-  .segmented span { padding: .3rem .45rem; font-size: .85rem; }
-  /* Longer labels (in Welsh, say) wrap inside equal columns instead of widening the page */
-  .segmented { max-width: 100%; }
-  .segmented label { flex: 1 1 0; min-width: 0; display: flex; }
-  .segmented span { flex: 1; white-space: normal; text-align: center; display: flex; align-items: center; justify-content: center; }
   .chart { font-size: .9rem; }
   .chart .bar { padding: .15rem .25rem; }
   .chart .beats { column-gap: .25rem; }
 }
-@media (hover: hover) { .segmented label:hover span { color: var(--accent-ink); } }
-.segmented input:checked + span { background: var(--chosen); color: var(--on-chosen); }  /* chosen: as a chosen pill; red is for Play */
-.segmented input:focus-visible + span { outline: 2px solid var(--accent-ink); outline-offset: -2px; }
 .switch { display: flex; align-items: center; gap: .45rem; cursor: pointer; }
 /* Drawn, so unticked is plainly empty in both themes (a dark theme's own box is a grey
    square that reads as on or disabled): an empty box with a muted edge; ticked, red with a
@@ -942,6 +930,7 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 @media (forced-colors: active) { .switch input { appearance: auto; } .switch input::before { display: none; } }
 .switch .what { color: var(--muted); }
 .card.chords .caption { margin: 0; }
+.card.chords .chords-on-score { margin-top: .9rem; }
 .hide-chords .abcjs-chord { display: none; }
 .card.place .wales-map { max-width: 10rem; margin: .25rem auto .5rem; }
 .card.place .caption { margin: 0; }
@@ -1105,9 +1094,10 @@ body.practice .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height
   .controls .view-tools { display: contents; }
   /* Opened: a fixed grid, so nothing moves when a caption appears ("Your key last time") */
   .controls.open { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end;
-    grid-template-areas: "summary summary" "key size" "tempo full"; }
+    grid-template-areas: "summary summary" "key size" "tempo full" "plays plays"; }
+  .controls.open > .how-it-plays { grid-area: plays; }
   .controls.open .controls-summary { grid-area: summary; }
-  .controls.open > .control:not(.tempo) { grid-area: key; }
+  .controls.open > .control:not(.tempo, .how-it-plays) { grid-area: key; }
   .controls.open > .control.tempo { grid-area: tempo; max-width: none; }
   .controls.open .music-size { grid-area: size; margin-left: 0; }
   .controls.open .practice-toggle { grid-area: full; }
@@ -1142,7 +1132,7 @@ body.practice .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height
 @media print {
   body { display: block; padding: 0; background: none; color: #000; }
   .fingering-how > summary { display: none; }
-  .nav, .site-footer, .controls, .tab-invite, .practice-tools, .tune-actions, .versions, .versions-fold, .tune-side, .audio, .card.chords, main > h1 { display: none !important; }
+  .nav, .site-footer, .controls, .tab-invite, .practice-tools, .tune-actions, .versions, .versions-fold, .tune-side, .audio, .card.chords, .chords-on-score, main > h1 { display: none !important; }
   main { padding: 0; max-width: none; animation: none; }
   .tune-layout { display: block; }
   .score { border: none; box-shadow: none; background: none; padding: 0; }
@@ -1392,9 +1382,9 @@ body.practice .tune-sub { display: none; }
   .say-key summary { display: inline-block; padding-block: .8rem; margin-block: -.8rem; }  /* a 44px target that doesn't make its line taller */
   /* At a session it's one thumb, often in the dark: 44px for every control (WCAG 2.5.5).
      Not the player's own buttons (abcjs's large size), the piano's keys or links in a line of text. */
-  button:not(.key, .link-button, .abcjs-btn), select, .segmented span, .versions a, .fold > summary, details.abc > summary,
+  button:not(.key, .link-button, .abcjs-btn), select, .versions a, .fold > summary, details.abc > summary,
   input:not([type="range"], [type="checkbox"], [type="radio"]) { min-height: 44px; }
-  .segmented span, .fold > summary, details.abc > summary { display: flex; align-items: center; }
+  .fold > summary, details.abc > summary { display: flex; align-items: center; }
   details.abc { padding-block: 0; }  /* its heading is the 44px target */
   details.abc pre { margin-bottom: .75rem; }
   .versions a { align-content: center; }
@@ -1422,7 +1412,6 @@ body.practice .tune-sub { display: none; }
   .notes-invite .link-button { display: inline-flex; align-items: center; min-height: 44px; }
   .home-more :is(a, .link-button) { display: inline-block; padding-block: .7rem; margin-block: -.7rem; }
   .tab-choice button { min-height: 44px; }
-  .segmented label { min-width: 44px; }
   .music-size button { min-width: 44px; }
   .set-item-controls button { min-width: 44px; }
   .switch input { width: 1.75rem; height: 1.75rem; }
@@ -1462,11 +1451,10 @@ main h1:focus { outline: none; }
    highlight instead, and leave out the colour swatches (empty boxes otherwise). */
 @media (forced-colors: active) {
   :is(.lang-switch, .theme-switch) button[aria-checked="true"], .pills button:is([aria-pressed="true"], [aria-checked="true"]),
-  .segmented input:checked + span, :is(.versions, .versions-list) a[aria-current="page"] {
+  :is(.versions, .versions-list) a[aria-current="page"] {
     forced-color-adjust: none; background: Highlight; color: HighlightText; border-color: Highlight;
   }
   :is(.versions, .versions-list) a[aria-current="page"] small { color: HighlightText; }
-  .segmented input:focus-visible + span { outline: 2px solid CanvasText; }
   .swatch { display: none; }
   /* Drawn icons are masked backgrounds, which forced colours would blank out */
   summary::before, .chevron, .icon, .menu-button::after, .theme-switch button::before, .versions-fold > summary::after, .pills button:is([aria-pressed="true"], [aria-checked="true"])::before { forced-color-adjust: none; background: CanvasText; }

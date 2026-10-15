@@ -189,9 +189,9 @@ def test_chord_chart(page):
     assert page.locator(".chart .repeat-start").count() == 2 and page.locator(".chart .repeat-end").count() == 2
     # Chords on the score only when asked for; playback options set abcjs's switches.
     assert page.locator(".score .hide-chords").count() == 1
-    page.check("text=Chords on the sheet music")
+    page.check("text=Show chords on sheet music")
     page.wait_for_function("!document.querySelector('.score .hide-chords')")
-    page.click("text=Chords only")
+    page.select_option("#chord-playback", "chords")
     volumes = page.evaluate("""() => { const [melody, chords] = state.synth.visualObj.setUpAudio({ voicesOff: true }).tracks
       .map((t) => [...new Set(t.filter((e) => e.cmd === 'note').map((e) => e.volume))]); return { melody, chords }; }""")
     assert volumes["melody"] == [0] and max(volumes["chords"]) > 0
@@ -295,9 +295,9 @@ SPY_SWING = """() => {
 
 
 def test_swing(page):
-    # Hornpipes are played swung, with a switch; a polka in 2/4 can be; a jig in 6/8 can't.
+    # Hornpipes are played swung, with a switch by the key and tempo; a polka in 2/4 can be
+    # (said in a phone's one line once it is); a jig in 6/8 can't.
     page.goto_site()
-    page.open_tools()
     page.evaluate(SPY_SWING)
     page.evaluate("navigate('alaw/pibddawns-abertawe/')")
     page.wait_for_selector(".score .abcjs-staff")
@@ -307,6 +307,9 @@ def test_swing(page):
     page.evaluate("navigate('alaw/abaty-waltham/')")  # a polka in 2/4: can swing, but doesn't to start with
     page.wait_for_selector(".score .abcjs-staff")
     assert not page.locator(".swing input").is_checked()
+    assert "swung" not in page.inner_text(".controls-summary .now")
+    page.check(".swing input")
+    assert "swung" in page.inner_text(".controls-summary .now")
     page.evaluate("navigate('alaw/cawl-cennin/')")  # a jig in 6/8
     page.wait_for_selector(".score .abcjs-staff")
     assert page.locator(".swing").count() == 0
@@ -593,7 +596,7 @@ def test_save_abc_and_midi(page):
     assert "\nK:A" in abc and "T:Glandyfi" in abc
     sizes = {}
     for play in ["Tune only", "Tune and chords"]:
-        page.click(f".playback label:has-text('{play}')")
+        page.select_option("#chord-playback", label=play)
         page.click("text=Print / save")
         with page.expect_download() as info:
             page.click("[id^=print-menu] >> text='Save as MIDI'")
@@ -2075,8 +2078,8 @@ def test_practice_tools_remembered(page):
     page.check(".practice-row label:has-text('Count-in')")
     page.check(".practice-row label:has-text('Click · on every beat')")
     page.select_option("#tab-select", "mandolin")
-    page.check(".practice-row label:has-text('Chords on the sheet music')")
-    page.check(".practice-row input[value=both]", force=True)
+    page.check(".card.chords label:has-text('Show chords on sheet music')")
+    page.select_option("#chord-playback", "both")
     page.select_option("#loop-select", "-1")
     page.fill("#tempo", "90")
     page.dispatch_event("#tempo", "change")
@@ -2094,22 +2097,25 @@ def test_practice_tools_remembered(page):
     page.wait_for_selector(".score .abcjs-staff")
     assert page.is_checked(".practice-row label:has-text('Count-in') input")
     assert page.is_checked(".practice-row label:has-text('Click · on every beat') input")
-    assert page.is_checked(".practice-row label:has-text('Chords on the sheet music') input")
-    assert page.is_checked(".practice-row input[value=both]")
+    assert page.is_checked(".card.chords label:has-text('Show chords on sheet music') input")
+    assert page.input_value("#chord-playback") == "both"
     assert page.input_value("#loop-select") == "-2" and page.input_value("#tempo") == "90"  # repeat not kept
     assert page.inner_text(".usual-key >> nth=-1") == "Your tempo last time · original 112"
-    # Said by Play, where it's pressed, with the way to the tools that change it.
-    assert page.inner_text(".sound-on") == "Plays with chords, count-in, click · Change"
+    # Said by Play, where it's pressed, with the way to the tools that change it; the chords
+    # heard are up with the key and tempo, and in a phone's one line.
+    assert page.inner_text(".sound-on") == "Plays with count-in, click · Change"
+    assert "with chords" in page.inner_text(".controls-summary .now")
     page.click(".sound-on .link-button")
     assert page.evaluate("document.activeElement.matches('.practice-tools > summary')")
-    # Turn all off: the chords heard and on the music, the clicks and the tablature; the tempo stays.
+    # Turn all off: the clicks and the tablature; how the tune plays (its tempo, the chords
+    # heard) stays, and the chords on the music, under the example chords, not in the tools.
     page.click(".kept-note .link-button")
     assert page.locator(".sound-on").is_hidden()
     assert not page.is_checked(".practice-row label:has-text('Click · on every beat') input")
     assert page.evaluate("[state.practice.countIn, state.practice.click]") == [False, False]
     assert page.input_value("#loop-select") == "-2" and page.input_value("#tab-select") == "none"
-    assert page.evaluate("state.practice.chordsOnScore") is False
-    assert page.evaluate("JSON.parse(localStorage.getItem('tunes'))") == {"glandyfi-version-2": {"bpm": 90}}  # the version it opens on
+    assert page.evaluate("state.practice.chordsOnScore") is True
+    assert page.evaluate("JSON.parse(localStorage.getItem('tunes'))") == {"glandyfi-version-2": {"bpm": 90, "play": "both"}}  # the version it opens on
     assert page.locator(".kept-note .link-button").is_hidden()
     page.evaluate("localStorage.setItem('practice', JSON.stringify({ tab: 'treble-recorder', open: 'yes' }))")
     page.goto_site("?tune=glandyfi")
@@ -3388,20 +3394,26 @@ def test_summary_says_the_key_changes(browser, site):
     context.close()
 
 
-def test_chord_settings_with_the_practice_tools(page):
-    # The paper is the player and the music; a tune's chord settings are among the practice
-    # tools: what's heard under How it plays, shown on the sheet music or not under See.
+def test_chord_settings_where_they_are_kept(page):
+    # The paper is the player and the music. The chords heard are kept for the tune, so they
+    # are with its key and tempo, under How it plays; shown on the sheet music or not, kept
+    # for every tune, is a tick under the example chords.
     page.goto_site("?tune=glandyfi")
     page.wait_for_selector(".score .abcjs-inline-audio")
-    assert page.locator(".score .playback").count() == 0
+    assert page.locator(".score select, .score .chords-on-score").count() == 0
+    assert page.locator(".controls .how-it-plays #chord-playback option").count() == 3
     groups = page.locator(".practice-tools .practice-group")
-    assert [g.get_attribute("aria-label") for g in groups.all()] == ["How it plays", "Practise", "See"]
-    assert groups.nth(0).locator("input[name=chord-playback]").count() == 3
-    assert groups.nth(2).locator("text=Chords on the sheet music").count() == 1
-    assert page.locator(".card.chords input[type=checkbox]").count() == 0
-    page.goto_site("?tune=cawl-cennin")  # no chords, no chord settings
+    assert [g.get_attribute("aria-label") for g in groups.all()] == ["Practise", "See"]
+    assert groups.locator("text=Show chords on sheet music").count() == 0
+    assert page.locator(".card.chords .chords-on-score input[type=checkbox]").count() == 1
+    # Ticked down there, the page goes up to the music it changes (a short window, so it's out of sight).
+    page.set_viewport_size({"width": 1300, "height": 500})
+    page.click(".card.chords .chords-on-score")
+    page.wait_for_function("Math.abs(document.querySelector('.score').getBoundingClientRect().top - 12) < 4")
+    page.set_viewport_size({"width": 1300, "height": 1000})
+    page.goto_site("?tune=cawl-cennin")  # a jig without chords: nothing for How it plays
     page.wait_for_selector(".score .abcjs-inline-audio")
-    assert page.locator("input[name=chord-playback], .chords-on-score").count() == 0
+    assert page.locator(".how-it-plays, #chord-playback, .chords-on-score").count() == 0
     assert [g.get_attribute("aria-label") for g in page.locator(".practice-group").all()] == ["Practise", "See"]
 
 
@@ -3606,7 +3618,7 @@ def test_touch_targets(browser, site):
         page.wait_for_function("typeof state !== 'undefined' && state.data && document.querySelector('main').children.length")
         page.wait_for_timeout(300)
         found = page.evaluate("""() => [...document.querySelectorAll('button, a, select, input, summary')]
-          .filter((e) => e.offsetParent && !e.closest('.visually-hidden, .segmented'))
+          .filter((e) => e.offsetParent && !e.closest('.visually-hidden'))
           .filter((e) => !(e.tagName === 'A' && e.closest('p, li, dd, td, .caption')))
           .filter((e) => { const r = e.getBoundingClientRect(); return r.width < 24 || r.height < 24; })
           .map((e) => e.outerHTML.slice(0, 90))""")

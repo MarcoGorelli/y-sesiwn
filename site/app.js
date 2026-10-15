@@ -2974,24 +2974,21 @@ function chordCard(tune) {
       " ", el("span", { class: "held-key" }, tr("A chord in grey carries on from the bar before.", "Mae cord mewn llwyd yn parhau o'r bar blaenorol."))));
 }
 
-// A tune's chords, among the practice tools (the paper is the player and the music): what
-// the player plays (under Hear), and whether they're shown on the sheet music (under See).
+// A tune's chords (the paper is the player and the music): what the player plays (under How
+// it plays, by the key and tempo), and whether they're shown on the sheet music (under the
+// example chords).
 function chordSettings(tune, settings, redraw) {
   if (tune.chords == null) return null;
-  // Each choice in full, and in short for a phone ("Tune · Both · Chords"), so the three
-  // stay on one line there; screen readers hear the full words either way.
-  const playback = el("div", { class: "segmented", role: "radiogroup", "aria-label": tr("Hear", "Clywed") },
-    [["tune", tr("Tune only", "Yr alaw yn unig"), tr("Tune", "Alaw")],
-      ["both", tr("Tune and chords", "Alaw a chordiau"), tr("Both", "Y ddau")],
-      ["chords", tr("Chords only", "Cordiau yn unig"), tr("Chords", "Cordiau")]].map(([value, label, short]) =>
-      el("label", {},
-        el("input", { type: "radio", name: "chord-playback", value, checked: settings.chords.play === value,
-          onchange: () => { settings.chords.play = value; saveTune(tune, "play", value); redraw(); } }),
-        el("span", {}, el("span", { class: "full" }, label), el("span", { class: "short", "aria-hidden": "true" }, short)))));
+  // What's heard: a menu, as the key's beside it, so it fits the Key and Tempo row.
+  const playback = el("select", { id: "chord-playback", "aria-label": tr("Chords heard", "Y cordiau a glywch"),
+    onchange: (e) => { settings.chords.play = e.target.value; saveTune(tune, "play", e.target.value); redraw(); } },
+    [["tune", tr("Tune only", "Yr alaw yn unig")], ["both", tr("Tune and chords", "Alaw a chordiau")],
+      ["chords", tr("Chords only", "Cordiau yn unig")]].map(([value, label]) =>
+      el("option", { value, selected: settings.chords.play === value }, label)));
   const onScore = el("label", { class: "switch chords-on-score" },
     el("input", { type: "checkbox", checked: state.practice.chordsOnScore,
       onchange: (e) => { state.practice.chordsOnScore = e.target.checked; savePractice(); redraw(); } }),
-    tr("Chords on the sheet music", "Cordiau ar y sgôr"));
+    tr("Show chords on sheet music", "Dangos cordiau ar y sgôr"));
   return { playback, onScore };
 }
 
@@ -3260,6 +3257,11 @@ function renderTune(main, group, tune) {
   // In short, so it fits a phone's width: "D", "E min", "A dor"; and a key change part-way
   // through (the first K: after the tune's own) as "G → D".
   const nextKey = keyChange(tune);
+  const hornpipe = tune.type === "Pibddawns";  // swung anyway
+  const playsWith = () => [
+    tune.chords != null && settings.chords.play === "both" ? tr("with chords", "gyda chordiau") : null,
+    tune.chords != null && settings.chords.play === "chords" ? tr("chords only", "cordiau yn unig") : null,
+    settings.swing && canSwing(tune) && !hornpipe ? tr("swung", "gyda swing") : null];
   // A key moved from the tune's own (chosen here, or a shared link's) says where from:
   // "A (from G), 80 bpm", so it's never taken for a mistake against a printed copy.
   const showSummary = () => summary.replaceChildren(
@@ -3267,6 +3269,8 @@ function renderTune(main, group, tune) {
       + (nextKey ? ` → ${shortKey(nextKey.pitch + settings.transpose, nextKey.modeName)}` : "")
       + (settings.transpose ? tr(` (from ${shortKey(tune.key.pitch, tune.key.modeName)})`, ` (o ${shortKey(tune.key.pitch, tune.key.modeName)})`) : ""),
       `${settings.bpm} bpm`,
+      // …how it plays, when it's more than the tune as written: "with chords", "swung"
+      ...playsWith(),
       // …and the size, so it's plain that Size is in there too (it looked like key and tempo only)
       tr(`size ${Math.round(SIZES[state.musicSize] * 100)}%`, `maint ${Math.round(SIZES[state.musicSize] * 100)}%`)]
       .filter(Boolean).join(", ")),  // "E dor, 112 bpm, size 100%"
@@ -3408,9 +3412,9 @@ function renderTune(main, group, tune) {
           whatVersions(), group.versions.map(versionLink)))]
     : [];
 
-  // The practice tools, in three groups by what they change: How it plays (the chords with
-  // the tune, or alone, and swing: kept for this tune), Practise (count-in, click) and See
-  // (tablature, chords on the music); those two kept for every tune.
+  // The practice tools, kept for every tune, in two groups by what they change: Practise
+  // (count-in, click) and See (tablature). How it plays, kept for this tune, is up with its
+  // key and tempo; chords on the music are under the example chords.
   const loopSelect = el("select", { id: "loop-select", onchange: (e) => { settings.loop = +e.target.value; speedSaid = ""; undoSpeedUp = null; redraw(); } });
   const toggle = (label, checked, onchange, cls) => el("label", { class: `switch${cls ? ` ${cls}` : ""}` },
     el("input", { type: "checkbox", checked, onchange: (e) => { onchange(e.target.checked); redraw(); } }), label);
@@ -3605,6 +3609,13 @@ function renderTune(main, group, tune) {
   // Choosing one draws the music again above the menu, longer or shorter. Chosen with a
   // finger or the mouse, the page goes up to where the music starts (and how to read it),
   // to see what changed; with the keyboard, going through them, the menu stays where it was.
+  // Up to where the music starts, under the pinned top bar (a phone's), to see what changed.
+  const upTo = (target) => {
+    const pinned = [...document.querySelectorAll(".topbar")].filter((x) => getComputedStyle(x).position === "sticky")
+      .reduce((bottom, x) => Math.max(bottom, x.getBoundingClientRect().bottom), 0);
+    window.scrollTo({ top: window.scrollY + target.getBoundingClientRect().top - pinned - 12,
+      behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  };
   let tabByKeys = false;
   const tabSelect = el("select", { id: "tab-select",
     onkeydown: () => { tabByKeys = true; }, onpointerdown: () => { tabByKeys = false; },
@@ -3613,10 +3624,7 @@ function renderTune(main, group, tune) {
       chooseTab(e.target.value);
       tabInvite.hidden = true;
       if (tabByKeys || state.practice.tab === "none") { window.scrollBy(0, e.target.getBoundingClientRect().top - was); return; }
-      const pinned = [...document.querySelectorAll(".topbar")].filter((x) => getComputedStyle(x).position === "sticky")
-        .reduce((bottom, x) => Math.max(bottom, x.getBoundingClientRect().bottom), 0);
-      window.scrollTo({ top: window.scrollY + fingeringKey.getBoundingClientRect().top - pinned - 12,
-        behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      upTo(fingeringKey);
     } },
     // In the pills' order, by how they're read: the music, the holes, or a string's frets.
     // Eight choices read as three.
@@ -3646,32 +3654,43 @@ function renderTune(main, group, tune) {
     redraw();
   };
   showKey();
-  const chordTools = chordSettings(tune, settings, () => redraw());
+  const chordTools = chordSettings(tune, settings, () => { showSummary(); redraw(); });
   const countInToggle = toggle(el("span", {}, tr("Count-in", "Cyfrif i mewn"), el("span", { class: "what" }, tr(" · a bar of clicks first", " · bar o gliciau yn gyntaf"))),
     state.practice.countIn, (on) => { state.practice.countIn = on; savePractice(); });
   const clickToggle = toggle(el("span", {}, tr("Click", "Clic"), el("span", { class: "what" }, tr(" · on every beat", " · ar bob curiad"))),
     state.practice.click, (on) => { state.practice.click = on; savePractice(); });
-  const swingToggle = canSwing(tune) ? toggle(el("span", {}, "Swing", el("span", { class: "what" }, tr(" · long-short quavers", " · cwafers hir-byr"))),
-    settings.swing, (on) => { settings.swing = on; saveTune(tune, "swing", on); }, "swing") : null;
+  const swingToggle = canSwing(tune) ? toggle("Swing",
+    settings.swing, (on) => { settings.swing = on; saveTune(tune, "swing", on); showSummary(); }, "swing") : null;
+  // How it plays, kept for this tune as its key and tempo are, so it's beside them: the
+  // chords heard with the tune, and swing; for a tune with either.
+  if (chordTools || swingToggle) {
+    controls.querySelector(".view-tools").before(el("div", { class: "control how-it-plays", role: "group", "aria-labelledby": "how-it-plays" },
+      el("span", { class: "label", id: "how-it-plays" }, tr("How it plays", "Sut mae'n chwarae")),
+      el("div", { class: "plays-line" }, chordTools?.playback, swingToggle)));
+  }
+  // Chords on the sheet music, kept for every tune: under the chart, with the chords themselves.
+  // The music they go on is further up: ticked with a finger or the mouse, the page goes up to
+  // it, as for the holes; from the keyboard it stays where it was.
+  if (chordTools) {
+    let byKeys = false;
+    const tick = chordTools.onScore.querySelector("input");
+    tick.addEventListener("keydown", () => { byKeys = true; });
+    chordTools.onScore.addEventListener("pointerdown", () => { byKeys = false; });
+    tick.addEventListener("change", () => { if (!byKeys) upTo(paper.closest(".score")); });
+    chords.append(chordTools.onScore);
+  }
   const toolGroup = (label, ...lines) => el("div", { class: "practice-group", role: "group", "aria-label": label },
     el("span", { class: "label", "aria-hidden": "true" }, label), ...lines);
   // Everything in the tools is kept, on this device: some for every tune, the rest for this one.
-  const forThisTune = [chordTools ? tr("the chords you hear", "y cordiau a glywch") : null, swingToggle ? "swing" : null].filter(Boolean);
   const keptNote = el("p", { class: "caption kept-note" },
     el("span", {}, tr("Kept on this device, for every tune: ", "Wedi'u cadw ar y ddyfais hon, ar gyfer pob alaw: "),
-      [tr("count-in", "cyfrif i mewn"), tr("click", "clic"), chordTools ? tr("chords on the music", "cordiau ar y sgôr") : null,
-        tr("holes or tabs", "tyllau neu dablatur")].filter(Boolean).join(", "), "."),
-    forThisTune.length ? el("span", {}, tr("For this tune only: ", "Ar gyfer yr alaw hon yn unig: "), forThisTune.join(tr(" and ", " a ")), ".") : null,
+      [tr("count-in", "cyfrif i mewn"), tr("click", "clic"), tr("holes or tabs", "tyllau neu dablatur")].join(", "), "."),
     el("button", { type: "button", class: "link-button", onclick: () => turnAllOff() }, tr("Turn all off", "Diffodd y cyfan")));
   const practiceRow = el("div", { class: "practice-row" },
-    chordTools || swingToggle ? toolGroup(tr("How it plays", "Sut mae'n chwarae"),
-      chordTools ? el("div", { class: "playback" }, chordTools.playback) : null,
-      swingToggle ? el("div", { class: "practice-line" }, swingToggle) : null) : null,
     toolGroup(tr("Practise", "Ymarfer"), el("div", { class: "practice-line" }, countInToggle, clickToggle)),
     toolGroup(tr("See", "Gweld"),
       el("div", { class: "practice-line" },
-        el("div", { class: "control" }, el("label", { for: "tab-select" }, tr("Holes or tabs", "Tyllau neu dablatur")), tabSelect), tabWhat),
-      chordTools ? el("div", { class: "practice-line" }, chordTools.onScore) : null),
+        el("div", { class: "control" }, el("label", { for: "tab-select" }, tr("Holes or tabs", "Tyllau neu dablatur")), tabSelect), tabWhat)),
     keptNote);
   // Repeat and Speed up, which a learner comes back to each time (and aren't kept): above
   // the music, in reach of Play, never folded away; the paper stays the player and the music.
@@ -3682,26 +3701,17 @@ function renderTune(main, group, tune) {
   // What playing will sound like besides the tune, by the player, where Play is pressed: so
   // a click or chords kept for this tune are never a surprise at a session.
   const soundOn = el("p", { class: "caption sound-on", hidden: true });
-  const hornpipe = tune.type === "Pibddawns";  // swung anyway
   const sounds = () => [
-    tune.chords != null && settings.chords.play === "both" ? tr("chords", "cordiau") : null,
-    tune.chords != null && settings.chords.play === "chords" ? tr("chords only", "cordiau yn unig") : null,
-    settings.swing && canSwing(tune) && !hornpipe ? "swing" : null,
     state.practice.countIn ? tr("count-in", "cyfrif i mewn") : null,
     state.practice.click ? tr("click", "clic") : null,
   ].filter(Boolean);
-  // Turning it all off, from the end of the tools; the key and tempo stay, as chosen.
+  // Turning it all off, from the end of the tools; how the tune plays (key, tempo, chords
+  // heard, swing) stays, as chosen for it.
   const turnAllOff = () => {
-    const as = tuneDefaults(tune);
-    settings.swing = as.swing;  // Repeat and Speed up, in sight above the music, stay
-    settings.chords.play = "tune";
-    for (const name of ["swing", "play"]) saveTune(tune, name, as[name]);
-    Object.assign(state.practice, { countIn: false, click: false, chordsOnScore: false, tab: "none" });
+    Object.assign(state.practice, { countIn: false, click: false, tab: "none" });
     savePractice();
     // The tools as they now are.
-    practiceRow.querySelectorAll("input[name=chord-playback]").forEach((r) => { r.checked = r.value === settings.chords.play; });
-    if (chordTools) chordTools.onScore.querySelector("input").checked = state.practice.chordsOnScore;
-    for (const [t, on] of [[countInToggle, state.practice.countIn], [clickToggle, state.practice.click], [swingToggle, settings.swing]]) {
+    for (const [t, on] of [[countInToggle, state.practice.countIn], [clickToggle, state.practice.click]]) {
       if (t) t.querySelector("input").checked = on;
     }
     fillLoops();
@@ -3722,13 +3732,12 @@ function renderTune(main, group, tune) {
     }
   };
   // Folded at first, so the music is the page; then as left. The summary says what's inside,
-  // or, once any is on (kept for this tune, or come with a link), which.
+  // or, once any is on (kept for every tune, or come with a link), which.
   const practiceCaption = el("span", { class: "caption" });
   showPracticeOn = () => {
     const tab = state.practice.tab === "none" ? null : (FINGERED[state.practice.tab] ?? TABS[state.practice.tab]).label();
     const on = [
       ...sounds(),
-      tune.chords != null && state.practice.chordsOnScore ? tr("chords on the music", "cordiau ar y sgôr") : null,
       tab && tab[0].toLowerCase() + tab.slice(1),
     ].filter(Boolean);
     keptNote.querySelector(".link-button").hidden = !on.length;
@@ -3736,9 +3745,7 @@ function renderTune(main, group, tune) {
     // What's inside is for the eye (a screen reader hears the tools themselves); what's on is for everyone.
     practiceCaption.toggleAttribute("aria-hidden", !on.length);
     practiceCaption.textContent = on.length ? `${tr(" · on: ", " · ymlaen: ")}${on.join(", ")}`
-      : tune.chords == null
-        ? tr(" · count-in, click, holes or tabs", " · cyfrif i mewn, clic, tyllau neu dablatur")
-        : tr(" · chords, count-in, click, holes or tabs", " · cordiau, cyfrif i mewn, clic, tyllau neu dablatur");
+      : tr(" · count-in, click, holes or tabs", " · cyfrif i mewn, clic, tyllau neu dablatur");
   };
   const practiceTools = el("details", { class: "practice-tools fold", open: practiceToolsOpen(),
     ontoggle: (e) => {

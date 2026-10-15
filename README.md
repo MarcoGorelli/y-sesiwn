@@ -201,8 +201,8 @@ scheduled runs after 60 days without a commit).
   seeks back to its first note whenever playback reaches a note outside it,
   and abcjs's own loop brings it round after the last part; the speed-up uses
   `setWarp`, which keeps playing from the same place). Then the **practice
-  tools** (under the music, folded at first): **How it plays** (the chords
-  heard and **Swing**), then **Count-in** and **Click**, then **Holes or tabs**. **Count-in** (one bar of woodblock
+  tools** (under the music, folded at first): **Count-in** and **Click**,
+  then **Holes or tabs**. **Count-in** (one bar of woodblock
   clicks before the tune) and **Click** (a woodblock on every felt beat, high
   on the first of the bar) use abcjs's `drum`, `drumIntro` and `drumOff`
   options, with General MIDI percussion 76/77 from abcjs's own sound set in
@@ -223,10 +223,10 @@ scheduled runs after 60 days without a commit).
   bar that doesn't start with a chord of its own begins with the one still
   sounding, faintly. It's
   built from abcjs's parsed tune (`chordChart()` in `app.js`), so it follows
-  the key drop-down. Both chord settings are in the practice tools (the paper
-  is just the player and the music): under **See**, a switch shows
+  the key drop-down. Neither chord setting is on the paper (it's just the
+  player and the music): under the example chords, a switch shows
   the chords on the sheet music (always drawn, hidden by CSS unless on), and
-  under **How it plays**, one chooses
+  by the key and tempo, under **How it plays**, a menu chooses
   *Tune only*, *Tune and chords* or *Chords only* (abcjs's `chordsOff` /
   `voicesOff`). Jigs
   (6/8, and 9/8, 12/8) are accompanied like a guitar or bodhrán, on every
@@ -268,7 +268,7 @@ scheduled runs after 60 days without a commit).
   when another tab or app starts playing; when it's paused, or iOS interrupts
   the audio context, the tune pauses. It also gives the lock screen a pause button.
   The round Play buttons (a search result's opening, each tune on a set's page) do the same.
-- **Swing:** hornpipes play swung by default (a switch in the practice tools), using
+- **Swing:** hornpipes play swung by default (a switch under **How it plays**, by the key and tempo), using
   abcjs's `swing` option; only for tunes in 2/4, 3/4 or 4/4.
 - **Save:** the Print menu (*Print / save*) also saves the tune as ABC or MIDI,
   in the key chosen (and for MIDI the tempo and Play choice).

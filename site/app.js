@@ -1223,6 +1223,7 @@ document.addEventListener("keydown", (event) => {
   if (!step || event.ctrlKey || event.metaKey || event.altKey) return;
   if (event.target.closest("input, textarea, select, [contenteditable]")) return;
   const control = document.getElementById(step[0]);
+  if (control && step[0] === "key-select") { event.preventDefault(); state.keyStep?.(step[1]); return; }
   if (!control) return;
   event.preventDefault();
   const values = control.tagName === "SELECT" ? [...control.options].map((o) => Number(o.value)) : [Number(control.min), Number(control.max)];
@@ -3245,64 +3246,84 @@ function renderTune(main, group, tune) {
   state.redrawScore = () => { if (paper.isConnected) redraw(); };  // for printing (see "beforeprint")
 
   const controls = el("div", { class: "controls", id: "tune-controls" });
-  // On a phone, and in full screen, the key, tempo and size fold into one line ("G, 100 bpm,
-  // size 100% · Change"), so the music comes first; it opens to change them. Otherwise on a
-  // wider screen they're all shown.
+  // On a phone, and in full screen, the tempo and size fold into one line ("100 bpm, size
+  // 100% · Change") under the keys, so the music comes first; it opens to change them.
+  // Otherwise on a wider screen they're all shown.
   const summary = el("button", { type: "button", class: "controls-summary", "aria-controls": "tune-controls",
     "aria-expanded": String(state.controlsOpen), onclick: () => {
       state.controlsOpen = !state.controlsOpen;
       controls.classList.toggle("open", state.controlsOpen);
       summary.setAttribute("aria-expanded", String(state.controlsOpen));
     } });
-  // In short, so it fits a phone's width: "D", "E min", "A dor"; and a key change part-way
-  // through (the first K: after the tune's own) as "G → D".
+  // A key change part-way through (the first K: after the tune's own): "Key: G major → D major".
   const nextKey = keyChange(tune);
   const hornpipe = tune.type === "Pibddawns";  // swung anyway
   const playsWith = () => [
     tune.chords != null && settings.chords.play === "both" ? tr("with chords", "gyda chordiau") : null,
     tune.chords != null && settings.chords.play === "chords" ? tr("chords only", "cordiau yn unig") : null,
     settings.swing && canSwing(tune) && !hornpipe ? tr("swung", "gyda swing") : null];
-  // A key moved from the tune's own (chosen here, or a shared link's) says where from:
-  // "A (from G), 80 bpm", so it's never taken for a mistake against a printed copy.
+  // The key is over it, always shown, so the line starts with the tempo.
   const showSummary = () => summary.replaceChildren(
-    el("span", { class: "now" }, [tune.key && shortKey(tune.key.pitch + settings.transpose, tune.key.modeName)
-      + (nextKey ? ` → ${shortKey(nextKey.pitch + settings.transpose, nextKey.modeName)}` : "")
-      + (settings.transpose ? tr(` (from ${shortKey(tune.key.pitch, tune.key.modeName)})`, ` (o ${shortKey(tune.key.pitch, tune.key.modeName)})`) : ""),
-      `${settings.bpm} bpm`,
+    el("span", { class: "now" }, [`${settings.bpm} bpm`,
       // …how it plays, when it's more than the tune as written: "with chords", "swung"
       ...playsWith(),
       // …and the size, so it's plain that Size is in there too (it looked like key and tempo only)
       tr(`size ${Math.round(SIZES[state.musicSize] * 100)}%`, `maint ${Math.round(SIZES[state.musicSize] * 100)}%`)]
-      .filter(Boolean).join(", ")),  // "E dor, 112 bpm, size 100%"
+      .filter(Boolean).join(", ")),  // "112 bpm, swung, size 100%"
     el("span", { class: "change" }, tr("Change", "Newid")));
   controls.classList.toggle("open", state.controlsOpen);
   controls.append(summary);
+  // The key, the thing most often changed here: every key at once, one tap each, over all
+  // the other settings and never folded away (on a phone, and full screen, too). In the tune's
+  // own mode, nearest first: five semitones down to six up, the written key among them.
+  let chooseKey = null;
   if (tune.key) {
     const { pitch, root } = tune.key;
     const mode = modeName(tune.key.modeName);
-    // Under the menu, in a line kept for it, so nothing moves when it appears: a page that
-    // opens in the key kept from last time says so (not a key just chosen, or a link's); and
-    // a key moved from the written one says which that was, as the phone's line does.
+    // Beside "Key: A major", so nothing moves when it appears: a page that opens in the key
+    // kept from last time says so (not a key just chosen, or a link's); and a key moved from
+    // the written one says which that was.
+    const keyLabel = el("span", { class: "key-now", id: "key-label" });
     const usual = el("span", { class: "caption usual-key" });
     const keptKey = shift === null && kept.key && kept.key === settings.transpose ? kept.key : null;
     const showUsual = () => {
       const written = `${root} ${mode}`;
+      keyLabel.textContent = `${tr("Key", "Cywair")}: ${keyName(pitch + settings.transpose, tune.key.modeName)}`
+        + (nextKey ? ` → ${keyName(nextKey.pitch + settings.transpose, nextKey.modeName)}` : "");
       usual.textContent = keptKey !== null && settings.transpose === keptKey
         ? tr(`Your key last time · original ${written}`, `Eich cywair y tro diwethaf · gwreiddiol ${written}`)
         : settings.transpose ? tr(`Original: ${written}`, `Gwreiddiol: ${written}`) : "";
     };
-    const select = el("select", { id: "key-select", onchange: (e) => {
-      settings.transpose = +e.target.value;
+    const strip = el("div", { class: "key-strip", id: "key-select", role: "radiogroup", "aria-labelledby": "key-label" });
+    // Going through them with the arrow keys, the music is drawn for the one stopped on,
+    // not each one passed (a long tune's drawing is slow).
+    let arrowingKey = null;
+    chooseKey = (to, byArrows) => {
+      to = Math.max(-5, Math.min(6, to));
+      clearTimeout(arrowingKey);
+      checkRadios(strip, (radio) => +radio.dataset.shift === to);
+      if (to === settings.transpose) return;
+      settings.transpose = to;
+      strip.dataset.value = to;
       saveTune(tune, "key", settings.transpose);
-      showUsual(); showInAddress(); showSummary(); redraw();
-    } });
+      showUsual(); showInAddress();
+      if (byArrows) arrowingKey = setTimeout(redraw, 400);
+      else redraw();
+    };
     for (let shift = -5; shift <= 6; shift++) {  // semitones, nearest direction
-      const label = shift === 0 ? `${root} ${mode} ${tr("(original)", "(gwreiddiol)")}` : keyName(pitch + shift, tune.key.modeName);
-      select.append(el("option", { value: shift, selected: shift === settings.transpose }, label));
+      const name = keyName(pitch + shift, tune.key.modeName);
+      strip.append(el("button", { type: "button", role: "radio", "data-shift": shift, class: shift === 0 ? "written" : null,
+        "aria-label": shift === 0 ? `${name} ${tr("(original)", "(gwreiddiol)")}` : name,
+        onclick: () => chooseKey(shift) }, keyNote(pitch + shift, tune.key.modeName)));
     }
+    strip.dataset.value = settings.transpose;
+    checkRadios(strip, (radio) => +radio.dataset.shift === settings.transpose);
+    radioKeys(strip, (radio, byArrows) => chooseKey(+radio.dataset.shift, byArrows));
     showUsual();
-    controls.append(el("div", { class: "control" }, el("label", { for: "key-select" }, tr("Key", "Cywair")), select, usual));
+    controls.prepend(el("div", { class: "control key-control" },
+      el("div", { class: "key-line" }, keyLabel, usual), strip));
   }
+  state.keyStep = (step) => chooseKey?.(settings.transpose + step);  // , and . (see the keyboard shortcuts)
   const tempoLabel = el("label", { for: "tempo" });
   // "from" is the tempo itself, typed: the exact tempo, which the slider makes fiddly on a
   // phone. Put back in range, it says so, as "to" does.
@@ -3531,11 +3552,8 @@ function renderTune(main, group, tune) {
     if (!missing) return fitNote.replaceChildren();
     const shift = [0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6].find((s) => s !== now && !notOn(pitches, f, drawnAt(s)));
     const other = f.recorder ? null : Object.keys(FINGERED).find((value) => !FINGERED[value].recorder && !notOn(pitches, FINGERED[value], drawnAt(now)));
-    const toKey = shift !== undefined && el("button", { type: "button", class: "link-button", onclick: () => {
-      const keys = document.getElementById("key-select");
-      keys.value = shift;
-      keys.dispatchEvent(new Event("change"));
-    } }, keyName(tune.key.pitch + shift, tune.key.modeName));
+    const toKey = shift !== undefined && el("button", { type: "button", class: "link-button", onclick: () => chooseKey(shift) },
+      keyName(tune.key.pitch + shift, tune.key.modeName));
     const toOther = other && el("button", { type: "button", class: "link-button", onclick: () => chooseTab(other) },
       FINGERED[other].label().replace(/^./, (c) => c.toLowerCase()));
     // Short, as it's between the name and Play: the instrument is named on the line above,

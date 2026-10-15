@@ -261,7 +261,7 @@ scheduled runs after 60 days without a commit).
   marked 8va in red). ? marks a note the instrument doesn't have. They're
   written as lines of lyrics (`w:`), so abcjs lines them up, with a gap between
   the hands (and after the recorder's thumb); worked out from the notes as drawn
-  (`withFingerings()` in `app.js`), so they follow the key menu. How to read them
+  (`withFingerings()` in `app.js`), so they follow the key chosen. How to read them
   is just above the music.
 - **Other sound stops the tune:** while a tune plays, a silent looping `<audio>`
   plays too (`audioFocus` in `app.js`), since phones only pause media elements
@@ -454,7 +454,7 @@ and `info.json`, and `.venv/`.
 - `ABCJS.strTranspose` needs the **whole array** returned by
   `renderAbc("*", abc)`, not its first element. Given one tune, it silently
   changes nothing.
-- The key menu picks a key, not an octave: `semitones()` in `app.js` turns it into
+- The keys pick a key, not an octave: `semitones()` in `app.js` turns it into
   a shift up or down, whichever keeps the notes nearest the treble stave (B3 to
   A5), so a low tune moved to a "lower" key goes up instead. Use it wherever a
   tune is transposed.

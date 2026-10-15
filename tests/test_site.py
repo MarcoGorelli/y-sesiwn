@@ -148,7 +148,7 @@ def test_transposing(page):
     page.wait_for_selector(".chart .bar")
     first = lambda: page.locator(".chart .beats span").first.inner_text()
     assert first() == "G"
-    page.select_option("#key-select", "2")  # up a tone: G major -> A major
+    page.click("#key-select [data-shift='2']")  # up a tone: G major -> A major
     page.wait_for_function("document.querySelector('.chart .beats span').textContent === 'A'")
     assert "F♯m" in page.locator(".chart").inner_text()  # Em -> F#m
 
@@ -166,9 +166,9 @@ def test_transposing_keeps_a_sensible_range(page):
     page.goto_site("alaw/tros-y-garreg/")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.evaluate("semitones(state.bySlug.get('tros-y-garreg'), -5)") == 7
-    page.select_option("#key-select", "-5")
-    page.wait_for_function("document.querySelector('#key-select').value === '-5'")
-    assert page.evaluate("document.querySelector('#key-select').selectedOptions[0].textContent") == "A minor"
+    page.click("#key-select [data-shift='-5']")
+    page.wait_for_function("document.querySelector('#key-select').dataset.value === '-5'")
+    assert page.get_attribute("#key-select [aria-checked=true]", "aria-label") == "A minor"
     abc = page.evaluate("""() => { const t = state.bySlug.get('tros-y-garreg');
       return ABCJS.strTranspose(t.abc, ABCJS.renderAbc('*', t.abc), semitones(t, -5)); }""")
     low, high = drawn_range(page, abc)
@@ -254,7 +254,7 @@ def test_print(page, mode, score, chords_on_score, chart):
     page.goto_site("?tune=glandyfi")
     page.wait_for_selector(".chart .bar")
     page.evaluate("window.print = () => {}")  # the real print dialog can't be driven
-    page.select_option("#key-select", "2")  # prints in the key chosen on the page
+    page.click("#key-select [data-shift='2']")  # prints in the key chosen on the page
     page.click("text=Print / save")
     page.click(f"[id^=print-menu] >> text='{mode}'")
     page.emulate_media(media="print")
@@ -460,7 +460,7 @@ def test_whistle_out_of_range(page):
     assert page.inner_text(".fit-note") == "10 notes aren't on this whistle (?). In C minor, every note is there."
     page.click(".fit-note .link-button")
     page.wait_for_function("document.querySelector('.fit-note').hidden")
-    assert page.input_value("#key-select") == "-2"
+    assert page.get_attribute("#key-select", "data-value") == "-2"
     assert page.evaluate("[...document.querySelectorAll('.score .abcjs-lyric .sign')].filter((t) => t.textContent === '?').length") == 0
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score g.holes", state="attached")
@@ -503,7 +503,7 @@ def test_whistle_on_a_tune(page):
     lyrics = lambda: "".join(page.locator(".score .abcjs-lyric").all_text_contents())
     in_d = lyrics()
     assert "?" not in in_d and "+" in in_d  # all on a D whistle, some in the second octave
-    page.select_option("#key-select", "-5")  # down to A: its lowest notes are below the whistle
+    page.click("#key-select [data-shift='-5']")  # down to A: its lowest notes are below the whistle
     page.wait_for_function("(before) => [...document.querySelectorAll('.score .abcjs-lyric')].map((e) => e.textContent).join('') !== before", arg=in_d)
     assert "?" in lyrics()
     in_a = lyrics()
@@ -515,7 +515,7 @@ def test_whistle_on_a_tune(page):
     gaps = page.evaluate("""() => [...document.querySelector('.score g.holes').querySelectorAll('circle')]
       .map((c) => +c.getAttribute('cy')).map((y, i, all) => i ? Math.round(y - all[i - 1]) : 0).slice(1)""")
     assert len(gaps) == 7 and gaps[0] == gaps[3] > gaps[1] == gaps[2] == gaps[4]
-    page.select_option("#key-select", "0")  # back to D: all where they're written
+    page.click("#key-select [data-shift='0']")  # back to D: all where they're written
     page.wait_for_function("() => !document.querySelector('.score .octave-up')")
     assert "recorder" in page.locator(".fingering-key").text_content()
     page.select_option("#tab-select", "none")
@@ -587,7 +587,7 @@ def test_save_abc_and_midi(page):
     page.goto_site("alaw/glandyfi/")
     page.open_tools()
     page.wait_for_selector(".score .abcjs-staff")
-    page.select_option("#key-select", "2")  # G major -> A major
+    page.click("#key-select [data-shift='2']")  # G major -> A major
     page.click("text=Print / save")
     with page.expect_download() as info:
         page.click("[id^=print-menu] >> text='Save as ABC'")
@@ -1477,17 +1477,17 @@ def test_share_in_a_key(page, site):
     # "learn it at 70" can be sent too.
     page.goto_site("alaw/glandyfi/?key=A")  # Glandyfi is in G
     page.wait_for_selector(".score .abcjs-staff")
-    assert page.input_value("#key-select") == "2"
-    page.select_option("#key-select", "-2")
+    assert page.get_attribute("#key-select", "data-value") == "2"
+    page.click("#key-select [data-shift='-2']")
     assert page.url == site + "alaw/glandyfi/?key=F"
     page.fill("#tempo", "150")
     page.dispatch_event("#tempo", "change")
     assert page.url == site + "alaw/glandyfi/?key=F&tempo=150"
-    page.select_option("#key-select", "0")
+    page.click("#key-select [data-shift='0']")
     assert page.url == site + "alaw/glandyfi/?tempo=150"
     page.goto_site("alaw/glandyfi/?v=1&key=Bb&tempo=70&bpm=120")  # ?tempo= opens it at that tempo; anything else is ignored
     page.wait_for_selector(".score .abcjs-staff")
-    assert page.input_value("#key-select") == "3" and page.input_value("#tempo") == "70"
+    assert page.get_attribute("#key-select", "data-value") == "3" and page.input_value("#tempo") == "70"
     assert page.url == site + "alaw/glandyfi/?v=1&key=Bb&tempo=70"
     page.goto_site("?tune=glandyfi&key=D")  # an older link: moves to the tune's address, key kept
     page.wait_for_selector(".score .abcjs-staff")
@@ -1644,12 +1644,30 @@ def test_keys_spelt_as_players_write_them(page):
     # in the key the menu says (abcjs's Gb major comes out as F# major, notes and chords).
     page.goto_site("alaw/glandyfi/?key=F%23")
     page.wait_for_selector(".score .abcjs-staff")
-    assert page.locator("#key-select option").all_inner_texts() == [
+    assert page.locator("#key-select [role=radio]").evaluate_all("rs => rs.map((r) => r.getAttribute('aria-label'))") == [
         "D major", "Eb major", "E major", "F major", "F# major", "G major (original)",
         "Ab major", "A major", "Bb major", "B major", "C major", "Db major"]
-    assert page.inner_text(".controls-summary .now").startswith("F# (from G)")
+    assert page.locator("#key-select [role=radio]").all_inner_texts() == [
+        "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B", "C", "Db"]
+    assert page.inner_text(".key-now") == "Key: F# major" and page.inner_text(".usual-key") == "Original: G major"
     assert page.evaluate("""() => respell('X:1\\nK:Gb\\n"Gb"GABc =Bd|"Cb"e_f|]')""") == 'X:1\nK:F#\n"F#"FGAB ^^Ac|"B"d=e|]'
     assert page.evaluate("""() => respell('X:1\\nK:Ab\\n"Ab"ABc|]')""") == 'X:1\nK:Ab\n"Ab"ABc|]'  # 4 flats: as it is
+
+
+def test_keys_by_keyboard(page, site):
+    # The keys are radio buttons: one tab stop, the chosen one, and the arrows go through
+    # them; the music is drawn for the one stopped on, and the address follows.
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.focus("#key-select [aria-checked=true]")
+    assert page.locator("#key-select [tabindex='0']").count() == 1
+    page.keyboard.press("ArrowRight")
+    page.keyboard.press("ArrowRight")
+    assert page.evaluate("document.activeElement.getAttribute('aria-label')") == "A major"
+    page.wait_for_function("location.search === '?key=A'")
+    page.wait_for_function("document.querySelector('.print-key')?.textContent.endsWith('A major')")
+    page.keyboard.press("End")
+    assert page.get_attribute("#key-select", "data-value") == "6"
 
 
 def test_usual_key_remembered(page, site):
@@ -1658,23 +1676,23 @@ def test_usual_key_remembered(page, site):
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-staff")
     # A key moved says the written one (as a phone's line does), wherever it was chosen.
-    page.select_option("#key-select", "2")
+    page.click("#key-select [data-shift='2']")
     assert page.inner_text(".usual-key") == "Original: G major"
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-staff")
-    assert page.input_value("#key-select") == "2" and page.url == site + "alaw/glandyfi/?key=A"
+    assert page.get_attribute("#key-select", "data-value") == "2" and page.url == site + "alaw/glandyfi/?key=A"
     assert page.inner_text(".usual-key") == "Your key last time · original G major"
-    page.select_option("#key-select", "3")
+    page.click("#key-select [data-shift='3']")
     assert page.inner_text(".usual-key") == "Original: G major"
-    page.select_option("#key-select", "2")  # back to it: it is last time's key
+    page.click("#key-select [data-shift='2']")  # back to it: it is last time's key
     assert page.inner_text(".usual-key") == "Your key last time · original G major"
     page.goto_site("alaw/glandyfi/?key=C")
     page.wait_for_selector(".score .abcjs-staff")
-    assert page.input_value("#key-select") == "5" and page.inner_text(".usual-key") == "Original: G major"
+    assert page.get_attribute("#key-select", "data-value") == "5" and page.inner_text(".usual-key") == "Original: G major"
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-staff")
-    assert page.input_value("#key-select") == "2"
-    page.select_option("#key-select", "0")  # back to the written key: nothing kept, nothing said
+    assert page.get_attribute("#key-select", "data-value") == "2"
+    page.click("#key-select [data-shift='0']")  # back to the written key: nothing kept, nothing said
     assert page.evaluate("localStorage.getItem('tunes')") == "{}" and page.inner_text(".usual-key") == ""
 
 
@@ -2521,7 +2539,7 @@ def test_set_from_tune_pages(page):
         page.goto_site(path)
         page.wait_for_selector(".score .abcjs-staff")
         if key:
-            page.select_option("#key-select", key)
+            page.click(f"#key-select [data-shift='{key}']")
         page.click(".add-to-set")
         if path == "alaw/llancesau-trefaldwyn/":  # the first makes the set, named first ("My set", ready to type over)
             assert page.input_value(".set-namer input") == "My set"
@@ -2897,7 +2915,7 @@ def test_score_and_player_names(page):
     page.wait_for_selector(".score .abcjs-staff")
     label = lambda: page.get_attribute(".score svg[role=img]", "aria-label")
     assert label() == 'Sheet Music for "Glandyfi": G major, 6/8 time'
-    page.select_option("#key-select", "2")
+    page.click("#key-select [data-shift='2']")
     page.wait_for_function("document.querySelector('.score svg[role=img]').getAttribute('aria-label').includes('A major')")
     # Repeating is the Repeat menu's (the player's own repeat button is left out).
     assert page.locator(".abcjs-midi-loop").count() == 0
@@ -3067,7 +3085,7 @@ def test_space_bar_plays(page):
     page.evaluate("document.activeElement.blur()")
     page.keyboard.press(" ")
     assert page.evaluate("presses") == 1
-    page.focus("#key-select")
+    page.focus("#key-select [aria-checked=true]")
     page.keyboard.press(" ")
     assert page.evaluate("presses") == 1
 
@@ -3197,22 +3215,29 @@ def test_phone_controls_fold_into_one_line(browser, site):
     page.goto(site + "?tune=glandyfi")
     page.wait_for_selector(".score .abcjs-inline-audio")
     summary = page.locator(".controls-summary")
-    assert summary.inner_text().startswith("G, 112 bpm")  # the key in short
-    assert not page.locator("#key-select").is_visible() and not page.locator(".music-size").is_visible()
+    # The keys are never folded away: two rows of six, each a full 44px, over the one line
+    keys = page.locator("#key-select [role=radio]")
+    assert page.locator("#key-select").is_visible() and keys.count() == 12
+    assert {round(keys.nth(i).bounding_box()["y"]) for i in range(12)} == {
+        round(keys.nth(0).bounding_box()["y"]), round(keys.nth(6).bounding_box()["y"])}
+    assert all(keys.nth(i).bounding_box()["height"] >= 44 for i in range(12))
+    assert summary.inner_text().startswith("112 bpm")
+    assert not page.locator("#tempo").is_visible() and not page.locator(".music-size").is_visible()
     assert abs(summary.bounding_box()["y"] - page.locator(".practice-toggle").bounding_box()["y"]) < 5  # one line
-    # Under the one line, and the folded practice tools; the type and "Say it" line under the
-    # name may wrap to two, depending on the font (it does with Arial's widths, and on CI).
-    assert page.locator(".score").bounding_box()["y"] < 520
+    # Under the keys, the one line, and the folded practice tools; the type and "Say it" line
+    # under the name may wrap to two, depending on the font (it does with Arial's widths, and on CI).
+    assert page.locator(".score").bounding_box()["y"] < 640
+    # One tap changes the key: it says the written one beside it
+    page.click("#key-select [data-shift='2']")
+    assert page.inner_text(".key-now") == "Key: A major" and page.inner_text(".usual-key") == "Original: G major"
+    page.click("#key-select [data-shift='0']")  # back to the written key
+    assert page.inner_text(".key-now") == "Key: G major" and page.inner_text(".usual-key") == ""
     summary.click()
     assert summary.get_attribute("aria-expanded") == "true"
-    assert page.locator(".music-size .label").is_visible()  # "Size", so − and + aren't taken for the key
-    page.select_option("#key-select", "2")
-    assert summary.inner_text().startswith("A (from G), 112 bpm")  # moved, so it says from what
-    page.select_option("#key-select", "0")  # back to the written key, marked "(original)" in the menu
-    assert summary.inner_text().startswith("G, 112 bpm")
-    # The size is said in it too, so it's plain that Size is in there, not only the key and tempo
+    assert page.locator(".music-size .label").is_visible()  # "Size", so − and + aren't taken for something else
+    # The size is said in it too, so it's plain that Size is in there, not only the tempo
     page.click(".music-size button[aria-label='Bigger music']")
-    assert page.inner_text(".controls-summary .now") == "G, 112 bpm, size 125%"
+    assert page.inner_text(".controls-summary .now") == "112 bpm, size 125%"
     context.close()
 
 
@@ -3290,7 +3315,7 @@ def test_phone_downloads_no_piano_notes_until_play(browser, site):
     page.goto(site + "alaw/glandyfi/")
     page.wait_for_function("state.offlineReady && state.sounds", timeout=30000)
     page.click(".controls-summary")  # changing the key or tempo doesn't play either
-    page.select_option("#key-select", "2")
+    page.click("#key-select [data-shift='2']")
     page.wait_for_timeout(1000)
     assert fetched == []
     page.click(".score .abcjs-midi-start")
@@ -3344,21 +3369,24 @@ def test_print_list_and_chart_words(page):
 
 
 def test_full_screen_folds_the_key_and_tempo_on_a_laptop(page):
-    # Full screen is a music stand on a wider screen too: the key, tempo and size fold into
-    # the phone's one line, which opens to change them.
+    # Full screen is a music stand on a wider screen too: the tempo and size fold into the
+    # phone's one line, which opens to change them; the keys stay, beside it.
     page.set_viewport_size({"width": 1366, "height": 900})
     page.goto_site("alaw/aberdaugleddau/")
     page.wait_for_selector(".score .abcjs-inline-audio")
     assert not page.is_visible(".controls-summary")
     page.click(".practice-toggle")
     assert page.is_visible(".controls-summary")
-    assert page.inner_text(".controls-summary .now") == "C, 112 bpm, size 100%"  # Blodau'r Grug's, in C
-    assert not page.is_visible("#tune-controls .control select")
+    assert page.inner_text(".controls-summary .now") == "112 bpm, size 100%"
+    assert page.inner_text(".key-now") == "Key: C major"  # Blodau'r Grug's, in C
+    assert not page.is_visible("#tempo") and page.is_visible("#key-select")
+    keys, line = page.locator("#key-select").bounding_box(), page.locator(".controls-summary").bounding_box()
+    assert line["x"] > keys["x"] + keys["width"] and line["y"] + line["height"] - (keys["y"] + keys["height"]) < 5  # one row
     page.click(".controls-summary")
-    assert page.is_visible("#tune-controls .control select")
+    assert page.is_visible("#tempo")
     page.click(".practice-toggle")
     assert not page.is_visible(".controls-summary")
-    assert page.is_visible("#tune-controls .control select")
+    assert page.is_visible("#tempo") and page.is_visible("#key-select")
 
 
 def test_full_screen_leaves_practice_tools_as_they_were(browser, site):
@@ -3381,16 +3409,18 @@ def test_full_screen_leaves_practice_tools_as_they_were(browser, site):
     context.close()
 
 
-def test_summary_says_the_key_changes(browser, site):
-    # Walts Dinefwr goes from G to D and back: the phone's one line says the key changes.
+def test_key_says_it_changes(browser, site):
+    # Walts Dinefwr goes from G to D and back: the key, over the phone's one line, says so.
     context = browser.new_context(service_workers="block", **PHONE)
     page = context.new_page()
     page.goto(site + "alaw/walts-dinefwr/")
     page.wait_for_selector(".score .abcjs-inline-audio")
-    assert page.inner_text(".controls-summary .now") == "G → D, 100 bpm, size 100%"
+    assert page.inner_text(".key-now") == "Key: G major → D major"
+    page.click("#key-select [data-shift='2']")
+    assert page.inner_text(".key-now") == "Key: A major → E major"
     page.goto(site + "alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-inline-audio")
-    assert "→" not in page.inner_text(".controls-summary .now")
+    assert "→" not in page.inner_text(".key-now")
     context.close()
 
 
@@ -3485,7 +3515,7 @@ def test_moved_tune(page, site):
     # Glandyfi is in G: 2 up, as kept for its old name; and the version it moved to (its
     # folder "glandyfi" is version 1, Alawon Cymru's, not the one the tune opens on).
     assert page.url.endswith("/alaw/glandyfi/?v=1&key=A")
-    assert page.inner_text("h1") == "Glandyfi" and page.input_value("#key-select") == "2"
+    assert page.inner_text("h1") == "Glandyfi" and page.get_attribute("#key-select", "data-value") == "2"
     page.goto_site("?set=zz~h")
     page.wait_for_selector(".set-list li", state="attached")
     assert page.text_content(".set-list li a") == "Glandyfi" and page.input_value(".set-list select.set-key-select") == "2"
@@ -3766,12 +3796,12 @@ def test_music_stand_on_a_phone(browser, site):
     page.wait_for_selector(".score .abcjs-inline-audio")
     page.click(".controls-summary")
     page.click(".practice-toggle")
-    assert not page.locator("#key-select").is_visible()
-    assert page.locator(".score").bounding_box()["y"] < 200
+    assert not page.locator("#tempo").is_visible() and page.locator("#key-select").is_visible()
+    assert page.locator(".score").bounding_box()["y"] < 330
     page.click(".score .abcjs-midi-start")
     page.wait_for_function("document.querySelector('.abcjs-note_playing')")
-    page.evaluate("state.synth.seek(.6)")  # on to the lines further down
-    page.wait_for_function("scrollY > 100", timeout=30000)  # followed the music down
+    page.evaluate("state.synth.seek(.85)")  # on to the lines further down
+    page.wait_for_function("document.querySelector('.score').getBoundingClientRect().top < 0", timeout=30000)  # followed the music down, past its top
     assert page.locator(".score > .audio").bounding_box()["y"] < 5  # pinned
     context.close()
 
@@ -3826,7 +3856,7 @@ def test_tempo_and_key_shortcuts(page):
     page.wait_for_selector(".score .abcjs-staff")
     page.keyboard.press("]")
     page.keyboard.press(".")
-    assert page.input_value("#tempo") == "117" and page.input_value("#key-select") == "1"
+    assert page.input_value("#tempo") == "117" and page.get_attribute("#key-select", "data-value") == "1"
     assert page.url.endswith("alaw/glandyfi/?key=Ab&tempo=117")
 
 
@@ -3981,7 +4011,7 @@ def test_a_moved_key_says_so_when_shared(browser, site):
     page.click(".tune-actions button:text-is('QR code')")
     assert "this tune, in A major, at 80 bpm." in page.inner_text(".qr-dialog .caption >> nth=0")
     page.keyboard.press("Escape")
-    page.select_option("#key-select", "0")
+    page.click("#key-select [data-shift='0']")
     assert "key=" not in page.url
     context.close()
 

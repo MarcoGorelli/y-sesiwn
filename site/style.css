@@ -520,6 +520,19 @@ details.all-tunes[open] > .tune-list { margin: .25rem 0 1.25rem; }
 .control label { display: block; font-size: .9rem; margin-bottom: .3rem; }
 .control select { padding: .4rem .6rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); }
 .control.tempo { flex: 1 1 18rem; max-width: 32rem; }
+/* The key: the first thing changed on a tune's page, so a row of its own over the rest, every
+   key one tap away (the written one marked with a dot under it), and never folded away */
+.key-control { flex: 1 0 100%; }
+.key-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 .75rem; margin-bottom: .35rem; }
+.key-now { font-size: .9rem; font-weight: 600; }
+.key-control .usual-key { position: static; white-space: normal; }
+.key-strip { display: flex; flex-wrap: wrap; gap: .35rem; }
+.key-strip button { position: relative; min-width: 2.75rem; min-height: 2.5rem; padding: .3rem .55rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.key-strip button.written::after { content: ""; position: absolute; left: 50%; bottom: .2rem; width: 4px; height: 4px; margin-left: -2px;
+  border-radius: 50%; background: currentColor; opacity: .55; }
+.key-strip button[aria-checked="true"], .key-strip button[aria-checked="true"]:hover:not(:disabled) {
+  border-color: var(--chosen); background: var(--chosen); color: var(--on-chosen); }
+@media (hover: hover) { .key-strip button:hover:not(:disabled) { border-color: var(--slate); color: inherit; } }
 /* "Your key last time", under the key menu: on its own line, kept for it below the
    row, so the row never moves when it appears */
 .control { position: relative; }
@@ -1000,8 +1013,9 @@ body.practice .controls { margin: .5rem 0 1rem; }
   /* A music stand on a laptop or tablet too: the key, tempo and size folded into the phone's
      one line, beside Exit full screen; opened, the line and then the row of them as usual */
   body.practice .controls-summary { display: flex; gap: 1.25rem; }
-  body.practice .controls:not(.open) { align-items: center; }
-  body.practice .controls:not(.open) > .control, body.practice .controls:not(.open) .music-size { display: none; }
+  body.practice .controls:not(.open) > .control:not(.key-control), body.practice .controls:not(.open) .music-size { display: none; }
+  body.practice .controls:not(.open) { flex-wrap: wrap; align-items: end; }
+  body.practice .controls:not(.open) > .key-control { flex: 0 1 auto; }  /* the keys, then the one line, then Exit */
   body.practice .controls.open .controls-summary { flex: 1 0 100%; justify-content: start; width: fit-content; max-width: max-content; }
 }
 body.practice .tune-layout { grid-template-columns: 1fr; }
@@ -1090,14 +1104,19 @@ body.practice .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height
   .controls:not(.open):has(.usual-key) { margin-bottom: 1rem; }  /* folded, the captions can't show: no room kept */
   .controls-summary { display: flex; flex: 1 1 0; }
   .controls:not(.open) .practice-toggle { flex: none; padding-inline: .75rem; }
-  .controls:not(.open) > .control, .controls:not(.open) .music-size { display: none; }
+  .controls:not(.open) > .control:not(.key-control), .controls:not(.open) .music-size { display: none; }
   .controls .view-tools { display: contents; }
+  /* The key over the one line, two rows of six keys, each a thumb's width */
+  .controls:not(.open) { flex-wrap: wrap; }
+  .controls:not(.open) > .key-control { flex: 1 0 100%; }
+  .key-strip { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .key-strip button { min-width: 0; min-height: 2.75rem; padding-inline: .2rem; }
   /* Opened: a fixed grid, so nothing moves when a caption appears ("Your key last time") */
   .controls.open { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end;
-    grid-template-areas: "summary summary" "key size" "tempo full" "plays plays"; }
+    grid-template-areas: "key key" "summary summary" "tempo size" "plays full"; }
   .controls.open > .how-it-plays { grid-area: plays; }
   .controls.open .controls-summary { grid-area: summary; }
-  .controls.open > .control:not(.tempo, .how-it-plays) { grid-area: key; }
+  .controls.open > .key-control { grid-area: key; }
   .controls.open > .control.tempo { grid-area: tempo; max-width: none; }
   .controls.open .music-size { grid-area: size; margin-left: 0; }
   .controls.open .practice-toggle { grid-area: full; }

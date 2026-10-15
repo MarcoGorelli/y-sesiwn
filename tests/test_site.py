@@ -969,8 +969,12 @@ def test_map_pinch_on_a_phone(browser, site):
     page.wait_for_timeout(600)  # after a swipe, Chrome takes the next tap as "stop scrolling", not a click
     page.locator(".map-zoom button").nth(2).tap()  # all of Wales again
     assert page.evaluate(MAP_SCALE) == 1
-    for _ in range(2):  # a double-tap zooms in
-        touch("touchStart", [{"x": cx, "y": cy, "id": 0}])
+    # A double-tap zooms in. Away from the dots (the centre is on Aberystwyth's): a tap on one
+    # opens its popup too, which on a busy machine could push the second tap out of time.
+    ty = box["y"] + box["height"] * 0.6
+    assert page.evaluate(f"!document.elementFromPoint({cx}, {ty}).closest('.target')")
+    for _ in range(2):
+        touch("touchStart", [{"x": cx, "y": ty, "id": 0}])
         touch("touchEnd", [])
         page.wait_for_timeout(80)
     assert page.evaluate(MAP_SCALE) == 2

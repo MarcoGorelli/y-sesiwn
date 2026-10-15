@@ -302,8 +302,13 @@ def test_swing(page):
     page.evaluate("navigate('alaw/pibddawns-abertawe/')")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.locator(".swing input").is_checked()
+    # Swung, the score says so in its tempo mark (printed too), and to a screen reader.
+    assert page.text_content(".score .abcjs-tempo").startswith("Swing")
+    assert "swung" in page.get_attribute(".score svg[role=img]", "aria-label")
     page.uncheck(".swing input")
     assert page.evaluate("window.swings") == [62, None]
+    assert "Swing" not in page.text_content(".score .abcjs-tempo")
+    assert "swung" not in page.get_attribute(".score svg[role=img]", "aria-label")
     page.evaluate("navigate('alaw/abaty-waltham/')")  # a polka in 2/4: can swing, but doesn't to start with
     page.wait_for_selector(".score .abcjs-staff")
     assert not page.locator(".swing input").is_checked()

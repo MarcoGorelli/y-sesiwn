@@ -269,7 +269,8 @@ scheduled runs after 60 days without a commit).
   the audio context, the tune pauses. It also gives the lock screen a pause button.
   The round Play buttons (a search result's opening, each tune on a set's page) do the same.
 - **Swing:** hornpipes play swung by default (a switch under **How it plays**, by the key and tempo), using
-  abcjs's `swing` option; only for tunes in 2/4, 3/4 or 4/4.
+  abcjs's `swing` option; only for tunes in 2/4 or 4/4. Swung, the score's tempo mark
+  says so ("Swing ♩ = 112"), printed too.
 - **Save:** the Print menu (*Print / save*) also saves the tune as ABC or MIDI,
   in the key chosen (and for MIDI the tempo and Play choice).
 - **Recently opened:** the home page lists the last five tunes opened on this

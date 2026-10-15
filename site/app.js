@@ -1995,8 +1995,10 @@ function endingsOnTheirBars(abc, layout) {
   return layout.wrap ? abc.replace(/(\|)[ \t]*\n[ \t]*(\[\d)/g, "$1$2\n") : abc;
 }
 
-function setTempo(abc, beat, bpm) {
-  const tempo = `Q:${beat}=${bpm}`;
+// The tempo mark, with the word before it when there is one ("Swing ♩ = 112", as swing
+// is marked on printed music).
+function setTempo(abc, beat, bpm, text = "") {
+  const tempo = `Q:${text ? `"${text}" ` : ""}${beat}=${bpm}`;
   return /^Q:/m.test(abc) ? abc.replace(/^Q:.*$/m, tempo) : abc.replace(/^K:/m, `${tempo}\nK:`);
 }
 
@@ -2654,7 +2656,9 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   const { transpose, bpm } = settings;
   // S:, Z:, B: (book), N: (notes), A: (area), H: (history) and R: (the tune type) are in
   // the Details box, so leave them off the score; the version tabs say which version it is.
-  let abc = setTempo(stripFields(tune.abc, "SZBNAHR"), tune.beat, bpm).replace(/^(T:.*) \(version \d+\)$/m, "$1");
+  // Played swung, the score says so in its tempo mark, printed too.
+  const swung = settings.swing && canSwing(tune);
+  let abc = setTempo(stripFields(tune.abc, "SZBNAHR"), tune.beat, bpm, swung ? "Swing" : "").replace(/^(T:.*) \(version \d+\)$/m, "$1");
   abc = transposeAbc(tune, abc, transpose);
   const tab = TABS[state.practice.tab];
   const fingered = FINGERED[state.practice.tab];
@@ -2709,6 +2713,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   nameScore(paper, [
     tune.key && keyName(tune.key.pitch + transpose, tune.key.modeName),
     num && tr(`${num}/${den} time`, `amser ${num}/${den}`),
+    swung && tr("swung", "gyda swing"),
   ].filter(Boolean).join(", "), tune.base);
   // Chords are always drawn (so playback has them), and hidden unless asked for.
   paper.classList.toggle("hide-chords", !state.practice.chordsOnScore);

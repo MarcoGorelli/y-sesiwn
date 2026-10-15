@@ -702,9 +702,11 @@ def test_search_by_notes_never_empty(page):
 
 def test_map(page):
     page.goto_site("?page=map")
-    page.wait_for_selector(".wales-map circle")
-    dots = page.locator(".wales-map circle:not(.target)").count()
-    assert dots == page.locator(".place-list li").count() > 50
+    page.wait_for_selector(".wales-map .merged circle")
+    # Every place is a dot of its own, or one of those merged into a dot with their number on it.
+    dots = page.locator(".wales-map circle:not(.target):not(.off)").count() - page.locator(".merged text").count()
+    merged = sum(int(n) for n in page.locator(".merged text").all_text_contents())
+    assert dots + merged == page.locator(".place-list li").count() > 50
     caernarfon = page.evaluate("state.data.places.findIndex((p) => p.name === 'Caernarfon')")
     page.hover(f".target[data-place='{caernarfon}']", force=True)
     assert "Castell Caernarfon" in page.locator(".map-popup").inner_text()
@@ -730,7 +732,7 @@ def test_phone_menu(browser, site):
     assert page.locator(".sidebar-links").is_visible()
     assert page.get_attribute("#menu-button", "aria-expanded") == "true"
     page.click(".sidebar-links a[href='?page=map']")  # opening a page closes the menu
-    page.wait_for_selector(".wales-map circle")
+    page.wait_for_selector(".wales-map .merged circle")
     assert not page.locator(".sidebar-links").is_visible()
     context.close()
 
@@ -877,12 +879,12 @@ def test_practice_row_in_practice_mode_on_a_phone(browser, site):
 
 MAP_SCALE = "Number((document.querySelector('.map-canvas').style.transform.match(/scale\\(([\\d.]+)\\)/) || [0, 1])[1])"
 MAP_SHIFT = "document.querySelector('.map-canvas').style.transform.match(/translate\\(([^)]*)\\)/)[1]"
-DOT_SIZE = "document.querySelector('.wales-map circle:not(.target)').getBoundingClientRect().width"
+DOT_SIZE = "document.querySelector('.wales-map circle:not(.target):not(.off)').getBoundingClientRect().width"
 
 
 def test_map_zoom(page):
     page.goto_site("?page=map")
-    page.wait_for_selector(".wales-map circle")
+    page.wait_for_selector(".wales-map .merged circle")
     zoom_in, zoom_out, reset = (page.locator(".map-zoom button").nth(i) for i in range(3))
     assert zoom_out.is_disabled() and reset.is_disabled()
     size = page.evaluate(DOT_SIZE)
@@ -907,12 +909,19 @@ def test_map_zoom(page):
     page.locator(".target").nth(merthyr).scroll_into_view_if_needed()
     reset.click()
     assert page.evaluate(MAP_SCALE) == 1 and reset.is_disabled()
-    dot = page.locator(f".target[data-place='{merthyr}']").bounding_box()
+    # Merthyr, Cyfarthfa, Cefn Coed and Dowlais are one dot at first, which lists them all...
+    assert page.locator(f".target[data-place='{merthyr}']").is_hidden()
+    dot = page.locator(f".target[data-places~='{merthyr}']").bounding_box()
+    page.mouse.click(dot["x"] + dot["width"] / 2, dot["y"] + dot["height"] / 2)
+    assert all(name in page.inner_text(".map-popup") for name in ["Merthyr Tudful", "Cyfarthfa", "Dowlais"])
+    page.click("h1")
+    # ...and come apart when zoomed in.
     page.mouse.move(dot["x"] + dot["width"] / 2, dot["y"] + dot["height"] / 2)
     page.keyboard.down("Control")
     page.mouse.wheel(0, -300)  # a trackpad pinch
     page.keyboard.up("Control")
     assert page.evaluate(MAP_SCALE) > 1
+    assert page.locator(f".target[data-places~='{merthyr}']").count() == 0
     dot = page.locator(f".target[data-place='{merthyr}']").bounding_box()
     page.mouse.click(dot["x"] + dot["width"] / 2, dot["y"] + dot["height"] / 2)
     assert "Merthyr Tudful" in page.inner_text(".map-popup")
@@ -939,7 +948,7 @@ def test_map_pinch_on_a_phone(browser, site):
                                   service_workers="block")
     page = context.new_page()
     page.goto(site + "?page=map")
-    page.wait_for_selector(".wales-map circle")
+    page.wait_for_selector(".wales-map .merged circle")
     cdp = context.new_cdp_session(page)
     box = page.locator(".map-view").bounding_box()
     cx, cy = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
@@ -1014,7 +1023,7 @@ def test_map_on_a_phone(browser, site):
                                   service_workers="block")
     page = context.new_page()
     page.goto(site + "?page=map")
-    page.wait_for_selector(".wales-map .target")
+    page.wait_for_selector(".wales-map .merged .target")
     caernarfon = page.evaluate("state.data.places.findIndex((p) => p.name === 'Caernarfon')")
     page.tap(f".target[data-place='{caernarfon}']", force=True)
     page.wait_for_timeout(600)  # longer than the delay before a mouse-out closes it
@@ -1281,7 +1290,7 @@ def test_works_offline(browser, site):
     page.wait_for_selector(".score .abcjs-staff")
     assert page.inner_text("main h1") == "Llancesau Trefaldwyn"
     page.click(".sidebar-links a[href='?page=map']")
-    page.wait_for_selector(".wales-map circle")
+    page.wait_for_selector(".wales-map .merged circle")
     assert page.url == site + "?page=map"
     context.close()
 

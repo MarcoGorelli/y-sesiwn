@@ -858,15 +858,22 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 }
 .wales-map svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 /* Sizes divided by the zoom (--z), so dots stay the same size on screen */
-.wales-map circle { fill: var(--slate); stroke: var(--card-bg); stroke-width: calc(.6px / var(--z)); r: calc(2.2px / var(--z));
+.wales-map circle { fill: var(--slate); stroke: var(--card-bg); stroke-width: calc(.5px / var(--z)); r: calc(1.7px / var(--z));
   transition: fill .15s; }  /* no transition on r: it would lag behind zooming */
 .wales-map circle.other { fill: var(--muted); opacity: .35; r: 1.6; }
 .wales-map circle.here { r: 5; stroke-width: 1.2; }
 .wales-map circle.here, .wales-map circle.lit { fill: var(--accent-ink); }
 .wales-map circle.lit { r: calc(4.2px / var(--z)); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .wales-map circle { fill: var(--muted); } }
-:root[data-theme="dark"] .wales-map circle { fill: var(--muted); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .wales-map circle:not(.target) { fill: var(--muted); } }  /* not the invisible tap targets */
+:root[data-theme="dark"] .wales-map circle:not(.target) { fill: var(--muted); }
 .wales-map circle.target { fill: transparent; stroke: none; cursor: pointer; r: calc(5px / var(--z)); }
+/* Places too close together to tell apart: one bigger dot with their number (app.js's mergeDots,
+   whose sizes these match) */
+.wales-map .merged circle:not(.target) { r: calc(3.3px / var(--z)); }
+.wales-map .merged circle.target { r: calc(6px / var(--z)); }
+.wales-map .merged circle.lit { r: calc(4.4px / var(--z)); }
+.wales-map .merged text { fill: var(--card-bg); font-size: calc(3.6px / var(--z)); font-weight: 600;
+  text-anchor: middle; dominant-baseline: central; pointer-events: none; }
 /* Over the sea at the top left, clear of every place (the north-east corner has Caer and Bangor Is-y-coed) */
 .map-zoom { position: absolute; top: .4rem; left: .4rem; z-index: 4; display: grid; gap: .3rem; }
 .map-zoom button { width: 2.1rem; height: 2.1rem; padding: 0; font-size: 1.15rem; line-height: 1; box-shadow: 0 1px 3px var(--shadow-soft); }
@@ -882,6 +889,7 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .map-popup[data-align="left"] { --dx: -1.2rem; }
 .map-popup[data-align="right"] { --dx: calc(-100% + 1.2rem); }
 .map-popup ul { list-style: none; margin: .2rem 0 0; padding: 0; }
+.map-popup ul + strong { display: block; margin-top: .5rem; }  /* the next of a merged dot's places */
 .map-popup a { color: var(--text); }
 .map-popup a:hover { color: var(--accent-ink); }
 .card.place { margin-top: 1rem; }

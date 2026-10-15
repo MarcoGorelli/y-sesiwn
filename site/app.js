@@ -4030,7 +4030,7 @@ function walesMap(current = null, places = state.data.places, label = null) {
   // places: the tunes' places (places.json), or others with x and y (the sessions' towns).
   const [width, height] = state.data.mapSize;
   const dots = places.map((place) => svg("circle", {
-    cx: place.x, cy: place.y, r: place === current ? 3.6 : 2.2,
+    cx: place.x, cy: place.y, r: place === current ? 3.6 : 1.7,
     class: current ? (place === current ? "here" : "other") : null,
   }, current ? svg("title", {}, place.name) : null));
   if (current) dots.push(dots.splice(places.indexOf(current), 1)[0]);  // drawn on top
@@ -4049,7 +4049,7 @@ function walesMap(current = null, places = state.data.places, label = null) {
 // Zooming the full map: the + and − buttons, double-click or double-tap, pinching (a
 // trackpad pinch is a Ctrl + wheel), and dragging to move about once zoomed in. A plain
 // wheel or a one-finger swipe still scrolls the page. The dots keep their size on screen
-// (--z in style.css), so crowded places come apart. onChange: after every zoom or move.
+// (--z in style.css), so crowded places come apart. onChange(scale): after every zoom or move.
 function mapZoom(map, onChange) {
   const view = map.querySelector(".map-view"), canvas = map.querySelector(".map-canvas");
   const MAX = 8;
@@ -4071,7 +4071,7 @@ function mapZoom(map, onChange) {
     view.classList.toggle("zoomed", scale > 1);
     zoomIn.disabled = scale >= MAX;
     zoomOut.disabled = reset.disabled = scale <= 1;
-    onChange();
+    onChange(scale);
   };
   // Zoom by factor, keeping the point (px, py) of the view where it is.
   const zoomAt = (factor, px, py) => {
@@ -4173,21 +4173,70 @@ function placeCard(group) {
     el("p", { class: "caption" }, el("a", { href: "?page=map", "data-route": true }, tr("All tunes on the map", "Pob alaw ar y map"))));
 }
 
+// Dots that would overlap at this zoom (scale), merged: the closest two at a time, into one
+// bigger dot where they were on average, until none overlap. Returns the merged dots, each
+// with its places; the rest stay as they are. Zooming in brings them apart again.
+const DOT = 1.7, MERGED_DOT = 3.3;  // their radius in the map's units at full size (style.css)
+function mergeDots(places, scale) {
+  const dots = places.map((place) => ({ x: place.x, y: place.y, places: [place] }));
+  const radius = (dot) => (dot.places.length > 1 ? MERGED_DOT : DOT);
+  for (;;) {
+    let closest = null, gap = 0;
+    for (let i = 0; i < dots.length; i++) for (let j = i + 1; j < dots.length; j++) {
+      const [a, b] = [dots[i], dots[j]];
+      const g = Math.hypot(a.x - b.x, a.y - b.y) * scale - radius(a) - radius(b);
+      if (g < 0.4 && (!closest || g < gap)) [closest, gap] = [[i, j], g];
+    }
+    if (!closest) return dots.filter((dot) => dot.places.length > 1);
+    const [a, b] = [dots[closest[0]], dots[closest[1]]];
+    const n = a.places.length + b.places.length;
+    dots.splice(closest[1], 1);
+    dots[closest[0]] = { x: (a.x * a.places.length + b.x * b.places.length) / n, y: (a.y * a.places.length + b.y * b.places.length) / n,
+      places: [...a.places, ...b.places] };
+  }
+}
+
 function renderMap(main) {
   document.title = tr("Tunes on the map · Y Sesiwn", "Alawon ar y map · Y Sesiwn");
   const places = [...state.data.places].sort((a, b) => (normalize(a.name) < normalize(b.name) ? -1 : 1));
   const map = walesMap();
   const circles = [...map.querySelectorAll("circle:not(.target)")];
+  const targets = [...map.querySelectorAll("circle.target")];
+  // Places close together are one dot with their number on it (mergeDots), redrawn as the zoom changes.
+  const mergedLayer = svg("g", { class: "merged" });
+  map.querySelector("svg").append(mergedLayer);
+  let merged = [], mergedKey = "";
+  const index = (place) => state.data.places.indexOf(place);
+  const merge = (scale) => {
+    const next = mergeDots(state.data.places, scale);
+    const key = next.map((dot) => dot.places.map(index).join(",")).join(" ");
+    if (key === mergedKey) return;
+    hide();  // its dot may have come apart
+    [merged, mergedKey] = [next, key];
+    const inMerged = new Set(merged.flatMap((dot) => dot.places));
+    state.data.places.forEach((place, i) => {
+      circles[i].classList.toggle("off", inMerged.has(place));
+      targets[i].classList.toggle("off", inMerged.has(place));
+    });
+    mergedLayer.replaceChildren(...merged.map((dot) => {
+      dot.circle = svg("circle", { cx: dot.x, cy: dot.y, r: MERGED_DOT });
+      return svg("g", {}, dot.circle,
+        svg("text", { x: dot.x, y: dot.y }, dot.places.length),
+        svg("circle", { cx: dot.x, cy: dot.y, r: 5, class: "target", "data-places": dot.places.map(index).join(" ") }));
+    }));
+  };
+  // Where a place is drawn: its own dot, or the one it's merged into.
+  const dotOf = (place) => merged.find((dot) => dot.places.includes(place))?.circle ?? circles[index(place)];
   // Pointing at a place in the list lights up its dot.
-  const light = (place, on) => circles[state.data.places.indexOf(place)].classList.toggle("lit", on);
+  const light = (place, on) => dotOf(place).classList.toggle("lit", on);
 
   // Pointing at (or tapping) a dot shows a popup with the place's tunes. It stays
   // open while the pointer is on it, so its links can be clicked.
   const popup = el("div", { class: "map-popup", hidden: true });
   map.append(popup);
-  // Where a place's dot is drawn in the map now (it moves as the map zooms).
-  const placePopup = (place) => {
-    const b = map.getBoundingClientRect(), d = circles[state.data.places.indexOf(place)].getBoundingClientRect();
+  // Where the places' dot is drawn in the map now (it moves as the map zooms).
+  const placePopup = (places) => {
+    const b = map.getBoundingClientRect(), d = dotOf(places[0]).getBoundingClientRect();
     const x = d.left + d.width / 2 - b.left, y = d.top + d.height / 2 - b.top;
     Object.assign(popup.style, { left: `${x}px`, top: `${y}px` });
     // Above the dot, or below it near the top; kept inside the map at the sides.
@@ -4196,21 +4245,22 @@ function renderMap(main) {
     popup.hidden = x < 0 || y < 0 || x > b.width || y > b.height;  // zoomed away from it
   };
   let shown = null, hideTimer = null;
-  const hide = () => { if (shown) light(shown, false); shown = null; popup.hidden = true; };
+  const hide = () => { if (shown) light(shown[0], false); shown = null; popup.hidden = true; };
   const hideSoon = () => { clearTimeout(hideTimer); hideTimer = setTimeout(hide, 250); };
-  const show = (place) => {
+  // A dot's popup: its place's tunes, or each of its places' when it's several merged.
+  const show = (places) => {
     clearTimeout(hideTimer);
-    if (shown === place) return;
+    if (shown?.[0] === places[0]) return;
     hide();
-    shown = place;
-    light(place, true);
-    popup.replaceChildren(el("strong", {}, place.name), el("ul", {}, place.tunes.map((slug) =>
-      el("li", {}, el("a", { href: tuneUrl(slug), "data-route": true }, tuneName(slug, state.groups.get(slug).title))))));
-    placePopup(place);
+    shown = places;
+    light(places[0], true);
+    popup.replaceChildren(...places.map((place) => [el("strong", {}, place.name), el("ul", {}, place.tunes.map((slug) =>
+      el("li", {}, el("a", { href: tuneUrl(slug), "data-route": true }, tuneName(slug, state.groups.get(slug).title)))))]).flat());
+    placePopup(places);
   };
   const target = (event) => event.target.closest?.(".target");
-  const place = (e) => state.data.places[target(e).dataset.place];
-  mapZoom(map, () => { if (shown) placePopup(shown); });
+  const place = (e) => (target(e).dataset.places ?? target(e).dataset.place).split(" ").map((i) => state.data.places[i]);
+  mapZoom(map, (scale) => { merge(scale); if (shown) placePopup(shown); });
   map.addEventListener("pointerover", (e) => { if (target(e) && e.pointerType !== "touch" && !e.buttons) show(place(e)); });
   // A touch "leaves" the dot as soon as the finger lifts: only a mouse closes it that way.
   map.addEventListener("pointerout", (e) => { if (target(e) && e.pointerType !== "touch") hideSoon(); });

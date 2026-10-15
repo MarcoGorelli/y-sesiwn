@@ -172,7 +172,7 @@ PLACE_WORDS = re.compile(
     r"Denbigh|Dinbych|Kidwelli|Cydweli|Cardigan|Aberdare|Cwmbach|Aman|Neyland|Beacons|Brecon|Gower|Gŵyr|Chester|Harlech|Conwy|"
     r"Bangor|Carmarthen|Swansea|Cardiff|Merthyr|Tydfil|Dowlais|Rhondda|Caersws|Machynlleth|Dolgellau|Barmouth|Bermo|Pwllheli|"
     r"Margam|Nedd|Neath|Holywell|Rhuddlan|Caerleon|Chepstow|Hirwaun|Tywyn|Wrecsam|Wrexham|Monmouth|Mynwy|Powys|Ceredigion|"
-    r"Pembroke|Penfro|Tenby|Rhuthun|Ruthin|Mwnge|Prestych|Wig|Wick|Darowen|Rheidol|Elwy|Camlad)\b", re.I)
+    r"Pembroke|Penfro|Tenby|Freshwater|Rhuthun|Ruthin|Mwnge|Prestych|Wig|Wick|Darowen|Rheidol|Elwy|Camlad)\b", re.I)
 
 
 def tune_names():

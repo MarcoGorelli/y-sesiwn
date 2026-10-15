@@ -45,6 +45,7 @@
     {"name": "Dyffryn Clydach", "lat": 51.683, "lon": -3.826, "tunes": ["dyffryn-clydach"]},
     {"name": "Eryri", "lat": 53.068, "lon": -4.076, "tunes": ["marchogion-eryri", "moel-yr-wyddfa", "snowdon", "creigiau-r-eryri"]},
     {"name": "Ffestiniog", "lat": 52.963, "lon": -3.937, "tunes": ["blodau-ffestiniog", "the-bala-ffestiniog-railway"]},
+    {"name": "Freshwater East", "lat": 51.646, "lon": -4.867, "tunes": ["freshwater-east"]},
     {"name": "Glandyfi", "lat": 52.556, "lon": -3.95, "tunes": ["glandyfi"]},
     {"name": "Gwynedd", "lat": 52.98, "lon": -4.15, "tunes": ["blodeu-cwynedd", "mwynen-gwynedd"]},
     {"name": "Gŵyr", "lat": 51.59, "lon": -4.15, "tunes": ["ril-gwyr", "gower-reel"]},

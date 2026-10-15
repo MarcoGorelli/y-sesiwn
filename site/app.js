@@ -2019,6 +2019,34 @@ function nameScore(paper, about = "", tuneTitle = "") {
 // it's played, and the end of the line before is in mind by then.
 const FOLLOW_AHEAD = 400;
 
+// abcjs lights the notes by the page's clock, from the moment Play is pressed, and plays
+// them by the sound's clock, which can be slow to get going (the speakers or headphones
+// waking up): the first Play lit the notes ahead of what was heard, and they stayed ahead.
+// So at each frame its timer is set to where the sound is: from when the sound last
+// started (or jumped), on the sound's clock, and where in the tune it started from.
+// Called for each new sound (a faster speed makes the sound and the timer again).
+function keepToTheSound(controller) {
+  const { midiBuffer: sound, timer } = controller;
+  const context = ABCJS.synth.activeAudioContext?.();
+  if (!sound?._kickOffSound || !timer?.doTiming || !context) return;
+  let from = null;
+  const kickOff = sound._kickOffSound;
+  sound._kickOffSound = (at) => { kickOff(at); from = { time: context.currentTime, at }; };
+  // The time being heard now: the clock, less the time the sound takes to come out.
+  const heard = () => {
+    const out = context.getOutputTimestamp?.().contextTime;
+    return out > 0 && out > context.currentTime - 1 ? out
+      : context.currentTime - (context.outputLatency || context.baseLatency || 0);
+  };
+  const doTiming = timer.doTiming;
+  timer.doTiming = (stamp) => {
+    if (from && sound.isRunning && !timer.isPaused) {
+      timer.startTime = stamp - 1000 * (from.at + Math.max(0, heard() - from.time));
+    }
+    doTiming(stamp);
+  };
+}
+
 class Cursor {  // highlights the notes as they play, and keeps playback inside a looped part
   constructor(loop = null) { this.loop = loop; }
   onEvent(event) {
@@ -2053,6 +2081,7 @@ class Cursor {  // highlights the notes as they play, and keeps playback inside 
     return next;
   }
   onStart() { soundPlayed(); }
+  onReady(controller) { keepToTheSound(controller); }
   onFinished() { this.onEvent(null); this.line = this.playing = this.note = undefined; }
 }
 

@@ -1903,6 +1903,26 @@ def test_paused_after_a_jump_plays_on_from_the_lit_notes(browser, site):
     context.close()
 
 
+def test_lit_notes_wait_for_a_slow_sound(browser, site):
+    # The sound slow to get going after Play (its clock held up, as by speakers waking): the
+    # lit notes wait for it, rather than running on ahead by the page's clock.
+    context = browser.new_context(service_workers="block")
+    page = context.new_page()
+    page.goto(site + "?tune=glandyfi")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.click(".abcjs-midi-start")
+    page.wait_for_function("document.querySelector('.abcjs-note_playing') && state.synth.timer")
+    page.evaluate("ABCJS.synth.activeAudioContext().suspend()")
+    page.wait_for_timeout(1500)
+    page.evaluate("ABCJS.synth.activeAudioContext().resume()")
+    page.wait_for_timeout(1000)
+    sound, notes = page.evaluate("""() => { const b = state.synth.midiBuffer;
+      return [ABCJS.synth.activeAudioContext().currentTime - b.startTimeSec, state.synth.timer.currentMillisecond() / 1000]; }""")
+    assert abs(sound - notes) < .25, (sound, notes)
+    page.click(".abcjs-midi-start")  # pause
+    context.close()
+
+
 def test_other_sound_pauses_the_tune(browser, site):
     # A phone pausing the page's silent <audio> (another tab or app has started playing)
     # pauses the tune too; pausing the tune lets the <audio> go.

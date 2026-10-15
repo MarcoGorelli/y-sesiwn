@@ -182,10 +182,14 @@ LENGTH_TOKEN = re.compile(
 TUPLETS = {2: Fraction(3, 2), 3: Fraction(2, 3), 4: Fraction(3, 4), 6: Fraction(2, 3)}
 
 
+# The time signatures written as symbols: common time and cut time.
+METER_SYMBOLS = {"C": "4/4", "C|": "2/2"}
+
+
 def meter_length(abc: str) -> Fraction | None:
     """A bar's length in whole notes, from M: (C is 4/4, C| is 2/2)."""
     meter = (parse_headers(abc).get("M") or [""])[0].strip()
-    meter = {"C": "4/4", "C|": "2/2"}.get(meter, meter)
+    meter = METER_SYMBOLS.get(meter, meter)
     m = re.match(r"(\d+)/(\d+)", meter)
     return Fraction(int(m.group(1)), int(m.group(2))) if m else None
 
@@ -345,6 +349,8 @@ def details(headers: dict[str, list[str]]) -> tuple[list[list[str]], list[list[s
             continue
         if field == "K":
             values = [key_name(v) for v in values]
+        if field == "M":  # as numbers, so "C" isn't read as a key
+            values = [METER_SYMBOLS.get(v.strip(), v.strip()) for v in values]
         rows.append([label, ", ".join(values)])
         if field == "C":
             for word, meaning in CREDIT_WORDS.items():

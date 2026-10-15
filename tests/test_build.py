@@ -148,6 +148,12 @@ def test_no_empty_details():
         assert all(value.strip() for _, value in rows), path.parent.name
 
 
+def test_meter_as_numbers():
+    # Common and cut time are shown as 4/4 and 2/2: a lone "C" would read as the key.
+    meter = lambda m: dict(b.details({"M": [m]})[0])["Time signature"]
+    assert (meter("C"), meter("C|"), meter("6/8")) == ("4/4", "2/2", "6/8")
+
+
 def test_places():
     groups = {b.tune_record(p)["group"] for p in TUNES}
     places = b.places(groups)  # stops with an error if a tune doesn't exist

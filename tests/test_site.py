@@ -3390,14 +3390,14 @@ def test_summary_says_the_key_changes(browser, site):
 
 def test_chord_settings_with_the_practice_tools(page):
     # The paper is the player and the music; a tune's chord settings are among the practice
-    # tools, together: what's heard, and shown on the sheet music or not.
+    # tools: what's heard under How it plays, shown on the sheet music or not under See.
     page.goto_site("?tune=glandyfi")
     page.wait_for_selector(".score .abcjs-inline-audio")
     assert page.locator(".score .playback").count() == 0
     groups = page.locator(".practice-tools .practice-group")
-    assert [g.get_attribute("aria-label") for g in groups.all()] == ["Chords", "Practise", "See"]
+    assert [g.get_attribute("aria-label") for g in groups.all()] == ["How it plays", "Practise", "See"]
     assert groups.nth(0).locator("input[name=chord-playback]").count() == 3
-    assert groups.nth(0).locator("text=Chords on the sheet music").count() == 1
+    assert groups.nth(2).locator("text=Chords on the sheet music").count() == 1
     assert page.locator(".card.chords input[type=checkbox]").count() == 0
     page.goto_site("?tune=cawl-cennin")  # no chords, no chord settings
     page.wait_for_selector(".score .abcjs-inline-audio")

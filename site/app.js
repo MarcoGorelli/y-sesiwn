@@ -3408,9 +3408,9 @@ function renderTune(main, group, tune) {
           whatVersions(), group.versions.map(versionLink)))]
     : [];
 
-  // The practice tools, in three groups by what they change: Hear (the chords with the
-  // tune, or alone), Practise (repeat, speeding up each time round, count-in, click, swing)
-  // and See (chords on the music, tablature).
+  // The practice tools, in three groups by what they change: How it plays (the chords with
+  // the tune, or alone, and swing: kept for this tune), Practise (count-in, click) and See
+  // (tablature, chords on the music); those two kept for every tune.
   const loopSelect = el("select", { id: "loop-select", onchange: (e) => { settings.loop = +e.target.value; speedSaid = ""; undoSpeedUp = null; redraw(); } });
   const toggle = (label, checked, onchange, cls) => el("label", { class: `switch${cls ? ` ${cls}` : ""}` },
     el("input", { type: "checkbox", checked, onchange: (e) => { onchange(e.target.checked); redraw(); } }), label);
@@ -3664,12 +3664,14 @@ function renderTune(main, group, tune) {
     forThisTune.length ? el("span", {}, tr("For this tune only: ", "Ar gyfer yr alaw hon yn unig: "), forThisTune.join(tr(" and ", " a ")), ".") : null,
     el("button", { type: "button", class: "link-button", onclick: () => turnAllOff() }, tr("Turn all off", "Diffodd y cyfan")));
   const practiceRow = el("div", { class: "practice-row" },
-    chordTools ? toolGroup(tr("Chords", "Cordiau"), el("div", { class: "playback" }, chordTools.playback),
-      el("div", { class: "practice-line" }, chordTools.onScore)) : null,
-    toolGroup(tr("Practise", "Ymarfer"), el("div", { class: "practice-line" }, countInToggle, clickToggle, swingToggle)),
+    chordTools || swingToggle ? toolGroup(tr("How it plays", "Sut mae'n chwarae"),
+      chordTools ? el("div", { class: "playback" }, chordTools.playback) : null,
+      swingToggle ? el("div", { class: "practice-line" }, swingToggle) : null) : null,
+    toolGroup(tr("Practise", "Ymarfer"), el("div", { class: "practice-line" }, countInToggle, clickToggle)),
     toolGroup(tr("See", "Gweld"),
       el("div", { class: "practice-line" },
-        el("div", { class: "control" }, el("label", { for: "tab-select" }, tr("Holes or tabs", "Tyllau neu dablatur")), tabSelect), tabWhat)),
+        el("div", { class: "control" }, el("label", { for: "tab-select" }, tr("Holes or tabs", "Tyllau neu dablatur")), tabSelect), tabWhat),
+      chordTools ? el("div", { class: "practice-line" }, chordTools.onScore) : null),
     keptNote);
   // Repeat and Speed up, which a learner comes back to each time (and aren't kept): above
   // the music, in reach of Play, never folded away; the paper stays the player and the music.

@@ -11,6 +11,7 @@ tunes/**/*.gif
 tunes/**/*.mid
 tunes/**/*.mp3
 *.mp3
+*.jpg
 
 # macOS
 .DS_Store

@@ -210,6 +210,22 @@ scheduled runs after 60 days without a commit).
   near-silent stubs). **Holes or tabs**: tablature under the stave for mandolin/fiddle
   (GDAE) or guitar, with abcjs's
   tablature plugin.
+- **On another website:** the Share menu's *Put it on a website* gives the code
+  (an `<iframe>`) for the tune as it is on the page: its version, key, tempo,
+  holes or tabs, and the site's language (`?lang=cy`), with a preview. Its height is
+  the preview's, drawn at the code's `max-width` (720px), so the whole tune shows on a
+  computer (narrower, the music is drawn smaller; on a phone it's laid out in shorter
+  lines and scrolls inside the frame). The build writes `embed/<folder>/` for every
+  tune from `site/embed.html`, with the tune's data in it as its page has (`noindex`,
+  canonical to the tune's page). It's `app.js` in embed mode (`EMBED`, `renderEmbed()`): the
+  name (opening the tune on Y Sesiwn, in a new tab, in the key and tempo chosen), the
+  key and tempo, and the music and player, drawn by `drawScore()` as on the tune page.
+  It always looks light, keeps nothing from the reader's own visits, registers no service
+  worker (it would save the whole site in the other website's corner of the browser), and
+  `sw.js` leaves `embed/` to the network. Views are counted like any page's, so
+  GoatCounter's referrers show which websites use it. *Put a tune on your website*
+  (`?page=embed`, `site/embed.md` and `embed.cy.md`, linked from About) says how,
+  for WordPress, Wix, Squarespace, Google Sites and Moodle.
 - **Report a problem with this tune:** a link on every tune page to a new
   GitHub issue with the tune's name, page and file filled in.
 - **Example chords:** tunes with chord symbols in their ABC (`"G"B2 G`)
@@ -344,13 +360,21 @@ scheduled runs after 60 days without a commit).
   seven days (counted from today, so a Sunday visit sees the week ahead), then,
   under *Further ahead*, any on announced dates up to four weeks off, each a
   link down to its card. The home page's *Coming up* lists the next
-  three, in order; then, under *One-off dates*, up to two on announced dates
+  three, in order (each a link to its own page); then, under *One-off dates*, up to two on announced dates
   that aren't among them (the occasional ones are easy to miss; the weekly ones
   are on next week too); then how many more there are in the next seven days.
-  Both open an email, like the tune form. The sessions are listed by hand in
+  Both open an email, like the tune form.
+  **Each session has its own page**, `sesiynau/<id>/` (the id is the venue, town and day:
+  `chapter-cardiff-tuesday`), to send or link to: its card, its town on the map, the
+  other sessions in the town, and **Share** (also on each card, whose name links to
+  the page). The build writes it with the session's own title, description and event
+  for link previews and search engines (`session_title()`, and `sessionTitle()` in
+  `app.js`: its name, with the town, and the venue too if the name says neither). A
+  session that changes day gets a new address; the old one (no page) goes to
+  `sesiynau/` (`404.html`). The sessions are listed by hand in
   `sessions.json` (its `_comment` says what each field is); `build_site.py`
   checks them, stops with a clear error on a mistake, and writes
-  `sessions.json` for the app and a plain `sesiynau/` page for search
+  `sessions.json` for the app and plain `sesiynau/` pages for search
   engines. When someone writes in about a session, check it and update its
   `confirmed` date.
 - **Offline and home-screen app:** `site/sw.js` (a service worker) saves a
@@ -425,9 +449,10 @@ scheduled runs after 60 days without a commit).
 
 | Path | What it is |
 |---|---|
-| `build_site.py` | Builds `_site/` (git-ignored): copies `site/`, `static/`, `CONTRIBUTING.md`, and writes `tunes.json`: every `tune.abc` plus what the page needs about it (type, key, default tempo and beat, Details rows, credit glosses, where the melody starts after a lead-in, version grouping), worked out once in Python; and the tune and type pages (`alaw/`, `math/`). Tune types, colourways and default tempos are set at the top. |
+| `build_site.py` | Builds `_site/` (git-ignored): copies `site/`, `static/`, `CONTRIBUTING.md`, and writes `tunes.json`: every `tune.abc` plus what the page needs about it (type, key, default tempo and beat, Details rows, credit glosses, where the melody starts after a lead-in, version grouping), worked out once in Python; and the tune, type, session and embed pages (`alaw/`, `math/`, `sesiynau/`, `embed/`). Tune types, colourways and default tempos are set at the top. |
 | `site/index.html`, `site/style.css`, `site/app.js` | The page. `app.js` does searching (a port of the original Python matching, including `difflib`'s similarity ratio), browsing, routing (`alaw/<folder>/?v=…`, `?page=add\|fix\|about`, all relative to `<base href>`), sheet music and playback with abcjs, and renders the Markdown pages with marked. |
 | `site/about.md`, `site/carthen.svg` | The About page; the tapestry band. |
+| `site/embed.html`, `site/embed.md`, `site/embed.cy.md` | A tune on another website (the template for `embed/<folder>/`), and how to put one there, in English and Welsh. |
 | `site/about.cy.md`, `site/guides.cy.md` | The Welsh About page, and the Welsh *How to add a tune* and *How to submit corrections* (keep in step with `about.md` and `CONTRIBUTING.md`). |
 | `.github/pull_request_template.md` | The checklist a new pull request starts with: credit and permission, checked in the abcjs editor, new tunes numbered in `tune_numbers.json`. |
 | `tune_numbers.json` | Each tune's number in set links. Only ever add to it (`python build_site.py --number-tunes`); never change a number or delete a line. |

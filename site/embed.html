@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- A tune on another website, in an <iframe>: build_site.py writes a copy of this for every
+       tune, at embed/<folder>/, with the tune's own title, address and data (see renderEmbed in
+       app.js). Always light: the sheet music is on paper, and it sits in someone else's page. -->
+  <base href="../../">
+  <title>Y Sesiwn</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="static/harp.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="static/abcjs/abcjs-audio.css">
+  <link rel="stylesheet" href="style.css">
+  <script src="static/abcjs/abcjs-basic-min.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body data-page="embed">
+  <main id="main" tabindex="-1"><p class="loading">Loading the sheet music…</p></main>
+</body>
+</html>

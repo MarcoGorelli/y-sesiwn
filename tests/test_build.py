@@ -409,8 +409,22 @@ def test_sessions(site):
     page = (out / "sesiynau" / "index.html").read_text(encoding="utf-8")
     assert '<base href="../">' in page and "<title>Active sessions · Y Sesiwn</title>" in page
     assert "2nd Friday of the month, from 21:00" in page and "Last confirmed" in page
-    assert "<strong>Llantrisant Tune Club</strong> (tune club): Last Tuesday of the month, from 19:00" in page
-    assert "<loc>https://ysesiwn.cymru/sesiynau/</loc>" in (out / "sitemap.xml").read_text(encoding="utf-8")
+    assert "<strong>Llantrisant Tune Club</strong></a> (tune club): Last Tuesday of the month, from 19:00" in page
+    assert '<a href="sesiynau/ty-tawe-swansea-friday/"><strong>Sesiwn Werin Tŷ Tawe</strong></a>' in page
+    sitemap = (out / "sitemap.xml").read_text(encoding="utf-8")
+    assert "<loc>https://ysesiwn.cymru/sesiynau/</loc>" in sitemap
+    # Each session's own page, to send: its own title and description for the link preview.
+    for s in built:
+        assert f"<loc>https://ysesiwn.cymru/sesiynau/{s['id']}/</loc>" in sitemap
+        assert (out / "sesiynau" / s["id"] / "index.html").exists()
+    page = (out / "sesiynau" / "ty-tawe-swansea-friday" / "index.html").read_text(encoding="utf-8")
+    assert '<base href="../../">' in page and "<title>Sesiwn Werin Tŷ Tawe, Swansea · Y Sesiwn</title>" in page
+    assert '<meta property="og:description" content="Folk session with Welsh tunes: 2nd Friday of the month, from 21:00.' in page
+    assert '<link rel="canonical" href="https://ysesiwn.cymru/sesiynau/ty-tawe-swansea-friday/">' in page
+    assert page.count('"@type": "Event"') == 1
+    assert b.session_title({"name": "Sesiwn Werin", "venue": "Cwrw", "town": "Carmarthen"}) == "Sesiwn Werin, Cwrw, Carmarthen"
+    assert b.session_title({"name": "Llantrisant Tune Club", "venue": "Caerlan Hall", "town": "Llantrisant"}) == "Llantrisant Tune Club"
+    assert b.session_title({"venue": "Hoogah", "town": "Swansea"}) == "Session at Hoogah, Swansea"
 
 
 def test_session_events(site):
@@ -434,6 +448,23 @@ def test_session_events(site):
     assert e["eventSchedule"]["repeatFrequency"] == "P1M" and e["location"]["address"]["addressLocality"] == "Swansea"
     page = (b.OUT / "sesiynau" / "index.html").read_text(encoding="utf-8")
     assert '<script type="application/ld+json">' in page and '"@type": "Event"' in page
+
+
+def test_embed_pages(site):
+    # Every tune for other websites, at embed/<folder>/, with its own data, kept out of search
+    # engines and out of the offline copy; the template itself isn't published.
+    out = b.OUT
+    groups = {t["group"] for t in json.loads((out / "tunes.json").read_text(encoding="utf-8"))["tunes"]}
+    assert {p.name for p in (out / "embed").iterdir()} == groups
+    page = (out / "embed" / "glandyfi" / "index.html").read_text(encoding="utf-8")
+    assert '<base href="../../">' in page and '<meta name="robots" content="noindex">' in page
+    assert "<title>Glandyfi · Y Sesiwn</title>" in page and '<link rel="canonical" href="https://ysesiwn.cymru/alaw/glandyfi/">' in page
+    data = json.loads(re.search(r'<script type="application/json" id="tune-data">(.*?)</script>', page).group(1))
+    assert {t["group"] for t in data["tunes"]} == {"glandyfi"} and len(data["tunes"]) > 1  # all its versions
+    assert '<body data-page="embed">' in page and not (out / "embed.html").exists()
+    sw = (out / "sw.js").read_text(encoding="utf-8")
+    assert '"embed/glandyfi/' not in sw and '"embed.md"' in sw  # the guide is kept for offline, the tunes for other websites aren't
+    assert "<loc>https://ysesiwn.cymru/?page=embed</loc>" in (out / "sitemap.xml").read_text(encoding="utf-8")
 
 
 def test_static_copy_is_marked(site):

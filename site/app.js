@@ -112,7 +112,14 @@ const PAGES = {
   add: { file: "CONTRIBUTING.md", heading: "How to add a tune", cy: { file: "guides.cy.md", heading: "Sut i ychwanegu alaw" } },
   fix: { file: "CONTRIBUTING.md", heading: "How to submit corrections", cy: { file: "guides.cy.md", heading: "Sut i gyflwyno cywiriadau" } },
   about: { file: "about.md", heading: "About Y Sesiwn", className: "about", cy: { file: "about.cy.md", heading: "Am Y Sesiwn" } },
+  embed: { file: "embed.md", heading: "Put a tune on your website", cy: { file: "embed.cy.md", heading: "Rhoi alaw ar eich gwefan" } },
 };
+
+// Put on another website, in an <iframe> (embed/<folder>/, see renderEmbed): one tune's
+// music and player, and nothing of the site around it: no service worker (it would save
+// the whole site in the other website's corner of the browser), nothing kept from the reader's
+// own visits (the key and tempo are the ones the website chose).
+const EMBED = document.body.dataset.page === "embed";
 
 const state = {
   data: null,           // tunes.json (on a tune's own page, at first, only that tune: see start())
@@ -155,6 +162,8 @@ const state = {
 // ---- Welsh or English --------------------------------------------------------------
 
 function savedLang() {
+  const asked = EMBED ? new URLSearchParams(location.search).get("lang") : null;  // the website's language
+  if (asked === "cy" || asked === "en") return asked;
   try {
     const saved = localStorage.getItem("lang");
     if (saved === "cy" || saved === "en") return saved;
@@ -1125,6 +1134,9 @@ function addressTune() {
   return match ? match[1] : new URLSearchParams(location.search).get("tune")?.replace(ADDRESS_JUNK, "") ?? null;
 }
 
+// The session in the address: sesiynau/<id>/ (its own page), or null.
+const addressSession = () => sitePath().match(/^sesiynau\/([^/]+)\/?$/)?.[1] ?? null;
+
 // The tunes didn't come (no signal on a first visit, most often): say so plainly, as when
 // the sheet music doesn't, and offer to try again (the whole page, since nothing loaded).
 function loadFailed() {
@@ -1227,7 +1239,7 @@ function showShortcuts() {
   dialog.showModal();
 }
 document.addEventListener("keydown", (event) => {
-  if (event.key !== "?" || event.ctrlKey || event.metaKey || event.altKey) return;
+  if (EMBED || event.key !== "?" || event.ctrlKey || event.metaKey || event.altKey) return;
   if (event.target.closest("input, textarea, select, [contenteditable]")) return;
   event.preventDefault();
   showShortcuts();
@@ -1235,7 +1247,7 @@ document.addEventListener("keydown", (event) => {
 
 // "/" jumps to search from anywhere (the big box on the home page, else the sidebar's).
 document.addEventListener("keydown", (event) => {
-  if (event.key !== "/" || event.ctrlKey || event.metaKey || event.altKey) return;
+  if (EMBED || event.key !== "/" || event.ctrlKey || event.metaKey || event.altKey) return;
   if (event.target.closest("input, textarea, select, [contenteditable]")) return;
   event.preventDefault();
   const box = document.getElementById("hero-search") ?? document.getElementById("search-input");
@@ -1321,6 +1333,7 @@ function render() {
   const setPage = page === "set" || params.has("set");
   const setsPage = page === "sets";
   const sessions = /^sesiynau\/?$/.test(sitePath());
+  const oneSession = addressSession();
   const main = document.getElementById("main");
   // abcjs (the sheet music and playback, 140 KB) isn't needed for the home page, so it
   // isn't loaded before it: a page with music waits for it (see loadAbcjs).
@@ -1333,11 +1346,11 @@ function render() {
   }
   if (!tune) setPractice(false);
   main.style.animation = "none"; void main.offsetWidth; main.style.animation = "";  // replay fade-in
-  const home = !tune && !lost && !guide && !map && !offline && !notes && !browse && !contact && !found && !setPage && !setsPage && !sessions;
+  const home = !tune && !lost && !guide && !map && !offline && !notes && !browse && !contact && !found && !setPage && !setsPage && !sessions && !oneSession;
   // The home page has its own search box (as search results do); a tune's page gives the music more of the width.
   document.body.dataset.page = home ? "home" : tune ? "tune" : found ? "search" : "other";
   setMenu(false);
-  markCurrentLink(sessions ? "sesiynau/" : browse ? "?page=browse" : page && !setPage ? `?page=${page}` : null);
+  markCurrentLink(sessions || oneSession ? "sesiynau/" : browse ? "?page=browse" : page && !setPage ? `?page=${page}` : null);
   main.lang = state.lang;
   keepAwake(Boolean(tune || setPage));
   if (tune) renderTune(main, group, tune);
@@ -1352,6 +1365,7 @@ function render() {
   else if (setPage) renderSet(main);
   else if (setsPage) renderSets(main);
   else if (sessions) renderSessions(main);
+  else if (oneSession) renderSession(main, oneSession);
   else renderHome(main);
   countView();
 }
@@ -3245,8 +3259,8 @@ function saveTune(tune, name, value) {
 const tuneDefaults = (tune) => ({ key: 0, bpm: tune.bpm, speedTo: tune.bpm, loop: -2, play: "tune",
   speedUp: false, swing: canSwing(tune) && tune.type === "Pibddawns" });  // hornpipes are played swung
 // The settings a tune's page opens with: as written, then as kept for it.
-function keptSettings(tune) {
-  const s = { ...tuneDefaults(tune), ...savedTunes()[tune.slug] };
+function keptSettings(tune, kept = savedTunes()[tune.slug]) {
+  const s = { ...tuneDefaults(tune), ...kept };
   return { transpose: s.key, bpm: s.bpm, loop: s.loop, speedUp: s.speedUp, speedTo: s.speedTo, swing: s.swing,
     chords: { play: s.play } };
 }
@@ -3488,7 +3502,8 @@ function renderTune(main, group, tune) {
   const carries = () => linkCarries(tune, settings, state.practice.tab);
   const share = shareMenu(`share-menu-${tune.slug}`, () => group.title, () => `https://ysesiwn.cymru/${tuneLink(group, tune, settings, state.practice.tab)}`,
     shareStatus, { carries, qrNote: () => { const what = carries();
-      return tr(`Scan with a phone's camera to open this tune${what ? `, ${what}` : ""}.`, `Sganiwch gyda chamera ffôn i agor yr alaw hon${what ? `, ${what}` : ""}.`); } });
+      return tr(`Scan with a phone's camera to open this tune${what ? `, ${what}` : ""}.`, `Sganiwch gyda chamera ffôn i agor yr alaw hon${what ? `, ${what}` : ""}.`); },
+    more: [el("button", { type: "button", onclick: () => showEmbed(group, tune, settings) }, tr("Put it on a website", "Ei rhoi ar wefan"))] });
   const actions = el("div", { class: "tune-actions", role: "group", "aria-label": tr("Take it with you", "Mynd â hi gyda chi") },
     share, printButton(tune, paper, settings), addToSetButton(tune, settings), shareStatus);
 
@@ -3949,6 +3964,135 @@ function qrSvg(text) {
     svg("rect", { width: "100%", height: "100%", fill: "#fff" }), svg("path", { d, fill: "#000" }));
 }
 
+// ---- On another website ------------------------------------------------------------
+// Any website can show a tune, with its player, in an <iframe>: embed/<folder>/, which
+// build_site.py writes for every tune, with the tune's data in it as a tune's own page has.
+// The address carries the version, key, tempo and holes or tabs, as a tune's link does
+// (tuneLink), and the language (?lang=cy).
+
+function embedLink(group, tune, settings, tab = state.practice.tab) {
+  const link = tuneLink(group, tune, settings, tab).replace(/^alaw\//, "embed/");
+  return `${link}${link.includes("?") ? "&" : "?"}lang=${state.lang}`;
+}
+
+function startEmbed() {
+  state.data = JSON.parse(document.getElementById("tune-data").textContent);
+  buildGroups();
+  document.documentElement.lang = state.lang;
+  // Just the music, unless the address asks for holes or tabs.
+  Object.assign(state.practice, { tab: "none", countIn: false, click: false, chordsOnScore: false });
+  showLinkTab(new URLSearchParams(location.search).get("tab"));
+  const group = state.groupList[0];
+  const tune = group.versions.find((v) => v.version === Number(new URLSearchParams(location.search).get("v"))) ?? group.versions[0];
+  renderEmbed(document.getElementById("main"), group, tune);
+  countView();
+}
+
+// The tune's name (to its page on Y Sesiwn, in a new tab), the key and tempo, and the music
+// with its player. The reader can change the key and tempo; Y Sesiwn's page opens with them.
+function renderEmbed(main, group, tune) {
+  const params = new URLSearchParams(location.search);
+  const settings = keptSettings(tune, {});
+  const shift = keyShift(tune, params.get("key"));
+  if (shift !== null) settings.transpose = shift;
+  const tempo = Math.round(Number(params.get("tempo")));
+  if (tempo >= MIN_BPM && tempo <= MAX_BPM) settings.bpm = tempo;
+  state.settings.set(tune.slug, settings);
+  document.title = `${group.title} · Y Sesiwn`;
+  const paper = el("div");
+  const audio = el("div", { class: "audio" });
+  const page = () => `https://ysesiwn.cymru/${tuneLink(group, tune, settings, state.practice.tab)}`;
+  const toPage = el("a", { href: page(), target: "_blank", rel: "noopener" }, group.title);
+  const howTo = el("a", { href: page(), target: "_blank", rel: "noopener" }, tr("How to read them", "Sut i'w darllen"));
+  const redraw = () => {
+    drawScore(tune, paper, audio, null);
+    toPage.href = howTo.href = page();
+  };
+  let key = null;
+  if (tune.key) {
+    const { pitch, modeName } = tune.key;
+    const select = el("select", { id: "key-select", onchange: (e) => { settings.transpose = +e.target.value; redraw(); } });
+    for (let up = -5; up <= 6; up++) {
+      select.append(el("option", { value: up, selected: up === settings.transpose },
+        keyName(pitch + up, modeName) + (up === 0 ? tr(" (original)", " (gwreiddiol)") : "")));
+    }
+    state.keyStep = (step) => {  // , and . (see the keyboard shortcuts)
+      const to = Math.max(-5, Math.min(6, settings.transpose + step));
+      if (to !== settings.transpose) { select.value = to; select.dispatchEvent(new Event("change")); }
+    };
+    key = el("div", { class: "control" }, el("label", { for: "key-select" }, tr("Key", "Cywair")), select);
+  }
+  const tempoLabel = el("label", { for: "tempo" }, `${tr("Tempo", "Tempo")}: ${settings.bpm} bpm`);
+  const slider = el("input", { type: "range", id: "tempo", min: MIN_BPM, max: MAX_BPM, step: 1, value: settings.bpm,
+    "aria-valuetext": `${settings.bpm} bpm`,
+    oninput: (e) => { settings.bpm = +e.target.value; tempoLabel.textContent = `${tr("Tempo", "Tempo")}: ${settings.bpm} bpm`; e.target.setAttribute("aria-valuetext", `${settings.bpm} bpm`); },
+    onchange: redraw });
+  const strings = TABS[state.practice.tab], holes = FINGERED[state.practice.tab];
+  main.replaceChildren(...[
+    el("header", { class: "embed-head" },
+      el("h1", { lang: nameLang(group.slug) }, toPage),
+      el("a", { class: "embed-brand", href: "https://ysesiwn.cymru/", target: "_blank", rel: "noopener" },
+        el("img", { src: "static/harp.svg", alt: "", width: 18, height: 18 }), "Y Sesiwn")),
+    el("div", { class: "embed-controls" }, key, el("div", { class: "control" }, tempoLabel, slider)),
+    strings || holes ? el("p", { class: "caption fingering-key" },
+      el("strong", {}, strings ? `${strings.label()} (${strings.tuning})` : holes.label()), " · ", howTo) : null,
+    el("div", { class: "score" }, audio, soundNote(), paper),
+  ].filter(Boolean));
+  redraw();
+  const resized = new ResizeObserver(() => {
+    if (JSON.stringify(scoreLayout(paper)) !== paper.dataset.layout) redraw();
+  });
+  resized.observe(paper);
+}
+
+// "Put it on a website", in a tune's Share menu: the code to paste, for the tune as it is on
+// the page (its version, key, tempo, holes or tabs), with a preview of how it will look.
+// Its height is the preview's own, so the whole tune shows without scrolling inside it.
+function showEmbed(group, tune, settings) {
+  const link = embedLink(group, tune, settings);
+  const name = `${group.title}: ${tr("sheet music and playback", "y sgôr a chwarae")} (Y Sesiwn)`;
+  const quote = (text) => text.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+  const code = (height) => `<iframe src="https://ysesiwn.cymru/${quote(link)}" title="${quote(name)}" `
+    + `width="100%" height="${height}" style="border: 0; max-width: ${EMBED_WIDTH}px;" loading="lazy"></iframe>`;
+  const box = el("textarea", { id: "embed-code", class: "embed-code", readonly: true, rows: 4, spellcheck: "false",
+    onfocus: (e) => e.target.select() }, code(EMBED_HEIGHT));
+  const status = el("p", { class: "caption", "aria-live": "polite" });
+  // As wide as the code lets it be (narrower, the music is drawn smaller, and needs less height),
+  // and as tall as it is once drawn, measured again a moment later (a long tune's music, the
+  // fonts): the page's body, not the document, which is never shorter than the frame it's in.
+  const preview = el("iframe", { src: link, title: name, class: "embed-preview",
+    style: `width: ${EMBED_WIDTH}px; height: ${EMBED_HEIGHT}px` });
+  const measure = () => {
+    const height = preview.contentDocument?.body.offsetHeight;
+    if (!height) return;
+    preview.style.height = `${height}px`;
+    box.value = code(height + 8);
+  };
+  preview.addEventListener("load", () => { measure(); setTimeout(measure, 500); });
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(box.value); status.replaceChildren(...doneText(tr("Code copied", "Cod wedi'i gopïo"))); }
+    catch { box.focus(); box.select(); status.textContent = tr("Press Ctrl+C (⌘C on a Mac) to copy it.", "Pwyswch Ctrl+C (⌘C ar Mac) i'w gopïo."); }
+  };
+  const what = linkCarries(tune, settings, state.practice.tab);
+  const dialog = el("dialog", { class: "embed-dialog", "aria-labelledby": "embed-title" },
+    el("h2", { id: "embed-title" }, tr("Put this tune on a website", "Rhoi'r alaw hon ar wefan")),
+    el("p", {}, tr(`Copy this code and paste it into your website, in an Embed or HTML block. It shows the music${what ? `, ${what}` : ""}, with its player.`,
+      `Copïwch y cod hwn a'i ludo yn eich gwefan, mewn bloc Mewnosod neu HTML. Mae'n dangos y gerddoriaeth${what ? `, ${what}` : ""}, gyda'i chwaraewr.`), " ",
+      el("a", { href: "?page=embed", "data-route": true, onclick: () => dialog.close() }, tr("How to, step by step", "Sut, gam wrth gam"))),
+    el("label", { for: "embed-code", class: "pills-label" }, tr("The code", "Y cod")),
+    box,
+    el("p", { class: "embed-buttons" }, el("button", { type: "button", class: "primary", onclick: copy }, tr("Copy the code", "Copïo'r cod")), status),
+    el("p", { class: "pills-label" }, tr("How it will look", "Sut y bydd yn edrych")),
+    el("div", { class: "embed-preview-box" }, preview),
+    el("form", { method: "dialog" }, el("button", {}, tr("Close", "Cau"))));
+  dialog.addEventListener("close", () => dialog.remove());
+  dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
+  document.body.append(dialog);
+  dialog.showModal();
+  countEvent("embed-code", "Embed code shown");
+}
+const EMBED_WIDTH = 720, EMBED_HEIGHT = 480;  // px: the most it's drawn across, and its height until measured
+
 async function showQr(title, link, caption) {
   await loadQr();
   const dialog = el("dialog", { class: "qr-dialog", "aria-labelledby": "qr-title" },
@@ -3970,7 +4114,7 @@ async function showQr(title, link, caption) {
 // what the link carries ("Link copied, in A major, at 80 bpm").
 // title() and link() are read when used (a set can be renamed); copies: [[label, done,
 // ask, text()]], ask being what the prompt says where the clipboard can't be written.
-function shareMenu(id, title, link, status, { carries = () => "", copies = [], qrNote }) {
+function shareMenu(id, title, link, status, { carries = () => "", copies = [], qrNote, more = [] }) {
   const copy = (done, ask, text) => async () => {
     try { await navigator.clipboard.writeText(text()); status.replaceChildren(...doneText(done())); }
     catch { prompt(ask, text()); }
@@ -3982,6 +4126,7 @@ function shareMenu(id, title, link, status, { carries = () => "", copies = [], q
     el("button", { type: "button", onclick: copy(linkDone, tr("Copy this link:", "Copïwch y ddolen hon:"), link) }, tr("Copy link", "Copïo'r ddolen")),
     ...copies.map(([label, done, ask, text]) => el("button", { type: "button", onclick: copy(() => done, ask, text) }, label)),
     el("button", { type: "button", onclick: () => showQr(title(), link(), qrNote()) }, tr("QR code", "Cod QR")),
+    ...more,
   ].filter(Boolean), "share");
 }
 
@@ -4480,7 +4625,7 @@ function sessionCalendar(session, first) {
   // A session on announced dates: an event for each date to come, none repeating.
   const days = session.repeat === "dates" ? upcomingDates(session, first) : [first];
   const after = (day) => (end <= session.start ? new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1) : day);  // past midnight
-  const page = "https://ysesiwn.cymru/sesiynau/";
+  const page = `https://ysesiwn.cymru/${sessionUrl(session)}`;
   const about = [session.music ? tr(session.music, session.music_cy ?? session.music) : null,
     tr("Times change: check before you go.", "Mae amseroedd yn newid: gwiriwch cyn mynd."),
     session.link, page].filter(Boolean).join("\n\n");
@@ -4506,7 +4651,24 @@ function sessionCalendar(session, first) {
   return lines.map(fold).join("\r\n") + "\r\n";
 }
 
-function sessionCard(session) {
+// A session's own page (build_site.py writes one for each, for link previews and search
+// engines), and what it's called there: its name, or what it is and where; with the town
+// if its name doesn't say it, and the venue too if it says neither (build_site.py: session_title).
+const sessionUrl = (session) => `sesiynau/${encodeURIComponent(session.id)}/`;
+function sessionTitle(session) {
+  const town = tr(session.town, session.town_cy);
+  if (!session.name) {
+    return session.kind === "tune club" ? tr(`Tune club at ${session.venue}, ${town}`, `Clwb alawon yn ${session.venue}, ${town}`)
+      : tr(`Session at ${session.venue}, ${town}`, `Sesiwn yn ${session.venue}, ${town}`);
+  }
+  const has = (part) => normalize(session.name).includes(normalize(part));
+  const named = has(session.town) || has(session.town_cy);
+  return [session.name, named || has(session.venue) ? null : session.venue, named ? null : town].filter(Boolean).join(", ");
+}
+
+// A session as a card: on the sessions page (own: false), its name links to its own page;
+// on that page (own: true) the page's heading is its name.
+function sessionCard(session, { own = false } = {}) {
   const next = nextSession(session);
   const today = new Date().toDateString() === next?.toDateString();
   const place = `${session.venue}, ${tr(session.town, session.town_cy)}`;
@@ -4528,8 +4690,11 @@ function sessionCard(session) {
           `, tan ${dateLabel(dateOf(session.until), { day: "numeric", month: "long", year: "numeric" })}.`) : ".")
       : session.until ? tr(`Until ${dateLabel(dateOf(session.until), { day: "numeric", month: "long", year: "numeric" })}.`,
         `Tan ${dateLabel(dateOf(session.until), { day: "numeric", month: "long", year: "numeric" })}.`) : null;
+  const shareStatus = el("p", { class: "caption share-status", "aria-live": "polite" });
+  const share = shareMenu(`share-session-${session.id}`, () => sessionTitle(session), () => `https://ysesiwn.cymru/${sessionUrl(session)}`,
+    shareStatus, { qrNote: () => tr("Scan with a phone's camera to open this session.", "Sganiwch gyda chamera ffôn i agor y sesiwn hon.") });
   return el("article", { class: "card session", id: `session-${session.id}`, tabindex: -1 },
-    el("h3", {}, session.name ?? session.venue,
+    own ? null : el("h3", {}, el("a", { href: sessionUrl(session), "data-route": true }, session.name ?? session.venue),
       session.kind === "tune club" ? el("span", { class: "badge" }, tr("Tune club", "Clwb alawon")) : null),
     el("p", { class: "when" }, el("strong", {}, `${sessionDays(session)}, ${sessionTime(session)}`),
       next && (today || !onDates) ? [" · ", today ? tr("today", "heddiw") : tr(`next: ${dateLabel(next, { weekday: "long", day: "numeric", month: "long" })}`,
@@ -4542,7 +4707,9 @@ function sessionCard(session) {
       el("a", { class: "action", href: map, target: "_blank", rel: "noopener" }, tr("Map", "Map")),
       next ? el("button", { type: "button", onclick: () => download(`${session.id}.ics`, "text/calendar", sessionCalendar(session, next)) },
         tr("Add to calendar", "Ychwanegu at y calendr")) : null,
-      session.link ? el("a", { class: "action", href: session.link, target: "_blank", rel: "noopener" }, tr("More about it", "Rhagor amdani")) : null),
+      session.link ? el("a", { class: "action", href: session.link, target: "_blank", rel: "noopener" }, tr("More about it", "Rhagor amdani")) : null,
+      share),
+    shareStatus,
     sessionReport(session, place));
 }
 
@@ -4615,8 +4782,8 @@ function upcomingSessions() {
     const first = soon.slice(0, HOME_SOON);
     const also = [...soon.slice(HOME_SOON), ...later].filter((x) => x.s.repeat === "dates").slice(0, HOME_ALSO);
     const more = soon.length - first.length - also.filter((x) => soon.includes(x)).length;
-    // Each one links to its card on the sessions page (address, map, calendar).
-    const item = (x) => soonItem(x, el("a", { href: `sesiynau/#session-${x.s.id}`, "data-route": true }, x.s.name ?? x.s.venue));
+    // Each one links to its own page (address, map, calendar).
+    const item = (x) => soonItem(x, el("a", { href: sessionUrl(x.s), "data-route": true }, x.s.name ?? x.s.venue));
     box.replaceChildren(...[
       el("h2", { class: "section-heading" }, tr("Coming up", "I ddod")),
       first.length ? el("ul", {}, first.map(item)) : null,
@@ -4832,6 +4999,48 @@ async function renderSessions(main) {
   // after the page's own move to the top and its heading.
   const linked = location.hash.startsWith("#session-") && document.getElementById(decodeURIComponent(location.hash.slice(1)));
   if (linked) setTimeout(() => { linked.scrollIntoView({ block: "start" }); linked.focus({ preventScroll: true }); }, 0);
+}
+
+// A session's own page (sesiynau/<id>/): its card, where it is on the map, the other
+// sessions in its town, and the way to all of them. An id that isn't one (a session that
+// has stopped, or moved to another day) says so, with the way to the rest.
+async function renderSession(main, id) {
+  let sessions;
+  try { ({ sessions } = await loadSessions()); } catch {
+    main.replaceChildren(el("h1", {}, tr("Active sessions", "Sesiynau cyfredol")),
+      el("p", {}, tr("Couldn't load the sessions. Check your connection and try again.", "Methu llwytho'r sesiynau. Gwiriwch eich cysylltiad a rhoi cynnig arall arni.")),
+      el("button", { type: "button", class: "primary", onclick: () => renderSession(main, id) }, tr("Try again", "Rhoi cynnig arall arni")));
+    return;
+  }
+  if (addressSession() !== id) return;  // left while loading
+  const all = el("p", {}, el("a", { href: "sesiynau/", "data-route": true }, tr("All sessions, on a map", "Pob sesiwn, ar fap")));
+  const session = sessions.find((s) => s.id === id);
+  if (!session) {
+    document.title = tr("Session not found · Y Sesiwn", "Sesiwn heb ei chanfod · Y Sesiwn");
+    main.replaceChildren(el("h1", {}, tr("Session not found", "Sesiwn heb ei chanfod")), emptyArt("pibgorn"),
+      el("p", { class: "lead" }, tr("There's no session at this address. It may have stopped, or moved to another day.",
+        "Does dim sesiwn yn y cyfeiriad hwn. Efallai ei bod wedi dod i ben, neu wedi symud i ddiwrnod arall.")), all);
+    return;
+  }
+  const title = sessionTitle(session);
+  document.title = `${title} · Y Sesiwn`;
+  // The map: every town with a session, this one marked (none for a session outside Wales).
+  const towns = [];
+  for (const s of sessions.filter((s) => s.x != null)) {
+    if (!towns.some((t) => t.name === tr(s.town, s.town_cy))) towns.push({ name: tr(s.town, s.town_cy), x: s.x, y: s.y });
+  }
+  const here = towns.find((t) => t.name === tr(session.town, session.town_cy));
+  const others = sessions.filter((s) => s !== session && s.town === session.town);
+  main.replaceChildren(...[
+    el("h1", {}, title, session.kind === "tune club" ? el("span", { class: "badge" }, tr("Tune club", "Clwb alawon")) : null),
+    el("div", { class: "session-page" },
+      sessionCard(session, { own: true }),
+      here ? el("section", { class: "card place" }, el("h2", {}, tr(session.town, session.town_cy)), walesMap(here, towns)) : null),
+    others.length ? el("section", {}, el("h2", { class: "section-heading" }, tr(`Also in ${session.town}`, `Hefyd yn ${session.town_cy}`)),
+      el("ul", {}, others.map((s) => el("li", {}, el("a", { href: sessionUrl(s), "data-route": true }, s.name ?? s.venue),
+        ` · ${sessionDays(s)}, ${sessionTime(s)}`)))) : null,
+    all,
+  ].filter(Boolean));
 }
 
 // ---- Installing the app ---------------------------------------------------------------
@@ -6147,6 +6356,7 @@ function buildGroups() {
 }
 
 async function start() {
+  if (EMBED) return startEmbed();
   // A tune's own page (alaw/<folder>/) comes with that tune's data, so its sheet music
   // can be drawn at once; every other tune (tunes.json, about 150 KB) follows.
   const own = document.getElementById("tune-data");
@@ -6228,7 +6438,7 @@ function openUpdated(url) {
   setTimeout(go, 500);
 }
 
-if ("serviceWorker" in navigator) {
+if ("serviceWorker" in navigator && !EMBED) {
   // If the copy can't be saved (no signal part-way through, storage refused), say so
   // rather than "Saving…" for ever: the worker is then dropped ("redundant").
   const failed = () => { if (!state.offlineReady) { state.offlineFailed = true; refreshOfflineCards(); } };

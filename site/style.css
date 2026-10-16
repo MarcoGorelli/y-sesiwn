@@ -988,16 +988,21 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .card.session { margin-bottom: .9rem; }
 .card.session h3 { margin: 0 0 .35rem; font-size: 1.1rem; }
 /* "Tune club": a club where people learn tunes together, not a pub session */
-.card.session .badge { display: inline-block; margin-left: .5rem; padding: .05rem .5rem; border: 1px solid var(--border);
+:is(.card.session, main) .badge { display: inline-block; margin-left: .5rem; padding: .05rem .5rem; border: 1px solid var(--border);
   border-radius: 999px; font-size: .75rem; font-weight: 500; color: var(--muted); vertical-align: .15em; }
 .card.session p { margin: .3rem 0; }
 /* A session's actions: Map, Add to calendar, More about it, as quiet buttons */
 .session-links { display: flex; flex-wrap: wrap; gap: .5rem; margin: .7rem 0 0; }
-.session-links :is(.action, button) {
+.session-links > :is(.action, button), .session-links > .print-wrap > button {
   display: inline-flex; align-items: center; padding: .35rem .8rem; font-size: .9rem;
   border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); color: var(--text); text-decoration: none;
 }
 @media (hover: hover) { .session-links .action:hover { border-color: var(--accent-ink); color: var(--accent-ink); } }
+.card.session .share-status:empty { display: none; }
+/* A session's own page (sesiynau/<id>/): its card, and beside it (under it, on a phone) where it is */
+.session-page { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 1rem; align-items: start; max-width: 52rem; }
+.session-page .card.place { margin-top: 0; }
+@media (max-width: 700px) { .session-page { grid-template-columns: minmax(0, 1fr); } }
 .area-filter { margin: 1.25rem 0 .5rem; }
 .area-filter .pills-label { margin: 0 0 .4rem; display: block; }
 #area-select { padding: .4rem .6rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); max-width: 100%; }
@@ -1253,6 +1258,37 @@ main { view-transition-name: page; }
 .qr-dialog .qr-link { word-break: break-all; }
 .qr-dialog form { margin-top: .75rem; }
 
+/* "Put it on a website": the code to copy, and a preview of how it will look */
+.embed-dialog { border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1.5rem; background: var(--card-bg); color: var(--text);
+  width: min(calc(720px + 3rem + 2px), calc(100vw - 2rem)); box-sizing: border-box; }
+.embed-dialog::backdrop { background: var(--scrim); }
+.embed-dialog h2 { margin: 0 0 .5rem; }
+.embed-dialog .pills-label { display: block; margin: 1rem 0 .35rem; }
+.embed-code { display: block; width: 100%; box-sizing: border-box; padding: .5rem .6rem; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg); color: var(--text); font: .85rem/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; resize: vertical; }
+.embed-buttons { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem 1rem; margin: .6rem 0 0; }
+.embed-buttons .caption { margin: 0; }
+.embed-preview-box { overflow-x: auto; }  /* the preview is drawn at the code's full width, even on a small screen */
+.embed-preview { display: block; box-sizing: content-box; border: 1px dashed var(--border); border-radius: var(--radius); background: #fff; }
+.embed-dialog form { margin-top: 1rem; text-align: right; }
+
+/* A tune on another website (embed/<folder>/, in its <iframe>): just the tune, its key and
+   tempo, and the music, filling the frame; the carthen band stays, a thin one */
+body[data-page="embed"] { display: block; min-height: 0; padding-top: 6px; background-size: auto 6px, auto; }
+body[data-page="embed"] main { max-width: none; padding: .6rem .75rem .75rem; animation: none; }
+.embed-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .25rem 1rem; }
+.embed-head h1 { font-size: 1.35rem; margin: 0; }
+.embed-head h1 a { color: inherit; text-decoration: none; }
+.embed-head h1 a:hover { text-decoration: underline; }
+.embed-brand { display: inline-flex; align-items: center; gap: .3rem; font-size: .85rem; color: var(--muted); text-decoration: none; white-space: nowrap; }
+.embed-brand:hover { color: var(--link); }
+.embed-controls { display: flex; flex-wrap: wrap; align-items: start; gap: .5rem 1.5rem; margin: .5rem 0 .75rem; }
+.embed-controls .control { display: grid; gap: .2rem; font-size: .9rem; }
+.embed-controls select { padding: .3rem .5rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); }
+.embed-controls input[type="range"] { width: min(14rem, 60vw); }
+body[data-page="embed"] .fingering-key { margin: 0 0 .5rem; }
+body[data-page="embed"] .score > .audio { position: static; }
+
 /* Sets: a list to arrange, then every tune's music */
 /* Your own set's name: a heading at rest, with a dashed line under it to say it can be
    changed; the whole dashed box with the pointer over it, and a red one while it's edited */
@@ -1433,7 +1469,7 @@ body.practice .tune-sub { display: none; }
      under a card): padding on an inline link reaches a finger's height without making its
      line taller, so a wrapped line stays with it; the rows are spaced so they don't meet */
   .coming-up li { padding: .45rem 0; }
-  .coming-up li > a, .set-tune h2 a { padding-block: .65rem; }
+  .coming-up li > a, .set-tune h2 a, .card.session h3 a, .session-page + section li > a { padding-block: .65rem; }
   /* A tune in a set's running order: the row is the finger's height, the name its target */
   .set-list li { padding-block: 0; }
   .set-list li > a { display: inline-flex; align-items: center; min-height: 44px; }

@@ -803,6 +803,52 @@ def test_practice_tools_folded_at_first(browser, site, page):
     assert page.locator("#tab-select").is_visible()
 
 
+def test_embed_code(page, site):
+    # A tune's Share menu gives the code to put it on another website: the tune as it is on
+    # the page (version, key, holes), in the page's language, as tall as its preview.
+    page.goto_site("alaw/glandyfi/?v=3&key=A&tab=whistle-D")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.click(".tune-actions .print-wrap > button:has-text('Share')")
+    page.click(".print-menu button:has-text('Put it on a website')")
+    page.wait_for_selector(".embed-dialog")
+    preview = page.frame_locator(".embed-preview")
+    preview.locator(".abcjs-staff").first.wait_for()
+    page.wait_for_function("!document.getElementById('embed-code').value.includes('height=\"480\"')")  # measured
+    code = page.input_value("#embed-code")
+    assert code.startswith('<iframe src="https://ysesiwn.cymru/embed/glandyfi/?v=3&amp;key=A&amp;tab=whistle-D&amp;lang=en" ')
+    assert 'title="Glandyfi: sheet music and playback (Y Sesiwn)"' in code and 'max-width: 720px;' in code
+    height = int(code.split('height="')[1].split('"')[0])
+    assert abs(height - page.evaluate("document.querySelector('.embed-preview').contentDocument.body.offsetHeight") - 8) <= 1
+    assert "in A major, with the holes" in page.inner_text(".embed-dialog p")
+    # The step-by-step guide, from the dialog.
+    page.click(".embed-dialog a[href='?page=embed']")
+    page.wait_for_selector("article.guide h1")
+    assert page.inner_text("article.guide h1") == "Put a tune on your website" and not page.locator(".embed-dialog").count()
+
+
+def test_embedded_tune(page, site):
+    # embed/<folder>/: one tune, nothing of the site around it, as the address says (key,
+    # version, holes, language); its name opens it on Y Sesiwn, in a new tab, as chosen here.
+    page.goto(site + "embed/glandyfi/?v=3&key=A&tab=whistle-D&lang=cy")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.evaluate("EMBED") and not page.locator(".nav, .sidebar, .site-footer").count()
+    assert page.locator(".abcjs-lyric").count() > 0  # the whistle's holes
+    assert page.evaluate("document.documentElement.lang") == "cy" and page.inner_text("label[for=key-select]") == "Cywair"
+    assert page.input_value("#key-select") == "2" and "Chwisl" in page.inner_text(".fingering-key")
+    link = page.locator("h1 a")
+    assert link.get_attribute("target") == "_blank"
+    assert link.get_attribute("href") == "https://ysesiwn.cymru/alaw/glandyfi/?v=3&key=A&tab=whistle-D"
+    page.select_option("#key-select", "0")
+    page.wait_for_function("!document.querySelector('h1 a').href.includes('key=')")
+    page.fill("#tempo", "80")
+    page.dispatch_event("#tempo", "change")
+    assert link.get_attribute("href") == "https://ysesiwn.cymru/alaw/glandyfi/?v=3&tempo=80&tab=whistle-D"
+    assert "80" in page.text_content(".score .abcjs-tempo")
+    # Nothing of the reader's own: no service worker, no kept key (this page sets none).
+    assert page.evaluate("'serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations().then((r) => r.length) : 0") == 0
+    assert page.evaluate("localStorage.getItem('tunes')") is None
+
+
 def test_upcoming_sessions(page):
     # The home page lists the next few sessions in order; then, under "Also coming up: one-off dates", ones
     # on announced dates that aren't among them (up to four weeks ahead: the occasional
@@ -1045,8 +1091,8 @@ def test_map_on_a_phone(browser, site):
 
 @pytest.mark.parametrize("lang", ["en", "cy"])  # Welsh labels are often longer
 @pytest.mark.parametrize("path", ["", "?page=browse", "?tune=glandyfi", "?tune=llancesau-trefaldwyn", "?page=map",
-                                  "?page=offline", "?page=about", "?page=add", "?page=contact",
-                                  "?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A"])
+                                  "?page=offline", "?page=about", "?page=add", "?page=embed", "?page=contact",
+                                  "?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A", "embed/glandyfi/?tab=whistle-D"])
 def test_fits_a_phone(browser, site, path, lang):
     context = browser.new_context(viewport={"width": 360, "height": 800}, service_workers="block")
     page = context.new_page()
@@ -1211,7 +1257,7 @@ def test_welsh_home_page(page):
 # GitHub's and other tools' own names, left in English in the Welsh guides.
 ENGLISH_ON_PURPOSE = {"abcjs Quick Editor", "Add file → Create new file", "Commit changes…", "Propose changes",
                       "Create pull request", "Edit this file", "pull request", "Add to Home Screen",
-                      "Windows, Mac, Linux", "F2 F GFG | AFD DFA | …",
+                      "Windows, Mac, Linux", "F2 F GFG | AFD DFA | …", "Google Sites",  # the platforms' own names
                       # Welsh on the English pages too
                       "Diolch yn fawr", "Cymdeithas Offerynnau Traddodiadol Cymru"}
 
@@ -1219,7 +1265,7 @@ ENGLISH_ON_PURPOSE = {"abcjs Quick Editor", "Add file → Create new file", "Com
 @pytest.mark.parametrize("path", [
     "?page=browse", "?page=browse&type=Jig&key=D%20major", "?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A",
     "?tune=glandyfi&v=2", "?tune=machynlleth", "?tune=llancesau-trefaldwyn", "?page=map", "?page=offline",
-    "?page=about", "?page=add", "?page=fix", "?page=contact&about=glandyfi-version-2",
+    "?page=about", "?page=add", "?page=fix", "?page=embed", "?page=contact&about=glandyfi-version-2",
     "?page=set&s=bne0o.6m42r~2&name=Nos%20Iau", "?page=sets",
 ])
 def test_every_page_in_welsh(page, path):
@@ -2349,15 +2395,44 @@ def test_session_dates_in_welsh(page):
     assert re.search(r"Cadarnhawyd \d+ (Ion|Chwef|Maw|Ebr|Mai|Meh|Gorff|Awst|Medi|Hyd|Tach|Rhag) 20\d\d", text)
 
 
-def test_home_sessions_link_to_their_cards(page):
-    # Tonight's session on the home page opens its card on the sessions page.
+def test_home_sessions_link_to_their_pages(page, site):
+    # Tonight's session on the home page opens its own page.
     page.goto_site()
     link = page.locator(".coming-up li a").first
     link.wait_for()
-    target = link.get_attribute("href").split("#")[1]
+    href = link.get_attribute("href")
+    assert href.startswith("sesiynau/") and href.endswith("/")
     link.click()
-    page.wait_for_function(f"document.activeElement && document.activeElement.id === '{target}'")
-    assert page.locator(f"#{target}").is_visible()
+    page.wait_for_selector(".session-page .card.session")
+    assert page.url == site + href
+
+
+def test_session_page(page, site):
+    # Each session has a page of its own (sesiynau/<id>/), to send: its card, where it is,
+    # the other sessions in its town, and Share. A session's name on the sessions page links to it.
+    page.goto_site("sesiynau/")
+    page.wait_for_selector(".card.session")
+    page.click("#session-chapter-cardiff-tuesday h3 a")
+    page.wait_for_selector(".session-page .card.session")
+    assert page.url == site + "sesiynau/chapter-cardiff-tuesday/"
+    assert page.inner_text("main h1") == "Noson Lawen: Folk in the Bar, Chapter, Cardiff"
+    assert page.title() == "Noson Lawen: Folk in the Bar, Chapter, Cardiff · Y Sesiwn"
+    assert page.locator(".session-page .card.session h3").count() == 0  # the page's heading is its name
+    assert page.locator(".session-page .wales-map circle.here").count() == 1
+    assert "Old Brewery" in page.inner_text("main") and page.locator(".sidebar-links a[href='sesiynau/'][aria-current]").count() == 1
+    page.click(".session-page .print-wrap > button")
+    page.click(".session-page .print-menu button:has-text('QR code')")
+    assert page.inner_text(".qr-dialog .qr-link") == "https://ysesiwn.cymru/sesiynau/chapter-cardiff-tuesday/"
+    page.keyboard.press("Escape")
+    page.click(".lang-switch [data-lang=cy]")
+    page.wait_for_function("document.querySelector('main h1').textContent.endsWith('Caerdydd')")
+    # A name that says neither town nor venue; and none at all.
+    assert page.evaluate("""() => [sessionTitle({ name: "Sesiwn Werin", venue: "Cwrw", town: "Carmarthen", town_cy: "Caerfyrddin" }),
+      sessionTitle({ venue: "Hoogah", town: "Swansea", town_cy: "Abertawe" })]""") == ["Sesiwn Werin, Cwrw, Caerfyrddin", "Sesiwn yn Hoogah, Abertawe"]
+    # An address that isn't a session (offline, the app opens at any address) says so.
+    page.evaluate("navigate('sesiynau/no-such-session/')")
+    page.wait_for_function("document.querySelector('main h1').textContent === 'Sesiwn heb ei chanfod'")
+    assert page.locator("main a[href='sesiynau/']").count() == 1
 
 
 def test_session_calendar(page):
@@ -2977,8 +3052,8 @@ def test_accessibility(browser, site, scheme, width):
     context = browser.new_context(service_workers="block", color_scheme=scheme, viewport={"width": width, "height": 900})
     page = context.new_page()
     problems = []
-    for path in ["", "?page=browse", "?tune=glandyfi", "?tune=nyth-y-gog", "?page=map", "sesiynau/", "?page=offline", "?page=about", "?page=add",
-                 "?page=contact", "?page=set&s=bne0o.6m42r~2&name=Nos%20Iau", "my:?set=3V~h5A&n=Nos%20Iau&my=aaaaaa", "?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A", "cy:", "cy:?tune=glandyfi"]:
+    for path in ["", "?page=browse", "?tune=glandyfi", "?tune=nyth-y-gog", "?page=map", "sesiynau/", "sesiynau/chapter-cardiff-tuesday/", "?page=offline", "?page=about", "?page=add",
+                 "?page=embed", "embed/glandyfi/?tab=whistle-D", "?page=contact", "?page=set&s=bne0o.6m42r~2&name=Nos%20Iau", "my:?set=3V~h5A&n=Nos%20Iau&my=aaaaaa", "?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A", "cy:", "cy:?tune=glandyfi"]:
         if path.startswith("cy:"):  # in Welsh: the home page, and a page with the not-in-Welsh-yet note
             page.evaluate("localStorage.setItem('lang', 'cy')")
         if path.startswith("my:"):  # your own set: its name is a field to edit, in the heading
@@ -3722,7 +3797,7 @@ def test_touch_targets(browser, site):
                                   service_workers="block")
     page = context.new_page()
     small = {}
-    for path in ["", "alaw/tros-y-garreg/", "?set=3V~h5A&n=Nos%20Iau", "?page=sets", "?page=add", "?page=contact", "?page=browse", "sesiynau/"]:
+    for path in ["", "alaw/tros-y-garreg/", "?set=3V~h5A&n=Nos%20Iau", "?page=sets", "?page=add", "?page=contact", "?page=browse", "sesiynau/", "sesiynau/chapter-cardiff-tuesday/"]:
         page.goto(site + path)
         page.wait_for_function("typeof state !== 'undefined' && state.data && document.querySelector('main').children.length")
         page.wait_for_timeout(300)

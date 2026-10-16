@@ -7,7 +7,8 @@
   <meta name="robots" content="noindex">
   <!-- GitHub Pages shows this for an address with no file. A tune's address
        (…/alaw/<folder>/) that has none, because the tune was renamed or removed, opens
-       the app at ?tune=<folder>, which says so and suggests the nearest names; an address
+       the app at ?tune=<folder>, which says so and suggests the nearest names; a session's
+       that has none (…/sesiynau/<id>/) opens the sessions page; an address
        with something stuck to its end goes to the address without it. -->
   <script>
     // A link pasted with something stuck to its end (a space or non-breaking space, a
@@ -19,6 +20,9 @@
     else {
       var m = path.match(/^(.*\/)alaw\/([^/]+)\/?$/);
       if (m) location.replace(m[1] + "?tune=" + m[2]);
+      // A session that has stopped, or moved to another day (a new address): all of them.
+      var s = path.match(/^(.*\/)sesiynau\/[^/]+\/?$/);
+      if (s) location.replace(s[1] + "sesiynau/");
     }
     function decodeURIComponentSafe(p) { try { return decodeURIComponent(p); } catch (e) { return p; } }
   </script>

@@ -25,6 +25,7 @@ SITE_URL = "https://ysesiwn.cymru/"
 TUNE_DIR = "alaw"  # each tune's own page is alaw/<folder>/ (see tune_pages)
 TYPE_DIR = "math"  # and each type's, math/<type>/
 SESSIONS_DIR = "sesiynau"  # the sessions page (see session_data)
+EMBED_DIR = "embed"  # each tune for other websites, embed/<folder>/ (see tune_pages)
 
 PITCH = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
 MODE_NAMES = {
@@ -898,7 +899,7 @@ def main() -> None:
 # Not needed offline: link-preview images, the source of the service worker itself, and
 # GitHub Pages' "not found" page (offline, sw.js answers every address with the app), and
 # GridinSoft's file proving we own the domain.
-NOT_OFFLINE = {"sw.js", "og-image.png", "CNAME", "sitemap.xml", "robots.txt", "404.html",
+NOT_OFFLINE = {"sw.js", "og-image.png", "CNAME", "sitemap.xml", "robots.txt", "404.html", "embed.html",
                "gridinsoft-qwhiwg62aaa11k3qbqvvhusx8eo7c6v2tjj40adno3rw650jcp1du72cqupbn9ay.txt"}
 
 
@@ -954,8 +955,11 @@ def tune_pages(tunes: list[dict], index: dict) -> None:
     tune, so the app can draw it without waiting for every other tune (a shared link on
     a phone, say); a type's lists its tunes, so search engines find every tune by
     following links. Also sitemap.xml and robots.txt, and links to the type pages on
-    the home page, for search engines too."""
+    the home page, for search engines too. And each tune for other websites to show, at
+    embed/<folder>/ (site/embed.html, with the tune's data as its page has)."""
     template = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
+    embed_template = (ROOT / "site" / "embed.html").read_text(encoding="utf-8")
+    (OUT / "embed.html").unlink()  # only the template
     groups: dict[str, list[dict]] = {}
     for tune in tunes:
         groups.setdefault(tune["group"], []).append(tune)
@@ -1004,6 +1008,10 @@ def tune_pages(tunes: list[dict], index: dict) -> None:
                  + f"<p>{esc(description)}</p><dl>{details}</dl>"
                  + f'<pre>{esc(first["abc"])}</pre><p>{type_link(first["type"])}</p>',
             loading="Loading the sheet music…", kind="tune"))
+        page = embed_template.replace("<title>Y Sesiwn</title>", f"<title>{esc(name)} · Y Sesiwn</title>\n"
+                                      f'  <link rel="canonical" href="{url}">\n'
+                                      f'  <script type="application/json" id="tune-data">{own}</script>', 1)
+        write_page(OUT / EMBED_DIR / group, page)
 
     # A page for each type: its tunes, A to Z.
     for name, kind in types.items():
@@ -1035,8 +1043,9 @@ def tune_pages(tunes: list[dict], index: dict) -> None:
             f'  <meta http-equiv="refresh" content="0; url={esc(to)}">\n</head>\n'
             f'<body><p>This tune has moved: <a href="{esc(to)}">{esc(new["base"])}</a>.</p></body>\n</html>\n'))
 
-    sessions_page(template, session_data())
-    urls.append(f"{SITE_URL}{SESSIONS_DIR}/")
+    sessions = session_data()
+    sessions_page(template, sessions)
+    urls += [f"{SITE_URL}{SESSIONS_DIR}/"] + [f"{SITE_URL}{SESSIONS_DIR}/{s['id']}/" for s in sessions]
 
     # The home page links to the type pages until the app takes over.
     home = OUT / "index.html"
@@ -1047,7 +1056,7 @@ def tune_pages(tunes: list[dict], index: dict) -> None:
         raise SystemExit(f"site/index.html: expected one {old!r}")
     home.write_text(page.replace(old, f'<div class="static"><ul class="type-links">{nav}</ul></div>' + old), encoding="utf-8")
 
-    pages = [SITE_URL] + [f"{SITE_URL}?page={p}" for p in ("browse", "notes", "map", "about", "add", "fix", "offline", "contact")]
+    pages = [SITE_URL] + [f"{SITE_URL}?page={p}" for p in ("browse", "notes", "map", "about", "add", "fix", "embed", "offline", "contact")]
     (OUT / "sitemap.xml").write_text(
         '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
         + "".join(f"  <url><loc>{esc(u)}</loc></url>\n" for u in pages + urls) + "</urlset>\n", encoding="utf-8")
@@ -1201,9 +1210,23 @@ def session_events(sessions: list[dict], today: "date") -> list[dict]:
     return events
 
 
+def session_title(s: dict) -> str:
+    """A session's own page's title: its name, or what it is and where ('Session at Tŷ
+    Tawe, Swansea'). A name that doesn't say where gets the town, and the venue too if it
+    says neither ('Sesiwn Werin, Cwrw, Carmarthen': there's more than one Sesiwn Werin)
+    (app.js: sessionTitle)."""
+    if s.get("name"):
+        has = lambda part: normalize(part) in normalize(s["name"])
+        return ", ".join([s["name"]] + ([] if has(s["town"]) or has(s["venue"]) else [s["venue"]])
+                         + ([] if has(s["town"]) else [s["town"]]))
+    return f"{'Tune club' if s.get('kind') == 'tune club' else 'Session'} at {s['venue']}, {s['town']}"
+
+
 def sessions_page(template: str, sessions: list[dict]) -> None:
     """sesiynau/: the sessions as plain HTML for search engines (the app draws its own),
-    and sessions.json for the app."""
+    and sessions.json for the app. Each session also has a page of its own,
+    sesiynau/<id>/, to send or link to: its link preview and search result are that
+    session's, not the whole list's."""
     (OUT / "sessions.json").write_text(json.dumps({"sessions": sessions}, ensure_ascii=False, separators=(",", ":")),
                                        encoding="utf-8")
     towns = sorted({s["town"] for s in sessions}, key=normalize)
@@ -1211,7 +1234,7 @@ def sessions_page(template: str, sessions: list[dict]) -> None:
                    + ": their days and times, on a map. Sesiynau cyfredol sy'n canolbwyntio'n drwm ar gerddoriaeth Gymreig.")
     body = "".join(
         f"<h2>{esc(town)}</h2><ul>" + "".join(
-            f"<li><strong>{esc(s.get('name') or s['venue'])}</strong>{' (tune club)' if s.get('kind') == 'tune club' else ''}: {esc(describe_session(s))}. "
+            f"<li><a href=\"{SESSIONS_DIR}/{s['id']}/\"><strong>{esc(s.get('name') or s['venue'])}</strong></a>{' (tune club)' if s.get('kind') == 'tune club' else ''}: {esc(describe_session(s))}. "
             f"{esc(s['venue'])}, {esc(s['address'])}. Last confirmed {esc(s['confirmed'])}.</li>"
             for s in sessions if s["town"] == town) + "</ul>"
         for town in towns)
@@ -1222,6 +1245,25 @@ def sessions_page(template: str, sessions: list[dict]) -> None:
         template, title="Active sessions", description=description, url=f"{SITE_URL}{SESSIONS_DIR}/",
         head=f'\n  <script type="application/ld+json">{ld}</script>', up="../", main=f"<h1>Active sessions</h1><p>{esc(description)}</p>{body}",
         loading="Loading the sessions…"))
+
+    for s in sessions:
+        title = session_title(s)
+        kind = "Tune club" if s.get("kind") == "tune club" else "Folk session"
+        cy_kind = "Clwb alawon" if s.get("kind") == "tune club" else "Sesiwn werin"
+        description = (f"{kind} with Welsh tunes: {describe_session(s)}. {s['venue']}, {s['address']}. "
+                       f"{cy_kind} gydag alawon Cymreig yn {s['town_cy']}.")
+        ld = json.dumps({"@context": "https://schema.org", "@graph": session_events([s], date.today())},
+                        ensure_ascii=False).replace("</", "<\\/")
+        url = f"{SITE_URL}{SESSIONS_DIR}/{s['id']}/"
+        write_page(OUT / SESSIONS_DIR / s["id"], app_page(
+            template, title=title, description=description, url=url,
+            head=f'\n  <script type="application/ld+json">{ld}</script>',
+            main=f"<h1>{esc(title)}</h1><p>{esc(description)}</p>"
+                 + (f"<p>{esc(s['music'])}</p>" if s.get("music") else "")
+                 + (f'<p><a href="{esc(s["link"])}">{esc(s["link"])}</a></p>' if s.get("link") else "")
+                 + f"<p>Last confirmed {esc(s['confirmed'])}.</p>"
+                 + f'<p><a href="{SESSIONS_DIR}/">All sessions, on a map</a></p>',
+            loading="Loading the session…"))
 
 
 def type_heading(kind: dict) -> str:
@@ -1239,8 +1281,9 @@ def write_service_worker() -> None:
         return h.hexdigest()[:12]
 
     # The tunes', types' and sessions' own pages aren't kept: offline, sw.js answers them with the app itself.
+    # Nor are the tunes for other websites (embed/), which are only ever opened there.
     files = sorted(f for f in OUT.rglob("*") if f.is_file() and f.name not in NOT_OFFLINE
-                   and not any(f.is_relative_to(OUT / d) for d in (TUNE_DIR, TYPE_DIR, SESSIONS_DIR)))
+                   and not any(f.is_relative_to(OUT / d) for d in (TUNE_DIR, TYPE_DIR, SESSIONS_DIR, EMBED_DIR)))
     sounds = [f for f in files if f.is_relative_to(OUT / "static" / "soundfont")]
     site = [f for f in files if f not in sounds]
     urls = lambda fs: json.dumps([f.relative_to(OUT).as_posix() for f in fs])

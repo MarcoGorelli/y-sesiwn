@@ -59,6 +59,11 @@ anfon alaw aton ni drwy e-bost, heb angen GitHub. Gweler hefyd
 [Sut i gyflwyno cywiriadau](?page=fix). Mae popeth
 [ar GitHub](https://github.com/MarcoGorelli/y-sesiwn).
 
+## Ar eich gwefan eich hun
+
+Gall athrawon, clybiau a gwyliau roi unrhyw alaw ar eu gwefan eu hunain, gyda'i
+chwaraewr: gweler [Rhoi alaw ar eich gwefan](?page=embed).
+
 ## Cysylltu
 
 Cwestiynau, syniadau, alaw rydych chi'n chwilio amdani, neu dim ond helo:

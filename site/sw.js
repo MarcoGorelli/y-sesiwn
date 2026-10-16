@@ -117,6 +117,8 @@ self.addEventListener("fetch", (event) => {
       : freshOrSaved(request.url, saved, page === "network" ? PAGE_WAIT : FRESH_WAIT));
     return;
   }
+  // A tune for another website (embed/<folder>/) is its own page, not the app: from the network.
+  if (path.startsWith("embed/")) return;
   // Every page (?set=…, a tune's alaw/<folder>/) is the app, index.html. A tune's page
   // is folders down from it, so the saved copy points <base href> back up (../../).
   const up = "../".repeat(path.split("/").length - 1);

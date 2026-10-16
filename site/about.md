@@ -60,6 +60,11 @@ form on [How to add a tune](?page=add) sends one to us by email, no GitHub
 needed. See also [How to submit corrections](?page=fix). Everything is
 [on GitHub](https://github.com/MarcoGorelli/y-sesiwn).
 
+## On your own website
+
+Teachers, clubs and festivals can put any tune on their own website, with its
+player: see [Put a tune on your website](?page=embed).
+
 ## Get in touch
 
 Questions, ideas, a tune you're looking for, or just hello:

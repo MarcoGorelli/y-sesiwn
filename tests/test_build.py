@@ -279,13 +279,20 @@ def test_tune_numbers():
     assert len(set(numbers.values())) == len(numbers), "two tunes share a number"
     assert all(isinstance(n, int) and n >= 0 for n in numbers.values())
     base = os.environ.get("NUMBERS_BASE", "").strip()
-    for revision in ["HEAD", "HEAD^1"] + ([base] if base and set(base) != {"0"} else []):
+    message = ("tune_numbers.json changes numbers that set links use (was, now): {}. "
+               "Only add new tunes (python build_site.py --number-tunes); keep removed ones.")
+    for revision in ["HEAD"] + ([base] if base and set(base) != {"0"} else []):
         before = committed_numbers(revision)
-        if before is None:
-            continue
-        changed = number_problems(before, numbers)
-        assert not changed, (f"tune_numbers.json changes numbers that set links use (was, now): {changed}. "
-                             "Only add new tunes (python build_site.py --number-tunes); keep removed ones.")
+        if before is not None:
+            changed = number_problems(before, numbers)
+            assert not changed, message.format(changed)
+    # The commit before: for a merge, one of its parents. Two branches can each give a new
+    # tune the same number; the merge keeps the pushed one's and renumbers the other, which
+    # had never been pushed, so it only has to agree with one parent (NUMBERS_BASE above
+    # checks it against what was pushed).
+    parents = [p for p in (committed_numbers(f"HEAD^{i}") for i in (1, 2)) if p is not None]
+    problems = [number_problems(before, numbers) for before in parents]
+    assert not parents or not all(problems), message.format(problems[0])
 
 
 def test_moved_tunes(tmp_path, monkeypatch):

@@ -253,7 +253,8 @@ def test_chord_chart_same_endings(page, slug, first_rows):
 def test_print(page, mode, score, chords_on_score, chart):
     page.goto_site("?tune=glandyfi")
     page.wait_for_selector(".chart .bar")
-    page.evaluate("window.print = () => {}")  # the real print dialog can't be driven
+    # The real print dialog can't be driven: just what printing starts with (the score drawn again).
+    page.evaluate("window.print = () => dispatchEvent(new Event('beforeprint'))")
     page.click("#key-select [data-shift='2']")  # prints in the key chosen on the page
     page.click("text=Print / save")
     page.click(f"[id^=print-menu] >> text='{mode}'")
@@ -265,6 +266,7 @@ def test_print(page, mode, score, chords_on_score, chart):
         assert page.locator(".print-key").inner_text() == "Key: A major"
         assert page.locator("main > h1").is_visible()
     assert not page.locator(".nav").is_visible() and not page.locator(".controls").is_visible()
+    assert not page.locator(".practise-now").is_visible()  # Repeat and Speed up: for playing
     # Afterwards the page is as it was.
     page.emulate_media(media="screen")
     page.evaluate("window.dispatchEvent(new Event('afterprint'))")

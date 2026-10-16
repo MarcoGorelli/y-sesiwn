@@ -1171,7 +1171,7 @@ body.practice .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height
 @media print {
   body { display: block; padding: 0; background: none; color: #000; }
   .fingering-how > summary { display: none; }
-  .nav, .site-footer, .controls, .tab-invite, .practice-tools, .tune-actions, .versions, .versions-fold, .tune-side, .audio, .card.chords, .chords-on-score, main > h1 { display: none !important; }
+  .nav, .site-footer, .controls, .tab-invite, .practice-tools, .tune-actions, .versions, .versions-fold, .tune-side, .audio, .card.chords, .chords-on-score, .practise-now, .sound-on, main > h1 { display: none !important; }
   main { padding: 0; max-width: none; animation: none; }
   .tune-layout { display: block; }
   .score { border: none; box-shadow: none; background: none; padding: 0; }

@@ -2763,7 +2763,10 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   // On the music stand the lines of music sit closer together, so more of the tune is in
   // sight at once (a slow air on a phone, the whole of it).
   if (document.body.classList.contains("practice") && !state.printing) abc = `%%staffsep ${STAND_STAFFSEP}\n${abc}`;
-  const format = state.practice.chordsOnScore || state.printing ? SCORE_FORMAT : HIDDEN_CHORDS_FORMAT;
+  // Printed from the Print menu, the chords are on the music for "Print with chords" only;
+  // printed from the browser's own menu, as they are on screen.
+  const chordsShown = state.printing && document.body.dataset.print ? document.body.dataset.print === "with-chords" : state.practice.chordsOnScore;
+  const format = chordsShown ? SCORE_FORMAT : HIDDEN_CHORDS_FORMAT;
   // The tablature's name is said once, above the music (fingeringKey), not on every line.
   const tablature = tab ? [{ instrument: tab.instrument, label: "" }] : null;
   const render = (layout) => ABCJS.renderAbc(paper, accompaniment(abc, settings.chords.play),
@@ -2797,7 +2800,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
     swung && tr("swung", "gyda swing"),
   ].filter(Boolean).join(", "), tune.base);
   // Chords are always drawn (so playback has them), and hidden unless asked for.
-  paper.classList.toggle("hide-chords", !state.practice.chordsOnScore);
+  paper.classList.toggle("hide-chords", !chordsShown);
   if (chart) {
     const grid = chordChart(visualObj);
     grid.setAttribute("aria-hidden", "true");  // read as words instead (chartWords)
@@ -3134,13 +3137,10 @@ function chordSettings(tune, settings, redraw) {
 // Printing: the sheet music, in the key chosen on the page. A tune with chords
 // can also be printed with them above the stave, or as just its chord chart;
 // body[data-print] tells the print styles (style.css) which, until it's printed.
-function printAs(mode, paper, settings) {
+function printAs(mode) {
+  // The score is drawn again for printing (beforeprint), with the chords or without.
   document.body.dataset.print = mode;
-  paper.classList.toggle("hide-chords", mode !== "with-chords");
-  window.addEventListener("afterprint", () => {
-    delete document.body.dataset.print;
-    paper.classList.toggle("hide-chords", !state.practice.chordsOnScore);
-  }, { once: true });
+  window.addEventListener("afterprint", () => { delete document.body.dataset.print; }, { once: true });
   window.print();
 }
 
@@ -3178,7 +3178,7 @@ function printButton(tune, paper, settings) {
     items.push(["with-chords", tr("Print with chords", "Argraffu gyda chordiau")], ["chart", tr("Print the chord chart", "Argraffu'r siart cordiau")]);
   }
   return dropMenu(`print-menu-${tune.slug}`, [tr("Print / save", "Argraffu / cadw")], [
-    ...items.map(([mode, label]) => el("button", { type: "button", onclick: () => printAs(mode, paper, settings) }, label)),
+    ...items.map(([mode, label]) => el("button", { type: "button", onclick: () => printAs(mode) }, label)),
     el("button", { type: "button", class: "menu-sep", onclick: saveAbc }, tr("Save as ABC", "Cadw fel ABC")),
     el("button", { type: "button", onclick: saveMidi }, tr("Save as MIDI", "Cadw fel MIDI"))]);
 }

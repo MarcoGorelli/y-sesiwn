@@ -144,8 +144,9 @@ def music(abc: str) -> str:
     return re.sub(r"\[(?!K:)[A-Za-z]:[^\]]*\]", " ", body)  # other inline fields, e.g. [M:6/8]
 
 
-def melody(abc: str) -> list[int]:
-    """MIDI pitches of the tune's notes in written order (top note of chords)."""
+def melody_notes(abc: str) -> list[tuple[int, bool]]:
+    """Each note (top note of chords) in written order: its MIDI pitch, and whether it
+    only holds on the note before it (tied to it, the same pitch)."""
     signature: dict[str, int] = {}
     body = music(abc)
     bar: dict[tuple[str, int], int] = {}  # accidentals written earlier in this bar
@@ -158,21 +159,32 @@ def melody(abc: str) -> list[int]:
         alter = bar.get((name, octave), signature.get(name, 0))
         return 60 + 12 * octave + PITCH[name] + alter
 
-    notes = []
-    for m in re.finditer(r"\[K:([^\]]*)\]|" + NOTE_TOKEN.pattern, body):
+    notes: list[tuple[int, bool]] = []
+    tie = False  # the note before ends in a tie, "-"
+    for m in re.finditer(r"\[K:([^\]]*)\]|(?:" + NOTE_TOKEN.pattern + r")[\d/]*(\s*-)?", body):
         if m.group(1) is not None:  # key change
             signature = key_signature(m.group(1))
             bar.clear()
             continue
+        tied = m.group(7) is not None
         m = NOTE_TOKEN.match(m.group(0))
         if m.group(5):
             bar.clear()
-        elif m.group(1) is not None:
+            continue
+        if m.group(1) is not None:
             chord = [pitch(*n.groups()) for n in re.finditer(r"(\^\^|\^|__|_|=)?([A-Ga-g])([,']*)", m.group(1))]
-            notes.append(max(chord))
+            p = max(chord)
         else:
-            notes.append(pitch(m.group(2), m.group(3), m.group(4)))
+            p = pitch(m.group(2), m.group(3), m.group(4))
+        notes.append((p, tie and bool(notes) and notes[-1][0] == p))
+        tie = tied
     return notes
+
+
+def melody(abc: str) -> list[int]:
+    """MIDI pitches of the tune's notes in written order (top note of chords), a note
+    tied to the one before it being the same note held, not another."""
+    return [p for p, held in melody_notes(abc) if not held]
 
 
 LENGTH_TOKEN = re.compile(
@@ -227,23 +239,14 @@ def lead_in(abc: str) -> int:
 
 def lead_index(abc: str) -> int:
     """The position in melody_string() of the first note after the lead-in."""
-    notes, k = melody(abc), lead_in(abc)
-    if not k:
-        return 0
-    collapsed = len([p for i, p in enumerate(notes[:k]) if i == 0 or p != notes[i - 1]])
-    return collapsed - 1 if k < len(notes) and notes[k] == notes[k - 1] else collapsed
+    return sum(not held for _, held in melody_notes(abc)[: lead_in(abc)])
 
 
 def melody_string(abc: str) -> str:
-    """The melody for the note search, one character per note: chr(MIDI pitch + 160),
-    repeated notes collapsed. The app works it out itself (melodyOf in app.js); the
-    tests check the two agree for every tune."""
-    out = []
-    for p in melody(abc):
-        c = chr(p + 160)
-        if not out or out[-1] != c:
-            out.append(c)
-    return "".join(out)
+    """The melody for the note search, one character per note: chr(MIDI pitch + 160).
+    The app works it out itself (melodyOf in app.js); the tests check the two agree
+    for every tune."""
+    return "".join(chr(p + 160) for p in melody(abc))
 
 
 def normalize(text: str) -> str:
@@ -422,9 +425,8 @@ def tune_record(path: Path) -> dict:
         "beatName": BEAT_NAMES.get(beat, str(beat)),
         "bpm": default_bpm(headers, beat),
         "details": rows,
-        # Where the melody starts after the lead-in (its repeated notes are collapsed,
-        # so count the same way). The app works out the title, the search names and the
-        # melody (melody_string) itself, so they aren't in tunes.json.
+        # Where the melody starts after the lead-in. The app works out the title, the
+        # search names and the melody (melody_string) itself, so they aren't in tunes.json.
         "lead": lead_index(abc),
         "gloss": gloss,
         "chords": chords_source(abc),

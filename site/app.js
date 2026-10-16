@@ -448,8 +448,9 @@ function search(query) {
 }
 
 // ---- Search by notes (any key) ------------------------------------------------------
-// Tunes and queries become the steps between successive notes, in semitones, and
-// repeated notes are ignored; steps don't depend on the key. Notes tapped on the
+// Tunes and queries become the steps between successive notes, in semitones; steps
+// don't depend on the key. A repeated note typed twice ("A A") has to be repeated in
+// the tune, but one left out needn't be: "F# A C" finds F# A A C too. Notes tapped on the
 // keyboard (or typed with an octave, "G3") give exact steps, leaps included. Note
 // names without an octave ("D E F#") are compared by the smaller way round
 // (-5..+6 semitones), since people rarely know the octave of a tune they hum.
@@ -490,7 +491,7 @@ function exactSteps(midis) {
 }
 
 // A tune's melody: the MIDI pitches of its notes in written order (the top note of a
-// chord), repeated notes collapsed. Worked out from its ABC on first use, exactly as
+// chord), a tied note being one note held. Worked out from its ABC on first use, exactly as
 // build_site.py's melody_string() does (tests/test_site.py checks every tune), rather
 // than shipped in tunes.json.
 const KEY_SHARPS = { C: 0, G: 1, D: 2, A: 3, E: 4, B: 5, "F#": 6, "C#": 7, F: -1, Bb: -2, Eb: -3, Ab: -4, Db: -5, Gb: -6, Cb: -7 };
@@ -526,24 +527,42 @@ function melodyOf(tune) {
     return 60 + 12 * octave + LETTER_PITCH[name] + alter;
   };
   const notes = [];
-  const token = /\[K:([^\]]*)\]|\[([^\]|]*[A-Ga-g][^\]|]*)\]|(\^\^|\^|__|_|=)?([A-Ga-g])([,']*)|(\|)/g;
+  let tie = false;  // the note before ends in a tie, "-"
+  const token = /\[K:([^\]]*)\]|(?:\[([^\]|]*[A-Ga-g][^\]|]*)\]|(\^\^|\^|__|_|=)?([A-Ga-g])([,']*)|(\|))[\d/]*(\s*-)?/g;
   for (const m of musicLine(tune.abc).matchAll(token)) {
-    if (m[1] != null) { signature = keySignature(m[1]); bar.clear(); }
-    else if (m[6]) bar.clear();
-    else if (m[2] != null) notes.push(Math.max(...[...m[2].matchAll(/(\^\^|\^|__|_|=)?([A-Ga-g])([,']*)/g)].map((n) => pitch(n[1], n[2], n[3]))));
-    else notes.push(pitch(m[3], m[4], m[5]));
+    if (m[1] != null) { signature = keySignature(m[1]); bar.clear(); continue; }
+    if (m[6]) { bar.clear(); continue; }
+    const p = m[2] != null
+      ? Math.max(...[...m[2].matchAll(/(\^\^|\^|__|_|=)?([A-Ga-g])([,']*)/g)].map((n) => pitch(n[1], n[2], n[3])))
+      : pitch(m[3], m[4], m[5]);
+    if (!(tie && notes.at(-1) === p)) notes.push(p);  // a tied note is the one before, held
+    tie = m[7] != null;
   }
-  tune.melody = collapse(notes);
+  tune.melody = notes;
   return tune.melody;
 }
 
+// The steps through a tune, with its repeated notes (each a step of 0) or without, and
+// where the melody starts after its lead-in in each.
 function tuneSteps(tune) {
+  if (tune.steps) return tune.steps;
   const midis = melodyOf(tune);
-  tune.steps ??= {
-    exact: exactSteps(collapse(midis)),
-    folded: foldedSteps(collapse(midis.map((m) => m % 12))),
+  const classes = midis.map((m) => m % 12);
+  // Notes before the lead-in's end that aren't a repeat of the one before.
+  const changes = midis.slice(1, tune.lead + 1).filter((m, i) => m !== midis[i]).length;
+  tune.steps = {
+    repeats: { exact: exactSteps(midis), folded: foldedSteps(classes), lead: tune.lead },
+    collapsed: { exact: exactSteps(collapse(midis)), folded: foldedSteps(collapse(classes)), lead: changes },
   };
   return tune.steps;
+}
+
+// The query's steps as a pattern. A repeated note it has must be in the tune; when it
+// has some, the tune's other repeated notes may have been left out of it.
+function stepsPattern(query, repeats, octaves) {
+  const zero = String.fromCharCode(octaves ? 80 : 70);
+  const hex = (c) => `\\x${c.charCodeAt(0).toString(16).padStart(2, "0")}`;
+  return [...query].map((c) => (c === zero || !repeats ? hex(c) : `${hex(zero)}*${hex(c)}`)).join("");
 }
 
 // Lead-ins (pick-ups) are handled both ways round. A tune's own lead-in is known
@@ -552,7 +571,7 @@ function tuneSteps(tune) {
 // lead-in. And the query's first one to three notes may be a lead-in the tune doesn't
 // have (or has differently): they're tried without, when enough notes are left.
 const LEAD_TRIES = 3;       // query notes that may be dropped as a lead-in
-const MIN_AFTER_LEAD = 5;   // notes that must be left after dropping them
+const MIN_AFTER_LEAD = 5;   // notes that must be left after dropping them (a repeat not counting)
 // Close matches: tunes without the notes exactly are ranked by how many notes are
 // different (wrong, missing or extra; editDistance), counting one more if the
 // passage isn't at the start. Those within CLOSE_SHARE of the query's notes are
@@ -594,23 +613,30 @@ function editDistance(query, steps, fromStart, octaves) {
 function searchByNotes(text) {
   const notes = parseNotes(text);
   const octaves = notes.length > 0 && notes.every((n) => n.midi !== null);
-  const query = octaves ? exactSteps(collapse(notes.map((n) => n.midi))) : foldedSteps(collapse(notes.map((n) => n.pc)));
-  if (query.length < MIN_NOTES - 1) return null;
+  const values = notes.map((n) => (octaves ? n.midi : n.pc));
+  if (collapse(values).length < MIN_NOTES) return null;
+  const query = octaves ? exactSteps(values) : foldedSteps(values);
+  // Repeated notes count when the query has them; without, the tunes' are left out too.
+  const repeats = query.includes(String.fromCharCode(octaves ? 80 : 70));
   // The query, then the query without its first 1, 2, 3 notes (a step fewer each).
   const trimmed = [];
-  for (let drop = 1; drop <= LEAD_TRIES && query.length - drop >= MIN_AFTER_LEAD - 1; drop++) trimmed.push(query.slice(drop));
+  for (let drop = 1; drop <= LEAD_TRIES && collapse(values.slice(drop)).length >= MIN_AFTER_LEAD; drop++) trimmed.push(query.slice(drop));
   const results = [], close = [];
+  const patterns = new Map([query, ...trimmed].map((q) => [q, new RegExp(stepsPattern(q, repeats, octaves), "y")]));
+  const startsAt = (q, steps, i) => { const re = patterns.get(q); re.lastIndex = i; return re.test(steps); };
+  const inTune = new RegExp(patterns.get(query).source);
   for (const tune of state.data.tunes) {
-    const steps = tuneSteps(tune)[octaves ? "exact" : "folded"];
-    const starts = new Set([0, tune.lead]);  // with and without the tune's lead-in
-    const atStart = (q) => [...starts].find((i) => steps.startsWith(q, i));
+    const way = tuneSteps(tune)[repeats ? "repeats" : "collapsed"];
+    const steps = way[octaves ? "exact" : "folded"];
+    const starts = new Set([0, way.lead]);  // with and without the tune's lead-in
+    const atStart = (q) => [...starts].find((i) => startsAt(q, steps, i));
     let score = 0, where = 0, how = "";
     if (atStart(query) !== undefined) {
       [score, how] = [6, "start"];
     } else if (trimmed.some((q) => atStart(q) !== undefined)) {
       [score, how] = [5, "lead"];
     } else {
-      const at = steps.indexOf(query);
+      const at = steps.search(inTune);
       if (at >= 0) [score, where, how] = at <= 2 ? [4, at, "start"] : [3, at, "later"];
     }
     if (score) { results.push({ tune, score, where, how }); continue; }
@@ -939,6 +965,8 @@ function renderNotesPage(main) {
       "ac yn ysgrifennu'r nodau wrth i chi chwarae (dyw e ddim yn gweithio i hymian). Does dim yn cael ei recordio na'i anfon i unman."],
     ["Mae chwech i wyth nodyn fel arfer yn ddigon. Gallwch adael nodau arwain alaw allan, neu eu chwarae; ",
       "y naill ffordd neu'r llall, caiff ei chanfod."],
+    ["Mae nodyn sy'n cael ei ailadrodd (A A) yn cyfrif os ydych chi'n ei deipio ddwywaith, ond does dim rhaid: ",
+      "mae F# A C yn canfod F# A A C hefyd."],
     ["Mae nodyn anghywir, coll neu ychwanegol yn dal i ganfod yr alaw, ymhlith y cyfatebiaethau ", el("em", {}, "agos"),
       ". Os nad oes dim yn cyfateb, dangosir yr alawon agosaf."],
     ["Mae cyfeiriad y dudalen hon yn cadw'ch nodau, felly gallwch roi nod tudalen ar chwiliad neu ei anfon at rywun."],
@@ -947,6 +975,7 @@ function renderNotesPage(main) {
       "microphone and writes down the notes as you play (it doesn't work for humming). Nothing is recorded or sent anywhere."],
     ["Six to eight notes is usually plenty. A tune's lead-in notes can be left out, or played; ",
       "either way it's found."],
+    ["A repeated note (A A) counts if you type it twice, but needn't be: F# A C finds F# A A C too."],
     ["A wrong, missing or extra note still finds the tune, among the ", el("em", {}, "close"),
       " matches. If nothing matches, the nearest tunes are shown."],
     ["The address of this page keeps your notes, so you can bookmark a search or send it to someone."],

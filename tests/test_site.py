@@ -698,6 +698,14 @@ def test_search_by_notes(page, notes, group, how):
     assert any(g == group and how in h for g, h in results[:3]), results[:3]
 
 
+def test_search_by_notes_counts_repeated_notes(page):
+    # Typed twice, a repeated note has to be repeated in the tune; left out, it needn't be.
+    page.goto_site()
+    groups = lambda notes: page.evaluate("(n) => searchByNotes(n).filter((r) => !r.close).map((r) => r.tune.group)", notes)
+    assert groups("F#4 A4 A4 C5 B4 B4") == ["ymgyrchdon-y-waunlwyd"]
+    assert "ymgyrchdon-y-waunlwyd" in groups("F#4 A4 C5 B4") and len(groups("F#4 A4 C5 B4")) > 1
+
+
 def test_search_by_notes_never_empty(page):
     page.goto_site("?page=notes")
     page.fill("#notes-search", "C C# D D# E F F# G G# A")

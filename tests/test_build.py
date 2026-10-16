@@ -323,6 +323,12 @@ def test_decorations_are_not_notes():
     assert b.melody(abc) == [69, 71]
 
 
+def test_tied_notes_are_one_note():
+    # A note tied to the next is held, not played again (for the note search); a repeat is played again.
+    abc = "X:1\nT:t\nM:4/4\nL:1/8\nK:C\nA4- A2 AB | c4 -c4|]\n"
+    assert b.melody(abc) == [69, 69, 71, 72]
+
+
 def test_playwright_matches_the_dev_container():
     # The dev container's image comes with browsers for one Playwright version only.
     image = re.search(r"playwright/python:v([\d.]+)", (b.ROOT / ".devcontainer" / "Dockerfile").read_text(encoding="utf-8"))

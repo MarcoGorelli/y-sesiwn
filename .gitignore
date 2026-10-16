@@ -10,6 +10,7 @@ tunes/**/*.json
 tunes/**/*.gif
 tunes/**/*.mid
 tunes/**/*.mp3
+*.mp3
 
 # macOS
 .DS_Store

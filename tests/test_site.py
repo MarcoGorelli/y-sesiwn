@@ -3362,6 +3362,47 @@ def test_phone_downloads_no_piano_notes_until_play(browser, site):
     context.close()
 
 
+def test_player_shows_the_piano_notes_downloading(browser, site):
+    # On a slow signal, Play waits for the piano notes: the bar's groove fills as they
+    # come, and goes once they're in and the tune plays.
+    context = browser.new_context(service_workers="block", **PHONE)
+    held = []
+    context.route("**/soundfont/**", lambda route: held.append(route))  # let through one at a time, below
+    page = context.new_page()
+    page.goto(site + "alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-inline-audio")
+    page.click(".score .abcjs-midi-start")
+    page.wait_for_selector(".score .seek-track.fetching", timeout=10000)
+    fetched = lambda: page.evaluate("getComputedStyle(document.querySelector('.seek-track')).getPropertyValue('--fetched')")
+    assert fetched() == "0.0%"
+    seen = []
+    while held:
+        held.pop(0).continue_()
+        page.wait_for_timeout(100)
+        seen.append(fetched())
+    assert len(set(seen)) > 2 and seen[-2] != "0.0%"  # it filled bit by bit
+    page.wait_for_function("document.querySelector('.abcjs-note_playing')", timeout=30000)
+    assert page.locator(".score .seek-track.fetching").count() == 0
+    assert page.locator(".score .seek[aria-busy]").count() == 0
+    context.close()
+
+
+def test_tune_samples_asked_for_once(page, site):
+    # Brave adds its anti-fingerprinting noise to a buffer's samples on every
+    # getChannelData: asked again for each note, a long tune took seconds to start.
+    # Each buffer's channel is asked for once, and the tune still plays.
+    page.add_init_script("""window.asked = new Map(); const get = AudioBuffer.prototype.getChannelData;
+      AudioBuffer.prototype.getChannelData = function (channel) {
+        if (!asked.has(this)) asked.set(this, [0, 0]);
+        asked.get(this)[channel]++;
+        return get.call(this, channel);
+      };""")
+    page.goto_site("alaw/gorsaf-y-gof/")
+    page.click(".score .abcjs-midi-start")
+    page.wait_for_function("document.querySelector('.abcjs-note_playing')", timeout=30000)
+    assert page.evaluate("Math.max(...[...asked.values()].flat())") == 1
+
+
 def test_sound_note_under_the_player(browser, site):
     # On a phone, once a tune is played, every piano note is saved by itself. Before that,
     # with no signal, Play waits for a signal and says why (rather than playing silence);

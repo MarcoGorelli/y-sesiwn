@@ -759,6 +759,13 @@ details[open] > summary::before { transform: rotate(90deg); }
 .score .seek-track { position: relative; flex: 1; display: flex; align-items: center; min-width: 0; }
 .score .seek-track .abcjs-midi-progress-background { flex: 1; }
 .score .seek-track .seek { position: absolute; inset: 0 8px 0 15px; width: auto; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+/* Play pressed, the piano notes still downloading (app.js): the groove fills in grey as they come */
+.score .seek-track.fetching .abcjs-midi-progress-background {
+  background: linear-gradient(var(--muted-on-slate), var(--muted-on-slate)) left center / var(--fetched, 0%) var(--groove) no-repeat,
+    linear-gradient(var(--player-track), var(--player-track)) center / 100% var(--groove) no-repeat;
+  transition: background-size .2s ease-out;
+}
+@media (prefers-reduced-motion: reduce) { .score .seek-track.fetching .abcjs-midi-progress-background { transition: none; } }
 .score .seek-track:has(.seek:focus-visible) .abcjs-midi-progress-background { outline: 2px solid var(--ivory); outline-offset: 2px; border-radius: 4px; }
 /* Keyboard focus on the player in ivory, like the slider's: the page's red ring is too faint
    on the slate bar, and lost on the red Play disc */

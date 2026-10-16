@@ -9,6 +9,44 @@ const AUDIO_PARAMS = {
   // abcjs only applies this boost automatically for its default online soundfont.
   soundFontVolumeMultiplier: 3.0,
 };
+// abcjs fetches each piano note by itself (all of a tune's at once, each its own request)
+// and says nothing until they're all in: a phone on a slow signal waits a few seconds
+// after Play. So the fetches are counted here, for the player's bar to fill as they come.
+const noteFetches = {
+  started: 0, done: 0, watchers: new Set(),
+  tell() { for (const watch of this.watchers) watch(); },
+};
+{
+  const { open, send } = XMLHttpRequest.prototype;
+  XMLHttpRequest.prototype.open = function (method, url, ...rest) {
+    this.pianoNote = String(url).includes("soundfont/");
+    return open.call(this, method, url, ...rest);
+  };
+  XMLHttpRequest.prototype.send = function (...args) {
+    if (this.pianoNote) {
+      noteFetches.started++;
+      this.addEventListener("loadend", () => {
+        // A batch over, the next starts counting from nothing again.
+        if (++noteFetches.done === noteFetches.started) noteFetches.started = noteFetches.done = 0;
+        noteFetches.tell();
+      });
+      noteFetches.tell();
+    }
+    return send.apply(this, args);
+  };
+}
+// abcjs lays each note into the tune's sound by asking for the whole tune's samples
+// (getChannelData) again, every time. Brave, against fingerprinting, adds its noise to
+// all of them on each ask: a second or two after Play for a long tune. Each channel's
+// samples are the same array every time anyway, so the first ask is kept and reused.
+if (window.AudioBuffer) {
+  const { getChannelData } = AudioBuffer.prototype;
+  const kept = new WeakMap();  // buffer -> its channels' samples
+  AudioBuffer.prototype.getChannelData = function (channel) {
+    if (!kept.has(this)) kept.set(this, []);
+    return kept.get(this)[channel] ??= getChannelData.call(this, channel);
+  };
+}
 // On iPhone/iPad, web audio is muted by the silent switch unless the page says
 // its sound is "playback" (like a music app). Ours only plays when someone presses
 // play or a piano key, so ask for playback. (Safari 16.4+; ignored elsewhere.)
@@ -2770,7 +2808,30 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
       if (controller.timer) controller.seek(at); else startAt = at;
       showState();
     } });
+  // Play pressed and the piano notes still coming: the bar's groove fills as they arrive.
+  // Not for a moment (notes already saved come at once), so it doesn't flicker.
+  let fetchShown = 0;
+  const showFetch = () => {
+    const track = seek.parentElement;
+    const loading = audio.isConnected && start?.classList.contains("abcjs-loading");
+    // Watched while Play waits: its notes may only be asked for a moment after.
+    noteFetches.watchers[loading ? "add" : "delete"](showFetch);
+    if (!loading || !noteFetches.started) {
+      clearTimeout(fetchShown);
+      fetchShown = 0;
+      track?.classList.remove("fetching");
+      seek.removeAttribute("aria-busy");
+      return;
+    }
+    track?.style.setProperty("--fetched", `${(100 * noteFetches.done / noteFetches.started).toFixed(1)}%`);
+    if (!fetchShown) fetchShown = setTimeout(() => {
+      if (!start.classList.contains("abcjs-loading")) return;
+      track?.classList.add("fetching");
+      seek.setAttribute("aria-busy", "true");
+    }, 300);
+  };
   const showState = () => {
+    showFetch();
     const playing = start?.classList.contains("abcjs-pushed");
     if (playing && startAt !== null && controller.timer) { controller.seek(startAt); startAt = null; }
     if (playing !== audioFocus.playing && state.synth === controller) audioFocus.hold(playing, tune.title);

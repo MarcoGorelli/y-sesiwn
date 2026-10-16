@@ -5,14 +5,15 @@ S:http://alawoncymru.com/alawon/Tunes/CadIdSt/CadIdSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
-N:The score plays part A twice, part B, then part A again (D.C. al Fine).
+N:The score plays part A twice, part B, then part A again (D.C. al Fine). The recording leads back into part A with Bc.
 M:3/4
 L:1/8
 Q:1/4=120
 K:D
 A2 | "D"d2 A2 F2 | D3 E F2 | "G"G2 B2 e2 | "A"c2 A2 c2 | "D"d2 A2 F2 |
 "G"G3 A B2 | "A"A2 d2 c2 | "D"d4 :| de | "D"f2 d2 f2 | "A"e2 c2 A2 |
-"E"B2 Bc de | "A"c2 A2 e2 | "D"f2 d2 f2 | "A"e2 c2 A2 | "E"d2 c2 B2 | "A"A4 Bc |
+"E"B2 Bc de | "A"c2 A2 e2 | "D"f2 d2 f2 | "A"e2 c2 A2 | "E"d2 c2 B2 | "A"A4 A2 |
 "D"d2 A2 F2 | D3 E F2 | "G"G2 B2 e2 | "A"c2 A2 c2 | "D"d2 A2 F2 |
-"G"G3 A B2 | "A"A2 d2 c2 | "D"d4 z2 |]
+"G"G3 A B2 | "A"A2 d2 c2 | "D"d4 |]

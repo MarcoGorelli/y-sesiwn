@@ -5,15 +5,16 @@ S:http://alawoncymru.com/alawon/Tunes/Glwysen/Glwysen.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
-N:The score plays part A, part B, then part A again (D.C. al Fine), and has a^ga=g fe in the fifth bar of part B; the recording plays ag ag fe.
+N:The score plays part A, part B, then part A again (D.C. al Fine). The recording plays ag ag fe in the fifth bar of part B, where the score has a^ga =gfe, and leads back into part A with FE.
 M:3/4
 L:1/8
 Q:1/4=120
 K:Am
 |: E2 | "Am"A2 AB cA | "E"B2 ^G2 E2 | "F"A2 AB cd | "E"e3 d cB | "Am"A2 AB cA |
 "E"B2 ^G2 E2 | "F"AF E"E"c B^G | "Am"A4 :| B2 | "C"c2 cd ec | "G"g4 G2 | "Am"A2 AB cd |
-"E"e4 e2 | "Am"ag ag fe | "Dm"fe fe dc | "F"dc dc BA | "E"^GB AG FE |
+"E"e4 e2 | "Am"a^ga =gfe | "Dm"fe fe dc | "F"dc dc BA | "E"^GB AG E2 |
 "Am"A2 AB cA | "E"B2 ^G2 E2 | "F"A2 AB cd | "E"e3 d cB |
 "Am"A2 AB cA | "E"B2 ^G2 E2 | "F"AF E"E"c B^G | "Am"A4 |]

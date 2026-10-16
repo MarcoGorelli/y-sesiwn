@@ -5,6 +5,7 @@ S:http://alawoncymru.com/alawon/Tunes/SetRosmari/SetRosmari.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1 pickup=1/4 bars=1-65
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams ar sail alaw Christine Stinchcombe-Brown
 N:The recording goes on into another tune, which is left out here, and orders some bars of each part differently from the score.

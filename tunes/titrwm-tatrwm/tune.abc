@@ -5,12 +5,14 @@ S:http://alawoncymru.com/alawon/Tunes/JigsYWerin/JigsWerin.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1 transpose=-5
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:The recording splits the last F of the fifth bar into two sixteenths.
 M:6/8
 L:1/8
 Q:3/8=67
 K:Em
 "Em"G2 G "B5"F F2 | "Em"E2 F E2 E | "Am"A A2 "C"G2 G | "B5"G F4 F |
-"Em"G2 G "B5"F2 F/F/ | "C"E2 F G2 A | "B5"B B2 F2 G | "Em"F E2 z3
+"Em"G2 G "B5"F2 F | "C"E2 F G2 A | "B5"B B2 F2 G | "Em"F E2 z3
 |: "Em"G2 E B2 B | "G"B2 G F2 F | "Em"E2 G "B5"F2 G | "Em"E E3 z2 :|

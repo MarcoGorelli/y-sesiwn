@@ -5,14 +5,15 @@ S:http://alawoncymru.com/alawon/Tunes/JigOwSet/JigOwnSt.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
-N:The score has sixteenth-note pick-ups (d/c/), AGF G2 at the ends of the parts and an eighth rest before part B.
+N:The recording plays the pick-ups as eighth notes (dc), AGF G at the ends of the parts and a crotchet rest before part B.
 M:6/8
 L:1/8
 Q:3/8=53
 K:G
-|: dc | "G"B2 G Bcd | "C"e2 c cde | "G"dBG dBG | "D"FAA A2 d/c/ |
-"G"B2 G Bcd | "C"e2 c cde | "G"dBG "D"cAF | "D"AGF "G"G :|
-|: z2 | "G"B2 d gdB | "C"c2 e gec | "G"B2 d gdB | "D"Ade fed |
-"G"B2 d gdB | "C"c2 e gec | "G"BdB "D"cAF | "D"AGF "G"G :|
+|: d/c/ | "G"B2 G Bcd | "C"e2 c cde | "G"dBG dBG | "D"FAA A2 d/c/ |
+"G"B2 G Bcd | "C"e2 c cde | "G"dBG "D"cAF | "D"AGF "G"G2 :|
+|: z | "G"B2 d gdB | "C"c2 e gec | "G"B2 d gdB | "D"Ade fed |
+"G"B2 d gdB | "C"c2 e gec | "G"BdB "D"cAF | "D"AGF "G"G2 :|

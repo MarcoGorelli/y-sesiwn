@@ -5,13 +5,15 @@ S:http://alawoncymru.com/alawon/Tunes/SetMelin4/Melin4.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams o fersiwn Alain Stivell
+N:The recording holds the E in the fourth bar through the rest.
 M:4/4
 L:1/8
 Q:1/4=100
 K:G
 EF | "Em"G2 G2 "B5"A2 F2 | "Em"E4 E2 EF | "Em"G2 G2 "B5"A2 F2 |
-"Em"E6 EF | "Em"G2 G2 "B5"A2 F2 | "Em"E2 F2 G2 E2 | "C"D2 E2 D2 C2 |
+"Em"E4- E z EF | "Em"G2 G2 "B5"A2 F2 | "Em"E2 F2 G2 E2 | "C"D2 E2 D2 C2 |
 "B5"B,6 z2 || "Em"B,2 B,B, B,2 A,2 | "C"G,2 A,2 "B5"B,4 | "Em"B,2 B,B, B,2 A,2 |
 "C"G,2 A,2 "B5"B,4 | "Em"B,2 B,B, E2 F2 | "G"G2 F2 "Am"A4 | "B5"F2 FF E2 D2 | "Em"E6 |]

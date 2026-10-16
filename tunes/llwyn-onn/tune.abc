@@ -1,10 +1,12 @@
 X:1
 T:Llwyn Onn
+T:Llwyn Onn - syml
 R:walts
 S:http://alawoncymru.com/alawon/Tunes/CadIdSt/CadIdSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 N:The score plays part A twice, part B, then part A again (D.C. al Fine).
 N:The MIDI varies the last A (AB cB AG, GA BA GF); this follows the score and the Glan Camlad recording, which repeat A unchanged.

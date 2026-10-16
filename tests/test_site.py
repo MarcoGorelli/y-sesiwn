@@ -39,7 +39,6 @@ EXPECTED_ODD_BARS = {
     "llongau-caernarfon": "has one bar in 6/4",
     "bonheddwr-mawr-o-r-bala": "its second part starts with a lead-in, without a double bar",
     "merch-megan-version-2": "its third part starts with a lead-in, without a double bar",
-    "rownd-yr-horn": "its endings are split across a tie, as on the score",
     "erddigan-caer-waen": "has a part in 6/8",
     "ffarwel-trwy-r-pwll": "has a part in 6/8",
     # A note short in Brian Martin's file, and in the tune's N: line; the right note isn't known.
@@ -4065,10 +4064,10 @@ def test_search_results_a_to_z_whatever_the_capitals(page):
 def test_phone_version_menu_says_which_version(browser, site):
     context = browser.new_context(service_workers="block", **PHONE)
     page = context.new_page()
-    page.goto(site + "alaw/merch-megan/?v=1")
+    page.goto(site + "alaw/ffaniglen/?v=1")
     page.wait_for_selector(".score .abcjs-staff")
     summary = page.locator(".versions-fold > summary")
-    assert summary.locator("small").inner_text() == "Alawon Cymru · G major · “Merch Megan”"
+    assert summary.locator("small").inner_text() == "Alawon Cymru · 4/4 · “Ffaniglen”"
     assert summary.evaluate("(s) => s.scrollWidth <= s.clientWidth + 1")  # cut short, not past its edge
     context.close()
 
@@ -4122,10 +4121,10 @@ def test_browse_link_on_a_phone_folds_the_choices(browser, site):
 def test_versions_told_apart(page):
     # Two versions from the same book in the same key: the one with a name of its own says
     # it, and so the other says the tune's own name.
-    page.goto_site("alaw/merch-megan/")
+    page.goto_site("alaw/ffaniglen/")
     page.wait_for_selector(".score .abcjs-staff")
     labels = page.locator(".versions a small").all_inner_texts()
-    assert labels[2].endswith("“Merch Megan”") and labels[3].endswith("“Merch Megan syml”")  # Alawon Cymru's two, last
+    assert labels[1].endswith("“Ffaniglen”") and labels[2].endswith("“Ffaniglen Syml”")  # Alawon Cymru's two, last
     assert len(set(labels)) == len(labels)
 
 

@@ -5,15 +5,14 @@ S:http://alawoncymru.com/alawon/Tunes/YnysAfan/PontYnysAfan.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Meurig Williams
-N:The score has part A with first and second endings (GA Bc d4, then G8); the recording plays it out with lead-ins.
+N:The recording plays part A twice as many times as the score, with lead-ins (G3 z F2 E2, G3 z A2 B2) in place of the second ending's G8.
 M:2/2
 L:1/8
 Q:1/2=75
 K:G
-|: "G"D2 GF "C"E2 C2 | "A"E2 AG "D"F2 D2 | "C"E2 AG "D"F2 BA | "G"GA Bc "D"d4 |
-"G"D2 GF "C"E2 C2 | "A"E2 AG "D"F2 D2 | "C"E2 AG "D"F2 BA |1 "G"G3 z F2 E2 :|
-[2 "G"G3 z A2 B2 || "Am"cB AB c2 cd | "Em"e2 ed c2 B2 | "Am"cB AG FG A2 |
-"C"B2 GA "D"G2 F2 | "G"D2 GF "C"E2 C2 | "A"E2 AG "D"F2 D2 | "C"E2 AG "D"F2 BA |
-"G"G8 |]
+|: "G"D2 GF "C"E2 C2 | "A"E2 AG "D"F2 D2 | "C"E2 AG "D"F2 BA |1 "G"GA Bc "D"d4 :|
+[2 "G"G8 || "Am"cB AB c2 cd | "Em"e2 ed c2 B2 | "Am"cB AG FG A2 |
+"C"B2 GA "D"G2 F2 | "G"D2 GF "C"E2 C2 | "A"E2 AG "D"F2 D2 | "C"E2 AG "D"F2 BA | "G"G8 |]

@@ -5,9 +5,10 @@ S:http://alawoncymru.com/alawon/Tunes/StEliJen/EliJenks.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Alaw Meurig Williams
-N:The score plays part A twice, part B, then part A again (D.C. al Fine).
+N:The score plays part A twice, part B, then part A again (D.C. al Fine). The recording holds the last note longer.
 M:4/4
 L:1/8
 Q:1/4=90
@@ -17,5 +18,4 @@ K:G
 "D"AF DF A2 cA | "G"BG DG B2 Bd | "C"ec A2 dB G2 | "Am"cB AG "D"F2 AG |
 "D"AF DF A2 cA | "G"BG DG B2 Bd | "C"ed cB "Am"AG FG | "D"AG FE D2 Bc |
 "G"dg dB G2 dB | "C"c2 c2 c2 dc | "G"BG DG B2 cd | "D"A2 A2 A2 Bc |
-"G"dg dB G2 dB | "C"ec GE G2 ec | "G"dB GB "D"cA FA | "G"G2 B2 G4- |
-G8 |]
+"G"dg dB G2 dB | "C"ec GE G2 ec | "G"dB GB "D"cA FA | "G"G2 B2 G2 |]

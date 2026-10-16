@@ -5,13 +5,15 @@ S:http://alawoncymru.com/alawon/Tunes/CeilyRhe/CeilyRhe.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
+N:The recording plays the tied A and d notes as separate notes.
 M:6/8
 L:1/8
 Q:3/8=80
 K:D
 |: "D"F2 A d2 e | "D"d3 d2 c | "D"e2 d "E"c2 B |1 "A"A6 :|
-[2 "A"A3 A2 d/e/ || "D"f3 "A"e3 | "D"d3 d z e | "D"f3 "A"e3 |
-"D"d3 d z c | "D"B2 A "A"d2 c | "D"B2 A d2 e | "D"f3 "A"e3 |
+[2 "A"A3- A2 d/e/ || "D"f3 "A"e3 | "D"d3- d z e | "D"f3 "A"e3 |
+"D"d3- d z c | "D"B2 A "A"d2 c | "D"B2 A d2 e | "D"f3 "A"e3 |
 "D"d6 |]

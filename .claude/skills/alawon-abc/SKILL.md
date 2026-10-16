@@ -7,8 +7,11 @@ description: Download Welsh traditional tunes from alawoncymru.com (CLERA "Alawo
 
 The site (http://alawoncymru.com/alawon/Tunes/Tunesal.html) has, per tune, a
 NoteWorthy Composer MIDI (melody only, repeats played out) and a GIF score.
-The notes come from the MIDI; the **bar layout must match the score**: same
-pickup, same bar lines, same repeat marks and endings, same line breaks.
+The MIDI gives a first draft of the notes; the **score is the reference**.
+The bar layout must match it (same pickup, same bar lines, same repeat marks
+and endings, same line breaks), and where the score and the MIDI disagree on
+notes or rhythms, **the score wins**: people play from the ABC, so an extra
+note the MIDI has and the score doesn't is a bug.
 
 Scripts are in `scripts/` next to this file. They need only `mido`; run them as
 
@@ -84,6 +87,10 @@ by editing the text directly (bar lines, repeat marks, line breaks).
 6. **Line breaks.** One ABC line per score line (system).
 7. **Title.** `T:` should be the name printed on the score (keep the others as
    extra `T:` lines).
+8. **Notes and rhythms.** Read the score bar by bar against the ABC. NoteWorthy
+   MIDIs often play a part differently the second time (passing quavers, lead-in
+   notes, a held last note), add ornaments, or swing even quavers. Wherever the
+   score differs, write what the score has.
 
 Then run:
 
@@ -95,10 +102,16 @@ abctool.py check tunes/<slug>/tune.abc tunes/<slug>/tune.mid
 - `REPEATS-DIFFER` — same music, but a passage is repeated a different number
   of times than in the MIDI. Fine only if that is what the score's repeat
   marks say; mention it to the user.
-- `MISMATCH` — a note, rhythm or bar was changed or lost. Fix it; never leave a
-  tune in this state. (If the score and the MIDI genuinely disagree on notes,
-  keep the MIDI's notes, add an `N:` line describing the difference, and tell
-  the user.)
+- `MISMATCH` — the ABC's notes differ from the MIDI's; every differing
+  passage is listed (`ABC bar N: ... / MIDI: ...`). Look at each in the score.
+  Where the ABC is wrong (a slip in a hand edit), fix it. Where the ABC has
+  what the score has, it is right: add the line `%%alawon-follows-score` after
+  the `%%alawon` lines and an `N:` line saying what the MIDI / recording plays
+  instead (`N:The score has AFD DEF in the second bar of part B; the recording
+  plays A2 D DEF.`), and tell the user.
+- `FOLLOWS-SCORE` — the tune is marked as following the score; `check` lists
+  every difference from the MIDI. Each one must be on the score; anything else
+  is a mistake to fix.
 
 The "bars not matching the meter" list is information: a pickup bar and the
 short bar that completes it are expected; anything else deserves a look.
@@ -116,6 +129,9 @@ staff are listed too (each staff's repeat signs count), so expect some false ala
 The same review usually turns up tunes whose bar lines are shifted by a missed pick-up
 (re-run `convert` with `--pickup`) or whose MIDI is in another key than the score
 (`--transpose` and `--key`).
+
+`OK` only proves the ABC matches the MIDI, not the score: a tune can be `OK`
+and still have the MIDI's extra notes, so step 8 is needed for every tune.
 
 When a tune is done, add the line `%%alawon-reviewed` after the `%%alawon`
 line so `batch --force` never overwrites it.

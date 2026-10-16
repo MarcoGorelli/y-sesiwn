@@ -6,6 +6,7 @@ S:http://alawoncymru.com/alawon/Tunes/JigsYWerin/JigsWerin.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1 transpose=-5
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 N:Follows the score. The alawoncymru recording plays part B in four bars, leaving out the middle four, and starts the second line of part A with G2 G FEF where the score has GFG FEF.

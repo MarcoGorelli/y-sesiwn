@@ -5,13 +5,14 @@ S:http://alawoncymru.com/alawon/Tunes/HoffBeth/HoffBeth.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
-N:The score writes it in cut time with every note twice as long, so each bar here is two of its bars.
+N:The score writes it in cut time with every note twice as long, so each bar here is two of its bars. The recording plays d3 at the end of part A both times, where the score's first ending has f3, and leads into the third line of part B with c/d/.
 M:2/2
 L:1/8
 Q:1/2=30
 K:D
-|: d/e/ | "D"ff fa dd dd/e/ | "D"ff fa "A"e3 c/d/ | "A"ee eg/e/ cc cc/d/ | "A"ee ea "D"d3 :| c/d/ |
-"A"e>c "E"d>B "A"c>A "E"B>^G | "A"Aa aa a3 e/f/ | "A"gg "D"ff "A"ee "D"dd | "A"cd gf e3 c/d/ |
+d/e/ |: "D"ff fa dd dd/e/ | "D"ff fa "A"e3 c/d/ | "A"ee eg/e/ cc cc/d/ |1 "A"ee ea "D"f3 d/e/ :|2 "A"ee ea "D"d3 c/d/ ||
+"A"e>c "E"d>B "A"c>A "E"B>^G | "A"Aa aa a3 e/f/ | "A"gg "D"ff "A"ee "D"dd | "A"cd gf e3 d/e/ |
 "D"ff fa dd dd/e/ | "D"ff fa "A"e3 c/d/ | "A"e>c "E"d>B "A"c>A "E"B>^G | "A"Aa ac "D"d3 |]

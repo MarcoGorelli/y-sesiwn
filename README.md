@@ -546,6 +546,9 @@ short:
    bars, repeats and line breaks to match the score image.
 3. Each tune can then be reviewed against its score and fixed;
    `abctool.py check` compares the ABC with the MIDI note for note.
+   Where the score and the MIDI disagree, the ABC follows the score; such
+   tunes have a `%%alawon-follows-score` line (`check` then lists the
+   differences) and an `N:` line describing them.
    Reviewed tunes are marked with a `%%alawon-reviewed` line.
 
 Run the scripts with:

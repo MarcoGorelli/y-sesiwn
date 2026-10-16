@@ -6,6 +6,7 @@ Z:MIDI transcribed with alawon-abc
 C:Trefniant Meurig Williams o addasiad Mike Lease
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 N:Written in even quavers, as on the score; the alawoncymru recording swings it.
 M:4/4

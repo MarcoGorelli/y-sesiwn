@@ -5,9 +5,10 @@ S:http://alawoncymru.com/alawon/Tunes/RalTSiSt/RalTSiSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
-N:The score ends on a held G6; the recording plays G2 and a rest.
+N:The recording ends with G2 and a rest, where the score holds G6.
 M:4/4
 L:1/8
 Q:1/4=120
@@ -17,4 +18,4 @@ K:G
 ef | "G"g2 g2 d2 ef | "G"g2 g2 d2 ef | "G"g2 g2 "C"ag fe | "D"d6 ^cd |
 "A"e2 e2 A2 ^cd | "A"e2 e2 A2 fg | "A"a2 g2 f2 e2 | "D"d6 dc |
 "G"B2 B2 B2 d2 | "G"G2 G2 G2 A2 | "G"B2 B2 "C"c2 e2 | "D"d6 ef |
-"Em"g2 g2 "D"f2 f2 | "C"e2 e2 "Em"d2 d2 | "C"c2 e2 "D"dc BA | "G"G2 z4 |]
+"Em"g2 g2 "D"f2 f2 | "C"e2 e2 "Em"d2 d2 | "C"c2 e2 "D"dc BA | "G"G6 |]

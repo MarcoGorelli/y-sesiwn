@@ -6,12 +6,14 @@ S:http://alawoncymru.com/alawon/Tunes/StHufMel/StHufMel.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:The recording holds the long d, g and e on through the rests that follow them on the score, and holds the last G longer.
 M:2/4
 L:1/8
 Q:1/4=80
 K:G
-|: D | "G"G>A BG | "D"A>B cA | "G"B d3- | "G"d3 D | "G"GB Bd | "D"cA GF | "G"G4- | "G"G2 z :| B |
-"C"c>B cd | "C"e/f/g fd | "C"e/f/ g3- | "C"g3 B | "C"c>B cd | "C"e/f/g fd | "C"e4- | "C"e2 z d |
-"G"gd dB | "C"ec "D"cA | "G"dB BG | "D"FE FD | "G"GB Bd | "D"cA GF | "G"G4- | "G"G4 |]
+|: D | "G"G>A BG | "D"A>B cA | "G"Bd- d2- | "G"d2 z D | "G"GB Bd | "D"cA GF | "G"G4- | "G"G2 z :| B |
+"C"c>B cd | "C"e/f/g fd | "C"e/f/g- g2- | "C"g2 z B | "C"c>B cd | "C"e/f/g fd | "C"e4- | "C"e z2 d |
+"G"gd dB | "C"ec "D"cA | "G"dB BG | "D"FE FD | "G"GB Bd | "D"cA GF | "G"G4- | "G"G3 |]

@@ -16,7 +16,9 @@ ties notes across bar lines, and folds the MIDI's played-out repeats back into
 |: :| and [1 [2 endings.
 
 A tune.abc containing the line "%%alawon-reviewed" has been checked against
-its score by hand; `batch --force` never overwrites it.
+its score by hand; `batch --force` never overwrites it. One containing
+"%%alawon-follows-score" plays the score's notes where the score and the MIDI
+disagree; `check` then lists the differences instead of failing.
 
 `check` parses the ABC (repeats, endings, ties, tuplets, broken rhythm,
 accidentals, key/meter changes), plays it out and compares it event by event
@@ -1041,6 +1043,31 @@ def check_loose(abc_text, tune):
     return True, "; ".join(extra)
 
 
+def differences(abc_text, tune):
+    """Every passage where the ABC's notes differ from the MIDI's, as
+    'ABC bar N: ... / MIDI: ...' lines (bars are the ABC's played bars)."""
+    ev, info = abc_played(abc_text)
+    whole = tune.tpb * 4
+    a = [(d, tuple(p)) for t, d, p in ev]
+    b = [(F(d, whole), tuple(p)) for on, d, p in played_events(tune)]
+
+    def bar_of(t):
+        return max(j for j, (st, ln, m) in enumerate(info) if st <= t) + 1
+
+    def notes(seq):
+        text = " ".join("+".join(PC_NAME[x % 12] + str(x // 12 - 1) for x in p) + f"/{d}"
+                        for d, p in seq[:12]) or "(nothing)"
+        return text + (f" ... ({len(seq)} notes)" if len(seq) > 12 else "")
+
+    out = []
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, a, b, autojunk=False).get_opcodes():
+        if tag == "equal":
+            continue
+        at = ev[i1][0] if i1 < len(ev) else ev[-1][0]
+        out.append(f"ABC bar {bar_of(at)}: {notes(a[i1:i2])}  /  MIDI: {notes(b[j1:j2])}")
+    return out
+
+
 def fmt_ev(t, d, p):
     names = "+".join(PC_NAME[x % 12] + str(x // 12 - 1) for x in p)
     return f"{names} at {t} len {d}"
@@ -1163,6 +1190,12 @@ def cmd_check(a):
     ok, msgs = check(text, tune)
     if ok:
         print("OK: ABC plays the same notes as the MIDI")
+    elif FOLLOWS_SCORE in text:
+        print("FOLLOWS-SCORE: the ABC follows the score where it differs from the MIDI; "
+              "check each difference against the score:")
+        for line in differences(text, tune):
+            print("  " + line)
+        return 0
     else:
         bars_ok, why = check_loose(text, tune)
         print("REPEATS-DIFFER: same music, but " + why +
@@ -1170,6 +1203,7 @@ def cmd_check(a):
               if bars_ok else "MISMATCH")
         if not bars_ok:
             msgs.append(why)
+            msgs += differences(text, tune)
     for m in msgs:
         print("  " + m)
     return 0 if ok else 2 if bars_ok else 1
@@ -1189,6 +1223,7 @@ def cmd_bars(a):
 
 
 REVIEWED = "%%alawon-reviewed"
+FOLLOWS_SCORE = "%%alawon-follows-score"
 
 
 def cmd_batch(a):

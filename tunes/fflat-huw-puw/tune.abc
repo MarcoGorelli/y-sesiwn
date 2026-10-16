@@ -5,8 +5,10 @@ S:http://alawoncymru.com/alawon/Tunes/FflatHP/FflatHP.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1 pickup=3/8
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:In the chorus the recording holds the A through the rest before "Mi wisga'i gap pig".
 M:12/8
 L:1/8
 Q:3/8=120
@@ -15,5 +17,5 @@ K:G
 "C"G2 A B2 c "D"B3 A3- | "D"A3- A6 D3 | "G"D2 E D2 C B,3 D3 |
 "C"E3 E3 "G"D3- D2 D | "C"E2 F G2 E "D"F2 G A2 F | "G"B3 G3 G3 || "^Cytgan"z3 |
 "G"B3 B3 "D"A3 A3 | "Em"G3 G3 "D"F3 F3 | "C"E2 F G2 E "D"F3 A3 |
-"C"G2 A B2 c "D"B3 A3- | A3- A6 D3 | "G"D2 E D2 C B,3 D3 |
+"C"G2 A B2 c "D"B3 A3- | A6 z3 D3 | "G"D2 E D2 C B,3 D3 |
 "C"E3 E3 "G"D3 |: "^Ailadroddiad offerynnol"z2 D | "C"E2 F G2 E "D"F2 G A2 F | "G"B3 G3 G3 :|

@@ -5,13 +5,15 @@ S:http://alawoncymru.com/alawon/Tunes/DnsYPydl/DnsYPwdl.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:The recording starts with the pick-up DE, where the score has E2.
 M:4/4
 L:1/8
 Q:1/4=110
 K:DDor
-DE |: "Dm"FE FE D2 d2 | A2 A2 A2 G2 | "Dm"FE FE D2 AB | "C"c2 c2 c2 E2 |
+E2 |: "Dm"FE FE D2 d2 | A2 A2 A2 G2 | "Dm"FE FE D2 AB | "C"c2 c2 c2 E2 |
 "Dm"FE FE D2 d2 | A2 A2 A2 G2 | "Dm"FE FE DE FG | "Am"A2 A2 "Dm"d4 :|
 |: "Dm"de fe d2 d2 | "Am"cB AG A2 A2 | "Dm"de fg a2 a2 | "G"g2 d2 d3 e |
 "Dm"fe fe d3 d | "Am"cB AG A3 G | "Dm"FE DC DE FG | "Am"A2 A2 "Dm"d4 :|

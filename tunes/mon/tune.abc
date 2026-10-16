@@ -4,14 +4,16 @@ S:http://alawoncymru.com/alawon/Tunes/CodHedSt/CodHedSt.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
 R:polca
+N:The recording plays c2 B2 cB A2 in the fourth bar, where the score has e2 d2 cB A2.
 M:4/4
 L:1/8
 Q:1/4=120
 K:D
-|: A2 | "D"d3 d A2 A2 | F2 A2 d2 ef | "G"g3 f e2 d2 | "A"c2 B2 cB A2 |
+|: A2 | "D"d3 d A2 A2 | F2 A2 d2 ef | "G"g3 f e2 d2 | "A"e2 d2 cB A2 |
 "D"d3 d A2 A2 | F2 A2 d2 e2 | "G"f2 gf "A"e2 fe | "D"d6 :: e2 |
 "D"f3 f d2 d2 | "A"e3 e c2 c2 | "D"d2 ef "G"g3 f | "A"e2 d2 cB A2 |
 "D"d3 d A2 A2 | F2 A2 d2 e2 | "G"f2 gf "A"e2 fe | "D"d6 :|

@@ -5,6 +5,7 @@ S:http://alawoncymru.com/alawon/Tunes/CanColst/CanColSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Addaswyd gan Meurig Williams
 N:On the score, the d before the last part is a dotted minim and a crotchet d that leads into the repeat, and the last G is a dotted minim; the MIDI holds both notes for the whole bar.
@@ -14,4 +15,4 @@ Q:1/4=120
 K:G
 "G"D2 | G2 G2 "D"AG F2 | "G"G2 G4 D2 | G2 A2 B2 c2 | "G7"d6 d2 | "C"c2 d2 c2 B2 |
 "Am"A2 A4 G2 | "D"F2 A2 "A"E2 F2 | "D"D4 || DE F2 | "G"G2 G2 "D"AG F2 | "G"G2 G4 D2 |
-"G"G2 A2 B2 c2 | "G7"d8 |: "C"e2 e2 "G"d2 B2 | "D"d2 c2 "Em"B2 A2 | "C"B2 A2 "D"G2 F2 | "G"G8 :|
+"G"G2 A2 B2 c2 | "G7"d6 |: d2 | "C"e2 e2 "G"d2 B2 | "D"d2 c2 "Em"B2 A2 | "C"B2 A2 "D"G2 F2 | "G"G6 :|

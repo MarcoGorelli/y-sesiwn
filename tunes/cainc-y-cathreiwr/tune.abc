@@ -5,6 +5,7 @@ S:http://alawoncymru.com/alawon/Tunes/SetDerDr/SetDerDr.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 N:The score has D2 z2 in the second bar of the third line; the recording holds the D a little longer.
@@ -14,6 +15,6 @@ Q:1/4=120
 K:G
 "^Pennill""G"z2 d2 | "C"c3 c | "G"B3 A | "A"A3 G | "D"F D3 | "D"z2 G2 | "G"A2 B2 |
 "C"c3 B | "A"A3 G | "D"F D3 | "G"z2 d2 | "C"c3 c | "G"B3 A | "A"A3 G |
-"D"F D3- | "D"D3 z | "G"G2 AB | "C"c3 A | "A"d3 A | "A"A3 G | "D"F D3- | "D"D4 ||
+"D"F D3- | "D"D2 z2 | "G"G2 AB | "C"c3 A | "A"d3 A | "A"A3 G | "D"F D3- | "D"D4 ||
 "^Cytgan""G"G4 | "G"d4 | "D"F3 E | "D"D4 | "G"z2 BG | "G"d4 | "C"c4 |
 "G"B4 | "D"AF AD | "G"G4 || "C"c4 | "G"B4 | "D"A4 | "G"G4 |]

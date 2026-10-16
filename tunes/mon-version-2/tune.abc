@@ -4,15 +4,16 @@ S:http://alawoncymru.com/alawon/Tunes/SetAwst/SetAwst.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1 pickup=0 bars=33-64
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
-N:The alawoncymru recording is a medley; only the part that is this tune is kept.
+N:The alawoncymru recording is a medley; only the part that is this tune is kept. It leads into part B with A, where the score has the pick-up e.
 R:polca
 M:4/4
 L:1/8
 Q:1/4=160
 K:D
-|: "D"d3 d A2 A2 | F2 A2 d2 ef | "G"g3 f e2 d2 | "A"e2 d2 cB A2 |
-"D"d3 d A2 A2 | F2 A2 d2 e2 | "G"f2 gf "A"e2 fe | "D"d6 A2 :|
-|: "D"f3 f d2 d2 | "A"e3 e c2 c2 | "D"d2 ef "G"g3 f | "A"e2 d2 cB A2 |
-"D"d3 d A2 A2 | F2 A2 d2 e2 | "G"f2 gf "A"e2 fe | "D"d6 A2 :|
+|: A2 | "D"d3 d A2 A2 | F2 A2 d2 ef | "G"g3 f e2 d2 | "A"e2 d2 cB A2 |
+"D"d3 d A2 A2 | F2 A2 d2 e2 | "G"f2 gf "A"e2 fe | "D"d6 :|
+|: e2 | "D"f3 f d2 d2 | "A"e3 e c2 c2 | "D"d2 ef "G"g3 f | "A"e2 d2 cB A2 |
+"D"d3 d A2 A2 | F2 A2 d2 e2 | "G"f2 gf "A"e2 fe | "D"d6 :|

@@ -6,6 +6,7 @@ S:http://alawoncymru.com/alawon/Tunes/MorwynyPentre/MorwynPentre.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 N:Transcribed from the score. The alawoncymru recording plays parts C, D and C twice each, and some rhythms more simply (ED D2 for ED DE, GF F2 for GF F>G, A2 A2 for A2 A/G/F/E/).

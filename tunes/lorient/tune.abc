@@ -5,13 +5,14 @@ S:http://alawoncymru.com/alawon/Tunes/SetHelGeinach/SetHelGeinach.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
-N:The score plays part A twice, part B, then part A again (D.C. al Fine).
+N:The score plays part A twice, part B, then part A again (D.C. al Fine). The recording holds the last note longer.
 M:4/4
 L:1/8
 Q:1/4=120
 K:Em
 |: "Em"(3EFG- G6 | "D"(3FED- D6 | "Am"(3FGA- A6 | "Em"(3GFE- E6 :|
 "G"(3GAB- B6 | "G"(3Bcd- d6 | "D"(3ABc- c6 | "G"(3GAB- B6 |
-"Em"(3EFG- G6 | "D"(3FED- D6 | "Am"(3FGA- A6 | "Em"(3GFE- E6- | (3:2:2E2z10 |]
+"Em"(3EFG- G6 | "D"(3FED- D6 | "Am"(3FGA- A6 | "Em"(3GFE- E6 |]

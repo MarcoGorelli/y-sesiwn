@@ -6,6 +6,7 @@ S:http://alawoncymru.com/alawon/Tunes/CaincMed/CaincMSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=2 pickup=1/4
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
 N:The harmony part for Tŷ Coch Caerdydd. In the second half of part B the score plays the melody (dcBA GABc | d2 d2 dcBA | B2 G2 FGAF | G2 B2 G2), where the alawoncymru recording plays harmony notes (BAGF DFGA | B2 B2 BAGF | G2 B2 A2 F2 | B2 G2 G2).

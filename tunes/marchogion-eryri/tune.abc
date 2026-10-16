@@ -5,9 +5,10 @@ S:http://alawoncymru.com/alawon/Tunes/SetyGarreg/SetyGarreg.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
-N:The score ends F2 D D3, as in Marchogion yr Wyddfa; the recording plays F2 E D3.
+N:The recording ends F2 E D3, where the score has F2 D D3, as in Marchogion yr Wyddfa.
 M:6/8
 L:1/8
 Q:3/8=67
@@ -16,4 +17,4 @@ K:D
 "A"c2 A A2 c | "D"d2 d "A"ede | "D"f2 d d3 :| "A"e2 e e2 e | "A"efg gab |
 "A"bag fed | c2 A A3 | "A"efe e2 e | efg gab | "A"bag fed |
 "A"cBA GFE | "D"DEF F2 F | FGA A2 A | "G"d2 B d2 B | "A"A2 G F2 E |
-"D"DEF F2 F | FGA A2 A | "G"d2 B "A"A2 G | "D"F2 E D3 |]
+"D"DEF F2 F | FGA A2 A | "G"d2 B "A"A2 G | "D"F2 D D3 |]

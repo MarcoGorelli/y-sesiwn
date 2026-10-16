@@ -5,16 +5,17 @@ S:http://alawoncymru.com/alawon/Tunes/SetDawGaeaf/SetDawGaef.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
-N:The score has first and second endings in part A (D4, then G4 at the Fine) and returns to part A after part B (D.C. al Fine).
+N:The score has first and second endings in part A (D4, then G4 at the Fine) and returns to part A after part B (D.C. al Fine). The recording ends part A with D4 both times and plays F2 E2 F2 before the last G.
 M:3/4
 L:1/8
 Q:1/4=90
 K:G
 |: B,2 | "G"B,2 C2 D2 | "G"G4 G2 | "G"B2 A2 G2 | "C"A2 G2 E2 |
-"G"B,2 C2 D2 | "G"G4 G2 | "D"F2 D2 E2 | "D"D4 :| F2 |
+"G"B,2 C2 D2 | "G"G4 G2 | "D"F2 D2 E2 |1 "D"D4 :|2 "G"G4 || F2 |
 "D"A2 A2 A2 | "D"A4 G2 | "D"F2 D2 E2 | "G"B,4 B2 |
 "Am"A2 A2 G2 | "D"F2 D2 G2 | "Am"F2 G2 A2 | "D"D4 B,2 |
 "G"B,2 C2 D2 | "G"G4 G2 | "G"B2 A2 G2 | "C"A2 G2 E2 |
-"G"B,2 C2 D2 | "G"G4 G2 | "D"F2 E2 F2 | "G"G4 |]
+"G"B,2 C2 D2 | "G"G4 G2 | "D"F2 D2 E2 | "G"G4 |]

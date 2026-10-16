@@ -5,8 +5,10 @@ S:http://alawoncymru.com/alawon/Tunes/MarErSet/MarErSt.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
+N:The recording leads back into part A with GE, where the score has the pick-up AG (D.C. al Fine).
 M:6/8
 L:1/8
 Q:3/8=80
@@ -14,6 +16,6 @@ K:D
 AG |: "D"F2 F "A"GFG | "D"AFD DFA | "G"B2 c dcB | "A"ABG FGE |
 "D"F2 F "A"GFG | "D"AFD DFA | "G"Bgf "A"edc |1 "D"d3 dAG :|2 "D"d3 dcd ||
 "A"e2 c Ace | "D"f2 d Adf | "G"gfe "D"fed | "A"ecA Acd |
-"A"e2 c Ace | "D"f2 d Adf | "Em"efd cdB | "A"ABG FGE ||
+"A"e2 c Ace | "D"f2 d Adf | "Em"efd cdB | "A"ABG FAG ||
 "D"F2 F "A"GFG | "D"AFD DFA | "G"B2 c dcB | "A"ABG FGE |
 "D"F2 F "A"GFG | "D"AFD DFA | "G"Bgf "A"edc | "D"d3 d |]

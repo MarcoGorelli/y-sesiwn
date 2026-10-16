@@ -5,6 +5,7 @@ S:http://alawoncymru.com/alawon/Tunes/SetStacey/SetStacey.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 N:Part B bar 2 is A2 A2 as on the score and the alawoncymru recording; the MIDI file plays B2 A2.
 M:4/4

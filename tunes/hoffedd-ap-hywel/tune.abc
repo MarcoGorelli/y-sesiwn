@@ -5,12 +5,14 @@ S:http://alawoncymru.com/alawon/Tunes/HoffapHy/ApHywel.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
+N:The recording plays BAB in part B, where the score has BGB.
 M:9/8
 L:1/8
 Q:3/8=80
 K:G
 |: "G"g2 e dBG dBG | "G"g2 e dBG "D"c2 A | "G"g2 e dBG dBG |
-"Am"ABc BAG "D"FED :: "G"G2 B BAB BAB | "G"G2 B BAB "D"AFD |
-"G"G2 B BAB BAB | "Am"ABc BAG "D"FED :|
+"Am"ABc BAG "D"FED :: "G"G2 B BGB BGB | "G"G2 B BGB "D"AFD |
+"G"G2 B BGB BGB | "Am"ABc BAG "D"FED :|

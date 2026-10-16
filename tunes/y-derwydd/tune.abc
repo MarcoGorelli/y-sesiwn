@@ -5,14 +5,15 @@ S:http://alawoncymru.com/alawon/Tunes/TomJonSt/TomJonSt.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
-N:The score ends part B on a held d6; the recording plays dAF D3.
+N:The recording plays BGB A2 A in the second bar of each line of part A, where the score has BGB A3, and ends part B with dAF D3, where the score holds d6.
 M:6/8
 L:1/8
 Q:3/8=67
 K:D
-|: "D"FGA AFA | "G"BGB "D"A2 A | "G"Bcd efg | "A"fed cBA |
-"D"FGA AFA | "G"BGB "D"A2 A | "G"Bcd efg | "A"ABc "D"d3 :|
+|: "D"FGA AFA | "G"BGB "D"A3 | "G"Bcd efg | "A"fed cBA |
+"D"FGA AFA | "G"BGB "D"A3 | "G"Bcd efg | "A"ABc "D"d3 :|
 |: "D"afa afa | "G"geg geg | "D"fag fed | "A"ced cBA |
-"D"afa afa | "G"geg geg | "D"fed "A"cde | "D"dAF D3 :|
+"D"afa afa | "G"geg geg | "D"fed "A"cde | "D"d6 :|

@@ -6,13 +6,14 @@ S:http://alawoncymru.com/alawon/Tunes/HenGalan/HenGalan.htm
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
-N:The score has D B,2 A, in the seventh and tenth bars, where the recording plays B,2 B,4 A,2 and D2 B,4 C2, and gives the words.
+N:The score gives the words. The recording plays B,2 B,4 A,2 and D2 B,4 C2 in the seventh and tenth bars, where the score has D2 B,4 A,2.
 M:4/4
 L:1/8
 Q:1/4=120
 K:D
 D2 | "D"F2 F4 D2 | "A"E2 E4 F2 | "Bm"B,2 B,4 A,2 | "A"A2 A4 A2 |
-"Bm"B2 F4 D2 | "G"D2 B,4 D2 | "Bm"B,2 B,4 A,2 | "A"A2 A4 A2 |
-"Bm"B2 F4 D2 | "A"D2 B,4 C2 | "D"D2 D4 |]
+"Bm"B2 F4 D2 | "G"D2 B,4 D2 | "Bm"D2 B,4 A,2 | "A"A2 A4 A2 |
+"Bm"B2 F4 D2 | "A"D2 B,4 A,2 | "D"D2 D4 |]

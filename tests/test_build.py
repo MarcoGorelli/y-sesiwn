@@ -39,6 +39,49 @@ def test_titles_and_versions():
         assert sorted(versions) == list(range(1, len(versions) + 1)), f"{group}: versions {versions}"
 
 
+# Tunes whose melodies are close but that are kept as separate tunes (on separate pages).
+SEPARATE_TUNES = {
+    ("llety-r-bugail", "llety-r-bugail-counterpoint"),
+    ("ffarwel-i-aberystwyth", "gadael-aberystwyth"),
+}
+
+
+def test_no_tune_twice():
+    # A tune already in the app under another name should be a version of it, not a new
+    # page. Compared in any key: the runs of 8 steps between notes they share, out of the
+    # shorter tune's (when that has at least 20, or a short repetitive air matches anything).
+    # A melody recast in another rhythm (Nos Galan, Jig Nos Galan) is a tune of its own.
+    runs, record = {}, {}
+    for p in TUNES:
+        r = b.tune_record(p)
+        notes = [ord(c) for c in b.melody_string(r["abc"])]
+        steps = [y - x for x, y in zip(notes, notes[1:])]
+        runs[r["slug"]] = {tuple(steps[i:i + 8]) for i in range(len(steps) - 7)}
+        record[r["slug"]] = r
+    gone = [slug for pair in SEPARATE_TUNES for slug in pair if slug not in runs]
+    assert not gone, f"SEPARATE_TUNES names tunes that aren't in the app: {gone}"
+    tunes_with = {}
+    for slug, own in runs.items():
+        for run in own:
+            tunes_with.setdefault(run, []).append(slug)
+    shared = {}
+    for slugs in tunes_with.values():
+        if len(slugs) <= 40:  # a scale or arpeggio half the tunes have says nothing
+            for i, one in enumerate(slugs):
+                for other in slugs[i + 1:]:
+                    pair = tuple(sorted((one, other)))
+                    shared[pair] = shared.get(pair, 0) + 1
+    same = []
+    for (one, other), n in shared.items():
+        fewer = min(len(runs[one]), len(runs[other]))
+        a, z = record[one], record[other]
+        if (a["group"] != z["group"] and a["type"] == z["type"] and fewer >= 20 and n / fewer >= 0.5
+                and (one, other) not in SEPARATE_TUNES):
+            same.append(f"{one} / {other} ({n / fewer:.0%})")
+    assert not same, ("the same melody as another tune: if it's the same tune, make it a version of it "
+                      "(T: <Name> (version N)); if not, add the pair to SEPARATE_TUNES:\n" + "\n".join(sorted(same)))
+
+
 @pytest.mark.parametrize("slug, lead", [
     ("glandyfi", 1),               # D | G2 G ...
     ("machynlleth", 2),            # Bc | de dc ...

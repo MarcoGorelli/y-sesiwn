@@ -86,6 +86,23 @@
     },
     {
       "kind": "tune club",
+      "name": "Sesiwn Fach Cwm Tawe",
+      "venue": "Tŷ'r Gwrhyd",
+      "address": "Holly Street, Pontardawe SA8 4ET",
+      "town": "Pontardawe",
+      "county": "Neath Port Talbot",
+      "lat": 51.7204,
+      "lon": -3.8497,
+      "day": "Tuesday",
+      "repeat": "monthly",
+      "nth": 3,
+      "start": "19:00",
+      "music": "Come to learn and practise tunes from Wales. Run by Menter Iaith Castell-nedd Port Talbot (01639 763819, menter@micnpt.cymru).",
+      "music_cy": "Dewch i ddysgu ac ymarfer alawon o Gymru. Dan ofal Menter Iaith Castell-nedd Port Talbot (01639 763819, menter@micnpt.cymru).",
+      "confirmed": "2026-10-19"
+    },
+    {
+      "kind": "tune club",
       "name": "Aberystwyth Tune Club",
       "venue": "Llanbadarn Village Hall",
       "address": "Llanbadarn Fawr, Aberystwyth",

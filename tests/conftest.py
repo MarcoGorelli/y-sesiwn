@@ -10,6 +10,11 @@ import http.server
 import re
 import sys
 import threading
+
+try:
+    import fcntl
+except ImportError:  # Windows: no locks, so run with -n0 there
+    fcntl = None
 from pathlib import Path
 
 import pytest
@@ -60,6 +65,29 @@ def browser(playwright_instance):
     browser = playwright_instance.chromium.launch()
     yield browser
     browser.close()
+
+
+@pytest.fixture(autouse=True)
+def alone(request, tmp_path_factory, worker_id):
+    """Tests marked alone time the sound in real time, which a busy computer holds up:
+    run in parallel, one waits for the tests running in the other workers to end, and
+    none start until it has. Every test holds a shared lock; those take it alone. (A
+    gate in front, so a test waiting to be alone isn't kept waiting by new ones.)"""
+    if worker_id == "master" or fcntl is None:
+        yield
+        return
+    folder = tmp_path_factory.getbasetemp().parent  # the same for every worker
+    alone = request.node.get_closest_marker("alone") is not None
+    with open(folder / "gate.lock", "a") as gate, open(folder / "tests.lock", "a") as tests:
+        fcntl.flock(gate, fcntl.LOCK_EX if alone else fcntl.LOCK_SH)
+        if not alone:
+            fcntl.flock(gate, fcntl.LOCK_UN)
+        fcntl.flock(tests, fcntl.LOCK_EX if alone else fcntl.LOCK_SH)
+        try:
+            yield
+        finally:
+            fcntl.flock(tests, fcntl.LOCK_UN)
+            fcntl.flock(gate, fcntl.LOCK_UN)
 
 
 TRACES = ROOT / "test-results"

@@ -1846,6 +1846,7 @@ def fiddle_recording(path, notes, seconds_per_note=0.13, rate=48000):
         w.writeframes(b"".join(struct.pack("<h", int(20000 * (x + rng.gauss(0, 0.004)))) for x in samples))
 
 
+@pytest.mark.alone
 @pytest.mark.parametrize("slow", [1, 6])
 def test_microphone(playwright_instance, site, tmp_path, slow):
     # Machynlleth's first ten notes, played a tone higher than written, fast: every note
@@ -1873,6 +1874,7 @@ def test_microphone(playwright_instance, site, tmp_path, slow):
     browser.close()
 
 
+@pytest.mark.alone
 def test_microphone_without_audio_worklet(playwright_instance, site, tmp_path):
     # Browsers without AudioWorklet look at the sound once a screen redraw instead: still
     # fine for notes played at a steady pace.
@@ -1954,6 +1956,15 @@ def test_loop_part_and_speed_up(browser, site):
     context.close()
 
 
+# Where the sound is that's being heard against where the lit notes are, in seconds. Heard:
+# abcjs's audio clock, less the time the sound takes to come out of the speakers (as the
+# page has it, which the lit notes keep to): 0.4 s on some computers.
+HEARD_AND_LIT = """() => { const c = ABCJS.synth.activeAudioContext(), out = c.getOutputTimestamp?.().contextTime;
+  const heard = out > 0 && out > c.currentTime - 1 ? out : c.currentTime - (c.outputLatency || c.baseLatency || 0);
+  return [heard - state.synth.midiBuffer.startTimeSec, state.synth.timer.currentMillisecond() / 1000]; }"""
+
+
+@pytest.mark.alone
 def test_paused_after_a_jump_plays_on_from_the_lit_notes(browser, site):
     # Moved on while playing, then paused and played again, the sound carries on from
     # the notes that are lit (abcjs's own would carry on from where it was before the jump).
@@ -1968,14 +1979,13 @@ def test_paused_after_a_jump_plays_on_from_the_lit_notes(browser, site):
     page.wait_for_function("!state.synth.isStarted")
     page.click(".abcjs-midi-start")  # play
     page.wait_for_function("state.synth.isStarted && state.synth.timer.isRunning")
-    # Where the sound is (abcjs's audio clock) against where the lit notes are, in seconds.
-    sound, notes = page.evaluate("""() => { const b = state.synth.midiBuffer;
-      return [ABCJS.synth.activeAudioContext().currentTime - b.startTimeSec, state.synth.timer.currentMillisecond() / 1000]; }""")
+    sound, notes = page.evaluate(HEARD_AND_LIT)
     assert notes > 5 and abs(sound - notes) < .25, (sound, notes)
     page.click(".abcjs-midi-start")  # pause
     context.close()
 
 
+@pytest.mark.alone
 def test_lit_notes_wait_for_a_slow_sound(browser, site):
     # The sound slow to get going after Play (its clock held up, as by speakers waking): the
     # lit notes wait for it, rather than running on ahead by the page's clock.
@@ -1989,8 +1999,7 @@ def test_lit_notes_wait_for_a_slow_sound(browser, site):
     page.wait_for_timeout(1500)
     page.evaluate("ABCJS.synth.activeAudioContext().resume()")
     page.wait_for_timeout(1000)
-    sound, notes = page.evaluate("""() => { const b = state.synth.midiBuffer;
-      return [ABCJS.synth.activeAudioContext().currentTime - b.startTimeSec, state.synth.timer.currentMillisecond() / 1000]; }""")
+    sound, notes = page.evaluate(HEARD_AND_LIT)
     assert abs(sound - notes) < .25, (sound, notes)
     page.click(".abcjs-midi-start")  # pause
     context.close()
@@ -2038,6 +2047,7 @@ def test_speed_up_arrives(browser, site):
     context.close()
 
 
+@pytest.mark.alone
 def test_speed_up_starts_each_time_round_at_the_start(browser, site):
     # Each time faster, the sound is made again and goes on from the start of the time
     # round: it used to go on from the end of the last one (where abcjs still said it was),
@@ -2066,8 +2076,7 @@ def test_speed_up_starts_each_time_round_at_the_start(browser, site):
     assert page.evaluate("state.synth.warp") == 105
     assert page.evaluate("offsets") and max(page.evaluate("offsets")) < 1, page.evaluate("offsets")
     # The lit notes and the sound together.
-    sound, notes = page.evaluate("""() => [ABCJS.synth.activeAudioContext().currentTime - state.synth.midiBuffer.startTimeSec,
-      state.synth.timer.currentMillisecond() / 1000]""")
+    sound, notes = page.evaluate(HEARD_AND_LIT)
     assert abs(sound - notes) < .25, (sound, notes)
     page.click(".abcjs-midi-start")  # pause
     assert not errors, errors
@@ -3773,14 +3782,17 @@ def test_no_flash_of_the_static_page(browser, site):
     # The page as written for search engines isn't shown where the app runs: while the tunes
     # load there's nothing but (after a moment) "Loading tunes…". Without JavaScript it's
     # all there; and if the app never comes, it shows after 8 s.
-    import time
     context = browser.new_context(service_workers="block")
     page = context.new_page()
-    page.route("**/tunes.json", lambda route: (time.sleep(1.5), route.continue_()))
+    held = []  # tunes.json, kept back until the checks are done
+    page.route("**/tunes.json", lambda route: held.append(route))
     page.goto(site, wait_until="commit")
     page.wait_for_selector("#main .loading")
     assert page.locator("#main .static").is_hidden()
     page.wait_for_selector("#main .loading", state="visible")
+    while not held:
+        page.wait_for_timeout(50)
+    held[0].continue_()
     page.wait_for_selector("#hero-search")
     assert page.locator("#main .static").count() == 0
     context.close()

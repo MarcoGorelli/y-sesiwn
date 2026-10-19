@@ -1,0 +1,19 @@
+X:1
+T:Cambro Brython 3
+T:Cambro Brython
+R:polca/pibddawns
+S:http://alawoncymru.com/alawon/Tunes/MantSian/MantSian.html
+Z:MIDI transcribed with alawon-abc
+%%alawon track=1
+%%alawon-reviewed
+%%chords From the Alawon Cymru score
+C:Trefniant Meurig Williams
+H:Known simply as Cambro Brython. Alawon Cymru has it in a set between Mantell Siani and Dic y Cymro: Cambro Brython and Dic y Cymro are often played together in north-east Wales, and the Kilbride brothers are credited with first putting them together. Alawon Cymru's Moliannwn set has it as a square dance, with the second time through part B ending with the second half of part A. In Blodau'r Grug (vol. 3) it's the last of three tunes for the set dance The Cambro Britons (Cambro Brython 1, 2 and 3).
+M:2/2
+L:1/8
+Q:1/2=60
+K:G
+|: "G"B2 d2 "C"c2 e2 | "G"d2 B2 A2 G2 | G2 g2 d2 B2 | "D"A2 A2 A4 |
+"G"B2 d2 "C"c2 e2 | "G"d2 B2 A2 G2 | B2 d2 "D"A2 c2 | "G"B2 G2 G4 :|
+|: "G"g4 d2 B2 | g4 d2 B2 | G2 g2 d2 B2 | "D"A2 A2 A4 |
+"G"g4 d2 B2 | g4 d2 B2 | "G"B2 d2 "D"A2 c2 | "G"B2 G2 G4 :|

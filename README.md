@@ -125,7 +125,7 @@ scheduled runs after 60 days without a commit).
   (`?page=search&q=…`, by name, then by book or arranger).
 - **Find a tune by its notes** (its own page, `?page=notes`, linked from the
   sidebar and from the home page, whose **Play it to me** opens it and starts
-  listening straight away): the search is kept in the address
+  listening straight away, and **type the notes** just opens it): the search is kept in the address
   (`?page=notes&q=D%20E%20F%23%20G%20A`), so it can be bookmarked or shared,
   and the five best matches show their opening line as a small score with a
   play button (`tunePreview()`). Type the first few notes (4 or more), play them on

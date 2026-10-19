@@ -1563,8 +1563,8 @@ function renderHome(main) {
       notesInvite(),
       el("p", { class: "home-more" }, tr("Or ", "Neu "),
         el("a", { href: "?page=browse&all=1", "data-route": true }, tr(`browse all ${count} tunes`, `pori'r ${count} alaw`)),
-        tr(", or ", ", neu "),
-        el("button", { type: "button", class: "link-button", onclick: openRandomTune }, tr("surprise me", "alaw ar hap"))),
+        el("span", { class: "surprise" }, tr(", or ", ", neu "),  // phones only: on a wide screen it's in the sidebar
+          el("button", { type: "button", class: "link-button", onclick: openRandomTune }, tr("surprise me", "alaw ar hap")))),
       yours,
       // An invitation for a first visit, as What you can do is: once there's anything of yours,
       // it steps aside (the tune page has its own), and once it's been answered it's gone.
@@ -1829,14 +1829,15 @@ function renderBrowse(main) {
 
 // On the home page, the way into the notes page: "Play it to me" goes there and starts
 // listening at once (the tap is still the go-ahead for the microphone and sound).
-// One line under the search: finding a tune by its notes, played to the microphone.
+// One line under the search: finding a tune by its notes, played to the microphone or typed.
 function notesInvite() {
   const notes = (text) => el("a", { href: "?page=notes", "data-route": true }, text);
   return el("p", { class: "notes-invite" }, el("strong", {}, tr("Know the tune but not its name?", "Gwybod yr alaw ond nid ei henw?")), " ",
     // (Tapping them is on the notes page too, beside the microphone.)
     canListen()
-      ? el("button", { type: "button", class: "link-button listen-start",
-        onclick: () => { state.autoListen = true; navigate("?page=notes"); } }, micIcon(), tr("Play it to me", "Chwaraewch hi i mi"))
+      ? [el("button", { type: "button", class: "link-button listen-start",
+          onclick: () => { state.autoListen = true; navigate("?page=notes"); } }, micIcon(), tr("Play it to me", "Chwaraewch hi i mi")),
+        tr(", or ", ", neu "), notes(tr("type the notes", "deipiwch y nodau"))]
       : notes(tr("Tap or type the notes", "Tapio neu deipio'r nodau")));
 }
 

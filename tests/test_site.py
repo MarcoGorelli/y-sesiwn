@@ -932,6 +932,8 @@ def test_home_page_on_a_phone(browser, site):
     # The picture comes near the end instead, after "What you can do".
     assert page.locator(".instruments.at-end").bounding_box()["y"] > page.locator(".features").bounding_box()["y"]
     assert page.locator(".features li").count() == 3 and page.locator(".features li").last.is_visible()
+    # Surprise me is folded in the menu, so the home page's own line keeps it in sight.
+    assert page.locator(".home-more button:has-text('surprise me')").is_visible()
     context.close()
 
 
@@ -1168,10 +1170,10 @@ def test_home_page(page):
     # No red button competes with the search: Surprise me is a plain one, and finding a
     # tune by its notes is a line of text.
     assert page.locator("main button.primary:visible").count() == 0
-    assert page.locator(".notes-invite :is(a[href='?page=notes'], .listen-start)").is_visible()
+    assert page.locator(".notes-invite a[href='?page=notes']").is_visible()  # and, with a microphone, Play it to me
     assert page.locator(".offline-card").is_visible()
-    # One Surprise me: the home page's own, not the sidebar's too.
-    assert page.locator(".home-more button:has-text('surprise me')").is_visible() and not page.locator("#surprise-sidebar").is_visible()
+    # One Surprise me, where it is on every other page: the sidebar's, not the home page's line too.
+    assert page.locator("#surprise-sidebar").is_visible() and not page.locator(".home-more button:has-text('surprise me')").is_visible()
     # One search box on the home page: its own big one, not the sidebar's too.
     assert page.locator("#hero-search").is_visible() and not page.locator("#search-input").is_visible()
     # Browsing every tune has its own page; the home page links to it.
@@ -1900,7 +1902,10 @@ def test_microphone(playwright_instance, site, tmp_path, slow):
     page.add_init_script("""window.contexts = []; window.AudioContext = class extends AudioContext {
       constructor(...a) { super(...a); contexts.push(this); } };""")
     # From the home page: "Play it to me" opens the notes page and starts listening.
+    # (Beside it, "type the notes" just opens the page.)
     page.goto(site)
+    assert page.inner_text(".notes-invite") == "Know the tune but not its name? Play it to me, or type the notes"
+    assert page.get_attribute(".notes-invite a", "href") == "?page=notes"
     page.click("button.listen-start")
     page.wait_for_selector("button.listen.on")
     started = page.evaluate("performance.now()")

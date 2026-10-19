@@ -166,7 +166,9 @@ main:focus { outline: none; }  /* focused only by the skip link, not something t
 .sidebar-actions { display: grid; gap: .5rem; }
 .menu-button { display: none; }  /* phones only */
 body:is([data-page="home"], [data-page="search"]) .topbar .search { display: none; }  /* the home page has its own, bigger one; so do search results, with the words searched for */
-body[data-page="home"] :is(#surprise-sidebar, .menu-surprise) { display: none; }  /* and its own Surprise me */
+/* Surprise me stays where it is on every page; on a wide screen the home page's own line
+   leaves it to the sidebar (on a phone, with it folded in the menu, the line keeps it) */
+.home-more .surprise { display: none; }
 .menu-surprise { display: none; }  /* phones only: in the menu (on a wider screen it's in the sidebar) */
 .lang-switch, .theme-switch { display: flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; align-self: flex-start; font-size: .85rem; }
 .lang-switch button, .theme-switch button { border: 0; border-radius: 0; padding: .25rem .7rem; }
@@ -1104,6 +1106,7 @@ body.practice .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height
   /* Surprise me goes in the menu, with the other ways to a tune, so the row is just the
      language and Menu: nothing next to Menu that leaves the page */
   #surprise-sidebar { display: none; }
+  .home-more .surprise { display: inline; }  /* the menu is folded: the home page's line keeps it in sight */
   /* Two columns of links, each a full 44px row, so a thumb doesn't catch the wrong one: the
      ways to a tune first; then, under a line and quieter, the pages about the site, in a row */
   .sidebar.menu-open .sidebar-links { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0; }
@@ -1119,7 +1122,7 @@ body.practice .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height
   .sidebar-links .menu-surprise:hover:not(:disabled) { color: var(--accent-ink); text-decoration: underline; }
   .sidebar-links a.more, .sidebar-links a:not(.more) + a.more { grid-column: span 2; margin-top: .35rem;
     border-top: 1px solid var(--border); color: var(--muted); font-size: .85rem; }
-  /* …starting a row of their own, even with an odd number of links above (Surprise me isn't in the home page's menu) */
+  /* …starting a row of their own, even with an odd number of links above */
   .sidebar-links a:not(.more) + a.more { grid-column: 1 / span 2; }
   /* One line, so the music starts high on the first screen: the key and tempo, to tap
      and change them, and full screen. Opened: key and size; then tempo and full screen. */

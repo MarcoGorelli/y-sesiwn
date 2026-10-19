@@ -1861,11 +1861,20 @@ def test_microphone(playwright_instance, site, tmp_path, slow):
     page = browser.new_context(service_workers="block", permissions=["microphone"]).new_page()
     if slow > 1:
         page.context.new_cdp_session(page).send("Emulation.setCPUThrottlingRate", {"rate": slow})
+    # The page's sound (to say how far it got, if it doesn't stop).
+    page.add_init_script("""window.contexts = []; window.AudioContext = class extends AudioContext {
+      constructor(...a) { super(...a); contexts.push(this); } };""")
     # From the home page: "Play it to me" opens the notes page and starts listening.
     page.goto(site)
     page.click("button.listen-start")
     page.wait_for_selector("button.listen.on")
-    page.wait_for_function("!document.querySelector('button.listen').classList.contains('on')", timeout=30000)
+    started = page.evaluate("performance.now()")
+    try:
+        page.wait_for_function("!document.querySelector('button.listen').classList.contains('on')", timeout=30000)
+    except Exception as e:
+        raise AssertionError(page.evaluate("""(started) => ({ heard: document.querySelector('#notes-search').value,
+          seconds: (performance.now() - started) / 1000, contexts: contexts.map((c) => ({ state: c.state,
+          time: c.currentTime, rate: c.sampleRate, latency: c.outputLatency, base: c.baseLatency })) })""", started)) from e
     heard = page.input_value("#notes-search")
     assert heard == "C# D E F# E D C# D C# B"
     assert page.locator(".notes-results li a").first.inner_text() == "Machynlleth"

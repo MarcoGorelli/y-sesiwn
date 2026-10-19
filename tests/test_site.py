@@ -548,7 +548,7 @@ def test_source_as_text_or_link(page):
     assert source.count() == 1 and source.locator("a").count() == 0
     page.goto_site("alaw/glandyfi/?v=1")
     page.wait_for_selector(".score .abcjs-staff")
-    assert page.inner_text(".tune-side .card dd a") == "Alawon Cymru (alawoncymru.com)"  # named, not the whole address
+    assert page.inner_text(".tune-side .card dd a") == "Alawon Cymru, CLERA's collection (alawoncymru.com)"  # named, not the whole address
     assert page.get_attribute(".tune-side .card dd a", "href").startswith("http://alawoncymru.com/")
 
 
@@ -853,6 +853,15 @@ def test_embedded_tune(page, site):
     page.dispatch_event("#tempo", "change")
     assert link.get_attribute("href") == "https://ysesiwn.cymru/alaw/glandyfi/?v=3&tempo=80&tab=whistle-D"
     assert "80" in page.text_content(".score .abcjs-tempo")
+    # An Alawon Cymru tune: who arranged it is on the score, and where it came from under
+    # it, in the page's language. (This version is from The Session: neither.)
+    assert page.locator(".embed-source").count() == 0
+    page.goto(site + "embed/glandyfi/?v=1&lang=cy")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert "Meurig Williams" in page.text_content(".score")
+    source = page.locator(".embed-source a")
+    assert page.inner_text(".embed-source") == "O Alawon Cymru, casgliad CLERA"
+    assert source.get_attribute("href").startswith("http://alawoncymru.com/") and source.get_attribute("target") == "_blank"
     # Nothing of the reader's own: no service worker, no kept key (this page sets none).
     assert page.evaluate("'serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations().then((r) => r.length) : 0") == 0
     assert page.evaluate("localStorage.getItem('tunes')") is None
@@ -1294,7 +1303,7 @@ ENGLISH_ON_PURPOSE = {"abcjs Quick Editor", "Add file → Create new file", "Com
                       "Create pull request", "Edit this file", "pull request", "Add to Home Screen",
                       "Windows, Mac, Linux", "F2 F GFG | AFD DFA | …", "Google Sites",  # the platforms' own names
                       # Welsh on the English pages too
-                      "Diolch yn fawr", "Cymdeithas Offerynnau Traddodiadol Cymru"}
+                      "Diolch yn fawr", "Cymdeithas Offerynnau Traddodiadol Cymru", "Alawon Sesiwn"}  # and CLERA's tune books
 
 
 @pytest.mark.parametrize("path", [
@@ -2345,7 +2354,7 @@ def test_tune_details(page):
     page.wait_for_selector(".score .abcjs-staff")
     labels = page.locator(".tune-side .card dt").all_inner_texts()
     assert "Key" not in labels and "Composer / arranger" not in labels
-    assert page.inner_text(".tune-side .card dd a") == "Alawon Cymru (alawoncymru.com)"
+    assert page.inner_text(".tune-side .card dd a") == "Alawon Cymru, CLERA's collection (alawoncymru.com)"
     assert page.get_attribute(".tune-side .card dd a", "href") == "http://alawoncymru.com/alawon/Tunes/SetyDwr/SetYDwr.html"
 
 

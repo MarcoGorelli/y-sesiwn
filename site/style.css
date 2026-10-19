@@ -1286,6 +1286,7 @@ body[data-page="embed"] main { max-width: none; padding: .6rem .75rem .75rem; an
 .embed-head h1 a:hover { text-decoration: underline; }
 .embed-brand { display: inline-flex; align-items: center; gap: .3rem; font-size: .85rem; color: var(--muted); text-decoration: none; white-space: nowrap; }
 .embed-brand:hover { color: var(--link); }
+.embed-source { margin: .5rem 0 0; }
 .embed-controls { display: flex; flex-wrap: wrap; align-items: start; gap: .5rem 1.5rem; margin: .5rem 0 .75rem; }
 .embed-controls .control { display: grid; gap: .2rem; font-size: .9rem; }
 .embed-controls select { padding: .3rem .5rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); }

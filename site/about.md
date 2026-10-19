@@ -31,6 +31,9 @@ The first tunes come from
 collection of Welsh traditional tunes to play, with notation and recordings.
 Most of its arrangements and adaptations are by **Meurig Williams**, alongside
 tunes and arrangements by many other musicians.
+CLERA also publishes the
+[*Alawon Sesiwn* tune books](http://alawoncymru.com/alawon/Tunes/Llyfrau.html),
+and [joining CLERA](http://www.clera.org/saesneg/membership.php) supports its work.
 
 More tunes come from **Brian Martin**'s transcriptions into ABC, kept in
 [John Chambers' ABC archive](https://trillian.mit.edu/~jc/music/abc/mirror/BrianMartin/msg/):
@@ -52,6 +55,10 @@ If you composed or arranged one of these tunes and would like its credit
 changed, or the tune taken down, please [write to us](?page=contact) or
 [open an issue](https://github.com/MarcoGorelli/y-sesiwn/issues/new) on
 GitHub and we'll put it right.
+
+The tunes and arrangements belong to their composers, arrangers and the
+collections they come from: this site's open-source licence covers its code,
+not them.
 
 ## Adding to the collection
 

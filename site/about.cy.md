@@ -30,6 +30,9 @@ Daw'r alawon cyntaf o
 CLERA o alawon traddodiadol Cymreig i'w chwarae, gyda nodiant a recordiadau.
 **Meurig Williams** a wnaeth y rhan fwyaf o'i drefniannau a'i addasiadau,
 ochr yn ochr ag alawon a threfniannau gan lawer o gerddorion eraill.
+Mae CLERA hefyd yn cyhoeddi
+[llyfrau alawon *Alawon Sesiwn*](http://alawoncymru.com/alawon/Tunes/Llyfrau.html),
+ac mae [ymaelodi â CLERA](http://www.clera.org/cymraeg/ymaelodi.php) yn cefnogi ei gwaith.
 
 Daw rhagor o alawon o drawsgrifiadau ABC **Brian Martin**, a gedwir yn
 [archif ABC John Chambers](https://trillian.mit.edu/~jc/music/abc/mirror/BrianMartin/msg/):
@@ -50,6 +53,10 @@ Os gwnaethoch chi gyfansoddi neu drefnu un o'r alawon hyn a hoffech newid ei
 chydnabyddiaeth, neu dynnu'r alaw i lawr, [ysgrifennwch aton ni](?page=contact)
 neu [agorwch *issue*](https://github.com/MarcoGorelli/y-sesiwn/issues/new) ar
 GitHub a byddwn ni'n ei gywiro.
+
+Mae'r alawon a'r trefniannau'n perthyn i'w cyfansoddwyr, eu trefnwyr a'r
+casgliadau y daethant ohonynt: mae trwydded cod agored y wefan hon yn cwmpasu
+ei chod, nid y rheini.
 
 ## Ychwanegu at y casgliad
 

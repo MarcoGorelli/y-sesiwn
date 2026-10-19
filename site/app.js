@@ -3239,8 +3239,12 @@ function detailValue(label, value) {
   return value;
 }
 
+// The Alawon Cymru (CLERA) page a tune came from, or null.
+const alawonPage = (tune) =>
+  tune.details.find(([label, value]) => label === "Source" && /^https?:\/\/(www\.)?alawoncymru\.com\//.test(value))?.[1].split(/\s/)[0] ?? null;
+
 // Where the tunes come from, by the address of the page: its name, for the link.
-const SOURCE_SITES = { "alawoncymru.com": () => "Alawon Cymru", "trillian.mit.edu": () => tr("John Chambers' ABC archive", "archif ABC John Chambers"),
+const SOURCE_SITES = { "alawoncymru.com": () => tr("Alawon Cymru, CLERA's collection", "Alawon Cymru, casgliad CLERA"), "trillian.mit.edu": () => tr("John Chambers' ABC archive", "archif ABC John Chambers"),
   "thesession.org": () => "The Session", "youtu.be": () => "YouTube" };
 
 // How someone plays each tune, kept on this device (a whistle player who always plays
@@ -4066,6 +4070,9 @@ function renderEmbed(main, group, tune) {
     strings || holes ? el("p", { class: "caption fingering-key" },
       el("strong", {}, strings ? `${strings.label()} (${strings.tuning})` : holes.label()), " · ", howTo) : null,
     el("div", { class: "score" }, audio, soundNote(), paper),
+    // Its arranger is on the score (C:); where it came from is said here, as on its page.
+    alawonPage(tune) ? el("p", { class: "caption embed-source" }, tr("From ", "O "),
+      el("a", { href: alawonPage(tune), target: "_blank", rel: "noopener" }, tr("Alawon Cymru, CLERA's collection", "Alawon Cymru, casgliad CLERA"))) : null,
   ].filter(Boolean));
   redraw();
   const resized = new ResizeObserver(() => {

@@ -10,6 +10,12 @@ Everything shown (sheet music, playback, key changes and tune details) is
 generated from each tune's **ABC notation alone** (`tunes/<folder>/tune.abc`).
 No MIDI files or score images are used by the site.
 
+**Licence.** The code is under the Apache License 2.0 ([LICENSE](LICENSE)). The
+tunes in `tunes/` are not: each belongs to its composer or arranger (`C:`) and
+the collection it comes from (`S:`, `B:`), and is shared here with credit for
+learning, not relicensed. Most of the first batch are arrangements by Meurig
+Williams from CLERA's [Alawon Cymru](http://alawoncymru.com/alawon/Tunes/Tunesal.html).
+
 It's a **static site**: plain HTML, CSS and JavaScript with no server, so it
 never sleeps and loads almost instantly. Everything it needs (the tunes, abcjs
 and the piano sounds) is in this repo; the only other website it contacts is

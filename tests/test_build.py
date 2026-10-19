@@ -237,11 +237,13 @@ def test_every_tune_has_a_pronunciation_or_is_english():
 
 
 def test_place_names_decided():
-    # A tune whose name looks like a place is on the map, or listed as not a place ("not_places").
+    # A tune whose name looks like a place, or names one on the map (Pibddawns Corwen, as
+    # well as Ymdaith Corwen), is on the map, or listed as not a place ("not_places").
     data = json.loads((b.ROOT / "places.json").read_text(encoding="utf-8"))
     decided = {t for place in data["places"] for t in place["tunes"]} | set(data["not_places"])
+    on_map = re.compile(r"\b(" + "|".join(re.escape(p["name"]) for p in data["places"]) + r")\b", re.I)
     undecided = sorted(group for group, titles in tune_names().items()
-                       if group not in decided and any(PLACE_WORDS.search(t) for t in titles))
+                       if group not in decided and any(PLACE_WORDS.search(t) or on_map.search(t) for t in titles))
     assert not undecided, ("places.json: put these tunes on the map under their place, "
                            f"or in \"not_places\": {', '.join(undecided)}")
 

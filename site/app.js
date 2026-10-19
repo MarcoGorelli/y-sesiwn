@@ -4289,7 +4289,9 @@ function walesMap(current = null, places = state.data.places, label = null) {
 // Zooming the full map: the + and − buttons, double-click or double-tap, pinching (a
 // trackpad pinch is a Ctrl + wheel), and dragging to move about once zoomed in. A plain
 // wheel or a one-finger swipe still scrolls the page. The dots keep their size on screen
-// (--z in style.css), so crowded places come apart. onChange(scale): after every zoom or move.
+// (--z in style.css), so crowded places come apart. With a mouse, dragging a box zooms to
+// it: a plain drag on all of Wales (where there's nothing to move), or Shift + drag at any
+// zoom. onChange(scale): after every zoom or move.
 function mapZoom(map, onChange) {
   const view = map.querySelector(".map-view"), canvas = map.querySelector(".map-canvas");
   const MAX = 8;
@@ -4322,6 +4324,16 @@ function mapZoom(map, onChange) {
     apply();
   };
   const zoomCentre = (factor) => { const { width, height } = box(); zoomAt(factor, width / 2, height / 2); };
+  // Zoom so the rectangle (left, top, w, h) of the view fills it, centred.
+  const zoomTo = (left, top, w, h) => {
+    const { width, height } = box();
+    const next = Math.min(MAX, scale * Math.min(width / w, height / h));
+    const cx = (left + w / 2 - x) / scale, cy = (top + h / 2 - y) / scale;  // its centre on the unzoomed map
+    x = width / 2 - cx * next;
+    y = height / 2 - cy * next;
+    scale = next;
+    apply();
+  };
   const at = (e) => { const b = box(); return [e.clientX - b.left, e.clientY - b.top]; };
 
   view.addEventListener("wheel", (e) => {
@@ -4332,9 +4344,16 @@ function mapZoom(map, onChange) {
   let lastPointer = "mouse";
   view.addEventListener("dblclick", (e) => { if (lastPointer !== "touch") zoomAt(2, ...at(e)); });  // touch: the double-tap below
 
-  // Dragging (one pointer, when zoomed in) and pinching (two).
+  // Dragging (one pointer, when zoomed in), pinching (two), and a mouse's box to zoom to.
   const pointers = new Map();
-  let moved = 0, pinch = null, lastTap = null;
+  let moved = 0, pinch = null, lastTap = null, boxFrom = null;
+  const boxDrawn = el("div", { class: "map-box", hidden: true });
+  view.append(boxDrawn);
+  const boxTo = (e) => {  // the box from where the drag began to the pointer, inside the view
+    const { width, height } = box();
+    const [px, py] = at(e).map((v, i) => Math.min([width, height][i], Math.max(0, v)));
+    return [Math.min(px, boxFrom[0]), Math.min(py, boxFrom[1]), Math.abs(px - boxFrom[0]), Math.abs(py - boxFrom[1])];
+  };
   const twoFingers = () => {
     const [a, b] = [...pointers.values()];
     const b0 = box();
@@ -4345,6 +4364,7 @@ function mapZoom(map, onChange) {
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pointers.size === 1) moved = 0;
     if (pointers.size === 2) pinch = twoFingers();
+    boxFrom = pointers.size === 1 && e.pointerType === "mouse" && e.button === 0 && (e.shiftKey || scale <= 1) ? at(e) : null;
   });
   view.addEventListener("pointermove", (e) => {
     const last = pointers.get(e.pointerId);
@@ -4358,6 +4378,14 @@ function mapZoom(map, onChange) {
       zoomAt(now.dist / pinch.dist, now.mx, now.my);
       pinch = now;
       moved = Infinity;
+    } else if (boxFrom) {
+      moved += Math.abs(dx) + Math.abs(dy);
+      if (moved > 4) {
+        try { view.setPointerCapture(e.pointerId); } catch {}
+        const [left, top, w, h] = boxTo(e);
+        Object.assign(boxDrawn.style, { left: `${left}px`, top: `${top}px`, width: `${w}px`, height: `${h}px` });
+        boxDrawn.hidden = false;
+      }
     } else if (pointers.size === 1 && scale > 1) {
       moved += Math.abs(dx) + Math.abs(dy);
       if (moved > 4) {
@@ -4371,6 +4399,12 @@ function mapZoom(map, onChange) {
   const up = (e) => {
     if (!pointers.delete(e.pointerId)) return;
     if (pointers.size < 2) pinch = null;
+    if (boxFrom && !boxDrawn.hidden && e.type === "pointerup") {
+      const [left, top, w, h] = boxTo(e);
+      if (w > 8 && h > 8) zoomTo(left, top, w, h);  // a slip of the hand isn't a box
+    }
+    boxFrom = null;
+    boxDrawn.hidden = true;
     // A double-tap zooms in (touch screens don't all send dblclick).
     if (e.type === "pointerup" && e.pointerType === "touch" && moved <= 4 && !pointers.size) {
       const [px, py] = at(e);

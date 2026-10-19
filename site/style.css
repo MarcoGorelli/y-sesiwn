@@ -855,6 +855,10 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .wales-map { position: relative; width: 100%; }
 .map-view { position: absolute; inset: 0; touch-action: pan-y; }  /* a swipe scrolls the page; a pinch zooms */
 .map-view.zoomed { overflow: hidden; overflow: clip; touch-action: none;  /* clip: not scrollable, even by code */ cursor: grab; border-radius: var(--radius); outline: 1px solid var(--border); }
+@media (pointer: fine) { .map-view:not(.zoomed) { cursor: crosshair; } }  /* a mouse can drag a box to zoom to */
+.map-view { user-select: none; -webkit-user-select: none; }  /* a drag draws a box, not a selection */
+.map-box { position: absolute; z-index: 3; pointer-events: none; border: 1.5px dashed var(--accent-ink); background: color-mix(in srgb, var(--accent-ink) 10%, transparent); border-radius: 2px; }
+.map-box[hidden] { display: none; }
 .map-view:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
 .map-canvas { position: absolute; inset: 0; transform-origin: 0 0; --z: 1; }
 .map-canvas::before {  /* the land; on its own layer so the mask doesn't clip dots over the border */

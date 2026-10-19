@@ -1000,6 +1000,32 @@ def test_map_zoom(page):
     assert page.evaluate(MAP_SHIFT) != before
     page.keyboard.press("0")
     assert page.evaluate(MAP_SCALE) == 1
+    # Dragging a box with the mouse zooms to it, centred there, and doesn't open a dot.
+    box = page.locator(".map-view").bounding_box()
+    left, top = box["x"] + box["width"] * 0.3, box["y"] + box["height"] * 0.6
+    page.mouse.move(left, top)
+    page.mouse.down()
+    page.mouse.move(left + box["width"] / 4, top + box["height"] / 4, steps=5)
+    assert page.locator(".map-box").is_visible()
+    page.mouse.up()
+    assert page.locator(".map-box").is_hidden()
+    assert 3.5 < page.evaluate(MAP_SCALE) < 4.5  # a quarter of the map, so about 4 times
+    assert page.locator(".map-popup").is_hidden()
+    # Its centre is the view's centre now.
+    tx, ty = (float(v.strip("px")) for v in page.evaluate(MAP_SHIFT).split(","))
+    scale = page.evaluate(MAP_SCALE)
+    cx, cy = box["width"] * (0.3 + 1 / 8), box["height"] * (0.6 + 1 / 8)
+    assert abs(tx + cx * scale - box["width"] / 2) < 2 and abs(ty + cy * scale - box["height"] / 2) < 2
+    # Zoomed in, a plain drag moves about; Shift + drag draws another box.
+    mx, my = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+    page.mouse.move(mx - 20, my - 20)
+    page.keyboard.down("Shift")
+    page.mouse.down()
+    page.mouse.move(mx + 20, my + 20, steps=5)
+    page.mouse.up()
+    page.keyboard.up("Shift")
+    assert page.evaluate(MAP_SCALE) == 8  # as far as it goes
+    reset.click()
 
 
 def test_map_pinch_on_a_phone(browser, site):

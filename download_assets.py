@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 STATIC = Path(__file__).parent / "static"
-ABCJS = "https://cdn.jsdelivr.net/npm/abcjs@6.4.4"
+ABCJS = "https://cdn.jsdelivr.net/npm/abcjs@6.7.2"
 SOUNDFONT = "https://paulrosen.github.io/midi-js-soundfonts/FluidR3_GM"
 INSTRUMENT = "acoustic_grand_piano"
 PERCUSSION = "https://paulrosen.github.io/midi-js-soundfonts/abcjs"

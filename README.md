@@ -469,7 +469,7 @@ scheduled runs after 60 days without a commit).
 | `site/sw.js`, `site/manifest.webmanifest`, `site/icon-*.png` | Offline use and the home-screen app (see Features). The icons are made from `design/app-icon.html`. |
 | `site/og-image.png`, `site/apple-touch-icon.png` | The link-preview card (1200×630, used by the `og:`/`twitter:` tags in `index.html`) and the home-screen icon. Made from `design/og-card.html` and `design/apple-touch-icon.html`: open one in a browser at that size and screenshot it to regenerate. |
 | `CONTRIBUTING.md` | How to add a tune, and how to submit corrections. Each `# ` section is one page on the site, and GitHub shows the whole file, so edit it in one place. Keep the two `# ` headings as they are: the site finds the sections by them. |
-| `static/abcjs/` | [abcjs](https://www.abcjs.net/) 6.4.4 (`abcjs-basic-min.js`, `abcjs-audio.css`): draws and plays the music. |
+| `static/abcjs/` | [abcjs](https://www.abcjs.net/) 6.7.2 (`abcjs-basic-min.js`, `abcjs-audio.css`): draws and plays the music. |
 | `static/soundfont/acoustic_grand_piano-mp3/` | The 88 piano notes (A0–C8) from the FluidR3_GM soundfont, one MP3 each; a tune loads only the notes it uses. |
 | `static/marked/`, `static/qrcode/`, `static/harp.svg`, `static/crwth.svg`, `static/pibgorn.svg`, `static/lovespoon.svg`, `static/quilt.svg` | [marked](https://marked.js.org/) 15 (Markdown pages); [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 1.4.4 (MIT, the QR code, loaded when first used); the icon, a Welsh triple harp drawn by `design/triple-harp.py` (the PNG icons and link-preview card are screenshots of it, see above); a crwth and a pibgorn, drawn by hand after 18th-century museum examples, shown with the harp on the home page and on empty pages; a lovespoon, for an empty My sets page; and a scrap of Welsh quilt behind the instruments on the home page and in the link-preview card, drawn by `design/quilt.py`. |
 | `download_assets.py` | Re-downloads everything in `static/` (skips files that exist). Only needed if `static/` is lost or you want to change version. |
@@ -490,7 +490,7 @@ and `info.json`, and `.venv/`.
   a shift up or down, whichever keeps the notes nearest the treble stave (B3 to
   A5), so a low tune moved to a "lower" key goes up instead. Use it wherever a
   tune is transposed.
-- The abcjs stylesheet is at the package root (`abcjs@6.4.4/abcjs-audio.css`),
+- The abcjs stylesheet is at the package root (`abcjs@6.7.2/abcjs-audio.css`),
   not in `dist/`. Without it the player shows "CSS required: load
   abcjs-audio.css".
 - abcjs boosts the volume (×3) only for its default online soundfont. With a

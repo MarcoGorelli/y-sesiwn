@@ -1,0 +1,77 @@
+# Once a month, see whether the libraries copied into static/ (download_assets.py) or
+# Playwright (requirements-dev.txt and .devcontainer/Dockerfile, bumped together) have
+# newer versions, which Dependabot can't see. If so, open an issue saying which (or
+# bring the open one up to date); nothing is changed until someone upgrades on purpose.
+name: Check for updates
+
+on:
+  schedule:
+    - cron: "0 6 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false  # only the files are read: the token isn't left in .git
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - id: check
+        shell: python
+        run: |
+          import json, os, re, urllib.request
+          from pathlib import Path
+
+          def latest(url, *keys):
+              with urllib.request.urlopen(url, timeout=30) as answer:
+                  data = json.load(answer)
+              for key in keys:
+                  data = data[key]
+              return data
+
+          assets = Path("download_assets.py").read_text(encoding="utf-8")
+          requirements = Path("requirements-dev.txt").read_text(encoding="utf-8")
+          found = [
+              ("abcjs", re.search(r"abcjs@([\d.]+)", assets)[1],
+               latest("https://registry.npmjs.org/abcjs/latest", "version"),
+               "https://github.com/paulrosen/abcjs/blob/main/RELEASE.md",
+               "Change the version in `download_assets.py`, delete `static/abcjs/`, run "
+               "`python download_assets.py`, and update the version in README.md."),
+              ("marked", re.search(r"marked@([\d.]+)", assets)[1],
+               latest("https://registry.npmjs.org/marked/latest", "version"),
+               "https://github.com/markedjs/marked/releases",
+               "Change the version in `download_assets.py`, delete `static/marked/` and run "
+               "`python download_assets.py`."),
+              ("Playwright", re.search(r"^playwright==([\d.]+)", requirements, re.M)[1],
+               latest("https://pypi.org/pypi/playwright/json", "info", "version"),
+               "https://github.com/microsoft/playwright-python/releases",
+               "Bump `requirements-dev.txt` and the image in `.devcontainer/Dockerfile` together "
+               "(once the image for that version is out: mcr.microsoft.com/playwright/python)."),
+          ]
+          behind = [f for f in found if f[1] != f[2]]
+          body = ["Newer versions are out. Upgrade on purpose: run the tests, and look at a few "
+                  "tune pages too (the tests can't see whether the music looks right).", ""]
+          for name, have, new, notes, how in behind:
+              body += [f"- **{name}**: {have} → {new} ([what's new]({notes})). {how}"]
+              print(f"{name}: {have} -> {new}")
+          Path("body.md").write_text("\n".join(body) + "\n", encoding="utf-8")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"behind={'yes' if behind else ''}\n")
+      - if: steps.check.outputs.behind
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: Library updates available
+        run: |
+          number=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number')
+          if [ -n "$number" ]; then
+            gh issue edit "$number" --body-file body.md
+          else
+            gh issue create --title "$TITLE" --body-file body.md
+          fi

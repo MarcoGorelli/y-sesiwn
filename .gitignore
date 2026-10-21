@@ -12,6 +12,7 @@ tunes/**/*.mid
 tunes/**/*.mp3
 *.mp3
 *.jpg
+*.pdf
 
 # macOS
 .DS_Store

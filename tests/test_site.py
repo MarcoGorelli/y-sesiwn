@@ -3024,6 +3024,21 @@ def test_search_misses_counted(page):
     assert events == [{"path": "search-miss/zzyxq-wobble", "title": "No tune found: zzyxq wobble", "event": True}]
 
 
+def test_search_opens_pasted_link(page):
+    # A set link pasted into the search box opens the set, and isn't counted as a tune
+    # nobody could find.
+    page.add_init_script("window.goatcounter = { count: (view) => (window.counted ||= []).push(view) }")
+    page.goto_site("?page=browse")
+    code = page.evaluate("state.groups.get('glandyfi').versions[0].code")
+    page.fill("#search-input", f"https://ysesiwn.cymru/?set={code}{code}~h")
+    assert page.locator("#suggestions li").all_inner_texts() == ["Open this set"]
+    page.wait_for_timeout(2000)
+    page.press("#search-input", "Enter")
+    page.wait_for_selector(".set-count")
+    assert f"?set={code}{code}~h" in page.url
+    assert not [v for v in page.evaluate("window.counted") if v.get("event")]
+
+
 def test_visit_counts_in_order(page):
     page.add_init_script("window.goatcounter = { count: (view) => (window.counted ||= []).push(view.path) }")
     page.goto_site()

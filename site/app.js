@@ -6253,6 +6253,12 @@ function suggestion(group, credit = null) {
     tuneName(group.slug, group.title), what.length ? el("span", { class: "what" }, what) : null];
 }
 
+// A link to this site pasted into the box (a set someone sent, say): where it goes, from
+// the site's root, so the one choice is to open it rather than search for its letters.
+function siteLink(query) {
+  return query.trim().match(/^(?:https?:\/\/)?(?:www\.)?ysesiwn\.cymru\/(\S+)$/)?.[1] ?? null;
+}
+
 function attachSearch(input, list, { showAllOnFocus = true, onPick = null } = {}) {
   let results = [];
   let active = 0;
@@ -6265,6 +6271,7 @@ function attachSearch(input, list, { showAllOnFocus = true, onPick = null } = {}
     statusTimer = setTimeout(() => {
       const n = results.length;
       status.textContent = !query.trim() ? ""
+        : results[0]?.link ? tr("A link to this site: Enter opens it.", "Dolen i'r wefan hon: mae Enter yn ei hagor.")
         : n === 0 ? tr("No tune, book or arranger by that name.", "Dim alaw, llyfr na threfnydd o'r enw hwnnw.")
         : results.at(-1)?.all ? tr(`${results.at(-1).all} tunes: the arrow keys go through the first ${SHOWN}, and the last shows them all.`,
           `${results.at(-1).all} alaw: mae'r bysellau saeth yn mynd drwy'r ${SHOWN} cyntaf, ac mae'r olaf yn eu dangos i gyd.`)
@@ -6283,6 +6290,7 @@ function attachSearch(input, list, { showAllOnFocus = true, onPick = null } = {}
   const open = (entry) => {
     input.value = "";
     close();
+    if (entry.link) { input.blur(); navigate(entry.link); return; }
     if (entry.all) { input.blur(); navigate(`?page=search&q=${encodeURIComponent(entry.query)}`); return; }
     if (onPick) { onPick(entry.group); return; }
     input.blur();
@@ -6294,7 +6302,9 @@ function attachSearch(input, list, { showAllOnFocus = true, onPick = null } = {}
     // In searchAll's order. Labels go on the first of a kind: "By book or arranger", "Close spellings".
     let entries;
     let total = 0;
-    if (query.trim()) {
+    const link = onPick ? null : siteLink(query);
+    if (link) entries = [{ link }];
+    else if (query.trim()) {
       const { named, credited, close } = searchAll(query);
       // The credit most of them share is said once, in the label ("By book or arranger ·
       // Trefniant Meurig Williams"); those tunes say what they are instead, as names do.
@@ -6318,9 +6328,11 @@ function attachSearch(input, list, { showAllOnFocus = true, onPick = null } = {}
     list.replaceChildren(...(results.length
       ? results.map((entry, i) => el("li", {
           role: "option", id: `${input.id}-option-${i}`, "aria-selected": String(i === active),
-          class: entry.all ? "all" : entry.label ? "close" : null, "data-label": entry.label,
+          class: entry.all || entry.link ? "all" : entry.label ? "close" : null, "data-label": entry.label,
           onmousedown: (e) => { e.preventDefault(); open(entry); },
-        }, entry.all ? [tr(`All ${entry.all} tunes`, `Y ${entry.all} alaw i gyd`), el("span", { class: "chevron", "aria-hidden": "true" })]
+        }, entry.link ? [new URLSearchParams(entry.link.split("?")[1]).has("set") ? tr("Open this set", "Agor y set hon")
+            : tr("Open this link", "Agor y ddolen hon"), el("span", { class: "chevron", "aria-hidden": "true" })]
+          : entry.all ? [tr(`All ${entry.all} tunes`, `Y ${entry.all} alaw i gyd`), el("span", { class: "chevron", "aria-hidden": "true" })]
           : suggestion(entry.group, entry.credit)))
       : [el("li", { class: "empty" }, ...(state.complete
         ? [tr("No tune, book or arranger by that name.", "Dim alaw, llyfr na threfnydd o'r enw hwnnw."), el("span", { class: "try" },

@@ -1,0 +1,12 @@
+X:1
+T:Hoffedd Gwylim
+C:Cass Meurig
+M:4/4
+L:1/8
+%%beat 1/4
+%%bpm 114
+K:A
+|: ec B/c/d cA G/A/B | AE F/G/A E4 | cc dc cB B2 | BA GF E3 e |
+ec B/c/d cA G/A/B | AE F/G/A E4 | cA cA dB BA |1 GE FG A2 A/B/c/d/ :|
+|2 GE FG A2 A2 || ce ce eB B2 | Bd Bd cA AB | cA cA dB BA | GE FG A2 A2 |
+c/d/e c/d/e eB B2 | B/c/d B/c/d cA AB | cA cA dB BA | GE FG A2 A2 |]

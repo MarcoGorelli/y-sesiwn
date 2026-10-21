@@ -40,7 +40,7 @@ BEAT_NAMES = {
     Fraction(1, 8): "quaver",
 }
 # Default tempo (beats per minute) by tune type, matched against R:. The Q:
-# tempos in the ABC files are ignored.
+# tempos in the ABC files are ignored; a `%%bpm` line overrides the default.
 DEFAULT_BPM = {"jig": 112, "ril": 90, "reel": 90, "polca": 100, "polka": 100}
 OTHER_BPM = 100
 # Airs and songs are played slowly: crotchet = 66, whatever note is the beat.
@@ -332,6 +332,15 @@ def own_beat(abc: str) -> Fraction | None:
     return Fraction(int(m.group(1)), int(m.group(2))) if m and int(m.group(1)) else None
 
 
+def own_bpm(abc: str) -> int | None:
+    """The tempo a tune's `%%bpm 114` line gives (beats per minute), or None.
+
+    For a tune whose composer gives a tempo the tune type's default doesn't match.
+    """
+    m = re.search(r"^%%bpm\s+(\d+)\s*$", abc, re.M)
+    return int(m.group(1)) if m and int(m.group(1)) else None
+
+
 def default_bpm(headers: dict[str, list[str]], beat: Fraction = Fraction(1, 4)) -> int:
     """Default from the tune type (earliest match in R:, e.g. "polca/ymdaith").
 
@@ -423,7 +432,7 @@ def tune_record(path: Path) -> dict:
         } if parsed else None,
         "beat": str(beat),
         "beatName": BEAT_NAMES.get(beat, str(beat)),
-        "bpm": default_bpm(headers, beat),
+        "bpm": own_bpm(abc) or default_bpm(headers, beat),
         "details": rows,
         # Where the melody starts after the lead-in. The app works out the title, the
         # search names and the melody (melody_string) itself, so they aren't in tunes.json.

@@ -50,7 +50,9 @@ About titles:
 - If a tune with the same name is already in the app, call yours
   `<Name> (version 2)` (or 3, 4, …). All versions of a tune share one page,
   with a tab for each; a `B:` line (the book it's from) labels your tab.
-- Tempo lines (`Q:`) are ignored: the app's tempo slider decides.
+- Tempo lines (`Q:`) are ignored: the app's tempo slider decides. If the
+  composer gives a tempo, put it in a `%%bpm 114` line in the header to make
+  it the starting tempo.
 - If the music is written in notes twice as long as usual (a polca in 2/4
   that's mostly crotchets, felt as two minims to the bar, not two crotchets),
   add a `%%beat 1/2` line to the header, so it starts at the right speed.

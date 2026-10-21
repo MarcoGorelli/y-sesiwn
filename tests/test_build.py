@@ -169,6 +169,10 @@ def test_types_and_tempos():
     assert (redowa["beat"], redowa["bpm"]) == ("1/2", 100)
     assert b.tune_record(b.ROOT / "tunes" / "polca-redowa-version-2" / "tune.abc")["beat"] == "1/4"
     assert b.own_beat("X:1\nK:G\n") is None
+    # A composer's tempo (%%bpm) overrides the tune type's default (Hoffedd Gwylim).
+    gwylim = b.tune_record(b.ROOT / "tunes" / "hoffedd-gwylim" / "tune.abc")
+    assert (gwylim["beat"], gwylim["bpm"]) == ("1/4", 114)
+    assert b.own_bpm("X:1\nK:G\n") is None
     assert b.tune_type(read("bwced")) == "Jig naid"  # R:Slip Jig
     assert b.tune_type(read("slipio")) == "Jig naid"  # R:jig naid
     assert b.tune_type({"R": ["jig"], "M": ["9/8"]}) == "Jig naid"  # a jig is in 6/8

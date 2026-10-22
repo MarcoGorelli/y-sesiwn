@@ -382,6 +382,15 @@ def slugify(title: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", normalize(title).replace(" ", "-")).strip("-")
 
 
+def own_version_label(abc: str) -> str | None:
+    """The name a tune's `%%version Bob Evans` line gives its version's tab, or None.
+
+    For a version learnt from a player, with no book or site to name it after.
+    """
+    m = re.search(r"^%%version\s+(.*\S)", abc, re.M)
+    return m.group(1) if m else None
+
+
 def version_label(headers: dict[str, list[str]]) -> str:
     """Where a version comes from, for its tab: the book, else the source site."""
     if headers.get("B"):
@@ -421,7 +430,7 @@ def tune_record(path: Path) -> dict:
         "group": slugify(base),
         "base": base,
         "version": number,
-        "source": version_label(headers),
+        "source": own_version_label(abc) or version_label(headers),
         "titles": titles,
         "type": tune_type(headers),
         # modeName spells the mode out for the key menu: "EDor" -> "E Dorian".

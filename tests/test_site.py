@@ -265,7 +265,7 @@ def test_print(page, mode, score, chords_on_score, chart):
         assert page.locator(".print-key").inner_text() == "Key: A major"
         assert page.locator("main > h1").is_visible()
     assert not page.locator(".nav").is_visible() and not page.locator(".controls").is_visible()
-    assert not page.locator(".practise-now").is_visible()  # Repeat and Speed up: for playing
+    assert not page.locator(".tab-line").is_visible()  # the holes or tabs menu: for playing
     # Afterwards the page is as it was.
     page.emulate_media(media="screen")
     page.evaluate("window.dispatchEvent(new Event('afterprint'))")
@@ -354,71 +354,40 @@ def test_fingered_notes_box_where_they_are(page):
     assert tops and min(tops) > -60
 
 
-# For a learner who doesn't read the stave: a line above the music that opens the choices
-# in place (the practice tools stay folded, now and on the next tune), gone once any has
-# been chosen, the music alone too, for good.
-def test_tablature_invite(page):
+# The holes or tabs: a menu just above the music, never folded away, so at a session it's
+# found as the tune starts; the music alone is the first choice, and the one chosen at first.
+@pytest.mark.parametrize("width", [390, 1280])
+def test_tab_line(page, width):
+    page.set_viewport_size({"width": width, "height": 844})
     page.goto_site("alaw/llancesau-trefaldwyn/")
     page.wait_for_selector(".score .abcjs-staff")
-    # Above the music, so it's seen before the staves (and heard before them)
-    assert page.locator(".tab-invite").bounding_box()["y"] < page.locator(".score").bounding_box()["y"]
-    assert page.locator(".tab-invite-choices").is_hidden()
-    page.click(".tab-invite-line .link-button")
-    assert page.get_attribute(".tab-invite-line .link-button", "aria-expanded") == "true"
-    # The music alone is one of the choices, and the one chosen at first
-    assert page.locator(".tab-choice [aria-checked=true]").inner_text() == "Just the music"
-    page.click(".tab-choice button:has-text('Whistle in D')")
+    assert page.locator(".tab-line").bounding_box()["y"] < page.locator(".score").bounding_box()["y"]
+    assert page.locator("#tab-select").is_visible() and page.input_value("#tab-select") == "none"
+    assert page.inner_text("#tab-select option:checked") == "Just the music"
+    # Chosen, the music is drawn again under it: the menu doesn't move, the tools stay folded.
+    top = page.locator("#tab-select").bounding_box()["y"]
+    page.select_option("#tab-select", "whistle-D")
     page.wait_for_selector(".score .abcjs-lyric")
-    assert page.locator(".tab-invite").is_hidden() and page.locator(".fingering-key").is_visible()
+    assert page.locator(".fingering-key").is_visible()
+    assert page.locator("#tab-select").bounding_box()["y"] == top
     assert page.locator(".practice-tools").evaluate("d => !d.open")
-    assert page.input_value("#tab-select") == "whistle-D"
     page.wait_for_timeout(100)  # (a toggle event would come a moment after)
     assert page.evaluate("state.practice") == {"tab": "whistle-D", "countIn": False, "click": False, "chordsOnScore": False, "open": None, "tabKnown": True, "heard": 0, "holesSeen": False, "versionsSeen": False}
-    # Change goes down to the menu; opened for it, the tools aren't kept open
-    page.click(".fingering-key .link-button")
-    page.wait_for_function("document.activeElement.id === 'tab-select'")
-    page.wait_for_timeout(100)
-    assert page.evaluate("state.practice.open") is None
-    page.select_option("#tab-select", "none")
     page.reload()
-    page.wait_for_selector(".score .abcjs-staff")
-    assert page.locator(".tab-invite").is_hidden()
+    page.wait_for_selector(".score .abcjs-lyric")
+    assert page.input_value("#tab-select") == "whistle-D"
 
 
-# Someone who reads the music says so once, and isn't asked again.
-def test_tablature_invite_just_the_music(page):
+# Someone who reads the music isn't asked on the home page again once they've answered on a
+# tune: choosing the music alone in the menu, or playing three tunes with the music alone.
+@pytest.mark.parametrize("how", ["menu", "played"])
+def test_tab_question_answered_by_reading(page, how):
     page.goto_site("alaw/llancesau-trefaldwyn/")
     page.wait_for_selector(".score .abcjs-staff")
-    page.click(".tab-invite-line .link-button")
-    page.click(".tab-choice button:has-text('Just the music')")
-    assert page.inner_text(".tab-invite").startswith("Just the music.")
-    assert page.evaluate("document.activeElement.closest('.tab-invite') !== null")
-    assert page.locator(".score .abcjs-lyric").count() == 0
-    assert page.evaluate("state.practice") == {"tab": "none", "countIn": False, "click": False, "chordsOnScore": False, "open": None, "tabKnown": True, "heard": 0, "holesSeen": False, "versionsSeen": False}
-    # Where they are, if wanted later: a link down to the menu (the tools opened for it aren't kept)
-    page.click(".tab-invite .link-button:has-text('the practice tools')")
-    page.wait_for_function("document.activeElement.id === 'tab-select'")
-    page.wait_for_timeout(100)
-    assert page.evaluate("state.practice.open") is None
-    page.reload()
-    page.wait_for_selector(".score .abcjs-staff")
-    assert page.locator(".tab-invite").is_hidden()
-
-
-# Someone who reads the music isn't made to say so: choosing the music alone in the menu,
-# opening the practice tools, or playing three tunes with the music alone answers the invite.
-@pytest.mark.parametrize("how", ["menu", "tools", "played"])
-def test_tablature_invite_answered_by_reading(page, how):
-    page.goto_site("alaw/llancesau-trefaldwyn/")
-    page.wait_for_selector(".score .abcjs-staff")
-    assert page.locator(".tab-invite").is_visible()
     if how == "menu":
-        page.open_tools()
         page.select_option("#tab-select", "whistle-D")
         page.evaluate("state.practice.tabKnown = false")
         page.select_option("#tab-select", "none")
-    elif how == "tools":
-        page.click(".practice-tools > summary")
     else:
         page.evaluate("[...state.bySlug.values()].slice(0, 2).forEach(heardWithTheMusic)")
         assert page.evaluate("state.practice.tabKnown") is False
@@ -427,13 +396,10 @@ def test_tablature_invite_answered_by_reading(page, how):
         page.evaluate("heardWithTheMusic([...state.bySlug.values()][2])")
     page.wait_for_timeout(100)
     assert page.evaluate("JSON.parse(localStorage.getItem('practice')).tabKnown") is True
-    page.reload()
-    page.wait_for_selector(".score .abcjs-staff")
-    assert page.locator(".tab-invite").is_hidden()
 
 
 # On a phone, once a tune has been played with the holes, the next folds how to read them
-# away (the name and Change stay); only drawn, they may not have been read. Printed, it's there.
+# away; only drawn, they may not have been read. Printed, it's there.
 def test_hole_key_folds_on_a_phone(page):
     page.set_viewport_size({"width": 390, "height": 844})
     page.goto_site("alaw/llancesau-trefaldwyn/")
@@ -449,7 +415,6 @@ def test_hole_key_folds_on_a_phone(page):
     assert page.evaluate("state.practice.holesSeen")
     page.goto_site("alaw/llancesau-trefaldwyn/")
     page.wait_for_selector(".score g.holes", state="attached")
-    assert page.locator(".fingering-name .link-button").is_visible()
     assert page.locator(".fingering-how").evaluate("d => !d.open") and page.locator(".fingering-signs").is_hidden()
     page.click(".fingering-how > summary")
     assert page.locator(".fingering-signs").is_visible()
@@ -493,7 +458,6 @@ def test_fiddle_tab_has_no_frets(page):
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-staff")
     assert "on a fiddle, 2 is the first finger" in page.inner_text(".fingering-key")
-    page.click(".fingering-key .link-button")
     page.select_option("#tab-select", "guitar")
     assert "on a fiddle" not in page.inner_text(".fingering-key") and "the number is the fret" in page.inner_text(".fingering-key")
 
@@ -784,23 +748,23 @@ def test_long_credit_on_a_phone(browser, site):
 def test_practice_tools_folded_at_first(browser, site, page):
     page.goto_site("?tune=glandyfi")
     page.wait_for_selector(".score .abcjs-staff")
-    assert not page.locator("#tab-select").is_visible()  # folded on a wide screen too, so the music is the page
-    assert page.locator("#loop-select").is_visible()  # Repeat and Speed up: above the music, never folded
+    assert not page.locator("#loop-select").is_visible()  # folded on a wide screen too, so the music is the page
+    assert page.locator("#tab-select").is_visible()  # the holes or tabs: above the music, never folded
     context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True,
                                   service_workers="block")
     phone = context.new_page()
     phone.goto(site + "alaw/glandyfi/")
     phone.wait_for_selector(".score .abcjs-staff")
-    assert not phone.locator("#tab-select").is_visible()
-    # Repeat, above the music and in reach of Play
-    assert phone.evaluate("""document.querySelector('#loop-select').getBoundingClientRect().bottom
-      < document.querySelector('.score').getBoundingClientRect().top + 1""")
+    assert not phone.locator("#loop-select").is_visible()
+    # The holes or tabs, above the music, on the first screen
+    assert phone.evaluate("""document.querySelector('#tab-select').getBoundingClientRect().bottom
+      < Math.min(document.querySelector('.score').getBoundingClientRect().top + 1, innerHeight)""")
     phone.click(".practice-tools summary")
-    assert phone.locator("#tab-select").is_visible()
+    assert phone.locator("#loop-select").is_visible()
     phone.click(".brand")
     phone.go_back()
     phone.wait_for_selector(".score .abcjs-staff")
-    assert phone.locator("#tab-select").is_visible()  # left open
+    assert phone.locator("#loop-select").is_visible()  # left open
     # Under the music on a phone too, so the music starts on the first screen
     assert phone.evaluate("""document.querySelector('.practice-tools').getBoundingClientRect().top
       > document.querySelector('.score').getBoundingClientRect().bottom - 1""")
@@ -809,7 +773,7 @@ def test_practice_tools_folded_at_first(browser, site, page):
     page.wait_for_function("state.practice.open")  # the toggle event comes a moment after the click
     page.evaluate("navigate('alaw/abaty-waltham/')")
     page.wait_for_selector(".score .abcjs-staff")
-    assert page.locator("#tab-select").is_visible()
+    assert page.locator("#loop-select").is_visible()
 
 
 def test_embed_code(page, site):
@@ -2276,13 +2240,13 @@ def test_practice_tools_remembered(page):
     assert "with chords" in page.inner_text(".controls-summary .now")
     page.click(".sound-on .link-button")
     assert page.evaluate("document.activeElement.matches('.practice-tools > summary')")
-    # Turn all off: the clicks and the tablature; how the tune plays (its tempo, the chords
-    # heard) stays, and the chords on the music, under the example chords, not in the tools.
+    # Turn all off: the clicks; how the tune plays (its tempo, the chords heard) stays, and the
+    # holes or tabs, above the music, and the chords on the music, under the example chords.
     page.click(".kept-note .link-button")
     assert page.locator(".sound-on").is_hidden()
     assert not page.is_checked(".practice-row label:has-text('Click · on every beat') input")
     assert page.evaluate("[state.practice.countIn, state.practice.click]") == [False, False]
-    assert page.input_value("#loop-select") == "-2" and page.input_value("#tab-select") == "none"
+    assert page.input_value("#loop-select") == "-2" and page.input_value("#tab-select") == "mandolin"
     assert page.evaluate("state.practice.chordsOnScore") is True
     assert page.evaluate("JSON.parse(localStorage.getItem('tunes'))") == {"glandyfi-version-2": {"bpm": 90, "play": "both"}}  # the version it opens on
     assert page.locator(".kept-note .link-button").is_hidden()
@@ -2297,6 +2261,7 @@ def test_controls_not_refilled_going_back(page):
     # Gone back to a tune, the browser doesn't put back the Repeat and Speed up chosen last
     # time (they aren't kept): the controls say what's playing, so "The whole tune" repeats it.
     page.goto_site("alaw/glandyfi/")
+    page.open_tools()
     page.wait_for_selector(".score .abcjs-staff")
     page.select_option("#loop-select", "-1")
     page.check("text=Speed up each time")
@@ -2322,8 +2287,8 @@ def test_tablature(page, tab, first, width):
     page.wait_for_function("document.querySelectorAll('.score .abcjs-tab-number, .score [data-name=\"tabNumber\"]').length > 50")
     numbers = page.evaluate("[...document.querySelectorAll('.score svg text')].map((t) => t.textContent).filter((t) => /^\\d+$/.test(t))")
     assert numbers[0] == first
-    # Said once, above the music, with its tuning; not on every line.
-    assert page.inner_text(".fingering-name strong") in ("Mandolin / fiddle (GDAE)", "Guitar (EADGBE)")
+    # Its tuning said once, above the music (the menu above names it); not on every line.
+    assert page.inner_text(".fingering-name strong") in ("Tuning: GDAE", "Tuning: EADGBE")
     assert page.locator(".score .abcjs-tab-label, .score text:has-text('EADGBE')").count() == 0
 
 
@@ -3669,7 +3634,7 @@ def test_chord_settings_where_they_are_kept(page):
     assert page.locator(".score select, .score .chords-on-score").count() == 0
     assert page.locator(".controls .how-it-plays #chord-playback option").count() == 3
     groups = page.locator(".practice-tools .practice-group")
-    assert [g.get_attribute("aria-label") for g in groups.all()] == ["Practise", "See"]
+    assert [g.get_attribute("aria-label") for g in groups.all()] == ["Repeat and speed up", "Keep time"]
     assert groups.locator("text=Show chords on sheet music").count() == 0
     assert page.locator(".card.chords .chords-on-score input[type=checkbox]").count() == 1
     # Ticked down there, the page goes up to the music it changes (a short window, so it's out of sight).
@@ -3680,7 +3645,7 @@ def test_chord_settings_where_they_are_kept(page):
     page.goto_site("?tune=cawl-cennin")  # a jig without chords: nothing for How it plays
     page.wait_for_selector(".score .abcjs-inline-audio")
     assert page.locator(".how-it-plays, #chord-playback, .chords-on-score").count() == 0
-    assert [g.get_attribute("aria-label") for g in page.locator(".practice-group").all()] == ["Practise", "See"]
+    assert [g.get_attribute("aria-label") for g in page.locator(".practice-group").all()] == ["Repeat and speed up", "Keep time"]
 
 
 def test_damaged_storage_and_backing_up_sets(browser, site):

@@ -1864,9 +1864,9 @@ function features() {
 function tabWelcome() {
   const said = el("p", { class: "caption tab-said", "aria-live": "polite" });
   return el("section", { class: "tab-welcome", "aria-labelledby": "tab-welcome-title" },
-    el("h2", { id: "tab-welcome-title" }, tr("Holes or tabs, if you want them", "Tyllau neu dablatur, os hoffech chi")),
-    el("p", {}, tr("Don't read music yet? Most whistles are in D. Have the holes or tabs for your instrument under every note.",
-      "Ddim yn darllen cerddoriaeth eto? Mae'r rhan fwyaf o chwislau yn D. Cewch y tyllau neu'r tablatur ar gyfer eich offeryn o dan bob nodyn.")),
+    el("h2", { id: "tab-welcome-title" }, tr("Tabs or holes, if you want them", "Tablatur neu dyllau, os hoffech chi")),
+    el("p", {}, tr("Don't read music yet? Most whistles are in D. Have the tabs or holes for your instrument under every note.",
+      "Ddim yn darllen cerddoriaeth eto? Mae'r rhan fwyaf o chwislau yn D. Cewch y tablatur neu'r tyllau ar gyfer eich offeryn o dan bob nodyn.")),
     el("p", { class: "pills-label", id: "tab-choice-label" }, tr("On every tune", "Ar bob alaw")),
     tabChooser("tab-choice-label", (value, name) => said.replaceChildren(...doneText(value === "none"
       ? tr("Just the music, on every tune. Kept on this device.", "Y gerddoriaeth yn unig, ar bob alaw. Wedi'i gadw ar y ddyfais hon.")
@@ -2322,23 +2322,6 @@ function holeSample(mark) {
   const svg = document.createElementNS(SVG_NS, "svg");
   for (const [name, value] of Object.entries({ viewBox: "0 0 12 12", class: "holes hole-sample", "aria-hidden": "true" })) svg.setAttribute(name, value);
   holeMark(svg, mark, 6, 6, 4.8);
-  return svg;
-}
-
-// A scrap of a whistle, to lead the tune page's invite to them: its body, and three holes
-// down it, two covered, one open (a lone half-covered hole would read as a light-and-dark
-// switch; three dots alone, as a "more" menu).
-function holeColumn() {
-  const svg = document.createElementNS(SVG_NS, "svg");
-  for (const [name, value] of Object.entries({ viewBox: "0 0 12 44", class: "holes hole-column", "aria-hidden": "true" })) svg.setAttribute(name, value);
-  const add = (attrs) => {
-    const node = document.createElementNS(SVG_NS, "rect");
-    for (const [name, value] of Object.entries(attrs)) node.setAttribute(name, value);
-    svg.append(node);
-  };
-  add({ x: .6, y: .6, width: 10.8, height: 42.8, rx: 2, class: "body" });  // the tube
-  add({ x: 3.5, y: 5, width: 5, height: 3, class: "covered" });  // the window, under the mouthpiece
-  ["●", "●", "○"].forEach((mark, i) => holeMark(svg, mark, 6, 18 + i * 9.5, 3.1));
   return svg;
 }
 
@@ -3577,9 +3560,10 @@ function renderTune(main, group, tune) {
           whatVersions(), group.versions.map(versionLink)))]
     : [];
 
-  // The practice tools, kept for every tune, in two groups by what they change: Practise
-  // (count-in, click) and See (tablature). How it plays, kept for this tune, is up with its
-  // key and tempo; chords on the music are under the example chords.
+  // The practice tools, in two groups: Repeat and speed up (not kept), and Keep time
+  // (count-in, click: kept for every tune). The holes or tabs are above the music; how it
+  // plays, kept for this tune, is up with its key and tempo; chords on the music are under
+  // the example chords.
   const loopSelect = el("select", { id: "loop-select", onchange: (e) => { settings.loop = +e.target.value; speedSaid = ""; undoSpeedUp = null; redraw(); } });
   const toggle = (label, checked, onchange, cls) => el("label", { class: `switch${cls ? ` ${cls}` : ""}` },
     el("input", { type: "checkbox", checked, onchange: (e) => { onchange(e.target.checked); redraw(); } }), label);
@@ -3640,12 +3624,9 @@ function renderTune(main, group, tune) {
       speedSaid = tr(`Back to ${settings.bpm} bpm.`, `Yn ôl i ${settings.bpm} bpm.`);
     }
   };
-  // With none chosen, what tablature is; with one, which it is just above the music, with
-  // the way to change it (the menu is down in the practice tools, a long way below once
-  // it's drawn), and how to read it: a string's frets, or a whistle's or recorder's holes,
-  // each sign kept on a line with what it means.
-  const tabWhat = el("span", { class: "caption", hidden: state.practice.tab !== "none" },
-    tr("Where to put your fingers, under each note.", "Ble i roi eich bysedd, o dan bob nodyn."));
+  // With one chosen, how to read it, just above the music (the menu above names which):
+  // a string's tuning and frets, or a whistle's or recorder's holes, each sign kept on a
+  // line with what it means.
   const fingerKey = () => {
     const strings = TABS[state.practice.tab];
     const f = FINGERED[state.practice.tab];
@@ -3653,9 +3634,6 @@ function renderTune(main, group, tune) {
       // A hole is said by what it means alone ("covered", not "black circle, covered").
       "●○◐".includes(mark) ? holeSample(mark) : [el("span", { class: `sign${mark === "8va" ? " up" : ""}`, "aria-hidden": "true" }, mark),
         el("span", { class: "visually-hidden" }, `${mark} `)], meaning);
-    const title = [el("strong", {}, strings ? `${strings.label()} (${strings.tuning})` : f.label()), " ",
-      el("button", { type: "button", class: "link-button", "aria-label": tr("Change the holes or tabs", "Newid y tyllau neu'r tablatur"), onclick: toTabMenu },
-        tr("Change", "Newid"))];
     // A fiddle has no frets: the same numbers are said as its fingers, in first position.
     const howUp = strings === TABS.mandolin
       ? tr("A line for each string, the highest at the top. On a mandolin the number is the fret; on a fiddle, 2 is the first finger, 3 or 4 the second, 5 the third (0: open)",
@@ -3667,7 +3645,7 @@ function renderTune(main, group, tune) {
         ? tr("The thumb (at the back), then from the mouthpiece down: left hand, then right",
           "Y bawd (yn y cefn), yna o'r darn ceg i lawr: y llaw chwith, yna'r dde")
         : tr("From the mouthpiece down: left hand, then right", "O'r darn ceg i lawr: y llaw chwith, yna'r dde");
-    if (strings) return [el("p", { class: "fingering-name" }, title, el("br"), howUp)];
+    if (strings) return [el("p", { class: "fingering-name" }, el("strong", {}, `${tr("Tuning", "Tiwnio")}: ${strings.tuning}`), el("br"), howUp)];
     const signs = el("ul", { class: "fingering-signs" },
       sign("●", tr("covered", "ar gau")), sign("○", tr("open", "ar agor")),
       f.recorder ? sign("◐", tr("half-covered (the thumb: pinched)", "hanner ar gau (y bawd: wedi'i binsio)")) : sign("◐", tr("half-covered", "hanner ar gau")),
@@ -3675,11 +3653,11 @@ function renderTune(main, group, tune) {
       sign("?", f.recorder ? tr("not on the recorder", "ddim ar y recorder") : tr("not on the whistle", "ddim ar y chwisl")));
     showFit();
     // On a phone, once the holes have been read on a tune, how to read them folds away, so
-    // Play and the music come sooner; the name and Change stay.
-    if (holesFolded) return [el("p", { class: "fingering-name" }, title), fitNote,
+    // Play and the music come sooner.
+    if (holesFolded) return [fitNote,
       el("details", { class: "fingering-how fold" }, el("summary", {}, tr("How to read the holes", "Sut i ddarllen y tyllau")),
         el("p", {}, howUp), signs)];
-    return [el("p", { class: "fingering-name" }, title, el("br"), howUp), fitNote, signs];
+    return [el("p", { class: "fingering-name" }, howUp), fitNote, signs];
   };
   // A tune that goes beyond the whistle or recorder chosen: how many notes aren't on it
   // (marked ?), and where every note is: the nearest key in the Key menu that has them all
@@ -3711,83 +3689,32 @@ function renderTune(main, group, tune) {
       ...(either.length ? [...either, tr(", every note is there.", ", mae pob nodyn yno.")] : []));
   };
   const holesFolded = state.practice.holesSeen && matchMedia("(max-width: 800px)").matches;
-  // The way to the menu, down in the practice tools, which may be folded: opened for the
-  // menu, they aren't kept open for the next tune (only the reader's own fold is).
+  // From "Plays with … · Change" by Play: the practice tools, opened and in view. Opened
+  // for that, they aren't kept open for the next tune (only the reader's own fold is).
   let openedForMenu = false;
-  // From "Plays with … · Change" by Play: the tools, opened (as for the menu) and in view.
   const toTools = () => {
     if (!practiceTools.open) { openedForMenu = true; practiceTools.open = true; }
     practiceTools.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
     practiceTools.querySelector("summary").focus({ preventScroll: true });
-  };
-  const toTabMenu = () => {
-    if (!practiceTools.open) { openedForMenu = true; practiceTools.open = true; }
-    tabSelect.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
-    tabSelect.focus({ preventScroll: true });
-  };
-  // For a learner who doesn't read the stave yet, a way in above the music, on the first
-  // screen: the home page's choices, opened in place, so the page doesn't move and the
-  // practice tools stay as they were. Gone once any has been chosen here, the music alone too.
-  const inviteChoices = el("div", { class: "tab-invite-choices", id: "tab-invite-choices", hidden: true },
-    el("p", { class: "pills-label", id: "tab-invite-label" }, tr("On every tune", "Ar bob alaw")),
-    tabChooser("tab-invite-label", (value, name, byArrows) => fromInvite(value, byArrows)),
-    el("p", { class: "caption" }, tr("Not sure which whistle? Most are in D. ", "Ddim yn siŵr pa chwisl? Mae'r rhan fwyaf yn D. "),
-      el("button", { type: "button", class: "link-button", onclick: toTabMenu }, tr("Other whistles", "Chwislau eraill"))));
-  const inviteButton = el("button", { type: "button", class: "link-button", "aria-expanded": "false", "aria-controls": "tab-invite-choices",
-    onclick: () => {
-      inviteChoices.hidden = !inviteChoices.hidden;
-      inviteButton.setAttribute("aria-expanded", String(!inviteChoices.hidden));
-    } }, tr("Show where your fingers go", "Dangos ble mae'ch bysedd yn mynd"), el("span", { class: "chevron", "aria-hidden": "true" }));
-  const inviteLine = el("p", { class: "tab-invite-line" }, holeColumn(), tr("Don't read music yet? ", "Ddim yn darllen cerddoriaeth eto? "), inviteButton);
-  const tabInvite = el("div", { class: "tab-invite", hidden: state.practice.tab !== "none" || state.practice.tabKnown }, inviteLine, inviteChoices);
-  // Chosen in the invite: holes or tabs, and focus to their Change just above the music; or
-  // the music alone, said where the invite was, and where the holes or tabs are if wanted later.
-  // Going through them with the arrow keys, the one stopped on is drawn (and said) and the invite stays.
-  let arrowing = null;
-  const fromInvite = (value, byArrows) => {
-    clearTimeout(arrowing);
-    // Going through them with the arrow keys, the music is drawn for the one stopped on,
-    // not each one passed (a long tune's drawing is slow, and each would be said).
-    if (byArrows) { arrowing = setTimeout(() => chooseTab(value), 400); return; }
-    chooseTab(value);
-    if (value !== "none") {
-      tabInvite.hidden = true;
-      fingeringKey.querySelector(".link-button")?.focus();
-      return;
-    }
-    const tools = el("button", { type: "button", class: "link-button", onclick: toTabMenu }, tr("the practice tools", "yr offer ymarfer"));
-    const done = el("p", { class: "tab-invite-line", tabindex: -1 }, ...doneText(tr(["Just the music. Holes or tabs are in ", tools, ", under the music, if you want them."],
-      ["Y gerddoriaeth yn unig. Mae'r tyllau neu'r tablatur yn ", tools, ", o dan y gerddoriaeth, os hoffech chi nhw."])));
-    tabInvite.replaceChildren(done);
-    done.focus();
   };
   const fingeringKey = el("div", { class: "caption fingering-key", hidden: state.practice.tab === "none" });
   const showKey = () => {
     fingeringKey.hidden = state.practice.tab === "none";
     if (!fingeringKey.hidden) fingeringKey.replaceChildren(...fingerKey());
   };
-  // Said to a screen reader as it's chosen: the menu stays where it is, the holes appear above.
+  // Said to a screen reader as it's chosen: the menu stays where it is, the holes appear under it.
   const tabSaid = el("span", { class: "visually-hidden", "aria-live": "polite" });
-  // Choosing one draws the music again above the menu, longer or shorter. Chosen with a
-  // finger or the mouse, the page goes up to where the music starts (and how to read it),
-  // to see what changed; with the keyboard, going through them, the menu stays where it was.
-  // Up to where the music starts, under the pinned top bar (a phone's), to see what changed.
+  // Up to where the music starts, under the pinned top bar (a phone's), to see what changed
+  // (the chords ticked on to the music, below it).
   const upTo = (target) => {
     const pinned = [...document.querySelectorAll(".topbar")].filter((x) => getComputedStyle(x).position === "sticky")
       .reduce((bottom, x) => Math.max(bottom, x.getBoundingClientRect().bottom), 0);
     window.scrollTo({ top: window.scrollY + target.getBoundingClientRect().top - pinned - 12,
       behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   };
-  let tabByKeys = false;
-  const tabSelect = el("select", { id: "tab-select",
-    onkeydown: () => { tabByKeys = true; }, onpointerdown: () => { tabByKeys = false; },
-    onchange: (e) => {
-      const was = e.target.getBoundingClientRect().top;
-      chooseTab(e.target.value);
-      tabInvite.hidden = true;
-      if (tabByKeys || state.practice.tab === "none") { window.scrollBy(0, e.target.getBoundingClientRect().top - was); return; }
-      upTo(fingeringKey);
-    } },
+  // The holes or tabs, just above the music and never folded away: at a session, picked as
+  // the tune starts. The music is drawn again under it, so the menu itself doesn't move.
+  const tabSelect = el("select", { id: "tab-select", onchange: (e) => chooseTab(e.target.value) },
     // In the pills' order, by how they're read: the music, the holes, or a string's frets.
     // Eight choices read as three.
     (() => {
@@ -3798,8 +3725,7 @@ function renderTune(main, group, tune) {
         el("optgroup", { label: tr("Strings: tabs", "Llinynnau: tablatur") },
           Object.entries(TABS).map(([value, t]) => option([value, t.label()])))];
     })());
-  // Choosing the holes or tabs, from the menu or the invite: kept for every tune, drawn,
-  // and said (from outside the practice tools, which may be folded).
+  // Choosing the holes or tabs: kept for every tune, drawn, and said.
   const chooseTab = (value) => {
     linkTab = null;  // the reader's own choice now, not the link's: kept
     state.practice.tab = value;
@@ -3808,7 +3734,6 @@ function renderTune(main, group, tune) {
     showInAddress();
     showKey();
     tabSelect.value = value;
-    tabWhat.hidden = value !== "none";
     const label = value === "none" ? tr("Just the music", "Y gerddoriaeth yn unig") : (FINGERED[value] ?? TABS[value]).label();
     tabSaid.textContent = value === "none" ? label : FINGERED[value]
       ? tr(`${label}: the holes under each note, and how to read them just above the music`, `${label}: y tyllau o dan bob nodyn, a sut i'w darllen ychydig uwchben y gerddoriaeth`)
@@ -3841,25 +3766,24 @@ function renderTune(main, group, tune) {
     tick.addEventListener("change", () => { if (!byKeys) upTo(paper.closest(".score")); });
     chords.append(chordTools.onScore);
   }
+  // "Just the music" first among them, as much a choice as the rest.
+  const tabLine = el("div", { class: "tab-line control" },
+    el("label", { for: "tab-select" }, tr("Tabs or holes", "Tablatur neu dyllau")), tabSelect);
   const toolGroup = (label, ...lines) => el("div", { class: "practice-group", role: "group", "aria-label": label },
     el("span", { class: "label", "aria-hidden": "true" }, label), ...lines);
   // Everything in the tools is kept, on this device: some for every tune, the rest for this one.
   const keptNote = el("p", { class: "caption kept-note" },
     el("span", {}, tr("Kept on this device, for every tune: ", "Wedi'u cadw ar y ddyfais hon, ar gyfer pob alaw: "),
-      [tr("count-in", "cyfrif i mewn"), tr("click", "clic"), tr("holes or tabs", "tyllau neu dablatur")].join(", "), "."),
+      [tr("count-in", "cyfrif i mewn"), tr("click", "clic")].join(", "), "."),
     el("button", { type: "button", class: "link-button", onclick: () => turnAllOff() }, tr("Turn all off", "Diffodd y cyfan")));
+  // Repeat and Speed up first, which a learner comes back to each time (and aren't kept).
   const practiceRow = el("div", { class: "practice-row" },
-    toolGroup(tr("Practise", "Ymarfer"), el("div", { class: "practice-line" }, countInToggle, clickToggle)),
-    toolGroup(tr("See", "Gweld"),
-      el("div", { class: "practice-line" },
-        el("div", { class: "control" }, el("label", { for: "tab-select" }, tr("Holes or tabs", "Tyllau neu dablatur")), tabSelect), tabWhat)),
+    toolGroup(tr("Repeat and speed up", "Ailadrodd a chyflymu"),
+      el("div", { class: "practice-line repeat-line" },
+        el("div", { class: "control" }, el("label", { for: "loop-select" }, tr("Repeat", "Ailadrodd")), loopSelect), speedUp, speedRange,
+        speedNote)),
+    toolGroup(tr("Keep time", "Cadw amser"), el("div", { class: "practice-line" }, countInToggle, clickToggle)),
     keptNote);
-  // Repeat and Speed up, which a learner comes back to each time (and aren't kept): above
-  // the music, in reach of Play, never folded away; the paper stays the player and the music.
-  const practiseNow = el("div", { class: "practise-now", role: "group", "aria-label": tr("Repeat and speed up", "Ailadrodd a chyflymu") },
-    el("div", { class: "practice-line" },
-      el("div", { class: "control" }, el("label", { for: "loop-select" }, tr("Repeat", "Ailadrodd")), loopSelect), speedUp, speedRange,
-      speedNote));
   // What playing will sound like besides the tune, by the player, where Play is pressed: so
   // a click or chords kept for this tune are never a surprise at a session.
   const soundOn = el("p", { class: "caption sound-on", hidden: true });
@@ -3867,19 +3791,16 @@ function renderTune(main, group, tune) {
     state.practice.countIn ? tr("count-in", "cyfrif i mewn") : null,
     state.practice.click ? tr("click", "clic") : null,
   ].filter(Boolean);
-  // Turning it all off, from the end of the tools; how the tune plays (key, tempo, chords
-  // heard, swing) stays, as chosen for it.
+  // Turning what's kept off, from the end of the tools; how the tune plays (key, tempo,
+  // chords heard, swing) stays, as chosen for it, and so do the holes or tabs.
   const turnAllOff = () => {
-    Object.assign(state.practice, { countIn: false, click: false, tab: "none" });
+    Object.assign(state.practice, { countIn: false, click: false });
     savePractice();
     // The tools as they now are.
     for (const [t, on] of [[countInToggle, state.practice.countIn], [clickToggle, state.practice.click]]) {
       if (t) t.querySelector("input").checked = on;
     }
     fillLoops();
-    tabSelect.value = state.practice.tab;
-    tabWhat.hidden = state.practice.tab !== "none";
-    showKey();
     showTempo();
     redraw();
     tabSaid.textContent = tr("Practice tools off", "Offer ymarfer wedi'u diffodd");
@@ -3897,25 +3818,19 @@ function renderTune(main, group, tune) {
   // or, once any is on (kept for every tune, or come with a link), which.
   const practiceCaption = el("span", { class: "caption" });
   showPracticeOn = () => {
-    const tab = state.practice.tab === "none" ? null : (FINGERED[state.practice.tab] ?? TABS[state.practice.tab]).label();
-    const on = [
-      ...sounds(),
-      tab && tab[0].toLowerCase() + tab.slice(1),
-    ].filter(Boolean);
+    const on = sounds();
     keptNote.querySelector(".link-button").hidden = !on.length;
     showSounds();
     // What's inside is for the eye (a screen reader hears the tools themselves); what's on is for everyone.
     practiceCaption.toggleAttribute("aria-hidden", !on.length);
     practiceCaption.textContent = on.length ? `${tr(" · on: ", " · ymlaen: ")}${on.join(", ")}`
-      : tr(" · count-in, click, holes or tabs", " · cyfrif i mewn, clic, tyllau neu dablatur");
+      : tr(" · repeat, speed up, count-in, click", " · ailadrodd, cyflymu, cyfrif i mewn, clic");
   };
   const practiceTools = el("details", { class: "practice-tools fold", open: practiceToolsOpen(),
     ontoggle: (e) => {
       if (openedForMenu) { openedForMenu = false; return; }  // opened by a link to the menu, not by the reader
       if (document.body.classList.contains("practice")) return;
       state.practice.open = e.target.open;
-      // Opened by the reader, the holes or tabs menu has been seen: the invite has done its job.
-      if (e.target.open) state.practice.tabKnown = true;
       savePractice();
     } },
     el("summary", {}, el("span", {}, tr("Practice tools", "Offer ymarfer"), practiceCaption)),
@@ -3937,10 +3852,9 @@ function renderTune(main, group, tune) {
     tuneSub(tune, group, versions[1]),
     versions[0],
     controls,
-    tabInvite,
     tabSaid,
     el("div", { class: "tune-layout" },
-      el("div", { class: "tune-main" }, practiseNow, el("div", { class: "score" }, fingeringKey, audio, soundOn, soundNote(), paper),
+      el("div", { class: "tune-main" }, tabLine, el("div", { class: "score" }, fingeringKey, audio, soundOn, soundNote(), paper),
         practiceTools, chords),
       // Taking it with you first, in reach beside the music (on a phone, after the practice tools)
       el("div", { class: "tune-side" }, actions,

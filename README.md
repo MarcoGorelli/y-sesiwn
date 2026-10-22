@@ -197,7 +197,9 @@ scheduled runs after 60 days without a commit).
   keyboard shortcuts (also in the footer, on a computer).
 - **Full screen** (practice mode): just the controls and a full-width score, full screen
   where supported.
-- **Repeat and Speed up** (above the music, never folded, in reach of Play).
+- **Tabs or holes** (above the music, never folded, so it's found as a tune starts at
+  a session; *Just the music* first). Then the **practice tools** (under the music,
+  folded at first): **Repeat** and **Speed up**, then **Count-in** and **Click**.
   **Repeat** (off, the whole tune, or one part: parts start at a repeat sign
   or double bar line, as in the chord chart; `tuneParts()`; it replaces abcjs's
   own repeat button), optionally **speeding up** each time round, by 5% of the
@@ -206,14 +208,12 @@ scheduled runs after 60 days without a commit).
   "Reached 100 bpm. *Da iawn!*" when it gets there (`repeatLoop()`: a part
   seeks back to its first note whenever playback reaches a note outside it,
   and abcjs's own loop brings it round after the last part; the speed-up uses
-  `setWarp`, which keeps playing from the same place). Then the **practice
-  tools** (under the music, folded at first): **Count-in** and **Click**,
-  then **Holes or tabs**. **Count-in** (one bar of woodblock
+  `setWarp`, which keeps playing from the same place). **Count-in** (one bar of woodblock
   clicks before the tune) and **Click** (a woodblock on every felt beat, high
   on the first of the bar) use abcjs's `drum`, `drumIntro` and `drumOff`
   options, with General MIDI percussion 76/77 from abcjs's own sound set in
   `static/soundfont/percussion-mp3/` (FluidR3's percussion samples are
-  near-silent stubs). **Holes or tabs**: tablature under the stave for mandolin/fiddle
+  near-silent stubs). **Tabs or holes**: tablature under the stave for mandolin/fiddle
   (GDAE) or guitar, with abcjs's
   tablature plugin.
 - **On another website:** the Share menu's *Put it on a website* gives the code
@@ -275,7 +275,7 @@ scheduled runs after 60 days without a commit).
   *Chord chart* (title, key and chart only, big). `printAs()` sets
   `body[data-print]` for the print styles and puts things back on
   `afterprint`.
-- **Whistle and recorder fingerings:** the Holes or tabs menu also offers a tin
+- **Whistle and recorder fingerings:** the Tabs or holes menu also offers a tin
   whistle in D, C, G or B♭ (six holes under each note: ● covered, ○ open, ◐ half; + for the
   second octave) and a descant recorder (thumb and seven holes, baroque
   fingering from the American Recorder Society's chart; ◐ is half a double hole

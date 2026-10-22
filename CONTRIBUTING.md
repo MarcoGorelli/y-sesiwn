@@ -49,7 +49,9 @@ About titles:
 - Use the name printed on the sheet music, without brackets.
 - If a tune with the same name is already in the app, call yours
   `<Name> (version 2)` (or 3, 4, …). All versions of a tune share one page,
-  with a tab for each; a `B:` line (the book it's from) labels your tab.
+  with a tab for each; a `B:` line (the book it's from) labels your tab. If
+  you learnt it from a player instead, a `%%version Bob Evans` line in the
+  header puts their name on the tab.
 - Tempo lines (`Q:`) are ignored: the app's tempo slider decides. If the
   composer gives a tempo, put it in a `%%bpm 114` line in the header to make
   it the starting tempo.

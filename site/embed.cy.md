@@ -8,8 +8,8 @@ a does dim hysbysebion.
 ## Cael y cod
 
 1. Agorwch yr alaw ar Y Sesiwn.
-2. Dewiswch ei chywair, ei thempo ac, os hoffech chi, y tyllau neu'r
-   tablatur: mae'r cod yn dangos yr alaw felly.
+2. Dewiswch ei chywair, ei thempo ac, os hoffech chi, y tablatur neu'r
+   tyllau: mae'r cod yn dangos yr alaw felly.
 3. O dan y gerddoriaeth, pwyswch **Rhannu**, yna **Ei rhoi ar wefan**.
 4. Pwyswch **Copïo'r cod**.
 

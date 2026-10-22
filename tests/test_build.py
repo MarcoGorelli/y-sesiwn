@@ -610,6 +610,9 @@ def test_tunes_from_the_session(site):
     # A setting from thesession.org: its version tab says so, and on the tune's own page
     # the source's link part is a link and who added it is text.
     assert b.version_label({"S": ["https://thesession.org/tunes/10046#setting30987 (added by ceri rhys matthews)"]}) == "The Session"
+    # A version learnt from a player names its tab with a %%version line.
+    assert b.tune_record(b.ROOT / "tunes" / "ar-foren-teg-version-3" / "tune.abc")["source"] == "Bob Evans"
+    assert b.own_version_label("X:1\nK:G\n") is None
     page = (b.OUT / "alaw" / "y-drochfa" / "index.html").read_text(encoding="utf-8")
     assert ('<a href="https://thesession.org/tunes/17046#setting32566">https://thesession.org/tunes/17046#setting32566</a>'
             " (added by Rowan Folk)") in page

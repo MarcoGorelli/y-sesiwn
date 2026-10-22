@@ -617,76 +617,64 @@ details[open] > summary::before { transform: rotate(90deg); }
 .chevron { margin: 0 0 0 .35em; transform: rotate(90deg); }
 .fold > summary { display: flex; align-items: baseline; gap: .15rem; }
 .fold > summary::before { background: var(--accent-ink); }
-/* The practice tools under the music: loop a part, speed up, count-in, click, tablature */
+/* The practice tools under the music: loop a part, speed up, count-in, click */
 .practice-tools { margin-top: .75rem; border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .9rem; background: var(--card-bg); }
 .practice-tools > summary { padding: .2rem 0; }
 .practice-tools .caption { font-size: .85rem; }
 .practice-tools[open] > summary .caption { display: none; }  /* what's in it: only while it's folded */
-/* Three groups, by what they change: Chords, Practise, See; each named above its lines,
-   with a hairline between. Then what's kept (all of it is), and Turn all off. */
+/* Two groups: Repeat and speed up, and Keep time; each named above its lines, with a
+   hairline between. Then what's kept, and Turn all off. */
 .practice-row { display: grid; gap: .9rem; margin: .6rem 0 .3rem; font-size: .9rem; }
 .practice-group { display: grid; gap: .6rem; }
 .practice-group + .practice-group { padding-top: .9rem; border-top: 1px solid var(--border); }
 .practice-group > .label { font-weight: 600; color: var(--text); }
-/* Above the music, for a learner who doesn't read the stave yet: an offer, in the reading
-   size and ink (not a footnote), with a hole drawn as in the music; the choices open under it */
-.tab-invite { margin: -.25rem 0 .6rem; }  /* the Repeat line under it, then the music */
-.tab-invite[hidden], .tab-invite-choices[hidden] { display: none; }
-.tab-invite-line { margin: 0; }
-.tab-invite-line:focus { outline: none; }
-.tab-invite-line .hole-column { width: .5em; height: 1.85em; margin-right: .5em; vertical-align: -.55em; stroke-width: 1.2; }
-.tab-invite-line .hole-column .body { stroke-width: 1; }
-.tab-invite .holes { stroke: currentColor; }  /* on the page, not the paper: the text's colour, in both themes */
-.tab-invite .holes .covered { fill: currentColor; }
-.tab-invite .link-button { margin: 0; font-size: inherit; }
-.tab-invite-line [aria-expanded="false"] .chevron { transform: none; }  /* points the way it opens */
-.tab-invite-choices { max-width: 40rem; padding: .1rem 0 .2rem; }
-.tab-invite-choices .pills-label { margin: .6rem 0 .5rem; }
-.tab-invite-choices .caption { margin: .6rem 0 0; }
 .kept-note { margin: 0; padding-top: .7rem; border-top: 1px solid var(--border); color: var(--muted); }
 .kept-note > span { display: block; }  /* every tune, then this tune: a line each */
 .kept-note .link-button { margin: 0; font-size: inherit; }
 .kept-note .link-button[hidden] { display: none; }
 .practice-line { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1.5rem; }
-/* Repeat and Speed up, above the music (on the page, not the paper): a slim card, the
-   unfolded sibling of the practice tools under the music. One wrapping line: Repeat, the
-   tick, and once it's ticked its from and to; then what it said. The tick never moves. */
-.practise-now {
-  margin: 0 0 .75rem; padding: .35rem .9rem; font-size: .9rem;
+/* The holes or tabs, above the music (on the page, not the paper): a slim card, so it's
+   found as the tune starts; "Just the music" until another is chosen */
+.tab-line {
+  display: flex; align-items: center; gap: .6rem; margin: 0 0 .75rem; padding: .35rem .9rem; font-size: .9rem; min-height: 2.1rem;
   border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg);
 }
-.practise-now .practice-line { gap: .35rem 1.25rem; }
-.practise-now .control, .practise-now .speed-up { min-height: 2.1rem; }
-.practise-now .control label { font-weight: 600; }  /* named as the practice groups are */
+.tab-line label { margin: 0; font-weight: 600; }
+.tab-line select { min-width: 0; text-overflow: ellipsis; }
+@media (max-width: 800px) { .tab-line select { min-height: 44px; } }
+/* Repeat and Speed up, in the practice tools. One wrapping line: Repeat, the tick, and
+   once it's ticked its from and to; then what it said. The tick never moves. */
+.repeat-line { gap: .35rem 1.25rem; }
+.repeat-line .control, .repeat-line .speed-up { min-height: 2.1rem; }
 .speed-range { display: inline-flex; align-items: center; gap: .35rem; color: var(--muted); }
 .speed-range[hidden] { display: none; }
 .speed-range > span { color: var(--text); font-variant-numeric: tabular-nums; }
 /* What it said, a line of its own under the controls, kept while Speed up is ticked, so
    "now 85 of 112 bpm" coming and going as it plays never moves the music. */
-.practise-now .speed-note { flex: 1 0 100%; margin: 0 0 .15rem; min-height: 1.4em; }
-.practise-now:has(.speed-up input:checked) .speed-note:empty { display: block; }
-.practise-now :is(#speed-from, #speed-to) { padding-block: .2rem; }  /* no taller than the menu: the row keeps its height */
-/* On a phone, one line, so the music still starts on the first screen: "Speed up" (a
-   screen reader still hears "each time round"); from and to on a line under both */
+.repeat-line .speed-note { flex: 1 0 100%; margin: 0 0 .15rem; min-height: 1.4em; }
+.repeat-line:has(.speed-up input:checked) .speed-note:empty { display: block; }
+.repeat-line :is(#speed-from, #speed-to) { padding-block: .2rem; }  /* no taller than the menu: the row keeps its height */
+/* On a phone, one line: "Speed up" (a screen reader still hears "each time round");
+   from and to on a line under both */
 @media (max-width: 800px) {  /* the menu a touch target's height there: the tick's words level with it */
-  .practise-now .control, .practise-now .speed-up { min-height: 44px; }
+  .repeat-line .control, .repeat-line .speed-up { min-height: 44px; }
   /* Repeat and the tick always share the line, whatever the font's widths: the menu gives
      way (its words cut short) before the tick would wrap under it */
-  .practise-now .practice-line { display: grid; grid-template-columns: minmax(0, max-content) max-content; justify-content: start; }
-  .practise-now .control { min-width: 0; }
-  .practise-now .control select { min-width: 0; text-overflow: ellipsis; }
-  .practise-now :is(.speed-range, .speed-note) { grid-column: 1 / -1; }
+  .repeat-line { display: grid; grid-template-columns: minmax(0, max-content) max-content; justify-content: start; }
+  .repeat-line .control { min-width: 0; }
+  .repeat-line .control select { min-width: 0; text-overflow: ellipsis; }
+  .repeat-line :is(.speed-range, .speed-note) { grid-column: 1 / -1; }
 }
 @media (max-width: 480px) {
-  .practise-now .speed-up .more { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .repeat-line .speed-up .more { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
 #speed-from, #speed-to {
   width: 4.5rem; padding: .3rem .4rem; text-align: right; font-variant-numeric: tabular-nums;
   border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg);
 }
-:is(.practice-row, .practise-now) .control { display: flex; align-items: center; gap: .45rem; }
-:is(.practice-row, .practise-now) .control label { margin: 0; font-size: .9rem; }
-:is(.practice-row, .practise-now) select { padding: .3rem .5rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); }
+.practice-row .control { display: flex; align-items: center; gap: .45rem; }
+.practice-row .control label { margin: 0; font-size: .9rem; }
+:is(.practice-row, .tab-line) select { padding: .3rem .5rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); }
 .speed-note:empty { display: none; }
 /* Something to put right, in ink, apart from the muted "what just changed". Worked up to
    speed: the note in ink, and a strip of carthen woven in after it, left to right, once,
@@ -720,7 +708,7 @@ details[open] > summary::before { transform: rotate(90deg); }
   .tune-layout { display: flex; flex-direction: column; align-items: stretch; gap: 0; }
   .tune-main, .tune-side { display: contents; }
   .tune-layout :is(.tune-main, .tune-side) > * { order: 2; min-width: 0; }
-  .tune-layout .tune-main > :is(.practise-now, .score, .practice-tools) { order: 0; }
+  .tune-layout .tune-main > :is(.tab-line, .score, .practice-tools) { order: 0; }
   .tune-layout .tune-side > .tune-actions { order: 1; margin: .75rem 0 0; }
   .tune-layout .tune-side > .card:not(.place) { margin-top: 1.5rem; }
 }
@@ -1046,7 +1034,7 @@ body.practice .controls { margin: .5rem 0 1rem; }
 }
 body.practice .tune-layout { grid-template-columns: 1fr; }
 body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 1rem 1.5rem 1.5rem; }
-body.practice :is(.versions, .versions-fold, .tune-actions, .tab-invite) { display: none; }
+body.practice :is(.versions, .versions-fold, .tune-actions) { display: none; }
 /* The player stays in reach as the page follows the music: pinned at the top of the screen,
    or on a phone just under the pinned top bar (whose height app.js keeps in --topbar-h) */
 .score > .audio { position: sticky; top: var(--topbar-h, 0px); z-index: 3; margin: -.5rem -.5rem 0; padding: .5rem;
@@ -1178,7 +1166,7 @@ body.practice .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height
 @media print {
   body { display: block; padding: 0; background: none; color: #000; }
   .fingering-how > summary { display: none; }
-  .nav, .site-footer, .controls, .tab-invite, .practice-tools, .tune-actions, .versions, .versions-fold, .tune-side, .audio, .card.chords, .chords-on-score, .practise-now, .sound-on, main > h1 { display: none !important; }
+  .nav, .site-footer, .controls, .practice-tools, .tune-actions, .versions, .versions-fold, .tune-side, .audio, .card.chords, .chords-on-score, .tab-line, .sound-on, main > h1 { display: none !important; }
   main { padding: 0; max-width: none; animation: none; }
   .tune-layout { display: block; }
   .score { border: none; box-shadow: none; background: none; padding: 0; }
@@ -1485,7 +1473,7 @@ body.practice .tune-sub { display: none; }
   /* the same, for links in smaller type: the source in a tune's details, the map's, the report,
      the offline card's, back to My sets */
   .card.place .caption a, .report-line a, dd > a:first-child, .offline-card .more a, .set-count a { padding-block: .85rem; }
-  .fingering-key .link-button, .sound-on .link-button, .kept-note .link-button, .tab-invite .link-button, .speed-range .speed-from { padding-block: .7rem; margin-block: -.7rem; min-width: 44px; }  /* "Newid" is short */
+  .fingering-key .link-button, .sound-on .link-button, .kept-note .link-button, .speed-range .speed-from { padding-block: .7rem; margin-block: -.7rem; min-width: 44px; }  /* "Newid" is short */
   .speed-range .speed-from { min-width: 0; padding-inline: .6rem; margin-inline: -.6rem; }  /* "70", between "from" and "to" */
   .notes-invite .link-button { display: inline-flex; align-items: center; min-height: 44px; }
   .home-more :is(a, .link-button) { display: inline-block; padding-block: .7rem; margin-block: -.7rem; }

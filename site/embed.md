@@ -8,7 +8,7 @@ has no adverts.
 ## Getting the code
 
 1. Open the tune on Y Sesiwn.
-2. Choose its key, tempo and, if you like, holes or tabs: the code shows the
+2. Choose its key, tempo and, if you like, tabs or holes: the code shows the
    tune that way.
 3. Under the music, press **Share**, then **Put it on a website**.
 4. Press **Copy the code**.

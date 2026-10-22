@@ -165,9 +165,10 @@ scheduled runs after 60 days without a commit).
   grouped with their tune (`build_site.py` adds `group`, `base`, `version` and
   a `source` label, e.g. *Alawon Cymru* or the `B:` book); the page has a tab
   per version (`alaw/rheged/?v=2`), and browsing, counts and search show one
-  entry per tune. The versions are shown with Alawon Cymru's after the books'
-  and players' (usually better to learn from) and before any of unknown source,
-  numbered in that order (`shown`); a tune's
+  entry per tune. The versions are shown in the order `version_order.json` gives
+  (for the tunes listed there: the books' and players' before Alawon Cymru's), then
+  any versions added since, in the order they were added, numbered in that order
+  (`shown`); a tune's
   address opens the first shown, and `?v=` names a version by its own number,
   from its title and folder, which never changes, so old links and sets keep
   their version. Older links (`?tune=rheged`, or a version's folder,
@@ -462,6 +463,7 @@ scheduled runs after 60 days without a commit).
 | `site/about.cy.md`, `site/guides.cy.md` | The Welsh About page, and the Welsh *How to add a tune* and *How to submit corrections* (keep in step with `about.md` and `CONTRIBUTING.md`). |
 | `.github/pull_request_template.md` | The checklist a new pull request starts with: credit and permission, checked in the abcjs editor, new tunes numbered in `tune_numbers.json`. |
 | `tune_numbers.json` | Each tune's number in set links. Only ever add to it (`python build_site.py --number-tunes`); never change a number or delete a line. |
+| `version_order.json` | The order a tune's versions are shown in, for tunes not shown in the order they were added; new versions go after those listed. Add a tune to show a new version earlier. |
 | `moved.json` | Renamed tune folders, old name to new, so old links still find them (see Features). Only ever add to it. |
 | `pronunciation.json` | How to say each Welsh tune name, by folder name (the build stops if a folder doesn't exist). |
 | `sessions.json` | The active sessions, for the sessions page (see above). |

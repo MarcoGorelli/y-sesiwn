@@ -1,0 +1,658 @@
+{
+  "_comment": "The order a tune's versions are shown in, first the one its page opens on, by folder name, for tunes whose versions aren't shown in the order they were added. Versions not listed come after, in the order they were added (by version number). To show a new version earlier, add the tune here.",
+  "order": {
+    "abaty-llanthony": [
+      "abaty-llanthony-version-2",
+      "abaty-llanthony"
+    ],
+    "aberdaugleddau": [
+      "aberdaugleddau-version-2",
+      "aberdaugleddau"
+    ],
+    "ap-siencyn": [
+      "ap-siencyn-version-2",
+      "ap-siencyn"
+    ],
+    "ar-hyd-y-nos": [
+      "ar-hyd-y-nos-version-2",
+      "ar-hyd-y-nos"
+    ],
+    "ar-lan-y-mor": [
+      "ar-lan-y-mor-version-2",
+      "ar-lan-y-mor"
+    ],
+    "bedd-y-morwr": [
+      "bedd-y-morwr-version-2",
+      "bedd-y-morwr"
+    ],
+    "blodau-r-drain": [
+      "blodau-r-drain-version-2",
+      "blodau-r-drain"
+    ],
+    "blodau-r-grug": [
+      "blodau-r-grug-version-2",
+      "blodau-r-grug-version-3",
+      "blodau-r-grug"
+    ],
+    "bois-y-chwarel": [
+      "bois-y-chwarel-version-2",
+      "bois-y-chwarel"
+    ],
+    "breuddwyd-y-wrach": [
+      "breuddwyd-y-wrach-version-2",
+      "breuddwyd-y-wrach"
+    ],
+    "bwlch-llanberis": [
+      "bwlch-llanberis-version-2",
+      "bwlch-llanberis"
+    ],
+    "cainc-dafydd-ap-gwilym": [
+      "cainc-dafydd-ap-gwilym-version-2",
+      "cainc-dafydd-ap-gwilym-version-3",
+      "cainc-dafydd-ap-gwilym"
+    ],
+    "cainc-ieuan-y-telynor-dall": [
+      "cainc-ieuan-y-telynor-dall-version-2",
+      "cainc-ieuan-y-telynor-dall"
+    ],
+    "cainc-y-datgeiniad": [
+      "cainc-y-datgeiniad-version-2",
+      "cainc-y-datgeiniad"
+    ],
+    "cambro-brython-3": [
+      "cambro-brython-3-version-2",
+      "cambro-brython-3"
+    ],
+    "castell-caernarfon": [
+      "castell-caernarfon-version-2",
+      "castell-caernarfon"
+    ],
+    "cawl-cennin": [
+      "cawl-cennin-version-2",
+      "cawl-cennin"
+    ],
+    "chwi-fechgyn-glan-ffri": [
+      "chwi-fechgyn-glan-ffri-version-2",
+      "chwi-fechgyn-glan-ffri"
+    ],
+    "clawdd-offa": [
+      "clawdd-offa-version-2",
+      "clawdd-offa"
+    ],
+    "codiad-yr-ehedydd": [
+      "codiad-yr-ehedydd-version-2",
+      "codiad-yr-ehedydd"
+    ],
+    "conset-arglwyddes-treffael": [
+      "conset-arglwyddes-treffael-version-2",
+      "conset-arglwyddes-treffael"
+    ],
+    "croen-y-ddafad-felen": [
+      "croen-y-ddafad-felen-version-2",
+      "croen-y-ddafad-felen"
+    ],
+    "croesawiad-gwraig-y-ty": [
+      "croesawiad-gwraig-y-ty-version-2",
+      "croesawiad-gwraig-y-ty-version-3",
+      "croesawiad-gwraig-y-ty"
+    ],
+    "cwicstep-y-bontnewydd": [
+      "cwicstep-y-bontnewydd-version-2",
+      "cwicstep-y-bontnewydd"
+    ],
+    "cwrw-da": [
+      "cwrw-da-version-2",
+      "cwrw-da"
+    ],
+    "cymro-o-ble": [
+      "cymro-o-ble-version-2",
+      "cymro-o-ble"
+    ],
+    "dacw-fuwch": [
+      "dacw-fuwch-version-2",
+      "dacw-fuwch"
+    ],
+    "dadl-dau": [
+      "dadl-dau-version-2",
+      "dadl-dau"
+    ],
+    "dafydd-ifan-tomos": [
+      "dafydd-ifan-tomos-version-2",
+      "dafydd-ifan-tomos"
+    ],
+    "dafydd-y-garreg-wen": [
+      "dafydd-y-garreg-wen-version-2",
+      "dafydd-y-garreg-wen"
+    ],
+    "dawns-y-pistyll": [
+      "dawns-y-pistyll-version-2",
+      "dawns-y-pistyll"
+    ],
+    "diferiad-y-gwerwyn": [
+      "diferiad-y-gwerwyn-version-2",
+      "diferiad-y-gwerwyn-version-3",
+      "diferiad-y-gwerwyn"
+    ],
+    "difyrrwch-abertawe": [
+      "difyrrwch-abertawe-version-2",
+      "difyrrwch-abertawe"
+    ],
+    "difyrrwch-bleddyn-ap-cynddyn": [
+      "difyrrwch-bleddyn-ap-cynddyn-version-2",
+      "difyrrwch-bleddyn-ap-cynddyn"
+    ],
+    "difyrrwch-corbet-ynysmaengwyn": [
+      "difyrrwch-corbet-ynysmaengwyn-version-2",
+      "difyrrwch-corbet-ynysmaengwyn"
+    ],
+    "difyrrwch-gwyr-caernarfon": [
+      "difyrrwch-gwyr-caernarfon-version-2",
+      "difyrrwch-gwyr-caernarfon"
+    ],
+    "difyrrwch-gwyr-dyfi": [
+      "difyrrwch-gwyr-dyfi-version-2",
+      "difyrrwch-gwyr-dyfi-version-3",
+      "difyrrwch-gwyr-dyfi-version-4",
+      "difyrrwch-gwyr-dyfi"
+    ],
+    "difyrrwch-gwyr-llanfabon": [
+      "difyrrwch-gwyr-llanfabon-version-2",
+      "difyrrwch-gwyr-llanfabon"
+    ],
+    "difyrrwch-gwyr-llangrallo": [
+      "difyrrwch-gwyr-llangrallo-version-2",
+      "difyrrwch-gwyr-llangrallo"
+    ],
+    "difyrrwch-gwyr-llanilltud": [
+      "difyrrwch-gwyr-llanilltud-version-2",
+      "difyrrwch-gwyr-llanilltud"
+    ],
+    "difyrrwch-yr-heusor-du": [
+      "difyrrwch-yr-heusor-du-version-2",
+      "difyrrwch-yr-heusor-du"
+    ],
+    "doed-a-ddel": [
+      "doed-a-ddel-version-2",
+      "doed-a-ddel"
+    ],
+    "du-fel-y-glo": [
+      "du-fel-y-glo-version-2",
+      "du-fel-y-glo"
+    ],
+    "dwr-glan": [
+      "dwr-glan-version-2",
+      "dwr-glan",
+      "dwr-glan-version-3"
+    ],
+    "eisteddfod-caerfyrddin": [
+      "eisteddfod-caerfyrddin-version-2",
+      "eisteddfod-caerfyrddin"
+    ],
+    "ffaniglen": [
+      "ffaniglen-version-2",
+      "ffaniglen",
+      "ffaniglen-version-3"
+    ],
+    "ffanni-blodau-r-ffair": [
+      "ffanni-blodau-r-ffair-version-2",
+      "ffanni-blodau-r-ffair"
+    ],
+    "ffarwel-i-f-ieuenctyd": [
+      "ffarwel-i-f-ieuenctyd-version-2",
+      "ffarwel-i-f-ieuenctyd"
+    ],
+    "ffarwel-i-r-marian": [
+      "ffarwel-i-r-marian-version-2",
+      "ffarwel-i-r-marian"
+    ],
+    "ffidl-ffadl": [
+      "ffidl-ffadl-version-2",
+      "ffidl-ffadl-version-3",
+      "ffidl-ffadl"
+    ],
+    "glan-meddwdod-mwyn": [
+      "glan-meddwdod-mwyn-version-2",
+      "glan-meddwdod-mwyn-version-3",
+      "glan-meddwdod-mwyn"
+    ],
+    "glanbargoed": [
+      "glanbargoed-version-2",
+      "glanbargoed"
+    ],
+    "glandyfi": [
+      "glandyfi-version-2",
+      "glandyfi-version-3",
+      "glandyfi"
+    ],
+    "glwysen": [
+      "glwysen-version-2",
+      "glwysen"
+    ],
+    "gorhoffedd-owain-cyfeiliog": [
+      "gorhoffedd-owain-cyfeiliog-version-2",
+      "gorhoffedd-owain-cyfeiliog"
+    ],
+    "gorymdaith-gwyr-cyfarthfa": [
+      "gorymdaith-gwyr-cyfarthfa-version-2",
+      "gorymdaith-gwyr-cyfarthfa"
+    ],
+    "gorymdaith-morys": [
+      "gorymdaith-morys-version-2",
+      "gorymdaith-morys"
+    ],
+    "gwenhynan": [
+      "gwenhynan-version-2",
+      "gwenhynan"
+    ],
+    "gwlychu-r-gwair": [
+      "gwlychu-r-gwair-version-2",
+      "gwlychu-r-gwair"
+    ],
+    "gwreiddyn-y-pren-ffawydd": [
+      "gwreiddyn-y-pren-ffawydd-version-2",
+      "gwreiddyn-y-pren-ffawydd"
+    ],
+    "gwylnos-croesoswallt": [
+      "gwylnos-croesoswallt-version-2",
+      "gwylnos-croesoswallt"
+    ],
+    "gwyr-pendref": [
+      "gwyr-pendref-version-2",
+      "gwyr-pendref"
+    ],
+    "gyrru-r-byd-o-m-blaen": [
+      "gyrru-r-byd-o-m-blaen-version-2",
+      "gyrru-r-byd-o-m-blaen"
+    ],
+    "hafoty-r-fraich-ddu": [
+      "hafoty-r-fraich-ddu-version-2",
+      "hafoty-r-fraich-ddu"
+    ],
+    "hel-y-sgwarnog": [
+      "hel-y-sgwarnog-version-2",
+      "hel-y-sgwarnog"
+    ],
+    "hela-r-wiwer": [
+      "hela-r-wiwer-version-2",
+      "hela-r-wiwer"
+    ],
+    "hela-r-ysgyfarnog": [
+      "hela-r-ysgyfarnog",
+      "hela-r-ysgyfarnog-version-3",
+      "hela-r-ysgyfarnog-version-2"
+    ],
+    "hen-ferchetan": [
+      "hen-ferchetan-version-2",
+      "hen-ferchetan"
+    ],
+    "hoffedd-ap-hywel": [
+      "hoffedd-ap-hywel-version-2",
+      "hoffedd-ap-hywel"
+    ],
+    "hoffedd-arglwyddes-owen": [
+      "hoffedd-arglwyddes-owen-version-2",
+      "hoffedd-arglwyddes-owen-version-3",
+      "hoffedd-arglwyddes-owen"
+    ],
+    "i-lawr-a-r-ffrancwyr": [
+      "i-lawr-a-r-ffrancwyr-version-2",
+      "i-lawr-a-r-ffrancwyr"
+    ],
+    "jig-arglwydd-caernarfon": [
+      "jig-arglwydd-caernarfon-version-2",
+      "jig-arglwydd-caernarfon"
+    ],
+    "jig-owen": [
+      "jig-owen-version-2",
+      "jig-owen"
+    ],
+    "jig-syr-watcyn": [
+      "jig-syr-watcyn-version-2",
+      "jig-syr-watcyn"
+    ],
+    "llancesau-trefaldwyn": [
+      "llancesau-trefaldwyn-version-2",
+      "llancesau-trefaldwyn"
+    ],
+    "llawenydd-ap-tomos": [
+      "llawenydd-ap-tomos-version-2",
+      "llawenydd-ap-tomos"
+    ],
+    "llwytcoed": [
+      "llwytcoed-version-2",
+      "llwytcoed"
+    ],
+    "machynlleth": [
+      "machynlleth-version-2",
+      "machynlleth"
+    ],
+    "malltraeth": [
+      "malltraeth-version-2",
+      "malltraeth-version-3",
+      "malltraeth"
+    ],
+    "man-ddarlun": [
+      "man-ddarlun-version-2",
+      "man-ddarlun"
+    ],
+    "mantell-siani": [
+      "mantell-siani-version-2",
+      "mantell-siani-version-3",
+      "mantell-siani"
+    ],
+    "marchogion-eryri": [
+      "marchogion-eryri-version-3",
+      "marchogion-eryri",
+      "marchogion-eryri-version-2"
+    ],
+    "megan-a-gollodd-ei-gardas": [
+      "megan-a-gollodd-ei-gardas-version-2",
+      "megan-a-gollodd-ei-gardas-version-3",
+      "megan-a-gollodd-ei-gardas"
+    ],
+    "meillionen-meirionnydd": [
+      "meillionen-meirionnydd-version-2",
+      "meillionen-meirionnydd"
+    ],
+    "merch-megan": [
+      "merch-megan-version-2",
+      "merch-megan-version-3",
+      "merch-megan"
+    ],
+    "merch-y-tafarnwr": [
+      "merch-y-tafarnwr-version-2",
+      "merch-y-tafarnwr"
+    ],
+    "moel-yr-wyddfa": [
+      "moel-yr-wyddfa-version-2",
+      "moel-yr-wyddfa"
+    ],
+    "mon": [
+      "mon-version-4",
+      "mon",
+      "mon-version-2",
+      "mon-version-3"
+    ],
+    "mopsi-don": [
+      "mopsi-don-version-2",
+      "mopsi-don"
+    ],
+    "morfa-rhuddlan": [
+      "morfa-rhuddlan-version-2",
+      "morfa-rhuddlan-version-3",
+      "morfa-rhuddlan"
+    ],
+    "morys-morgannwg": [
+      "morys-morgannwg-version-2",
+      "morys-morgannwg"
+    ],
+    "mursen-yn-ei-menyg": [
+      "mursen-yn-ei-menyg-version-2",
+      "mursen-yn-ei-menyg"
+    ],
+    "mwynen-cynwyd": [
+      "mwynen-cynwyd-version-2",
+      "mwynen-cynwyd-version-3",
+      "mwynen-cynwyd"
+    ],
+    "mwynen-mon": [
+      "mwynen-mon-version-2",
+      "mwynen-mon"
+    ],
+    "mympwy-llwyd": [
+      "mympwy-llwyd-version-2",
+      "mympwy-llwyd"
+    ],
+    "mympwy-portheinon": [
+      "mympwy-portheinon-version-2",
+      "mympwy-portheinon"
+    ],
+    "nantgarw": [
+      "nantgarw-version-2",
+      "nantgarw"
+    ],
+    "neidod-twm-bach": [
+      "neidod-twm-bach-version-2",
+      "neidod-twm-bach"
+    ],
+    "nos-fercher": [
+      "nos-fercher-version-2",
+      "nos-fercher"
+    ],
+    "nos-galan": [
+      "nos-galan-version-2",
+      "nos-galan-version-3",
+      "nos-galan"
+    ],
+    "nyth-y-gog": [
+      "nyth-y-gog-version-2",
+      "nyth-y-gog"
+    ],
+    "nyth-y-gwcw": [
+      "nyth-y-gwcw-version-2",
+      "nyth-y-gwcw"
+    ],
+    "o-gylch-y-ford-gron": [
+      "o-gylch-y-ford-gron-version-2",
+      "o-gylch-y-ford-gron"
+    ],
+    "o-uchel-dras-oedd-siencyn": [
+      "o-uchel-dras-oedd-siencyn-version-2",
+      "o-uchel-dras-oedd-siencyn-version-3",
+      "o-uchel-dras-oedd-siencyn"
+    ],
+    "pen-rhaw": [
+      "pen-rhaw-version-2",
+      "pen-rhaw-version-3",
+      "pen-rhaw"
+    ],
+    "pibddawns-abertawe": [
+      "pibddawns-abertawe-version-2",
+      "pibddawns-abertawe"
+    ],
+    "pibddawns-dowlais": [
+      "pibddawns-dowlais-version-2",
+      "pibddawns-dowlais"
+    ],
+    "pibddawns-gwyr-gwrecsam": [
+      "pibddawns-gwyr-gwrecsam-version-2",
+      "pibddawns-gwyr-gwrecsam"
+    ],
+    "pibddawns-heol-y-felin": [
+      "pibddawns-heol-y-felin-version-2",
+      "pibddawns-heol-y-felin"
+    ],
+    "pibddawns-merthyr-tydfil": [
+      "pibddawns-merthyr-tydfil-version-2",
+      "pibddawns-merthyr-tydfil-version-3",
+      "pibddawns-merthyr-tydfil"
+    ],
+    "pibddawns-pant-corlan-yr-wyn": [
+      "pibddawns-pant-corlan-yr-wyn-version-2",
+      "pibddawns-pant-corlan-yr-wyn"
+    ],
+    "pibddawns-y-glowr": [
+      "pibddawns-y-glowr-version-2",
+      "pibddawns-y-glowr"
+    ],
+    "polca-cefn-coed": [
+      "polca-cefn-coed-version-3",
+      "polca-cefn-coed",
+      "polca-cefn-coed-version-2"
+    ],
+    "polca-redowa": [
+      "polca-redowa-version-2",
+      "polca-redowa"
+    ],
+    "polca-rhyd-y-car": [
+      "polca-rhyd-y-car-version-2",
+      "polca-rhyd-y-car"
+    ],
+    "pwt-ar-y-bys": [
+      "pwt-ar-y-bys-version-2",
+      "pwt-ar-y-bys",
+      "pwt-ar-y-bys-version-3"
+    ],
+    "rachel-dafydd-ifan": [
+      "rachel-dafydd-ifan-version-2",
+      "rachel-dafydd-ifan"
+    ],
+    "rachel-ty-cam": [
+      "rachel-ty-cam-version-2",
+      "rachel-ty-cam"
+    ],
+    "rasys-cas-gwent": [
+      "rasys-cas-gwent-version-2",
+      "rasys-cas-gwent"
+    ],
+    "rhediad-i-r-odyn": [
+      "rhediad-i-r-odyn-version-2",
+      "rhediad-i-r-odyn"
+    ],
+    "rheged": [
+      "rheged-version-2",
+      "rheged"
+    ],
+    "rhuban-morfudd": [
+      "rhuban-morfudd-version-2",
+      "rhuban-morfudd",
+      "rhuban-morfudd-version-3"
+    ],
+    "rhyfelgyrch-capten-morgan": [
+      "rhyfelgyrch-capten-morgan-version-2",
+      "rhyfelgyrch-capten-morgan"
+    ],
+    "ril-llanofer": [
+      "ril-llanofer-version-2",
+      "ril-llanofer"
+    ],
+    "robin-ddiog": [
+      "robin-ddiog-version-2",
+      "robin-ddiog"
+    ],
+    "sawdl-y-fuwch": [
+      "sawdl-y-fuwch-version-2",
+      "sawdl-y-fuwch"
+    ],
+    "sbonc-bogel": [
+      "sbonc-bogel-version-2",
+      "sbonc-bogel"
+    ],
+    "tafarn-y-wheatsheaf": [
+      "tafarn-y-wheatsheaf-version-2",
+      "tafarn-y-wheatsheaf"
+    ],
+    "tom-edwards": [
+      "tom-edwards-version-2",
+      "tom-edwards"
+    ],
+    "tom-jones": [
+      "tom-jones-version-2",
+      "tom-jones"
+    ],
+    "torth-o-fara": [
+      "torth-o-fara-version-2",
+      "torth-o-fara"
+    ],
+    "ty-a-gardd": [
+      "ty-a-gardd-version-2",
+      "ty-a-gardd"
+    ],
+    "ty-coch-caerdydd": [
+      "ty-coch-caerdydd-version-2",
+      "ty-coch-caerdydd",
+      "ty-coch-caerdydd-version-3"
+    ],
+    "ty-crwn": [
+      "ty-crwn-version-2",
+      "ty-crwn"
+    ],
+    "walts-abernant": [
+      "walts-abernant-version-2",
+      "walts-abernant"
+    ],
+    "walts-trefforest": [
+      "walts-trefforest-version-2",
+      "walts-trefforest"
+    ],
+    "welsh-morris": [
+      "welsh-morris-version-2",
+      "welsh-morris"
+    ],
+    "y-ceiliog-gwyn": [
+      "y-ceiliog-gwyn-version-2",
+      "y-ceiliog-gwyn"
+    ],
+    "y-coroni": [
+      "y-coroni-version-2",
+      "y-coroni"
+    ],
+    "y-ddafad-gorniog": [
+      "y-ddafad-gorniog-version-2",
+      "y-ddafad-gorniog"
+    ],
+    "y-delyn-newydd": [
+      "y-delyn-newydd-version-2",
+      "y-delyn-newydd"
+    ],
+    "y-derwydd": [
+      "y-derwydd-version-2",
+      "y-derwydd"
+    ],
+    "y-dyn-meddw": [
+      "y-dyn-meddw-version-2",
+      "y-dyn-meddw"
+    ],
+    "y-facsen-felen": [
+      "y-facsen-felen-version-2",
+      "y-facsen-felen"
+    ],
+    "y-gelynnen": [
+      "y-gelynnen-version-3",
+      "y-gelynnen",
+      "y-gelynnen-version-2"
+    ],
+    "y-gog-lwydlas": [
+      "y-gog-lwydlas-version-2",
+      "y-gog-lwydlas"
+    ],
+    "y-gwningen-gymreig": [
+      "y-gwningen-gymreig-version-2",
+      "y-gwningen-gymreig-version-3",
+      "y-gwningen-gymreig"
+    ],
+    "y-polacca-cymreig": [
+      "y-polacca-cymreig-version-2",
+      "y-polacca-cymreig"
+    ],
+    "y-stwffwl": [
+      "y-stwffwl-version-2",
+      "y-stwffwl"
+    ],
+    "ymadawiad-y-brenin": [
+      "ymadawiad-y-brenin-version-2",
+      "ymadawiad-y-brenin"
+    ],
+    "ymdaith-corwen": [
+      "ymdaith-corwen-version-2",
+      "ymdaith-corwen"
+    ],
+    "ymdaith-y-cymry": [
+      "ymdaith-y-cymry-version-2",
+      "ymdaith-y-cymry"
+    ],
+    "ymdaith-yr-hen-gymry": [
+      "ymdaith-yr-hen-gymry-version-3",
+      "ymdaith-yr-hen-gymry",
+      "ymdaith-yr-hen-gymry-version-2"
+    ],
+    "ymdeithdon-capten-reed": [
+      "ymdeithdon-capten-reed-version-2",
+      "ymdeithdon-capten-reed"
+    ],
+    "ymgyrchdon-y-waunlwyd": [
+      "ymgyrchdon-y-waunlwyd-version-2",
+      "ymgyrchdon-y-waunlwyd"
+    ]
+  }
+}

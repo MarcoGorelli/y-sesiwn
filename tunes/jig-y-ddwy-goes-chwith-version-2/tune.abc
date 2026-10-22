@@ -1,0 +1,16 @@
+X:1
+T:Jig y Ddwy Goes Chwith (version 2)
+R:jig
+C:Rowan Kodratoff
+N:Rowan's second version of the first part, with a bar of 9/8; the second and third parts as in version 1.
+%%chords Part A supplied by Rowan Kodratoff; parts B and C from the Alawon Cymru score
+%%version Rowan Kodratoff
+M:6/8
+L:1/8
+K:D
+|: "D"DFA d2 c | "G"B2 A "D"F2 A | "Em"GFE "A"EFG | [M:9/8] "A"FED "D"DFA d2 c |
+[M:6/8] "G"B2 A F2 A | "Em"GAB "A"B2 c | "D"d3 d3 :|
+|: "D"DFA DFA | "G"DGA B2 G | "D"DFA DFA | "A"GFE E3 |
+"D"DFA DFA | "G"DGA B2 G | "D"FGA "A"GFE | "D"FED D3 :|
+|: "D"fed def | "G"gfe efg | "D"fed def | "A"ecA A3 |
+"D"fed def | "G"gfe efg | "D"fed "A"edc | "D"dAF D3 :|

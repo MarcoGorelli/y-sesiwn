@@ -850,17 +850,25 @@ def carry_chords(tunes: list[dict]) -> None:
                     tune["abc"], tune["chords"] = max(fits, key=lambda c: c[0])[1], CARRIED_CHORDS
 
 
+VERSION_ORDER = ROOT / "version_order.json"
+
+
 def show_versions(tunes: list[dict]) -> None:
-    """Number each tune's versions in the order they're shown ("shown"): Alawon Cymru's
-    after those from books and players, which are usually the better ones to learn from,
-    and before any we don't know the source of; otherwise by version. A version's own
-    number ("version") stays as it is, as its folder, ?v= and set links depend on it."""
+    """Number each tune's versions in the order they're shown ("shown"): as version_order.json
+    has them, for a tune listed there, then any versions not listed, in the order they were
+    added (by version). A version's own number ("version") stays as it is, as its folder, ?v=
+    and set links depend on it."""
+    order = json.loads(VERSION_ORDER.read_text(encoding="utf-8"))["order"]
+    slugs = {t["slug"]: t["group"] for t in tunes}
+    wrong = [slug for group, listed in order.items() for slug in listed if slugs.get(slug) != group]
+    if wrong:
+        raise SystemExit(f"version_order.json: not a version of the tune it's listed under: {', '.join(wrong)}")
     groups: dict[str, list[dict]] = {}
     for tune in tunes:
         groups.setdefault(tune["group"], []).append(tune)
-    for versions in groups.values():
-        rank = lambda t: 1 if t["source"] == "Alawon Cymru" else 2 if t["source"] in ("", "Source unknown") else 0
-        versions.sort(key=lambda t: (rank(t), t["version"]))
+    for group, versions in groups.items():
+        listed = order.get(group, [])
+        versions.sort(key=lambda t: (listed.index(t["slug"]) if t["slug"] in listed else len(listed), t["version"]))
         for shown, tune in enumerate(versions, 1):
             tune["shown"] = shown
 

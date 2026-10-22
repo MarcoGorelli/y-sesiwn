@@ -110,15 +110,28 @@ def test_chords_source():
     assert b.chords_source(read("cawl-cennin")) is None
 
 
-def test_versions_shown_alawon_cymru_last(site):
-    # A tune's versions are shown with Alawon Cymru's after the books' and before any of
-    # unknown source; each keeps its own number (its folder, ?v= and set links).
+def test_versions_shown_in_order(site):
+    # A tune's versions are shown as version_order.json has them (there, the books' and
+    # players' before Alawon Cymru's, and before any of unknown source), then any added
+    # since, in the order they were added; each keeps its own number (its folder, ?v= and
+    # set links).
     index = json.loads((b.OUT / "tunes.json").read_text(encoding="utf-8"))
     shown = lambda group: [(t["version"], t["source"]) for t in sorted(
         (t for t in index["tunes"] if t["group"] == group), key=lambda t: t["shown"])]
     assert shown("nyth-y-gog") == [(2, "Cat's Claw"), (1, "Alawon Cymru")]
     assert shown("glandyfi") == [(2, "Blodau'r Grug Collection Vol. 1"), (3, "The Session"), (1, "Alawon Cymru")]
     assert shown("byth-adre") == [(1, "Alawon Cymru"), (2, "")]
+    assert shown("jig-y-ddwy-goes-chwith") == [(1, "Alawon Cymru"), (2, "Rowan Kodratoff")]  # not listed: added later, shown later
+
+
+def test_version_order_names_real_versions(monkeypatch, tmp_path):
+    # A version listed under a tune it isn't a version of (a typo, or a folder renamed) stops the build.
+    order = tmp_path / "version_order.json"
+    order.write_text(json.dumps({"order": {"glandyfi": ["glandyfi-version-2", "nyth-y-gog"]}}), encoding="utf-8")
+    monkeypatch.setattr(b, "VERSION_ORDER", order)
+    tunes = [b.tune_record(b.ROOT / "tunes" / slug / "tune.abc") for slug in ("glandyfi", "glandyfi-version-2", "nyth-y-gog")]
+    with pytest.raises(SystemExit, match="nyth-y-gog"):
+        b.show_versions(tunes)
 
 
 def test_chords_carried_from_alawon_cymru(site):

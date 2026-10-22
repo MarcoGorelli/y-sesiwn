@@ -37,6 +37,7 @@ EXPECTED_ODD_BARS = {
     "blwyddyn-newydd-dda": "changes to 6/8 for two bars",
     "erddigan-caer-waen-version-2": "its third part is in 6/8",
     "llongau-caernarfon": "has one bar in 6/4",
+    "jig-y-ddwy-goes-chwith-version-2": "has one bar in 9/8",
     "bonheddwr-mawr-o-r-bala": "its second part starts with a lead-in, without a double bar",
     "merch-megan-version-2": "its third part starts with a lead-in, without a double bar",
     "erddigan-caer-waen": "has a part in 6/8",

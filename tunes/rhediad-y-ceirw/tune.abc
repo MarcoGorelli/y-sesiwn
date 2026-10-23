@@ -4,13 +4,15 @@ S:http://alawoncymru.com/alawon/Tunes/SetYCeirw/SetYCeirw.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
+N:The score has plain quavers Bd in the first bar; the recording plays a triplet (3Bcd.
 M:2/2
 L:1/8
 Q:1/2=50
 K:G
-|: "G"d2 Bc (3Bcd G2 | "G"dB "C"ce "G"d3 B | "C"c e2 d "D"c A2 B | "C"ce "D"dc "G"BG G2 |
+|: "G"d2 Bc Bd G2 | "G"dB "C"ce "G"d3 B | "C"c e2 d "D"c A2 B | "C"ce "D"dc "G"BG G2 |
 "G"BG d2 "C"cA e2 | "D"dg fe dc ed | "C"cB AG "D"FG Ad | "G"EG "D"FA "G"GG, z2 :|
 |: "D"FA FD FA AB | "C"c>e dc "G"Bd d2 | "D"FA GE FG AB | "C"ce dc "G"[GB]2 [FA]2 |
 "G"GB df "C"ec c2 | "Am"Ac eg "D"fd d2 | "G"Bd ge dB cd | "G"EG "D"FA "G"GG, z2 :|

@@ -7,10 +7,12 @@ Z:MIDI transcribed with alawon-abc
 %%alawon-reviewed
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
-N:The score writes it in cut time with every note twice as long, so each bar here is two of its bars.
-M:2/2
+N:The score is marked cut time, but each of its bars holds a crotchet's worth of two beats, so it is written here in 2/4.
+M:2/4
 L:1/8
 Q:1/2=30
 K:D
-|: d/e/ | "D"ff fe/d/ "A"ee ed/c/ | "D"d>e "A"dc "D"dD D/E/F/G/ | "D"AA/B/ "A"GG/A/ "D"FF/G/ "A"EE | "D"F/G/A/B/ "E"A^G "A"A3 :| z |
-"D"AA/B/ "A"GG/A/ "D"FF/G/ "A"EE | "G"BB/d/ "A"c/d/e/c/ "D"dd de | "D"ff fa "G"e/d/c/B/ "A"Ad/e/ | "D"fe/d/ "A"e2 "D"d3 |]
+|: d/e/ | "D"ff fe/d/ | "A"ee ed/c/ | "D"d>e "A"dc | "D"dD D/E/F/G/ |
+"D"AA/B/ "A"GG/A/ | "D"FF/G/ "A"EE | "D"F/G/A/B/ "E"A^G | "A"A3 :| z |
+"D"AA/B/ "A"GG/A/ | "D"FF/G/ "A"EE | "G"BB/d/ "A"c/d/e/c/ | "D"dd de |
+"D"ff fa | "G"e/d/c/B/ "A"Ad/e/ | "D"fe/d/ "A"e2 | "D"d3 |]

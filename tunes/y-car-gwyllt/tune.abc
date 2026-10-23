@@ -6,6 +6,8 @@ Z:MIDI transcribed with alawon-abc
 C:Trefniant Meurig Williams
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
+N:Part B has two bars of FD FA d2 d2 in the score; the MIDI plays only one.
 %%chords From the Alawon Cymru score
 M:4/4
 L:1/8
@@ -15,4 +17,4 @@ K:D
 "A"c2 A2 A2 AG | "D"FD FA d2 d2 | "A"cd ef g2 g2 | "D"fa fd "A"eg ec |
 "D"d2 d2 d2 :: fg | "D"af df af df | "A"ge ce ge ce |
 "D"af df af df | "A"e2 A2 A2 AG | "D"FD FA d2 d2 |
-"A"cd ef g2 g2 | "D"fa fd "A"eg ec | "D"d2 d2 d2 :|
+"D"FD FA d2 d2 | "A"cd ef g2 g2 | "D"fa fd "A"eg ec | "D"d2 d2 d2 :|

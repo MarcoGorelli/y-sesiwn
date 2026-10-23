@@ -8,7 +8,7 @@ Z:MIDI transcribed with alawon-abc
 %%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams o drefniant Alain Stivell
-N:The recording holds the last note for four bars, where the score holds it for two.
+N:The recording holds the last note for four bars, where the score holds it for a bar and five quavers.
 M:6/8
 L:1/8
 Q:3/8=67
@@ -16,4 +16,4 @@ K:Em
 B | "Em"G2 B "D"FED | "Em"E3 E2 B | "Em"G2 B "D"FED | "Em"E3- E2 A |
 "Em"B2 B B2 ^c | "G"d2 d d2 d | "A"^c2 e cBA | "B5"B3- B2 || z |
 "Em"B2 E E2 F | "C"G2 A "B5"B3 | "Em"B2 E E2 F | "C"G2 A "B5"B2 A |
-"Em"G2 B "D"AGF | "C"E3 "B"^D3 | "Em"E6- | "Em"E6 |]
+"Em"G2 B "D"AGF | "C"E3 "B"^D3 | "Em"E6- | "Em"E3- E2 |]

@@ -8,7 +8,7 @@ Z:MIDI transcribed with alawon-abc
 %%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
-N:The score ends part A with Adc d2 and starts part B with a pick-up e; the recording plays Adc d3 and no pick-up.
+N:The score ends part A with Adc d2 and starts part B with a pick-up e; the recording plays Adc d3 and no pick-up. The last bar is also Adc d2 on the score.
 M:6/8
 L:1/8
 Q:3/8=53
@@ -16,4 +16,4 @@ K:D
 "D"dAA "G"BGG | "D"ABA "A"f2 e | "D"dAA "G"BGG | "A"Adc "D"d3 |
 "D"dAA "G"BGG | "D"ABA "A"f2 e | "D"dAA "G"BGG | "A"Adc "D"d2 || e |
 "D"fef "A"gfg | "G"agf "D"gfe | "D"fed "A"eAA | "D"ABA "A"f2 e |
-"D"dAA A2 d | "G"BGG G2 E | "D"FGA "G"BAG | "A"Adc "D"d3 |]
+"D"dAA A2 d | "G"BGG G2 E | "D"FGA "G"BAG | "A"Adc "D"d2 |]

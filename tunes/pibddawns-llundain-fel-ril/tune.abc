@@ -9,13 +9,13 @@ Z:MIDI transcribed with alawon-abc
 %%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
-N:Written in even quavers, as on the score; the alawoncymru recording swings it.
+N:Written in even quavers, as on the score; the alawoncymru recording swings it. It also plays triplets (cdc, BAG, def, efg) where the score has plain quavers.
 M:4/4
 L:1/8
 Q:1/4=90
 K:G
-|: BA | "G"GD B,D GB dB | "C"(3cdc (3BAG "D"FA DF | "G"GB dB "C"ce dc |
-"G"Bd cB "D"Ac BA | "G"GD B,D GB dB | "C"(3cdc (3BAG "D"FA DF |
-"G"GB dB "D"ce dc | "G"B2 G2 G2 :: dc | "G"Bc (3def gd BG |
-"C"e2 c2 "Am"ed cB | "A"A^c (3efg ae ^cA | "A"ce ag "D"gf ed |
-"G"Bc (3def gd BG | "C"e2 c2 "Am"ed cB | "C"ed cB "D"ce dc | "G"B2 G2 G2 :|
+|: BA | "G"GD B,D GB dB | "C"cB AG "D"FA DF | "G"GB dB "C"ce dc |
+"G"Bd cB "D"Ac BA | "G"GD B,D GB dB | "C"cB AG "D"FA DF |
+"G"GB dB "D"ce dc | "G"B2 G2 G2 :: dc | "G"Bd ef gd BG |
+"C"e2 c2 "Am"ed cB | "A"A^c ef ae ^cA | "A"^ce ag "D"gf ed |
+"G"Bd ef gd BG | "C"e2 c2 "Am"ed cB | "C"ed cB "D"ce dc | "G"B2 G2 G2 :|

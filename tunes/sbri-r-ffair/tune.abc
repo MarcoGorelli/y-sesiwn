@@ -4,8 +4,10 @@ S:http://alawoncymru.com/alawon/Tunes/SetDacwDadi/SetDacwDad.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
+%%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Meurig Williams
+N:The score has F2 FG in the third bar of the second half of part B; the recording plays A2 AB.
 M:2/4
 L:1/8
 Q:1/4=100
@@ -13,4 +15,4 @@ K:Em
 |: "Em"E2 B2 | "Em"BA GB | "D"AB AG | "D"F2 EF | "C"G2 E2 | "C"EF GE | "Bm"F2 D2 | "Bm"B,2 F2 |
 "Em"E2 B2 | "Em"BA GB | "D"AB AG | "D"F2 EF | "C"G2 E2 | "Bm"FE DF | "Em"E4 | "Em"E4 :|
 |: "G"G2 GA | "G"B2 G2 | "D"A2 AB | "D"A2 F2 | "G"G2 B2 | "G"BA G2 | "D"F2 A2 | "D"A4 |
-"G"G2 GA | "G"B2 G2 | "D"A2 AB | "D"A2 F2 | "Em"G2 B2 | "Bm"A2 F2 | "Em"E2 D2 | "Em"E4 :|
+"G"G2 GA | "G"B2 G2 | "D"F2 FG | "D"A2 F2 | "Em"G2 B2 | "Bm"A2 F2 | "Em"E2 D2 | "Em"E4 :|

@@ -7,7 +7,7 @@ Z:MIDI transcribed with alawon-abc
 %%alawon-reviewed
 %%alawon-follows-score
 %%chords From the Alawon Cymru score
-N:Part B bar 2 is A2 A2 as on the score and the alawoncymru recording; the MIDI file plays B2 A2.
+N:Part B bar 2 is A2 A2 as on the score and the alawoncymru recording; the MIDI file plays B2 A2. The MIDI also holds the last note a beat longer than the score.
 M:4/4
 L:1/8
 Q:1/4=120
@@ -16,4 +16,4 @@ DE | "D"F2 F2 "A"E2 D2 | "D"A2 A2 DD DE | "D"F2 F2 "A"E2 D2 | "D"A6 DE |
 "D"F2 F2 "A"E2 D2 | "G"G2 G2 DD DE | "D"F2 F2 "A"E2 D2 | "D"D6 || DE |
 "D"F2 F2 "A"E2 D2 | "D"A2 A2 DD DE | "D"F2 F2 "A"E2 D2 | "D"A6 DE |
 "D"F2 F2 "A"E2 D2 | "G"G2 G2 DD DE | "D"F2 F2 "A"E2 D2 | "D"D4 D2 || C2 |
-"A"A,8 | "A"z4 D2 C2 | "D"D8- | D8 |]
+"A"A,8 | "A"z4 D2 C2 | "D"D8- | D6 |]

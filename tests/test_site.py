@@ -1633,12 +1633,12 @@ def test_chord_chart_bar_numbers(page):
 
 
 def test_no_ending_left_hanging_on_a_phone(browser, site):
-    # A slow air on a phone: a first-time ending at the start of a line of the ABC isn't an
+    # A tune on a phone: a second-time ending at the start of a line of the ABC isn't an
     # empty bar of its own (lines a bar short, its bracket at the end of a line), and no bar
     # is left alone in the middle of the music.
     context = browser.new_context(service_workers="block", **PHONE)
     page = context.new_page()
-    page.goto(site + "alaw/agoriad-y-blodau/")
+    page.goto(site + "alaw/codi-yn-y-bore/")
     page.wait_for_selector(".score .abcjs-staff")
     # abcjs marks each bar line and ending bracket with its line (abcjs-l2) and its place
     # on it (abcjs-m1).

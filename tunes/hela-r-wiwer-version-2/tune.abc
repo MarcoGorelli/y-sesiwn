@@ -10,9 +10,10 @@ M:6/8
 L:1/8
 Q:130
 K:G
-% Endings written [1 and [2 (the source has a bare 1 and 2 at the start of the lines).
+% Part B written out (the source has first and second endings, each four bars long).
 D|G2AB2e|d2cB2A|G2B AFD|G2B AFD|
 G2AB2e|d2cB2A|G2B AFD|G3G2:||
 B|c2ee2g|c2ee2g|c2ee2g|e2g gfe|
-[1 B2dd2c|B2dd2c|edc BcA|G3G2:||
-[2 f2a afd|f2a afd|bge afd|g3g2||
+B2dd2c|B2dd2c|edc BcA|G3G2 B|
+c2ee2g|c2ee2g|c2ee2g|e2g gfe|
+f2a afd|f2a afd|bge afd|g3g2||

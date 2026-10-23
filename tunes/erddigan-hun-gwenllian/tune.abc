@@ -8,7 +8,6 @@ M:2/4
 L:1/8
 %%bpm 60
 K:D
-D | "D"A3 B | "A7"AG FE | "Bm"DD "G"d>B | "D"AF "Em"GE | "Bm"DD "G"d>B | "D"AF "Em"GB |
-"D"A<F "A"E>F | "D"D3 A || "D"d2 d2 | "A"c3 c | "G"Bd "A"cB | "F#"^A3 A |
-"G"Bc "Bm"d>c | de "D"!fermata!f2 | Ac "Em"B>A | "A"A3 :| D | "D"A3 B | "A7"AG FE |
-"Bm"DD "G"d>B | "D"AF "Em"GE | "Bm"DD "G"d>B | "D"AF "Em"GB | "D"A<F "A"c>d | "D"d3 |]
+D | "D"A3 B | "A7"AG FE | "Bm"DD "G"d>B | "D"AF "Em"GE | "Bm"DD "G"d>B | "D"AF "Em"GB | "D"A<F "A"E>F | "D"D3 A ||
+"D"d2 d2 | "A"c3 c | "G"Bd "A"cB | "F#"^A3 A | "G"Bc "Bm"d>c | de "D"!fermata!f2 | Ac "Em"B>A | "A"A3 :|
+D | "D"A3 B | "A7"AG FE | "Bm"DD "G"d>B | "D"AF "Em"GE | "Bm"DD "G"d>B | "D"AF "Em"GB | "D"A<F "A"c>d | "D"d3 |]

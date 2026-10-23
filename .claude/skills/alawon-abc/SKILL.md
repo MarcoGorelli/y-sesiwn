@@ -1,6 +1,6 @@
 ---
 name: alawon-abc
-description: Download Welsh traditional tunes from alawoncymru.com (CLERA "Alawon Cymru" tune index) and convert their MIDI files to ABC notation whose bars, repeats and line breaks match the sheet music on the site. Use when the user wants alawoncymru / alawon tunes as ABC, wants to (re)transcribe, check or fix one of those tunes, or wants a tunebook built from them.
+description: Download Welsh traditional tunes from alawoncymru.com (CLERA "Alawon Cymru" tune index) and convert their MIDI files to ABC notation whose notes, rhythms, bars and repeats match the sheet music on the site. Use when the user wants alawoncymru / alawon tunes as ABC, wants to (re)transcribe, check or fix one of those tunes, or wants a tunebook built from them.
 ---
 
 # alawoncymru.com MIDI -> ABC
@@ -8,8 +8,8 @@ description: Download Welsh traditional tunes from alawoncymru.com (CLERA "Alawo
 The site (http://alawoncymru.com/alawon/Tunes/Tunesal.html) has, per tune, a
 NoteWorthy Composer MIDI (melody only, repeats played out) and a GIF score.
 The MIDI gives a first draft of the notes; the **score is the reference**.
-The bar layout must match it (same pickup, same bar lines, same repeat marks
-and endings, same line breaks), and where the score and the MIDI disagree on
+The bars must match it (same pickup, same bar lines, same repeat marks
+and endings), and where the score and the MIDI disagree on
 notes or rhythms, **the score wins**: people play from the ABC, so an extra
 note the MIDI has and the score doesn't is a bug.
 
@@ -54,7 +54,7 @@ into `|: :|` / `[1 [2`, writes `tune.abc`, and runs the check. Options:
 | `--no-fold` | the score writes out what the MIDI repeats |
 | `--bars A-B` | the MIDI also plays another tune; keep played bars A-B (see `bars`) |
 | `--track N` | the melody is not the first note track (harmony parts exist) |
-| `--bars-per-line N` | the score has N bars per line (short pickup bars are not counted) |
+| `--bars-per-line N` | lay the tune out N bars a line instead of 4 (short pickup bars are not counted) |
 
 `abctool.py bars tune.mid` prints the MIDI bar by bar with numbers (repeats
 written out) — use it to find `--bars` ranges or to see what the MIDI plays.
@@ -66,7 +66,7 @@ saved in a `%%alawon ...` line in the ABC, which `check` reads back. Keep it.
 
 For each tune: read `tunes/<slug>/score.gif` (look at it) and `tune.abc`, then
 go through this list and fix the ABC — by re-running `convert` with options, or
-by editing the text directly (bar lines, repeat marks, line breaks).
+by editing the text directly (bar lines, repeat marks).
 
 1. **Right score?** The pairing is heuristic (`info.json` → `pairing: low`
    means check twice). If the score is a different tune or a different
@@ -84,7 +84,10 @@ by editing the text directly (bar lines, repeat marks, line breaks).
 5. **Repeats.** Same `|:` `:|` `::` `[1` `[2` as the score. The MIDI sometimes
    plays a part a different number of times than the score shows — follow the
    score.
-6. **Line breaks.** One ABC line per score line (system).
+6. **Line breaks.** These need not follow the score: lay the tune out to be
+   easy to read, each part starting on a new line and the same number of bars
+   on each line (usually 4; 8 for a sparse 2/4), no line ending where a first
+   or second ending starts.
 7. **Title.** `T:` should be the name printed on the score (keep the others as
    extra `T:` lines).
 8. **Notes and rhythms.** Read the score bar by bar against the ABC. NoteWorthy

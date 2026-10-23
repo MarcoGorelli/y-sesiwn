@@ -12,8 +12,13 @@ M:3/4
 L:1/8
 Q:1/4=100
 K:C
-|: "^Alaw""C"c2 c2 c2 | "G"B2 B2 B2 | "Am"A2 A2 A2 | "Em"G2 G2 G2 | "F"F2 F2 F2 | "C"E2 E2 E2 | "G"D4 D2 | "C"C6 :|
-|: "^Amrywiad 1""C"c4 e2 | "G"g4 G2 | "Am"A4 c2 | "Em"e4 E2 | "F"F4 A2 | "C"c4 C2 | "G"D2 c2 B2 | "C"c6 :|
-|: "^Amrywiad 2""C"c2 cd ef | "G"g2 G2 G2 | "Am"A2 AB cd | "Em"e2 E2 E2 | "F"F2 FG AB | "C"c2 C2 C2 | "G"D2 c2 B2 | "C"c6 :|
-|: "^Amrywiad 3""C"edcdef | "G"gGgfed | "Am"cBABcd | "Em"eEedcB | "F"AGFGAB | "C"cBAGFE | "G"D2 C2 B,2 | "C"C6 :|
-|: "^Amrywiad 4""C"(3edc (3edc (3edc | "G"(3dcB (3dcB (3dcB | "Am"(3cBA (3cBA (3cBA | "Em"(3BAG (3BAG (3BAG | "F"(3AGF (3AGF (3AGF | "C"(3GFE (3GFE (3GFE | "G"(3FED (3FED (3FED | "C"C6 :|
+|: "^Alaw""C"c2 c2 c2 | "G"B2 B2 B2 | "Am"A2 A2 A2 | "Em"G2 G2 G2 |
+"F"F2 F2 F2 | "C"E2 E2 E2 | "G"D4 D2 | "C"C6 :|
+|: "^Amrywiad 1""C"c4 e2 | "G"g4 G2 | "Am"A4 c2 | "Em"e4 E2 |
+"F"F4 A2 | "C"c4 C2 | "G"D2 c2 B2 | "C"c6 :|
+|: "^Amrywiad 2""C"c2 cd ef | "G"g2 G2 G2 | "Am"A2 AB cd | "Em"e2 E2 E2 |
+"F"F2 FG AB | "C"c2 C2 C2 | "G"D2 c2 B2 | "C"c6 :|
+|: "^Amrywiad 3""C"edcdef | "G"gGgfed | "Am"cBABcd | "Em"eEedcB |
+"F"AGFGAB | "C"cBAGFE | "G"D2 C2 B,2 | "C"C6 :|
+|: "^Amrywiad 4""C"(3edc (3edc (3edc | "G"(3dcB (3dcB (3dcB | "Am"(3cBA (3cBA (3cBA | "Em"(3BAG (3BAG (3BAG |
+"F"(3AGF (3AGF (3AGF | "C"(3GFE (3GFE (3GFE | "G"(3FED (3FED (3FED | "C"C6 :|

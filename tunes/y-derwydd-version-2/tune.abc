@@ -12,7 +12,7 @@ L:1/8
 Q:130
 K:D
 % Bar line fixed (the source has one between dAF and D3).
-FGA AFA|BGB A3|Bcd efg|fed cBA|FGA AFA|BGB A3|
-Bcd efg|f2e d3:||
-afa afa|geg geg| fag fed|
-ced cBA|afa afa|geg geg|fed cde|dAF D3:||
+FGA AFA|BGB A3|Bcd efg|fed cBA|
+FGA AFA|BGB A3|Bcd efg|f2e d3:||
+afa afa|geg geg| fag fed|ced cBA|
+afa afa|geg geg|fed cde|dAF D3:||

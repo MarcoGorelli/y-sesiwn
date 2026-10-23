@@ -17,8 +17,10 @@ M:6/8
 L:1/8
 Q:130
 K:F
-"^Tenderly"c|AFFF2F|FAc cBA|dGGG2G|B>cd dcB|AFFF2F|FAc cBA|BAB Gdc|BABG2:||
-z|d2fd2f|d2f dBd|c2fc2f|c2f cAc|dGGG2G|B2c dcB|ecc d=BB|cd_e dcB|
+"^Tenderly"c|AFFF2F|FAc cBA|dGGG2G|B>cd dcB|
+AFFF2F|FAc cBA|BAB Gdc|BABG2:||
+z|d2fd2f|d2f dBd|c2fc2f|c2f cAc|
+dGGG2G|B2c dcB|ecc d=BB|cd_e dcB|
 AFFF2F|FAc cBA|dGGG2G|B>dc dcB|
 (c3AF)A|(d3B)GB|(A>Bc) cdB|A>BGF3|
 {CFA}(c3AF)A|(d3B)GB|A>Bc cdB|A>BGF2:||

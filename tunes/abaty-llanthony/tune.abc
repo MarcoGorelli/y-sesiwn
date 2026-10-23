@@ -10,8 +10,7 @@ M:4/4
 L:1/8
 Q:1/4=110
 K:G
-|: "G"dBdg bgdB | "D"cAcf afcA | "G"BGBd gdBG |
-"D"A2 A2 A4 | "G"dBdg bgdB | "D"cAcf afcA |
-"G"B2 g2 "D"A2 f2 | "G"g2 g2 g4 :: "D"cABc defg | "D"agfe dcBA |
-"G"BGAB "D"cdef | "G"g2 d2 B4 | "D"cABc defg |
-"D"agfe dcBA | "G"B2 g2 "D"A2 f2 | "G"g2 g2 g4 :|
+|: "G"dBdg bgdB | "D"cAcf afcA | "G"BGBd gdBG | "D"A2 A2 A4 |
+"G"dBdg bgdB | "D"cAcf afcA | "G"B2 g2 "D"A2 f2 | "G"g2 g2 g4 ::
+"D"cABc defg | "D"agfe dcBA | "G"BGAB "D"cdef | "G"g2 d2 B4 |
+"D"cABc defg | "D"agfe dcBA | "G"B2 g2 "D"A2 f2 | "G"g2 g2 g4 :|

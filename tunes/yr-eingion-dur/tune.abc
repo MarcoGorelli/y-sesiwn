@@ -13,7 +13,6 @@ M:4/4
 L:1/8
 Q:1/4=90
 K:D
-|: "D"A3 B "G"AG FG | "D"FE DE "G"DB, A,2 | "D"DE FG "G"AB AG |1 "D"FD EF "A"D4 :|
-[2 "A"FD EF "D"D4 || "D"A3 A "G"BA GB | "A"cB Ac "D"dD FA | "D"df ed "A"cB Ac |
-"E"BA ^GB "A"A2 Bc | "D"d3 B "G"AG FG | "D"FE DE "G"DB, A,2 | "D"DE FG "G"AB AG |
-"A"FD EF "D"D4 |]
+|: "D"A3 B "G"AG FG | "D"FE DE "G"DB, A,2 | "D"DE FG "G"AB AG |1 "D"FD EF "A"D4 :| [2 "A"FD EF "D"D4 ||
+"D"A3 A "G"BA GB | "A"cB Ac "D"dD FA | "D"df ed "A"cB Ac | "E"BA ^GB "A"A2 Bc |
+"D"d3 B "G"AG FG | "D"FE DE "G"DB, A,2 | "D"DE FG "G"AB AG | "A"FD EF "D"D4 |]

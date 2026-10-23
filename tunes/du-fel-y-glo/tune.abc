@@ -11,6 +11,5 @@ M:9/8
 L:1/8
 Q:3/8=67
 K:G
-|: "G"GBB "D"GBB D3 | "G"GBB GBB "C"c3 | "G"GBB "D"GBB D3 |
-"G"dcB "D"A2 G "G"G3 :: "G"dBG GAB D3 | "G"dBG GAB "C"c3 |
-"G"dBG GAB D3 | "G"dcB "D"A2 G "G"G3 :|
+|: "G"GBB "D"GBB D3 | "G"GBB GBB "C"c3 | "G"GBB "D"GBB D3 | "G"dcB "D"A2 G "G"G3 ::
+"G"dBG GAB D3 | "G"dBG GAB "C"c3 | "G"dBG GAB D3 | "G"dcB "D"A2 G "G"G3 :|

@@ -304,6 +304,22 @@
       "nth": 3,
       "start": "16:30",
       "confirmed": "2026-10-13"
+    },
+    {
+      "venue": "The Old New Inn",
+      "address": "High Street, Llanfyllin SY22 5AA",
+      "town": "Llanfyllin",
+      "county": "Powys",
+      "lat": 52.7660,
+      "lon": -3.2730,
+      "day": "Wednesday",
+      "repeat": "monthly",
+      "nth": 2,
+      "start": "19:30",
+      "end": "22:00",
+      "music": "Mostly Welsh tunes and songs.",
+      "music_cy": "Alawon a chaneuon Cymreig yn bennaf.",
+      "confirmed": "2026-10-23"
     }
   ]
 }

@@ -35,8 +35,13 @@ def test_titles_and_versions():
     by_group = {}
     for r in records:
         by_group.setdefault(r["group"], []).append(r["version"])
+    # A version number may be missing only if its folder moved (moved.json), since its old
+    # address and set code still lead to where it went and can't be given to another tune.
+    moved = json.loads((b.ROOT / "moved.json").read_text(encoding="utf-8"))["moved"]
     for group, versions in by_group.items():
-        assert sorted(versions) == list(range(1, len(versions) + 1)), f"{group}: versions {versions}"
+        missing = {n for n in range(1, max(versions) + 1) if n not in versions}
+        assert sorted(versions) == sorted(set(versions)), f"{group}: versions {versions}"
+        assert all(f"{group}-version-{n}" in moved for n in missing), f"{group}: versions {versions}"
 
 
 # Tunes whose melodies are close but that are kept as separate tunes (on separate pages).

@@ -11,7 +11,6 @@ N:4,8,12. Grace note moved from preceeding bar.
 M:6/8
 L:1/8
 K:G
-G|Bde cAF|G2z z2G|Bde cAc|"^NB"{B/}B2z z2G|
-Bde cAF|G2z z2G|Bde cAc|"^NB"{B/}B3-B2||
+G|:Bde cAF|G2z z2G|Bde cAc|1 "^NB"{B/}B2z z2G:|2 "^NB"{B/}B3-B2||
 c|dB{A/}G GBc|d3- d2G|{G/}FED cAc|"^NB"{B/}B3- B2G|
 Bcd gfe|d3- d2G|Bde cAF|G3-G2|]

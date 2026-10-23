@@ -12,6 +12,6 @@ N:grace note moved fro
 M:3/4
 L:1/8
 K:G dorian
-A2 AB AG|F2 FG AB|c2A2d2|B2G2z2|A2 AB AG|
-F2 FG AB|c2A2d2|B2G2z2||A2 A^G AB|A2G2 {AG}F2|
-B2 BA Bc|d2c2B2|A2 c>A BG|F2 FG AB|c2A2d2|"^NB"{B/}B2G2z2|]
+|:A2 AB AG|F2 FG AB|c2A2d2|B2G2z2:|
+A2 A^G AB|A2G2 {AG}F2|B2 BA Bc|d2c2B2|
+A2 c>A BG|F2 FG AB|c2A2d2|"^NB"{B/}B2G2z2|]

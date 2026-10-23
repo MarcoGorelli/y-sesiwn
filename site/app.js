@@ -383,12 +383,14 @@ function score(query, tune) {
   // before "Pibddawns Pwt ar y Bys", which is also called that), and a name that starts with
   // the query before one with a later word that does: "pont" lists "Pont Cleddau" before
   // "Cwicstep y Bontnewydd" (found by its other name, "The Pontnewydd Quickstep").
+  // A name's "Y" or "The" at the start doesn't count: "car gwyllt" is "Y Car Gwyllt", before "Jig y Car Gwyllt".
   let best = 0;
   const queryWords = words(query);
+  const bare = (text) => text.replace(/^(y|yr|the) /, "");
   for (const [i, title] of tune.search.entries()) {
-    if (title === query) return i ? 2 : 2.2;  // the exact name comes first, the tune's own before another's other name
+    if (title === query || bare(title) === bare(query)) return i ? 2 : 2.2;  // the exact name comes first, the tune's own before another's other name
     if (` ${title}`.includes(` ${query}`)) {
-      best = Math.max(best, 1 + (i ? 0 : 0.2) + (title.startsWith(query) ? 0.1 : 0));
+      best = Math.max(best, 1 + (i ? 0 : 0.2) + (bare(title).startsWith(bare(query)) ? 0.1 : 0));
       continue;
     }
     const titleWords = words(title);
@@ -1535,10 +1537,15 @@ function renderNotFound(main, slug) {
 }
 
 // Phones dim and lock after a minute or so, mid-tune. With music showing (a tune or a
-// set) the screen stays on while the page is in front; anywhere else it's let go.
-let wakeLock = null;
+// set) the screen stays on while the page is in front; anywhere else it's let go. So a
+// phone left on the table goes dark in the end, it's let go after ten minutes without a
+// touch, a key or a scroll, and kept on again at the next one.
+let wakeLock = null, idleTimer = 0;
+const IDLE_MS = 10 * 60 * 1000;
 async function keepAwake(on) {
   state.awake = on;
+  clearTimeout(idleTimer);
+  if (on) idleTimer = setTimeout(() => { wakeLock?.release().catch(() => {}); wakeLock = null; }, IDLE_MS);
   if (!on) { wakeLock?.release().catch(() => {}); wakeLock = null; return; }
   if (wakeLock || !navigator.wakeLock || document.visibilityState !== "visible") return;
   try {
@@ -1549,6 +1556,9 @@ async function keepAwake(on) {
   } catch {}  // not allowed (low battery, a frame): the screen dims as usual
 }
 document.addEventListener("visibilitychange", () => { if (state.awake) keepAwake(true); });  // let go when hidden
+for (const type of ["pointerdown", "keydown", "scroll", "wheel"]) {
+  addEventListener(type, () => { if (state.awake) keepAwake(true); }, { passive: true, capture: true });
+}
 
 // ---- Home page -----------------------------------------------------------------
 

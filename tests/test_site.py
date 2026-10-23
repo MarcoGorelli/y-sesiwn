@@ -599,6 +599,7 @@ def test_no_chord_box_without_chords(page):
     ("risiart annwyl", "Rhisiart Annwyl"),             # another spelling
     ("pont", "Pont Cleddau"),                          # a name that starts with it, before another name of a tune ("The Pontnewydd Quickstep")
     ("pwt ar y bys", "Pwt ar y Bys"),                  # the exact name of a tune, before the same as another's other name
+    ("car gwyllt", "Y Car Gwyllt"),                    # its "Y" doesn't count: before "Jig y Car Gwyllt"
     ("llwyn onn version 2", "Llwyn Onn"),              # a version, as a tune's page names it
     ("llwyn-onn-version-2", "Llwyn Onn"),              # a folder's name
     ("llwytcoed-version-3", "Jig Llwytcoed"),          # a folder's name, renamed since (moved.json)
@@ -3875,6 +3876,23 @@ def test_screen_stays_on_with_music(page, site):
     page.click(".set-list a >> nth=0")  # from a set to one of its tunes: kept on
     page.wait_for_selector(".score .abcjs-staff")
     assert page.evaluate("wakeLog.join()") == "request"
+
+
+def test_screen_let_go_when_left_alone(page, site):
+    # A phone left on the table with a tune showing goes dark after ten minutes without
+    # a touch; the next touch keeps it on again.
+    page.add_init_script(WAKE_LOCK)
+    page.clock.install()
+    page.goto_site("alaw/tros-y-garreg/")
+    page.wait_for_function("wakeLog.length === 1")
+    page.clock.fast_forward("09:00")
+    page.mouse.click(5, 300)
+    page.clock.fast_forward("09:00")  # ten minutes in all, but touched in between
+    assert page.evaluate("wakeLog.join()") == "request"
+    page.clock.fast_forward("01:01")
+    page.wait_for_function("wakeLog.join() === 'request,release'")
+    page.mouse.click(5, 300)
+    page.wait_for_function("wakeLog.join() === 'request,release,request'")
 
 
 def test_set_next_and_previous(browser, site):

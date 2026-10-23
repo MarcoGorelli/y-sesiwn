@@ -1253,14 +1253,15 @@ function showShortcuts() {
     [keys(",", "."), tr("A semitone lower or higher (on a tune's page)", "Hanner tôn yn is neu'n uwch (ar dudalen alaw)")],
     [keys("←", "→"), tr("The tune before or after (in a set)", "Yr alaw o'r blaen neu nesaf (mewn set)")],
     [keys("+", "−", "0"), tr("Zoom in, out, or show all of Wales (on a map; the arrow keys move it)", "Chwyddo i mewn, allan, neu ddangos Cymru gyfan (ar fap; mae'r bysellau saeth yn ei symud)")],
+    [keys("F"), tr("Full screen, or back (on a tune's page or a set)", "Sgrin lawn, neu'n ôl (ar dudalen alaw neu set)")],
     [keys("Esc"), tr("Close a list or this box; leave full screen", "Cau rhestr neu'r blwch hwn; gadael y sgrin lawn")],
     [keys("?"), tr("This list", "Y rhestr hon")],
   ];
   const dialog = el("dialog", { class: "shortcuts", "aria-labelledby": "shortcuts-title" },
     el("h2", { id: "shortcuts-title" }, tr("Keyboard shortcuts", "Llwybrau byr y bysellfwrdd")),
     el("table", {}, el("tbody", {}, rows.map(([k, what]) => el("tr", {}, el("th", { scope: "row" }, k), el("td", {}, what))))),
-    el("p", { class: "caption" }, tr("You can also tap or click a note in the sheet music to play from there.",
-      "Gallwch hefyd dapio neu glicio nodyn yn y sgôr i chwarae o'r fan honno.")),
+    el("p", { class: "caption" }, tr("While a tune plays, you can also tap or click a note in the sheet music to jump there.",
+      "Tra bo alaw'n chwarae, gallwch hefyd dapio neu glicio nodyn yn y sgôr i neidio yno.")),
     el("form", { method: "dialog" }, el("button", { class: "primary" }, tr("Close", "Cau"))));
   dialog.addEventListener("close", () => dialog.remove());
   dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
@@ -1286,13 +1287,24 @@ document.addEventListener("keydown", (event) => {
 
 // Space plays or pauses the tune (hands on the instrument), unless a control has the
 // focus: then it's that control's. (A heading focused on arriving at the page isn't one.)
+// Not in full screen, which is for reading the music: no Play there to stop it with.
 document.addEventListener("keydown", (event) => {
   if (event.key !== " " || event.ctrlKey || event.metaKey || event.altKey) return;
+  if (document.body.classList.contains("practice")) return;
   if (event.target.closest("input, textarea, select, button, a, summary, [contenteditable], [role='button'], [tabindex]:not([tabindex='-1'])")) return;
   const play = document.querySelector(".score .abcjs-midi-start");
   if (!play) return;
   event.preventDefault();
   play.click();
+});
+
+// F: full screen, or back, where there's a Full screen button (a tune's page, a set).
+document.addEventListener("keydown", (event) => {
+  if (event.key.toLowerCase() !== "f" || event.ctrlKey || event.metaKey || event.altKey) return;
+  if (event.target.closest("input, textarea, select, [contenteditable]")) return;
+  if (!document.querySelector(".practice-toggle")) return;
+  event.preventDefault();
+  setPractice(!document.body.classList.contains("practice"));
 });
 
 // On a tune's page, hands on the instrument: [ and ] make it slower or faster (5 bpm),
@@ -2497,7 +2509,7 @@ const SCORE_FORMAT = Object.fromEntries([["title", "20"], ["subtitle", "16"], ["
 // Chords are always drawn (playback reads them from the music), but hidden unless asked
 // for: then drawn tiny, so the room above each line kept for them doesn't spread the music out.
 const HIDDEN_CHORDS_FORMAT = { ...SCORE_FORMAT, gchordfont: `${SCORE_FACE} 1` };
-const STAND_STAFFSEP = 20;  // between lines of music in full screen, closer than abcjs's own
+const STAND_STAFFSEP = 20;  // between lines of music in full screen and on a phone, closer than abcjs's own
 
 // On a narrow screen a tune's own lines (four bars or so, as in the books) shrink to fit
 // it, too small to read; there abcjs lays the music out again in shorter lines, at a
@@ -2691,8 +2703,9 @@ function hideMeasuring() {
   document.querySelectorAll("body > svg[role='img']").forEach((s) => s.setAttribute("aria-hidden", "true"));
 }
 
-// Tapping (or clicking) a note plays the tune from there: to practise a passage, or find
-// your place. A note in a repeated part starts from its first time round.
+// Tapping (or clicking) a note while the tune plays jumps there: to practise a passage, or
+// find your place. A note in a repeated part starts from its first time round. Stopped, a
+// tap does nothing: at a session the music is read, and a touch on it mustn't start the sound.
 // Not when the finger was scrolling the page, though: abcjs takes any touch that ends on a
 // note as a tap, even one that moved, or one that only stopped the page sliding on.
 let touchAt = null, touchMoved = false, scrolledAt = 0;
@@ -2706,12 +2719,11 @@ window.addEventListener("touchmove", (e) => {
   const t = e.touches[0];
   if (touchAt && t && Math.hypot(t.clientX - touchAt.x, t.clientY - touchAt.y) > 10) touchMoved = true;
 }, { passive: true, capture: true });
-async function playFrom(abcElem, tuneNumber, classes, analysis, drag, event) {
+function playFrom(abcElem, tuneNumber, classes, analysis, drag, event) {
   if (touchMoved && !event?.type?.startsWith("mouse")) return;  // abcjs passes the touch, or the touchend
   const ms = [abcElem.currentTrackMilliseconds ?? []].flat()[0];
   const player = state.synth;
-  if (ms == null || !player) return;
-  if (!player.isStarted) await player.play();
+  if (ms == null || !player?.isStarted) return;
   player.seek(ms / 1000, "seconds");
 }
 
@@ -2744,9 +2756,10 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   if (document.body.classList.contains("practice") && !state.printing && grow > 1.1) {
     abc = `%%composerfont * ${Math.round(13 / grow)}\n%%tempofont * ${Math.round((12 * Math.min(grow, 1.75)) / grow)}\n${abc}`;
   }
-  // On the music stand the lines of music sit closer together, so more of the tune is in
-  // sight at once (a slow air on a phone, the whole of it).
-  if (document.body.classList.contains("practice") && !state.printing) abc = `%%staffsep ${STAND_STAFFSEP}\n${abc}`;
+  // On the music stand, and on a phone (its lines laid out again, shorter), the lines of
+  // music sit closer together, so more of the tune is in sight at once (a slow air on the
+  // stand, or a 32-bar reel on a phone, the whole of it).
+  if ((layout.wrap || document.body.classList.contains("practice")) && !state.printing) abc = `%%staffsep ${STAND_STAFFSEP}\n${abc}`;
   // Printed from the Print menu, the chords are on the music for "Print with chords" only;
   // printed from the browser's own menu, as they are on screen.
   const chordsShown = state.printing && document.body.dataset.print ? document.body.dataset.print === "with-chords" : state.practice.chordsOnScore;
@@ -2865,6 +2878,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
     const playing = start?.classList.contains("abcjs-pushed");
     if (playing && startAt !== null && controller.timer) { controller.seek(startAt); startAt = null; }
     if (playing !== audioFocus.playing && state.synth === controller) audioFocus.hold(playing, tune.title);
+    audio.classList.toggle("playing", !!playing);  // pinned while it plays (style.css)
     if (playing) { heardWithTheMusic(tune); heardWithTheHoles(); }
     start?.setAttribute("aria-label", playing ? tr("Pause (space bar)", "Oedi (bylchwr)") : tr("Play (space bar)", "Chwarae (bylchwr)"));
     const percent = Math.round((startAt ?? controller.percent ?? 0) * 100);
@@ -3829,7 +3843,6 @@ function renderTune(main, group, tune) {
   const practiceTools = el("details", { class: "practice-tools fold", open: practiceToolsOpen(),
     ontoggle: (e) => {
       if (openedForMenu) { openedForMenu = false; return; }  // opened by a link to the menu, not by the reader
-      if (document.body.classList.contains("practice")) return;
       state.practice.open = e.target.open;
       savePractice();
     } },
@@ -4151,26 +4164,17 @@ function sayIt(group) {
         "r is rolled. A rough guide for English speakers.")));
 }
 
-// Practice mode: hide everything but the controls and the score, full screen if possible.
+// Full screen: the music and nothing else (the name, and Exit), full screen if possible. For
+// reading at a session: no keys, no Play, no practice tools (style.css hides them), and
+// anything playing stops, as there's no Play left to stop it with.
 function setPractice(on) {
   if (document.body.classList.contains("practice") === on) return;
   document.body.classList.toggle("practice", on);
   const button = document.querySelector(".practice-toggle");
   if (button) button.textContent = practiceLabel(on);
-  // Open on the music stand, without counting as the reader's choice: leaving puts them
-  // back as they were (and the next tune opens them as the reader left them).
-  const tools = document.querySelector(".practice-tools");
-  if (tools) tools.open = on || practiceToolsOpen();
-  state.redrawScore?.();  // in full screen the score leaves out the name, as on a phone
-  // It's a music stand: the key and tempo folded back into their one line, and the music
-  // from the top of the screen.
-  if (on) {
-    state.controlsOpen = false;
-    document.getElementById("tune-controls")?.classList.remove("open");
-    document.querySelector(".controls-summary")?.setAttribute("aria-expanded", "false");
-  }
+  if (on) audioFocus.stop();
+  state.redrawScore?.();  // drawn again for the width (and bigger, on a wide screen)
   if (on) window.scrollTo(0, 0);
-  refreshOfflineCards();  // in full screen, the piano sounds for no signal are offered at once (fillSoundNote)
   if (on && document.fullscreenEnabled) document.documentElement.requestFullscreen().catch(() => {});
   if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {});
 }

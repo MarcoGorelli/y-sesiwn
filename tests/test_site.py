@@ -902,17 +902,6 @@ def test_home_page_on_a_phone(browser, site):
     context.close()
 
 
-def test_practice_row_in_practice_mode_on_a_phone(browser, site):
-    context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True,
-                                  service_workers="block")
-    page = context.new_page()
-    page.goto(site + "alaw/glandyfi/")
-    page.wait_for_selector(".score .abcjs-staff")
-    page.click(".practice-toggle")
-    assert page.locator("#loop-select").is_visible() and page.locator("#tab-select").is_visible()
-    context.close()
-
-
 MAP_SCALE = "Number((document.querySelector('.map-canvas').style.transform.match(/scale\\(([\\d.]+)\\)/) || [0, 1])[1])"
 MAP_SHIFT = "document.querySelector('.map-canvas').style.transform.match(/translate\\(([^)]*)\\)/)[1]"
 DOT_SIZE = "document.querySelector('.wales-map circle:not(.target):not(.off)').getBoundingClientRect().width"
@@ -1666,8 +1655,8 @@ def test_no_ending_left_hanging_on_a_phone(browser, site):
 
 
 def test_a_slow_air_fits_a_phone_in_full_screen(browser, site):
-    # On the music stand a phone shows the whole of a slow air under the pinned player: the
-    # lines closer together, and the hidden chords not keeping room above every line.
+    # In full screen a phone shows the whole of a slow air under its name: the lines closer
+    # together, and the hidden chords not keeping room above every line.
     context = browser.new_context(service_workers="block", **PHONE)
     page = context.new_page()
     page.goto(site + "alaw/agoriad-y-blodau/")
@@ -1675,9 +1664,42 @@ def test_a_slow_air_fits_a_phone_in_full_screen(browser, site):
     page.click(".practice-toggle")
     page.wait_for_function("document.body.classList.contains('practice')")
     page.wait_for_selector(".score .abcjs-staff")
-    music, player, screen = page.evaluate("""() => [document.querySelector('.score .abcjs-container').getBoundingClientRect().height,
-      document.querySelector('.score > .audio').offsetHeight, innerHeight]""")
-    assert music + player <= screen, (music, player, screen)
+    bottom, screen = page.evaluate("""() => [document.querySelector('.score .abcjs-container').getBoundingClientRect().bottom, innerHeight]""")
+    assert bottom <= screen, (bottom, screen)
+    context.close()
+
+
+def test_a_32_bar_reel_fits_a_phone(browser, site):
+    # At a session a phone shows the whole of Rhiwfelen (32 bars, no repeats) under the
+    # pinned top bar: its lines closer together, as on the music stand.
+    context = browser.new_context(service_workers="block", **PHONE)
+    page = context.new_page()
+    page.goto(site + "alaw/rhiwfelen/")
+    page.wait_for_selector(".score .abcjs-staff")
+    music, bar, screen = page.evaluate("""() => [document.querySelector('.score .abcjs-container').getBoundingClientRect().height,
+      document.querySelector('.topbar').offsetHeight, innerHeight]""")
+    assert music + bar <= screen, (music, bar, screen)
+    page.click(".practice-toggle")  # and in full screen, under its name, from the top
+    page.wait_for_function("document.body.classList.contains('practice')")
+    page.wait_for_selector(".score .abcjs-staff")
+    bottom = page.evaluate("document.querySelector('.score .abcjs-container').getBoundingClientRect().bottom")
+    assert bottom <= screen, (bottom, screen)
+    context.close()
+
+
+def test_the_player_is_pinned_only_while_playing(browser, site):
+    # Stopped, the player scrolls away with the page, so it isn't pressed by mistake while
+    # reading, and leaves the room to the notes; playing, it's pinned, in reach to stop.
+    context = browser.new_context(service_workers="block", **PHONE)
+    page = context.new_page()
+    page.goto(site + "alaw/walts-dinefwr/")
+    page.wait_for_selector(".score .abcjs-inline-audio")
+    page.evaluate("window.scrollTo(0, document.querySelector('.score').getBoundingClientRect().top + scrollY + 400)")
+    assert page.locator(".score > .audio").bounding_box()["y"] < 0  # scrolled away
+    page.evaluate("document.querySelector('.score .abcjs-midi-start').click()")
+    page.wait_for_function("document.querySelector('.score > .audio.playing')")
+    page.evaluate("window.scrollBy(0, 1)")
+    assert page.locator(".score > .audio").bounding_box()["y"] >= 0  # pinned under the top bar
     context.close()
 
 
@@ -1771,8 +1793,9 @@ def test_usual_key_remembered(page, site):
     assert page.evaluate("localStorage.getItem('tunes')") == "{}" and page.inner_text(".usual-key") == ""
 
 
-def test_play_from_a_note(page):
-    # Tapping a note starts playback from there (and the notes aren't Tab stops).
+def test_a_note_jumps_there_while_playing(page):
+    # Tapping a note while the tune plays jumps there (and the notes aren't Tab stops);
+    # stopped, it doesn't start the sound: at a session the music is read, not played.
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.locator(".score [data-layout] svg [tabindex]").count() == 0
@@ -1781,7 +1804,13 @@ def test_play_from_a_note(page):
     note = page.locator(".score [data-layout] .abcjs-l1 .abcjs-note").first
     box = note.bounding_box()
     page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
-    page.wait_for_function("window.seeks.length > 0")
+    page.wait_for_timeout(300)
+    assert page.evaluate("window.seeks") == [] and not page.evaluate("state.synth.isStarted")
+    page.click(".score .abcjs-midi-start")
+    page.wait_for_function("state.synth.isStarted")
+    page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+    page.wait_for_function("window.seeks.some(([t, u]) => u === 'seconds')")
+    page.evaluate("window.seeks = window.seeks.filter(([t, u]) => u === 'seconds')")
     (seconds, units), = page.evaluate("window.seeks")
     assert units == "seconds" and seconds > 1  # the second line, not the start
 
@@ -3570,47 +3599,6 @@ def test_print_list_and_chart_words(page):
     assert page.get_attribute(".chart-box .chart", "aria-hidden") == "true"
 
 
-def test_full_screen_folds_the_key_and_tempo_on_a_laptop(page):
-    # Full screen is a music stand on a wider screen too: the tempo and size fold into the
-    # phone's one line, which opens to change them; the keys stay, beside it.
-    page.set_viewport_size({"width": 1366, "height": 900})
-    page.goto_site("alaw/aberdaugleddau/")
-    page.wait_for_selector(".score .abcjs-inline-audio")
-    assert not page.is_visible(".controls-summary")
-    page.click(".practice-toggle")
-    assert page.is_visible(".controls-summary")
-    assert page.inner_text(".controls-summary .now") == "112 bpm, size 100%"
-    assert page.inner_text(".key-now") == "Key: C major"  # Blodau'r Grug's, in C
-    assert not page.is_visible("#tempo") and page.is_visible("#key-select")
-    keys, line = page.locator("#key-select").bounding_box(), page.locator(".controls-summary").bounding_box()
-    assert line["x"] > keys["x"] + keys["width"] and line["y"] + line["height"] - (keys["y"] + keys["height"]) < 5  # one row
-    page.click(".controls-summary")
-    assert page.is_visible("#tempo")
-    page.click(".practice-toggle")
-    assert not page.is_visible(".controls-summary")
-    assert page.is_visible("#tempo") and page.is_visible("#key-select")
-
-
-def test_full_screen_leaves_practice_tools_as_they_were(browser, site):
-    # The music stand opens the practice tools; leaving it puts them back as the reader had
-    # them (folded on a phone), for this tune and the next.
-    context = browser.new_context(service_workers="block", **PHONE)
-    page = context.new_page()
-    page.goto(site + "alaw/glandyfi/")
-    page.wait_for_selector(".score .abcjs-inline-audio")
-    tools = page.locator(".practice-tools")
-    assert tools.get_attribute("open") is None
-    page.click(".practice-toggle")
-    assert tools.get_attribute("open") is not None
-    page.click(".practice-toggle")
-    assert tools.get_attribute("open") is None
-    page.evaluate("navigate('?tune=cawl-cennin')")  # the next tune, in the same visit
-    page.wait_for_function("document.querySelector('main h1')?.textContent === 'Cawl Cennin'")
-    page.wait_for_selector(".score .abcjs-inline-audio")
-    assert page.locator(".practice-tools").get_attribute("open") is None
-    context.close()
-
-
 def test_key_says_it_changes(browser, site):
     # Walts Dinefwr goes from G to D and back: the key, over the phone's one line, says so.
     context = browser.new_context(service_workers="block", **PHONE)
@@ -3991,23 +3979,94 @@ def test_tune_page_before_the_other_tunes(page, site):
     assert page.evaluate("state.groupList.length") > 500
 
 
-def test_music_stand_on_a_phone(browser, site):
-    # Full screen on a phone is a music stand: the key and tempo folded into their line even
-    # if they were open, the player pinned at the top, and the playing line kept in view
-    # (when the tune is longer than the screen: a short one stays put).
+def test_the_page_follows_the_music_on_a_phone(browser, site):
+    # Playing on a phone, the player is pinned under the top bar, and the playing line kept in
+    # view (when the tune is longer than the screen: a short one stays put).
     context = browser.new_context(service_workers="block", **PHONE)
     page = context.new_page()
-    page.goto(site + "alaw/walts-dinefwr/?tempo=200")  # a long tune: more than a screen, even on the stand
+    page.goto(site + "alaw/walts-dinefwr/?tempo=200")  # a long tune: more than a screen
     page.wait_for_selector(".score .abcjs-inline-audio")
-    page.click(".controls-summary")
-    page.click(".practice-toggle")
-    assert not page.locator("#tempo").is_visible() and page.locator("#key-select").is_visible()
-    assert page.locator(".score").bounding_box()["y"] < 330
     page.click(".score .abcjs-midi-start")
     page.wait_for_function("document.querySelector('.abcjs-note_playing')")
     page.evaluate("state.synth.seek(.85)")  # on to the lines further down
     page.wait_for_function("document.querySelector('.score').getBoundingClientRect().top < 0", timeout=30000)  # followed the music down, past its top
-    assert page.locator(".score > .audio").bounding_box()["y"] < 5  # pinned
+    bar = page.locator(".topbar").bounding_box()
+    assert abs(page.locator(".score > .audio").bounding_box()["y"] - (bar["y"] + bar["height"])) < 5  # pinned
+    context.close()
+
+
+@pytest.mark.parametrize("phone", [True, False])
+def test_full_screen_is_just_the_music(browser, site, phone):
+    # Full screen is for reading at a session: the tune's name with Exit beside it, then the
+    # music. No keys, tempo, player, tabs-or-holes menu or practice tools; leaving it brings
+    # them all back as they were.
+    size = PHONE if phone else {"viewport": {"width": 1366, "height": 900}}
+    context = browser.new_context(service_workers="block", **size)
+    page = context.new_page()
+    page.goto(site + "alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-inline-audio")
+    controls = ["#key-select", "#tab-select", ".score .abcjs-midi-start", ".practice-tools summary"]
+    assert all(page.is_visible(c) for c in controls)
+    page.click(".practice-toggle")
+    assert page.inner_text(".practice-toggle") == "Exit full screen"
+    assert not any(page.is_visible(c) for c in controls)
+    assert not page.is_visible(".controls-summary") and not page.is_visible(".music-size")
+    name, exit, music = (page.locator(s).bounding_box() for s in ["main h1", ".practice-toggle", ".score"])
+    assert abs((name["y"] + name["height"] / 2) - (exit["y"] + exit["height"] / 2)) < 6  # one line
+    text = page.evaluate("(() => { const r = document.createRange(); r.selectNodeContents(document.querySelector('main h1')); return r.getBoundingClientRect().right; })()")
+    assert exit["x"] > text and music["y"] < name["y"] + name["height"] + 20  # the music right under them
+    page.click(".practice-toggle")
+    assert all(page.is_visible(c) for c in controls)
+    assert page.locator(".practice-tools").get_attribute("open") is None  # as they were
+    context.close()
+
+
+def test_full_screen_stands_out_and_has_a_key(page):
+    # Full screen is the one filled button among the controls (slate: red is for Play), and
+    # F goes in and out of it; not while typing.
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-inline-audio")
+    filled = "getComputedStyle(document.querySelector('.practice-toggle')).backgroundColor"
+    play = page.evaluate("getComputedStyle(document.querySelector('.score .abcjs-midi-start')).backgroundColor")
+    assert page.evaluate(filled) not in (play, page.evaluate("getComputedStyle(document.querySelector('.controls-summary, #key-select button')).backgroundColor"))
+    page.keyboard.press("f")
+    page.wait_for_function("document.body.classList.contains('practice')")
+    page.keyboard.press("F")
+    page.wait_for_function("!document.body.classList.contains('practice')")
+    page.click("#search-input")
+    page.keyboard.press("f")
+    assert not page.evaluate("document.body.classList.contains('practice')")
+
+
+def test_full_screen_stops_the_music(browser, site):
+    # Nothing plays in full screen, with no Play there to stop it: what was playing stops,
+    # and the space bar doesn't start it.
+    context = browser.new_context(service_workers="block", **PHONE)
+    page = context.new_page()
+    page.goto(site + "alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-inline-audio")
+    page.click(".score .abcjs-midi-start")
+    page.wait_for_function("state.synth?.isStarted")
+    page.click(".practice-toggle")
+    page.wait_for_timeout(300)
+    assert not page.evaluate("state.synth?.isStarted")
+    page.evaluate("document.activeElement.blur()")
+    page.keyboard.press(" ")
+    page.wait_for_timeout(300)
+    assert not page.evaluate("state.synth?.isStarted")
+    context.close()
+
+
+def test_full_screen_set_is_just_the_music(browser, site):
+    # A set in full screen: its name and Exit, then each tune's name and music, without its Play.
+    context = browser.new_context(service_workers="block", **PHONE)
+    page = context.new_page()
+    page.goto(site + "?set=5A3V~h&n=Nos%20Iau")
+    page.wait_for_selector(".set-tune .abcjs-staff")
+    assert page.is_visible(".set-tune-head .preview-play >> nth=0") and page.is_visible(".set-actions .music-size")
+    page.click(".practice-toggle")
+    assert not page.is_visible(".set-tune-head .preview-play >> nth=0") and not page.is_visible(".set-actions .music-size")
+    assert page.is_visible(".set-tune-head h2 >> nth=0") and page.is_visible(".practice-toggle")
     context.close()
 
 

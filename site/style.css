@@ -50,6 +50,8 @@
   --plus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M12 5v14M5 12h14'/%3E%3C/svg%3E");
   --sharp: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 20' fill='none' stroke='%23000' stroke-linecap='round'%3E%3Cpath d='M3.6 2.5v16M6.6 1.5v16' stroke-width='1.3'/%3E%3Cpath d='m1.3 8.2 7.4-2.2M1.3 13.6l7.4-2.2' stroke-width='2.4'/%3E%3C/svg%3E");
   --flat: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 20' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 1.5v17c3.5-1.6 6.2-3.6 5.6-6.2-.5-2.2-3.3-2-5.6.2' stroke-width='1.6'/%3E%3C/svg%3E");
+  --expand: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5'/%3E%3C/svg%3E");
+  --collapse: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 4v5H4M15 4v5h5M20 15h-5v5M4 15h5v5'/%3E%3C/svg%3E");
   --tick: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4.5 12.5 5 5 10-11'/%3E%3C/svg%3E");
   --theme-auto: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M12 4a8 8 0 0 1 0 16z' fill='%23000'/%3E%3C/svg%3E");
   --theme-light: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6'/%3E%3C/svg%3E");
@@ -203,6 +205,14 @@ button {
    :hover look until the next tap elsewhere, as if it were still chosen. */
 @media (hover: hover) { button:hover:not(:disabled) { border-color: var(--accent-ink); color: var(--accent-ink); } }
 button:disabled { opacity: .5; cursor: default; }
+/* Full screen, the music alone for reading at a session: the one filled button among the
+   tune's controls (slate, as a chosen key; red is for Play), with the corners that say it.
+   In full screen, Exit is a plain button, its corners turned in. */
+.practice-toggle { display: inline-flex; align-items: center; justify-content: center; gap: .45em; white-space: nowrap; }
+.practice-toggle::before { content: ""; flex: none; width: 1em; height: 1em; background: currentColor; mask: var(--expand) center / contain no-repeat; }
+body.practice .practice-toggle::before { mask-image: var(--collapse); }
+body:not(.practice) .practice-toggle { border-color: var(--chosen); background: var(--chosen); color: var(--on-chosen); font-weight: 600; }
+@media (hover: hover) { body:not(.practice) .practice-toggle:hover:not(:disabled) { border-color: var(--chosen); color: var(--on-chosen); filter: brightness(1.15); } }
 button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 button.primary:hover { color: var(--on-accent); filter: brightness(1.1); }
 :focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
@@ -774,7 +784,6 @@ details[open] > summary::before { transform: rotate(90deg); }
 .score .abcjs-inline-audio:has(.bar-pace:not(:empty)) .abcjs-midi-clock { display: none; }
 .score .abcjs-inline-audio .bar-pace.arrived::after { content: ""; width: 2.25rem; height: 7px;
   background: url("carthen.svg") repeat-x left center / auto 7px; border-radius: 2px; }
-body.practice .score .abcjs-inline-audio .bar-pace { font-size: 1rem; }  /* read from the stand */
 @media (max-width: 480px) { .score .abcjs-inline-audio .bar-pace .unit { display: none; } }
 /* Player: play/loop in red while they're on. */
 .score .abcjs-inline-audio .abcjs-btn.abcjs-pushed { background-color: var(--accent); }
@@ -1015,35 +1024,28 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .place-list li:hover { background: var(--accent-soft); }
 .place-list strong { display: block; }
 
-/* Practice mode: just the controls and a big score, for a tablet on a music stand */
+/* Full screen: the music and nothing else, for reading at a session: the tune's name with
+   Exit full screen beside it, then the score. No keys, no player, no tabs-or-holes menu, no
+   practice tools (the holes or tabs chosen are still on the music). */
 body.practice { grid-template-columns: 1fr; }
 body.practice .nav, body.practice .tune-side, body.practice .card.chords, body.practice .site-footer { display: none; }
-body.practice main { max-width: none; padding: 1rem 1.5rem 2rem; }
+body.practice main { max-width: none; padding: 1rem 1.5rem 2rem; position: relative; }
 body.practice h1 { font-size: 1.35rem; }
-body.practice .controls { margin: .5rem 0 1rem; }
-/* …but the room under the row for "Original: G major" when it's said (a phone's one line hides it) */
-@media (min-width: 801px) {
-  body.practice .controls.open:has(.usual-key:not(:empty)) { margin-bottom: 2rem; }
-  /* A music stand on a laptop or tablet too: the key, tempo and size folded into the phone's
-     one line, beside Exit full screen; opened, the line and then the row of them as usual */
-  body.practice .controls-summary { display: flex; gap: 1.25rem; }
-  body.practice .controls:not(.open) > .control:not(.key-control), body.practice .controls:not(.open) .music-size { display: none; }
-  body.practice .controls:not(.open) { flex-wrap: wrap; align-items: end; }
-  body.practice .controls:not(.open) > .key-control { flex: 0 1 auto; }  /* the keys, then the one line, then Exit */
-  body.practice .controls.open .controls-summary { flex: 1 0 100%; justify-content: start; width: fit-content; max-width: max-content; }
-}
+body.practice :is(.tab-line, .practice-tools, .score > .audio, .sound-on, .sound-note) { display: none; }
+body.practice .controls > :not(.view-tools), body.practice .controls .music-size { display: none; }
+/* Exit, at the top right, on the name's line (the name kept clear of it) */
+body.practice :is(.controls, .set-actions) { position: absolute; top: 1rem; right: 1.5rem; margin: 0; }
+body.practice main > h1 { min-height: 44px; display: flex; align-items: center; margin: 0 0 .5rem; padding-right: 12rem; }
 body.practice .tune-layout { grid-template-columns: 1fr; }
 body.practice .score { width: 100%; max-width: 1400px; margin: 0 auto; padding: 1rem 1.5rem 1.5rem; }
 body.practice :is(.versions, .versions-fold, .tune-actions) { display: none; }
-/* The player stays in reach as the page follows the music: pinned at the top of the screen,
-   or on a phone just under the pinned top bar (whose height app.js keeps in --topbar-h) */
-.score > .audio { position: sticky; top: var(--topbar-h, 0px); z-index: 3; margin: -.5rem -.5rem 0; padding: .5rem;
+/* While the tune plays, the player stays in reach as the page follows the music: pinned at
+   the top of the screen, or on a phone just under the pinned top bar (whose height app.js
+   keeps in --topbar-h). Stopped, it scrolls away with the page: at a session the music is
+   read, not played, and a pinned Play took room from the notes and was pressed by mistake. */
+.score > .audio { position: relative; z-index: 3; margin: -.5rem -.5rem 0; padding: .5rem;
   background: var(--paper); border-radius: var(--radius) var(--radius) 0 0; }
-body.practice .score > .audio { top: 0; }
-/* On the music stand Play is pressed from arm's length: a 44px disc, as on a touch screen */
-body.practice .score .abcjs-inline-audio { height: auto; min-height: 52px; padding: 4px 6px; }
-body.practice .score .abcjs-inline-audio .abcjs-midi-reset { width: 44px; height: 44px; padding: 12px; margin: 0; }
-body.practice .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height: 44px; padding: 12px 11px 12px 14px; margin: 0 10px; }
+.score > .audio.playing { position: sticky; top: var(--topbar-h, 0px); }
 /* Under the pinned player, the music fades out rather than being cut off (paper on paper,
    so at rest it can't be seen) */
 .score > .audio::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: .9rem; pointer-events: none;
@@ -1052,8 +1054,9 @@ body.practice .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height
   /* A phone on a music stand: the name and the one line of key and tempo, then the music,
      edge to edge */
   body.practice main { padding: .5rem .5rem 2rem; }
-  body.practice h1 { font-size: 1.1rem; margin: 0 .25rem .4rem; }
-  body.practice .controls { margin: 0 0 .5rem; }
+  body.practice h1 { font-size: 1.1rem; }
+  body.practice main > h1 { margin: 0 .25rem .4rem; padding-right: 10.5rem; }
+  body.practice :is(.controls, .set-actions) { top: .5rem; right: .5rem; }
   body.practice .score { padding: .5rem .5rem 1rem; border-radius: 6px; }
 }
 
@@ -1136,9 +1139,6 @@ body.practice .score .abcjs-inline-audio .abcjs-midi-start { width: 44px; height
   .controls.open .music-size { grid-area: size; margin-left: 0; }
   .controls.open .practice-toggle { grid-area: full; }
   .controls.open .usual-key { position: static; display: block; min-height: 1.55em; margin-top: .2rem; white-space: normal; }
-  /* On the music stand the one line has less room: the chevron says it opens */
-  body.practice .controls-summary .change { font-size: 0; gap: 0; }
-  body.practice .controls-summary .change::after { font-size: .9rem; }
   main { padding: 1.5rem 1rem 3rem; }
   .site-footer { padding: 22px 1rem 1.25rem; }
   .map-layout { grid-template-columns: minmax(0, 1fr); }  /* min 0: a long line of the ABC mustn't widen the page */
@@ -1370,8 +1370,9 @@ body[data-page="embed"] .score > .audio { position: static; }
   .set-actions > button, .set-actions .print-wrap > button, .set-actions .music-size button { font-size: .85rem; padding-inline: .5rem; }
   .set-actions .music-size .buttons { gap: .25rem; }
 }
-/* Practice mode on a set: just the music */
-body.practice .set-edit, body.practice .set-shared, body.practice .set-count, body.practice .set-actions > :not(.practice-toggle, .music-size), body.practice .set-name { display: none; }
+/* Full screen on a set: just the music (each tune's name, without its Play) */
+body.practice .set-edit, body.practice .set-shared, body.practice .set-count, body.practice .set-actions > :not(.practice-toggle), body.practice .set-name,
+body.practice .set-tune-head .preview-play { display: none; }
 @media print {
   .set-edit, .set-shared, .set-count, .set-actions, .set-name, .add-to-set-wrap, .set-undo, .browse-jump { display: none !important; }
   .set-tune { break-inside: avoid; }
@@ -1523,7 +1524,7 @@ main h1:focus { outline: none; }
   :is(.versions, .versions-list) a[aria-current="page"] small { color: HighlightText; }
   .swatch { display: none; }
   /* Drawn icons are masked backgrounds, which forced colours would blank out */
-  summary::before, .chevron, .icon, .menu-button::after, .theme-switch button::before, .versions-fold > summary::after, .pills button:is([aria-pressed="true"], [aria-checked="true"])::before { forced-color-adjust: none; background: CanvasText; }
+  summary::before, .chevron, .icon, .practice-toggle::before, .menu-button::after, .theme-switch button::before, .versions-fold > summary::after, .pills button:is([aria-pressed="true"], [aria-checked="true"])::before { forced-color-adjust: none; background: CanvasText; }
   .pills button:is([aria-pressed="true"], [aria-checked="true"])::before { background: HighlightText; }
   .tab-sample :is(.line, .stem, .holes) { stroke: CanvasText; }
   .tab-sample :is(.ink, .fret, .holes .covered) { fill: CanvasText; }

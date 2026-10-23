@@ -190,14 +190,15 @@ scheduled runs after 60 days without a commit).
   which the person sent it sees on that tune only, their own choice left as it
   was. The key chosen for a tune is kept on the device
   (`localStorage`) and used next time ("Last used on this device"), and
-  tapping a note in the music plays from there.
+  tapping a note in the music while it plays jumps there.
 - **Accessibility:** tune names are marked Welsh or English (`lang`, from
   `pronunciation.json`) so screen readers say them in the right voice; moving to
   another page puts the focus on its heading; the search says how many tunes it
   found; selections stay visible in Windows high-contrast mode; `?` lists the
   keyboard shortcuts (also in the footer, on a computer).
-- **Full screen** (practice mode): just the controls and a full-width score, full screen
-  where supported.
+- **Full screen** (the filled button by the tempo, or `F`): just the music, for reading at a session: the tune's name with
+  *Exit full screen* beside it, then a full-width score (no keys, player or practice
+  tools; anything playing stops), full screen where supported.
 - **Tabs or holes** (above the music, never folded, so it's found as a tune starts at
   a session; *Just the music* first). Then the **practice tools** (under the music,
   folded at first): **Repeat** and **Speed up**, then **Count-in** and **Click**.

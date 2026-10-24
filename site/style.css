@@ -258,6 +258,8 @@ button.primary:hover { color: var(--on-accent); filter: brightness(1.1); }
 /* Each tune: its type's colour, its name, and what it is ("jig · G major") at the end */
 .suggestions li[role="option"] { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: .75rem; }
 .suggestions .swatch { width: .75em; height: .75em; margin-right: -.25rem; transform: translateY(.05em); }
+.suggestions .aka { margin-left: -.4rem; color: var(--muted); }
+.tune-list .aka { margin-left: .3em; color: var(--muted); }
 .suggestions .what { margin-left: auto; color: var(--muted); font-size: .85rem; white-space: nowrap; }
 /* On a phone the type's gloss would push "what it is" onto a second line: Browse has it */
 @media (max-width: 800px) { .suggestions .what .gloss { display: none; } }

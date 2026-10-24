@@ -383,20 +383,26 @@ function score(query, tune) {
   // the query before one with a later word that does: "pont" lists "Pont Cleddau" before
   // "Cwicstep y Bontnewydd" (found by its other name, "The Pontnewydd Quickstep").
   // A name's "Y" or "The" at the start doesn't count: "car gwyllt" is "Y Car Gwyllt", before "Jig y Car Gwyllt".
-  let best = 0;
-  const queryWords = words(query);
-  const bare = (text) => text.replace(/^(y|yr|the) /, "");
-  for (const [i, title] of tune.search.entries()) {
-    if (title === query || bare(title) === bare(query)) return i ? 2 : 2.2;  // the exact name comes first, the tune's own before another's other name
-    if (` ${title}`.includes(` ${query}`)) {
-      best = Math.max(best, 1 + (i ? 0 : 0.2) + (bare(title).startsWith(bare(query)) ? 0.1 : 0));
-      continue;
-    }
-    const titleWords = words(title);
-    const scores = queryWords.map((q) => Math.max(0, ...titleWords.map((t) => ratio(q, t))));
-    best = Math.max(best, (0.99 * scores.reduce((s, x) => s + x, 0)) / scores.length);
-  }
-  return best;
+  return Math.max(...tune.search.map((title, i) => titleScore(query, title, i)));
+}
+const bare = (text) => text.replace(/^(y|yr|the) /, "");
+function titleScore(query, title, i) {
+  if (title === query || bare(title) === bare(query)) return i ? 2 : 2.2;  // the exact name comes first, the tune's own before another's other name
+  if (` ${title}`.includes(` ${query}`)) return 1 + (i ? 0 : 0.2) + (bare(title).startsWith(bare(query)) ? 0.1 : 0);
+  const titleWords = words(title);
+  const scores = words(query).map((q) => Math.max(0, ...titleWords.map((t) => ratio(q, t))));
+  return (0.99 * scores.reduce((s, x) => s + x, 0)) / scores.length;
+}
+
+// The other name a search found a tune by, when it matched better than the tune's own, so
+// the list says why it's there: "pontnewydd" finds Cwicstep y Bontnewydd (The Pontnewydd Quickstep).
+// Not when its own name has the words typed too ("pwt ar y bys", Pibddawns Pwt ar y Bys).
+function foundAs(group, query) {
+  const q = searchQuery(query);
+  if (!q) return null;
+  const scores = group.search.map((title, i) => titleScore(q, title, i));
+  const best = scores.indexOf(Math.max(...scores));
+  return best > 0 && scores[0] < 1 ? group.titles[best] : null;
 }
 
 // The tunes a book or an arranger's name finds ("Blodau'r Grug", "Meurig"), with the credit
@@ -427,6 +433,11 @@ function searchAll(query) {
   const close = found.close < 0 ? [] : found.slice(found.close, named.length || credited.length ? found.close + 3 : undefined);
   return { named, credited, close };
 }
+// The words a name is matched against: "Llwyn Onn version 2" is Llwyn Onn.
+function searchQuery(query) {
+  const typed = normalize(query);
+  return typed.replace(/ (version|fersiwn) \d+$/, "") || typed;
+}
 const SHOWN = 20;  // under the box; the rest on the page of all of them
 
 function search(query) {
@@ -435,7 +446,7 @@ function search(query) {
   // name ("llwytcoed-version-3", even one renamed since: moved.json) is that tune, first.
   const typed = normalize(query);
   if (!typed) return state.groupList;
-  const q = typed.replace(/ (version|fersiwn) \d+$/, "") || typed;
+  const q = searchQuery(query);
   const slug = movedTo(typed.replace(/ /g, "-"));
   const own = state.groups.get(slug) ?? state.groups.get(state.bySlug.get(slug)?.group);
   const scored = state.groupList
@@ -1453,8 +1464,10 @@ function renderSearchPage(main, query) {
   const item = ({ group, credit }, grouped) => {
     const key = group.versions[0].key;
     const what = [grouped ? null : typeName(group.type), key && shortKey(key.pitch, key.modeName)].filter(Boolean).join(" · ");
+    const aka = credit === undefined ? foundAs(group, query) : null;  // found by another of its names
     return el("li", {},
       el("a", { href: tuneUrl(group.slug), "data-route": true }, tuneName(group.slug, group.title)),
+      aka ? el("span", { class: "aka" }, `(${aka})`) : null,
       what ? el("span", { class: "tune-key" }, what) : null,
       own(credit) ? el("span", { class: `tune-key tune-credit${own(credit).length > 16 ? " own-line" : ""}`, title: credit }, own(credit)) : null);
   };
@@ -6291,7 +6304,7 @@ function noteMiss(query, found) {
 // A tune in the search's list: its type's colour, its name, and what it is ("Jig · G major",
 // "Pibddawns (hornpipe) · D major", "Other · G major", as Browse names the types), so two tunes of the same
 // name, or a half-remembered one, can be told apart.
-function suggestion(group, credit = null) {
+function suggestion(group, credit = null, aka = null) {
   const type = state.data.types?.find((t) => t.name === group.type);
   const key = group.versions[0].key;
   const gloss = state.lang !== "cy" && GLOSSED.has(group.type) ? el("span", { class: "gloss" }, ` (${EN_TYPE[group.type]})`) : null;
@@ -6299,7 +6312,8 @@ function suggestion(group, credit = null) {
   const what = [[typeName(group.type), gloss], credit ? el("span", { class: "credit" }, credit) : key && `${key.root} ${modeName(key.modeName)}`]
     .filter(Boolean).flatMap((part, i) => (i ? [" · ", part] : [part]));
   return [el("span", { class: "swatch", style: type ? `--c: ${type.colour}` : null, "aria-hidden": "true" }),
-    tuneName(group.slug, group.title), what.length ? el("span", { class: "what" }, what) : null];
+    tuneName(group.slug, group.title), aka ? el("span", { class: "aka" }, `(${aka})`) : null,
+    what.length ? el("span", { class: "what" }, what) : null];
 }
 
 // A link to this site pasted into the box (a set someone sent, say): where it goes, from
@@ -6382,7 +6396,7 @@ function attachSearch(input, list, { showAllOnFocus = true, onPick = null } = {}
         }, entry.link ? [new URLSearchParams(entry.link.split("?")[1]).has("set") ? tr("Open this set", "Agor y set hon")
             : tr("Open this link", "Agor y ddolen hon"), el("span", { class: "chevron", "aria-hidden": "true" })]
           : entry.all ? [tr(`All ${entry.all} tunes`, `Y ${entry.all} alaw i gyd`), el("span", { class: "chevron", "aria-hidden": "true" })]
-          : suggestion(entry.group, entry.credit)))
+          : suggestion(entry.group, entry.credit, entry.credit === undefined ? foundAs(entry.group, query) : null)))
       : [el("li", { class: "empty" }, ...(state.complete
         ? [tr("No tune, book or arranger by that name.", "Dim alaw, llyfr na threfnydd o'r enw hwnnw."), el("span", { class: "try" },
             elsewhere("?page=notes", tr("Find it by its notes", "Ei chanfod o'i nodau")), " · ",

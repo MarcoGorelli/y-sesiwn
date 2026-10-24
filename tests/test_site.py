@@ -619,6 +619,22 @@ def test_search_by_name(page, query, expected):
         assert "Frân" in first
 
 
+def test_search_says_the_other_name_it_found(page):
+    # Found by another of its names: the list says which, beside the tune's own; not when
+    # the tune's own name has it too.
+    page.goto_site()
+    page.fill("#hero-search", "pontnewydd quickstep")
+    first = page.locator("#hero-suggestions li").first
+    assert first.locator("span[lang]").inner_text() == "Cwicstep y Bontnewydd"
+    assert first.locator(".aka").inner_text() == "(The Pontnewydd Quickstep)"
+    page.fill("#hero-search", "pont cleddau")
+    assert page.locator("#hero-suggestions li").first.locator(".aka").count() == 0
+    page.fill("#hero-search", "pwt ar y bys")  # Pibddawns Pwt ar y Bys has it in its own name
+    assert page.locator("#hero-suggestions .aka").count() == 0
+    page.goto_site("?page=search&q=pontnewydd+quickstep")
+    assert page.locator(".search-part .tune-list li").first.locator(".aka").inner_text() == "(The Pontnewydd Quickstep)"
+
+
 def test_tunes_sharing_a_name(page):
     # Different tunes with the same name are separate tunes, told apart by their source;
     # searching the name finds them all.

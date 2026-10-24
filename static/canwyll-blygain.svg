@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Nadolig: a plygain candle, decorated with coloured paper, in its holder, and a
+       sprig of holly: the light the plygain carols were sung by before dawn. -->
+  <!-- the glow -->
+  <circle cx="32" cy="12" r="9" fill="#e9a800" opacity=".18"/>
+  <!-- the flame -->
+  <path d="M32 4 C35 9 36 12 34.5 15 C33.6 16.6 30.4 16.6 29.5 15 C28 12 29 9 32 4 Z"
+        fill="#e9a800" stroke="#b4532a" stroke-width="0.8" stroke-linejoin="round"/>
+  <path d="M32 9 C33.2 11.4 33.2 13.4 32 15 C30.8 13.4 30.8 11.4 32 9 Z" fill="#fdfbf7"/>
+  <path d="M32 15 V18" stroke="#1d1d1b" stroke-width="0.9"/>
+  <!-- the candle, with a band of coloured paper -->
+  <rect x="27" y="18" width="10" height="30" rx="1" fill="#fdfbf7" stroke="#7a3e12" stroke-width="0.9"/>
+  <path d="M27 30 L32 27 L37 30 V36 L32 33 L27 36 Z" fill="#C8102E" stroke="#7a1f2b" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M27 38 L32 35 L37 38" fill="none" stroke="#2e5e3a" stroke-width="1.4"/>
+  <!-- the holder -->
+  <path d="M18 48 H46 C46 52 40 54 32 54 C24 54 18 52 18 48 Z" fill="#c28f1c" stroke="#7a3e12" stroke-width="0.9" stroke-linejoin="round"/>
+  <path d="M46 50 C51 50 52 55 48 56" fill="none" stroke="#7a3e12" stroke-width="1.6" stroke-linecap="round"/>
+  <!-- holly: two leaves and berries -->
+  <g fill="#2e5e3a" stroke="#1d3b25" stroke-width="0.7" stroke-linejoin="round">
+    <path d="M10 58 L12 55 L14 56.5 L16 53.5 L18 55 L21 52 L20 56 L22 57.5 L18 58.5 L17 61 L14 59.5 L12 61 Z"/>
+    <path d="M54 58 L52 55 L50 56.5 L48 53.5 L46 55 L43 52 L44 56 L42 57.5 L46 58.5 L47 61 L50 59.5 L52 61 Z"/>
+  </g>
+  <circle cx="22" cy="58.5" r="1.8" fill="#C8102E"/>
+  <circle cx="25" cy="59.5" r="1.8" fill="#C8102E"/>
+  <circle cx="42" cy="58.5" r="1.8" fill="#C8102E"/>
+</svg>

@@ -39,6 +39,7 @@
   --paper-button: #ffffff;
   --paper-button-ink: #262b31;
   --paper-button-edge: #dcdfe3;
+  --carthen: url("carthen.svg");  /* in its season's colours around a feast day (app.js: SEASONS) */
   --art-dim: none;            /* the drawn instruments on their quilt: dimmed at night, as the paper is */
   /* Red and black striped Welsh flannel (as in a pais or betgwn), down the edge of a call-out */
   --flannel: linear-gradient(to right, #C8102E 0 2.5px, #1d1d1b 2.5px 4px, #C8102E 4px 7px) left / 7px 100% no-repeat;
@@ -108,7 +109,7 @@ body {
   min-height: 100vh;
   /* The carthen band (Welsh tapestry blanket pattern) across the top. */
   padding-top: 14px;
-  background: url("carthen.svg") repeat-x top left / auto 14px, var(--bg);
+  background: var(--carthen) repeat-x top left / auto 14px, var(--bg);
   color: var(--text);
   font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
@@ -145,7 +146,7 @@ main:focus { outline: none; }  /* focused only by the skip link, not something t
 /* The sidebar's colour and edge also run down the page behind it, so no strip of page
    shows under it once it's pinned (it's 14px shorter than the screen: the carthen band) */
 @media (min-width: 801px) {
-  body:not(.practice) { background: url("carthen.svg") repeat-x top left / auto 14px,
+  body:not(.practice) { background: var(--carthen) repeat-x top left / auto 14px,
     linear-gradient(to right, var(--sidebar-bg) calc(var(--sidebar) - 1px), var(--border) 0) left 14px / var(--sidebar) 100% no-repeat, var(--bg); }
 }
 /* A tune's page on a laptop: a narrower sidebar and less margin, so the music (the largest
@@ -165,6 +166,12 @@ main:focus { outline: none; }  /* focused only by the skip link, not something t
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .brand img { filter: brightness(1.8) saturate(.85); } }
 :root[data-theme="dark"] .brand img { filter: brightness(1.8) saturate(.85); }
 .brand img { flex: none; }  /* the harp keeps its size beside a name in large text */
+/* The season's token (app.js: wearSeason), pinned on after the name, on a disc of carthen
+   cream so it reads on the sidebar by day and by night (dimmed at night, as the art is) */
+.brand .brand-season { width: 36px; height: 36px; padding: 1px; margin-left: -.1rem; border-radius: 50%;
+  background: var(--ivory-hover); box-shadow: inset 0 0 0 1px var(--swatch-edge); filter: var(--art-dim); }
+:root[data-theme="dark"] .brand .brand-season { filter: var(--art-dim); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .brand .brand-season { filter: var(--art-dim); } }
 .sidebar-actions { display: grid; gap: .5rem; }
 .menu-button { display: none; }  /* phones only */
 body:is([data-page="home"], [data-page="search"]) .topbar .search { display: none; }  /* the home page has its own, bigger one; so do search results, with the words searched for */
@@ -327,10 +334,36 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .coming-up p { margin: .5rem 0 0; }
 .coming-up p.pills-label { margin: .9rem 0 .2rem; }
 
+/* The Welsh year (app.js: SEASONS): the carthen in the season's colours, and on the home
+   page the day, its picture on a scrap of carthen cream, a verse and its tunes */
+:root[data-season="calan-gaeaf"] { --carthen: url("carthen-calan-gaeaf.svg"); }
+:root[data-season="calennig"] { --carthen: url("carthen-calennig.svg"); }
+:root[data-season="nadolig"] { --carthen: url("carthen-nadolig.svg"); }
+:root[data-season="mari-lwyd"] { --carthen: url("carthen-mari-lwyd.svg"); }
+:root[data-season="dwynwen"] { --carthen: url("carthen-dwynwen.svg"); }
+:root[data-season="gwyl-dewi"] { --carthen: url("carthen-gwyl-dewi.svg"); }
+:root[data-season="calan-mai"] { --carthen: url("carthen-calan-mai.svg"); }
+.season {
+  display: flex; gap: 1.1rem; align-items: flex-start; max-width: 40rem; margin: 1.75rem 0 .5rem;
+  padding: calc(1rem + 7px) 1.2rem 1.1rem;
+  background: var(--carthen) repeat-x top left / auto 7px, var(--card-bg);
+  border: 1px solid var(--border); border-radius: var(--radius);
+}
+.season-art { flex: none; width: 4.5rem; height: 4.5rem; padding: .35rem; border-radius: var(--radius);
+  background: var(--ivory-hover); filter: var(--art-dim); }
+.season > div { min-width: 0; }
+.season h2 { margin: 0 0 .35rem; font-size: 1.15rem; }
+.season p { margin: 0 0 .7rem; }
+.season-verse { font-style: italic; padding-left: .8rem; border-left: 3px solid var(--border); }
+@media (max-width: 480px) {
+  .season { flex-direction: column; gap: .6rem; }
+  .season-art { width: 3.5rem; height: 3.5rem; }
+}
+
 /* "Take it to the session": installing the app and using it offline */
 .offline-card {  /* with a strip of carthen along the top */
   max-width: 40rem; margin: 1.75rem 0 .5rem; padding: calc(1rem + 7px) 1.2rem 1.1rem;
-  background: url("carthen.svg") repeat-x top left / auto 7px, var(--card-bg);
+  background: var(--carthen) repeat-x top left / auto 7px, var(--card-bg);
   border: 1px solid var(--border); border-radius: var(--radius);
   box-shadow: 0 1px 3px var(--shadow-rest);
 }
@@ -511,7 +544,7 @@ details.all-tunes[open] > .tune-list { margin: .25rem 0 1.25rem; }
 .empty-art { display: flex; flex-direction: column; align-items: flex-start; margin: 1.25rem 0 1rem; }
 .empty-art img { width: 7rem; height: 7rem; }
 .empty-art::after { content: ""; width: 7rem; height: 7px; margin-top: .5rem;
-  background: url("carthen.svg") repeat-x left center / auto 7px; }
+  background: var(--carthen) repeat-x left center / auto 7px; }
 .set-empty[hidden] { display: none; }
 
 /* A strip of the carthen under section headings, as long as the heading (centred, so a
@@ -520,7 +553,7 @@ details.all-tunes[open] > .tune-list { margin: .25rem 0 1.25rem; }
 .section-heading, .about h2 { width: fit-content; min-width: 7rem; }
 .section-heading::after, .about h2::after {
   content: ""; display: block; height: 7px; margin-top: .45rem;
-  background: url("carthen.svg") repeat-x center / auto 7px;
+  background: var(--carthen) repeat-x center / auto 7px;
 }
 .tune-list { columns: 3 14rem; column-gap: 2rem; padding: 0; list-style: none; margin: .5rem 0 0; }
 .tune-list li { break-inside: avoid; padding: .15rem 0; display: flex; align-items: baseline; }  /* long names wrap beside the swatch */
@@ -694,7 +727,7 @@ details[open] > summary::before { transform: rotate(90deg); }
 .speed-note.arrived strong { color: var(--accent-ink); }
 .speed-note.arrived::after {
   content: ""; display: inline-block; width: 6rem; height: 7px; margin-left: .6rem; vertical-align: middle;
-  background: url("carthen.svg") repeat-x left center / auto 7px;
+  background: var(--carthen) repeat-x left center / auto 7px;
   animation: weave .7s cubic-bezier(.16, 1, .3, 1) both;
 }
 @keyframes weave { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
@@ -783,7 +816,7 @@ details[open] > summary::before { transform: rotate(90deg); }
 .score .abcjs-inline-audio .bar-pace:empty { display: none; }
 .score .abcjs-inline-audio:has(.bar-pace:not(:empty)) .abcjs-midi-clock { display: none; }
 .score .abcjs-inline-audio .bar-pace.arrived::after { content: ""; width: 2.25rem; height: 7px;
-  background: url("carthen.svg") repeat-x left center / auto 7px; border-radius: 2px; }
+  background: var(--carthen) repeat-x left center / auto 7px; border-radius: 2px; }
 @media (max-width: 480px) { .score .abcjs-inline-audio .bar-pace .unit { display: none; } }
 /* Player: play/loop in red while they're on. */
 .score .abcjs-inline-audio .abcjs-btn.abcjs-pushed { background-color: var(--accent); }
@@ -803,7 +836,7 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 /* Footer: the carthen band again, and a line of links */
 .site-footer {
   padding: 22px 3rem 1.5rem;
-  background: url("carthen.svg") repeat-x top left / auto 14px;
+  background: var(--carthen) repeat-x top left / auto 14px;
   color: var(--muted); font-size: .9rem;
 }
 .site-footer p { margin: 0; max-width: 72ch; }
@@ -1081,6 +1114,7 @@ body.practice :is(.versions, .versions-fold, .tune-actions) { display: none; }
   }
   .brand { font-size: 1.25rem; gap: .4rem; }
   .brand img { width: 26px; height: 26px; }
+  .brand .brand-season { width: 28px; height: 28px; padding: 1px; }
   .search input { padding-top: .55rem; padding-bottom: .55rem; }
   .topbar .shortcut { display: none; }
   /* One row (language, Surprise me, Menu); the links open under it from the Menu button. */
@@ -1326,7 +1360,7 @@ body[data-page="embed"] .score > .audio { position: static; }
 .browse-jump .icon { flex: none; }
 /* Each tune's music as on its own page: cream paper, under its number and colourway */
 /* A carthen strip above every tune, so the next one is plain to see from a music stand */
-.set-tune { margin: .5rem 0 1.75rem; padding-top: 1rem; background: url("carthen.svg") repeat-x top left / auto 7px; scroll-margin-bottom: 4.5rem; }
+.set-tune { margin: .5rem 0 1.75rem; padding-top: 1rem; background: var(--carthen) repeat-x top left / auto 7px; scroll-margin-bottom: 4.5rem; }
 .set-tune:last-child { margin-bottom: 1rem; }
 .set-tune-head { display: flex; align-items: center; gap: .75rem; margin: 0 0 .5rem; }
 .set-tune h2 { display: flex; flex-wrap: wrap; align-items: center; gap: 0 .5rem; font-size: 1.15rem; margin: 0; min-width: 0; }

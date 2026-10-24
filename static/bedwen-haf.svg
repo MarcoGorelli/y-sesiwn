@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Calan Mai: the bedwen haf, a birch maypole, with a garland and a crown of birch at
+       its top and ribbons out to the dancers. -->
+  <!-- ribbons out from the top -->
+  <g stroke-width="1.6" stroke-linecap="round" fill="none">
+    <path d="M32 14 C22 24 14 38 6 56" stroke="#C8102E"/>
+    <path d="M32 14 C26 26 22 40 18 58" stroke="#2f4f8f"/>
+    <path d="M32 14 C38 26 42 40 46 58" stroke="#e9a800"/>
+    <path d="M32 14 C42 24 50 38 58 56" stroke="#d94f6e"/>
+  </g>
+  <!-- the birch pole: white bark with dark marks -->
+  <rect x="30" y="10" width="4" height="52" rx="1" fill="#fdfbf7" stroke="#3b4550" stroke-width="0.9"/>
+  <path d="M30 20 h2 M32 27 h2 M30 35 h2.4 M31.6 43 h2.4 M30 51 h2 M32 57 h2" stroke="#1d1d1b" stroke-width="1.1"/>
+  <!-- the garland -->
+  <ellipse cx="32" cy="15" rx="8" ry="2.6" fill="none" stroke="#4c7a2a" stroke-width="2"/>
+  <g fill="#d94f6e"><circle cx="24.4" cy="15" r="1.3"/><circle cx="39.6" cy="15" r="1.3"/><circle cx="32" cy="17.6" r="1.3"/></g>
+  <g fill="#f3ead3"><circle cx="27.5" cy="17" r="1"/><circle cx="36.5" cy="17" r="1"/></g>
+  <!-- the crown of birch leaves -->
+  <g fill="#7aa83a" stroke="#4c7a2a" stroke-width="0.7" stroke-linejoin="round">
+    <path d="M32 10 C29 7 29 4 32 1 C35 4 35 7 32 10 Z"/>
+    <path d="M31 10 C27 10 24 8 23 5 C27 5 30 7 31 10 Z"/>
+    <path d="M33 10 C37 10 40 8 41 5 C37 5 34 7 33 10 Z"/>
+  </g>
+  <!-- the grass -->
+  <path d="M2 62 Q32 57 62 62 V64 H2 Z" fill="#4c7a2a"/>
+</svg>

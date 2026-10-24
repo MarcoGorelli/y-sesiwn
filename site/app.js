@@ -1590,6 +1590,7 @@ function renderHome(main) {
       yours,
       // An invitation for a first visit, as What you can do is: once there's anything of yours,
       // it steps aside (the tune page has its own), and once it's been answered it's gone.
+      seasonCard(),  // Calan Gaeaf, the Mari Lwyd and the rest, in their weeks
       yours || state.practice.tabKnown ? null : tabWelcome(),
       upcomingSessions(),
       yours ? null : features(),  // a first visit: what the tune pages can do
@@ -1600,6 +1601,101 @@ function renderHome(main) {
   const beside = new Set(["coming-up", "at-top", "at-end"]);
   intro.style.setProperty("--left-rows", [...intro.children].filter((c) => ![...c.classList].some((n) => beside.has(n))).length);
   main.replaceChildren(intro);
+}
+
+// The Welsh year: around each of its old feast days the carthen band is woven in that
+// season's colours (site/carthen-<id>.svg, design/carthen-seasons.py), and the home page
+// says what the day is, with the tunes that belong to it. Each is from one day to another
+// (month, day), both kept, in the reader's own time; the first in the list wins where two
+// meet (Nos Galan in the Mari Lwyd's weeks). ?season=<id> (or none) shows one at any time.
+const SEASONS = [
+  { id: "calan-gaeaf", days: [[10, 24, 11, 1]], art: "hwch-ddu-gwta",
+    name: ["Calan Gaeaf", "Calan Gaeaf"],
+    title: ["Calan Gaeaf, the first day of winter", "Calan Gaeaf, dydd cyntaf y gaeaf"],
+    alt: ["The Hwch Ddu Gwta, a tailless black sow, by a bonfire under the moon", "Yr Hwch Ddu Gwta wrth goelcerth dan y lleuad"],
+    about: ["Nos Galan Gaeaf, the last night of October, is an ysbrydnos, a spirit night, when the dead walk and the Tylwyth Teg are abroad. Bonfires were lit on the hills, and once they burned low everyone ran home before the Hwch Ddu Gwta, the tailless black sow, caught the last one:",
+      "Ysbrydnos yw Nos Galan Gaeaf, noson olaf Hydref, pan fydd y meirw'n cerdded a'r Tylwyth Teg ar grwydr. Arferid cynnau coelcerthi ar y bryniau, ac wedi iddyn nhw losgi'n isel byddai pawb yn rhedeg adref rhag i'r Hwch Ddu Gwta ddal yr olaf:"],
+    verse: ["Adref, adref, am y cynta',", "Hwch ddu gwta a gipio'r ola'."],
+    tunes: ["gwrachod-llanddona", "breuddwyd-y-wrach", "dawns-y-tylwyth-teg", "mae-r-nos-yn-ddu", "noson-oer", "daw-r-gaeaf"] },
+  { id: "calennig", days: [[12, 31, 1, 1], [1, 13, 1, 13]], art: "afal-calennig",
+    name: ["Calennig", "Calennig"],
+    title: ["Blwyddyn Newydd Dda: a happy New Year", "Blwyddyn Newydd Dda!"],
+    alt: ["A calennig apple on three sticks, stuck with oats and cloves and topped with evergreen", "Afal calennig ar dair coes, yn llawn ceirch a chlofs, a sbrigyn bytholwyrdd ar ei ben"],
+    about: ["On New Year's morning children went from door to door until midday, singing for calennig, a New Year's gift of a coin or something to eat, and carrying a calennig apple: an apple on three sticks, stuck with oats and cloves and topped with evergreen. In Cwm Gwaun they still keep the Hen Galan, the old New Year, on 13 January.",
+      "Ar fore dydd Calan byddai plant yn mynd o ddrws i ddrws tan hanner dydd yn canu am galennig, rhodd y flwyddyn newydd o geiniog neu rywbeth i'w fwyta, ac yn cario afal calennig: afal ar dair coes, yn llawn ceirch a chlofs, a sbrigyn bytholwyrdd ar ei ben. Yng Nghwm Gwaun maen nhw'n dal i gadw'r Hen Galan ar 13 Ionawr."],
+    verse: ["Blwyddyn newydd dda i chi,", "Ac i bawb sydd yn y tŷ;", "Dyma yw fy nymuniad i:", "Blwyddyn newydd dda i chi."],
+    tunes: ["nos-galan", "jig-nos-galan", "calennig", "blwyddyn-newydd-dda", "hen-galan"] },
+  { id: "nadolig", days: [[12, 1, 12, 26]], art: "canwyll-blygain",
+    name: ["Nadolig", "Nadolig"],
+    title: ["Nadolig Llawen: a merry Christmas", "Nadolig Llawen!"],
+    alt: ["A plygain candle in its holder, with holly", "Cannwyll blygain yn ei chanhwyllbren, a chelyn"],
+    about: ["The plygain was sung before dawn on Christmas morning, by candlelight: parties of men, and families, singing old Welsh carols in close harmony, one after another, and no carol sung twice. In mid Wales the plygeiniau go on, in the evenings, until the middle of January.",
+      "Cynhelid y plygain cyn y wawr fore Nadolig, yng ngolau cannwyll: partïon o ddynion, a theuluoedd, yn canu hen garolau Cymraeg mewn harmoni clos, un ar ôl y llall, heb ganu'r un garol ddwywaith. Yng nghanolbarth Cymru mae'r plygeiniau'n dal i fynd, gyda'r nos, tan ganol Ionawr."],
+    tunes: ["ar-dymor-gaeaf", "mae-gwahoddiad", "mae-r-nos-yn-fwyn-ym-methlehem", "tua-bethl-em-dref", "wele-gwawriodd", "carol-y-blwch", "dolig-abertawe", "pibddawns-nadolig-kate-broadwood"] },
+  { id: "mari-lwyd", days: [[12, 27, 1, 12]], art: "mari-lwyd",
+    name: ["Y Fari Lwyd", "Y Fari Lwyd"],
+    title: ["The Mari Lwyd is at the door", "Mae'r Fari Lwyd wrth y drws"],
+    alt: ["The Mari Lwyd: a horse's skull under a white sheet, hung with ribbons", "Y Fari Lwyd: penglog ceffyl dan gynfas wen, yn rhubanau i gyd"],
+    about: ["Between Christmas and Twelfth Night the Mari Lwyd goes from house to house: a horse's skull on a pole, under a white sheet and hung with ribbons. Her party sings verses at the door, the people inside sing back, and the pwnco, the battle of rhymes, goes on until the house gives in and lets her in for food and drink.",
+      "Rhwng y Nadolig a'r Ystwyll bydd y Fari Lwyd yn mynd o dŷ i dŷ: penglog ceffyl ar bolyn, dan gynfas wen ac yn rhubanau i gyd. Mae ei pharti'n canu penillion wrth y drws, a'r rhai sydd yn y tŷ yn ateb, a'r pwnco'n mynd yn ei flaen nes i'r tŷ ildio a'i gadael i mewn am fwyd a diod."],
+    verse: ["Wel dyma ni'n dwad,", "Gyfeillion diniwad,", "I ofyn am gennad", "I ganu."],
+    tunes: ["can-y-fari-lwyd"] },
+  { id: "dwynwen", days: [[1, 20, 1, 25]], art: "lovespoon",
+    name: ["Santes Dwynwen", "Santes Dwynwen"],
+    title: ["Dydd Santes Dwynwen, 25 January", "Dydd Santes Dwynwen, 25 Ionawr"],
+    alt: ["A carved Welsh lovespoon", "Llwy garu"],
+    about: ["Dwynwen is the Welsh saint of lovers, and her church stands in ruins on Ynys Llanddwyn, off Anglesey. Her day is for cards, and for lovespoons: carved from one piece of wood, to give as a token of love.",
+      "Dwynwen yw nawddsant cariadon Cymru, ac mae adfeilion ei heglwys ar Ynys Llanddwyn, ger Môn. Mae ei diwrnod hi'n ddiwrnod i gardiau, ac i lwyau caru: wedi'u cerfio o un darn o bren, i'w rhoi'n arwydd o gariad."],
+    tunes: ["serch-hudol", "dilyn-serch", "caru-doli", "cariadgan-y-sguthan"] },
+  { id: "gwyl-dewi", days: [[2, 25, 3, 1]], art: "cenhinen-bedr",
+    name: ["Gŵyl Dewi", "Gŵyl Dewi"],
+    title: ["Dydd Gŵyl Dewi, 1 March", "Dydd Gŵyl Dewi Hapus!"],
+    alt: ["A daffodil", "Cenhinen Bedr"],
+    about: ["1 March is the day of Dewi Sant, Saint David, the patron saint of Wales, who told his followers “Gwnewch y pethau bychain”: do the little things. Daffodils and leeks are worn, schools hold their eisteddfodau, and there are parades through the towns.",
+      "1 Mawrth yw dydd Dewi Sant, nawddsant Cymru, a ddywedodd wrth ei ddilynwyr: “Gwnewch y pethau bychain.” Mae pobl yn gwisgo cennin Pedr a chennin, mae'r ysgolion yn cynnal eu heisteddfodau, a cheir gorymdeithiau drwy'r trefi."],
+    tunes: ["dydd-gwyl-dewi", "ymdaith-gwyl-dewi", "hen-wlad-fy-nhadau"] },
+  { id: "calan-mai", days: [[4, 26, 5, 1]], art: "bedwen-haf",
+    name: ["Calan Mai", "Calan Mai"],
+    title: ["Calan Mai, the first day of summer", "Calan Mai, dydd cyntaf yr haf"],
+    alt: ["A birch maypole with a garland and ribbons", "Bedwen haf, gyda thorch a rhubanau"],
+    about: ["1 May, Calan Mai or Calan Haf, is the first day of summer. The bedwen haf, a birch maypole hung with ribbons, was raised on the green to dance around, and parties went from house to house singing carolau Mai, May carols, to welcome the summer in.",
+      "1 Mai, Calan Mai neu Galan Haf, yw dydd cyntaf yr haf. Codid y fedwen haf, polyn bedw yn rhubanau i gyd, ar y maes i ddawnsio o'i chwmpas, a byddai partïon yn mynd o dŷ i dŷ yn canu carolau Mai i groesawu'r haf."],
+    tunes: ["pawl-haf", "old-summer-carol", "beth-yw-r-haf-i-mi"] },
+];
+const SEASON_ASKED = new URLSearchParams(location.search).get("season");  // kept from page to page
+function seasonNow(date = new Date()) {
+  if (SEASON_ASKED != null) return SEASONS.find((s) => s.id === SEASON_ASKED) ?? null;
+  const day = (m, d) => m * 100 + d, today = day(date.getMonth() + 1, date.getDate());
+  const within = ([m1, d1, m2, d2]) => (day(m1, d1) <= day(m2, d2)
+    ? day(m1, d1) <= today && today <= day(m2, d2)
+    : today >= day(m1, d1) || today <= day(m2, d2));  // over the new year
+  return SEASONS.find((s) => s.days.some(within)) ?? null;
+}
+// The season's colours on the carthen, everywhere (style.css: --carthen), and its token
+// worn after the site's name, as a daffodil on a lapel (not in full screen: no name there).
+function wearSeason() {
+  const season = seasonNow();
+  document.querySelector(".brand-season")?.remove();
+  if (!season) { delete document.documentElement.dataset.season; return; }
+  document.documentElement.dataset.season = season.id;
+  document.querySelector(".brand")?.append(el("img", { class: "brand-season", src: `static/${season.art}.svg`, alt: "",
+    width: 36, height: 36, title: season.title[0], "data-cy-title": season.title[1] }));
+}
+wearSeason();
+
+// On the home page: the day, in a line or two, its verse if it has one, and its tunes.
+function seasonCard() {
+  const season = seasonNow();
+  if (!season) return null;
+  const tunes = season.tunes.map((slug) => state.groups.get(slug)).filter(Boolean);
+  return el("section", { class: "season", "aria-labelledby": "season-heading" },
+    el("img", { class: "season-art", src: `static/${season.art}.svg`, alt: tr(...season.alt), width: 64, height: 64 }),
+    el("div", {},
+      el("h2", { id: "season-heading" }, tr(...season.title)),
+      el("p", {}, tr(...season.about)),
+      season.verse ? el("p", { class: "season-verse", lang: "cy" }, ...season.verse.flatMap((line, i) => (i ? [el("br"), line] : [line]))) : null,
+      tunes.length ? el("ul", { class: "pills recent-list", "aria-label": tr(`Tunes for ${season.name[0]}`, `Alawon ${season.name[1]}`) },
+        tunes.map((g) => el("li", {}, el("a", { href: tuneUrl(g.slug), "data-route": true }, tuneName(g.slug, g.title))))) : null));
 }
 
 // The last few tunes opened on this device (localStorage), for the home page: at a

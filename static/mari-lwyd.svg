@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- The Mari Lwyd: a horse's skull on a pole, under a white sheet, hung with ribbons
+       and rosettes, with bottle-glass eyes and a jaw that snaps. -->
+  <!-- the white sheet, falling from the back of the skull -->
+  <path d="M30 22 C40 18 52 22 56 32 C59 42 58 54 60 62 H22 C26 52 24 40 26 30 Z"
+        fill="#ffffff" stroke="#5f6973" stroke-width="0.9" stroke-linejoin="round"/>
+  <path d="M33 34 C34 44 32 54 30 62 M42 30 C44 42 44 54 45 62 M51 33 C52 44 52 54 54 62"
+        fill="none" stroke="#b9bcc2" stroke-width="0.8"/>
+  <!-- ribbons streaming from the ears -->
+  <g stroke-width="2.2" stroke-linecap="round" fill="none">
+    <path d="M37 9 C44 8 47 13 54 12" stroke="#C8102E"/>
+    <path d="M37 10 C43 13 45 18 52 19" stroke="#2f4f8f"/>
+    <path d="M36 11 C40 16 41 22 47 26" stroke="#2e6b4f"/>
+    <path d="M38 9 C46 4 50 7 57 5" stroke="#e9a800"/>
+  </g>
+  <!-- the skull, side on, facing left -->
+  <g fill="#f3ead3" stroke="#3b4550" stroke-width="0.9" stroke-linejoin="round">
+    <path d="M30 6 L35 4 L36 10 C40 13 41 18 39 22 C37 26 32 27 28 28 L15 32 C10 33.5 6 32 5.5 29
+             C5 26.5 7 25 10 24 L22 17 C24 12 27 8 30 6 Z"/>
+    <!-- the jaw, open a little -->
+    <path d="M28 28 C26 31 22 33 17 35 L9 37.5 C6.5 38 5.5 36.5 6.5 35 L8 34 L15 32 Z"/>
+  </g>
+  <!-- teeth -->
+  <path d="M9 31.6 V33.2 M11.5 31 V32.8 M14 30.3 V32 M10 34.6 V33.4 M12.5 33.9 V32.7"
+        stroke="#3b4550" stroke-width="0.8"/>
+  <!-- the eye socket, with its bottle-glass eye -->
+  <circle cx="29" cy="15" r="3.4" fill="#3b4550"/>
+  <circle cx="29" cy="15" r="2" fill="#2e6b4f"/>
+  <circle cx="28.3" cy="14.3" r="0.6" fill="#ffffff"/>
+  <!-- the nostril -->
+  <ellipse cx="8.5" cy="26.6" rx="1.1" ry="0.7" fill="#3b4550"/>
+  <!-- a rosette on the brow -->
+  <circle cx="22" cy="17.6" r="2.6" fill="#C8102E" stroke="#7a1f2b" stroke-width="0.6"/>
+  <circle cx="22" cy="17.6" r="1" fill="#e9a800"/>
+</svg>

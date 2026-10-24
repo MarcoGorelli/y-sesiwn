@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Gŵyl Dewi: a daffodil (cenhinen Bedr), with its leaves, as worn on 1 March. -->
+  <!-- stem and leaves -->
+  <g fill="#2e6b4f" stroke="#1d3b25" stroke-width="0.8" stroke-linejoin="round">
+    <path d="M30.5 62 C30 50 30.5 40 32 30 L34 30 C33 40 32.5 50 33.5 62 Z"/>
+    <path d="M29 62 C24 52 20 44 14 38 C21 41 27 49 31 62 Z"/>
+    <path d="M35 62 C38 50 43 42 50 36 C45 44 40 52 37 62 Z"/>
+  </g>
+  <!-- the sheath behind the flower -->
+  <path d="M33 31 C35 27 37 25 40 24 C38 27 36 29 34 31 Z" fill="#c9b98a" stroke="#7a3e12" stroke-width="0.6"/>
+  <!-- six petals -->
+  <g fill="#f6d34a" stroke="#a37a10" stroke-width="0.8" stroke-linejoin="round">
+    <path d="M32 20 C28 12 30 6 32 3 C34 6 36 12 32 20 Z"/>
+    <path d="M32 20 C24 19 20 23 18 26 C22 27.5 28 26 32 20 Z"/>
+    <path d="M32 20 C40 19 44 23 46 26 C42 27.5 36 26 32 20 Z"/>
+    <path d="M32 20 C25 15 19 12 15 13 C17 17 24 21 32 20 Z"/>
+    <path d="M32 20 C39 15 45 12 49 13 C47 17 40 21 32 20 Z"/>
+    <path d="M32 20 C29 27 30 32 32 34 C34 32 35 27 32 20 Z"/>
+  </g>
+  <!-- the trumpet, facing out -->
+  <circle cx="32" cy="20" r="7.2" fill="#e9a800" stroke="#a35a10" stroke-width="0.9"/>
+  <path d="M25.6 18.2 L27 19.4 L26.6 21.4 L28.2 22.6 L28.4 24.6 L30.4 25.2 L32 26.8 L33.6 25.2 L35.6 24.6 L35.8 22.6 L37.4 21.4 L37 19.4 L38.4 18.2"
+        fill="none" stroke="#a35a10" stroke-width="0.7" stroke-linejoin="round"/>
+  <circle cx="32" cy="20" r="4" fill="#d48a00"/>
+  <circle cx="32" cy="20" r="1.4" fill="#a35a10"/>
+</svg>

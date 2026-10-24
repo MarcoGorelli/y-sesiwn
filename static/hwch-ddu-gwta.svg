@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Calan Gaeaf: the Hwch Ddu Gwta, the tailless black sow, coming over the hill for the
+       last one home from the bonfire, under a late October moon. -->
+  <!-- the moon -->
+  <circle cx="14" cy="13" r="7" fill="#f3ead3" stroke="#c28f1c" stroke-width="0.9"/>
+  <!-- the bonfire burning down, behind her -->
+  <g stroke="#7a3e12" stroke-width="0.9" stroke-linejoin="round">
+    <path d="M45 50 C41 44 45 40 47 35 C48 40 51 41 50 45 C53 43 53 39 52 37 C57 42 57 48 53 50 Z" fill="#d4581c"/>
+    <path d="M48 50 C46.5 47 48 45 49 43 C50 45.5 52 46.5 51 50 Z" fill="#e9a800" stroke="none"/>
+    <path d="M40 52 L58 47 M42 47 L59 52" stroke-width="2.2" stroke-linecap="round"/>
+  </g>
+  <!-- the sow: no tail -->
+  <g fill="#1d1d1b" stroke="#1d1d1b" stroke-width="0.9" stroke-linejoin="round">
+    <path d="M7 38 C7 29 14 25 23 25 C29 25 32 27 35 28 L38 26 L39 30 C41 31 42.5 33 43.5 35
+             L44 36.5 C44 38.5 42.6 39.2 41 39 C40 42 37 44 35 44.5 L35 51 L32 51 L31.5 45.5
+             C26 46.5 20 46.5 15 45.5 L14.5 51 L11.5 51 L11 44 C8.5 42.5 7 40.5 7 38 Z"/>
+    <!-- the far legs -->
+    <path d="M18 45.5 L18.5 50 L16.5 50 Z M29 45.5 L29.5 50 L27.5 50 Z"/>
+  </g>
+  <!-- her eye, catching the firelight -->
+  <circle cx="37.6" cy="32.4" r="0.9" fill="#e9a800"/>
+  <!-- the snout's end -->
+  <ellipse cx="43.6" cy="37" rx="0.8" ry="1.6" fill="#5f6973"/>
+  <!-- the hill -->
+  <path d="M1 54 Q32 48 63 54 V60 Q32 58 1 60 Z" fill="#3b4550"/>
+</svg>

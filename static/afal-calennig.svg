@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Calennig: the New Year's apple, on three hazel sticks for legs, stuck with oats and
+       cloves, and topped with a sprig of evergreen with hazelnuts on its tips. -->
+  <!-- the three legs -->
+  <g stroke="#7a3e12" stroke-width="2.2" stroke-linecap="round">
+    <path d="M26 44 L16 60 M32 46 L32 61 M38 44 L48 60"/>
+  </g>
+  <!-- the evergreen sprig on top -->
+  <g stroke="#1d3b25" stroke-width="0.7" fill="#2e5e3a" stroke-linejoin="round">
+    <path d="M32 21 C31 15 30 11 32 5" fill="none" stroke="#7a3e12" stroke-width="1.4"/>
+    <path d="M31.5 16 C26 15 22 12 20 8 C25 8.5 29 11 31.5 16 Z"/>
+    <path d="M32 13 C37 11 40 7 41 3 C36.5 4.5 33.5 8 32 13 Z"/>
+    <path d="M31 10 C27 8.5 25 5.5 25 2.5 C28.5 4 30.5 6.5 31 10 Z"/>
+    <path d="M32.5 18 C37.5 17.5 41.5 15 43.5 11.5 C38.5 12 34.5 14.5 32.5 18 Z"/>
+  </g>
+  <!-- hazelnuts on the tips -->
+  <g fill="#b4532a" stroke="#7a3e12" stroke-width="0.6">
+    <circle cx="20" cy="8" r="1.9"/><circle cx="41" cy="3.4" r="1.9"/><circle cx="43.6" cy="11.4" r="1.9"/><circle cx="25" cy="3" r="1.9"/>
+  </g>
+  <!-- the apple -->
+  <path d="M32 23 C36 19 47 19 47 32 C47 41 40 47 32 47 C24 47 17 41 17 32 C17 19 28 19 32 23 Z"
+        fill="#C8102E" stroke="#7a1f2b" stroke-width="0.9" stroke-linejoin="round"/>
+  <path d="M22 28 C23 25 25.5 24 27 24" fill="none" stroke="#f3ead3" stroke-width="1.4" stroke-linecap="round" opacity=".7"/>
+  <!-- oats -->
+  <g fill="#e9a800" stroke="#a37a10" stroke-width="0.5">
+    <ellipse cx="25" cy="35" rx="1" ry="2.3" transform="rotate(-30 25 35)"/>
+    <ellipse cx="38" cy="29" rx="1" ry="2.3" transform="rotate(25 38 29)"/>
+    <ellipse cx="33" cy="39" rx="1" ry="2.3" transform="rotate(10 33 39)"/>
+    <ellipse cx="41" cy="37" rx="1" ry="2.3" transform="rotate(40 41 37)"/>
+    <ellipse cx="29" cy="29" rx="1" ry="2.3" transform="rotate(-10 29 29)"/>
+  </g>
+  <!-- cloves -->
+  <g fill="#3b2412">
+    <circle cx="21.5" cy="33" r="1.1"/><circle cx="35" cy="34" r="1.1"/><circle cx="28" cy="41" r="1.1"/><circle cx="43" cy="32" r="1.1"/><circle cx="33" cy="26" r="1.1"/>
+  </g>
+</svg>

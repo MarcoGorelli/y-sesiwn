@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="14" viewBox="0 0 48 14">
+  <!-- The carthen band in the colours of dwynwen (design/carthen-seasons.py). -->
+  <rect width="48" height="14" fill="#f3ead3"/>
+  <rect width="48" height="2" fill="#7a1f2b"/>
+  <rect y="12" width="48" height="2" fill="#7a1f2b"/>
+  <polygon points="12,2.5 17,7 12,11.5 7,7" fill="none" stroke="#7a1f2b" stroke-width="1"/>
+  <polygon points="12,4.5 14.5,7 12,9.5 9.5,7" fill="#d94f6e"/>
+  <polygon points="36,4.5 38.5,7 36,9.5 33.5,7" fill="#7a1f2b"/>
+  <rect x="23" y="6" width="2" height="2" fill="#d94f6e"/>
+  <rect x="47" y="6" width="1" height="2" fill="#d94f6e"/>
+  <rect x="0" y="6" width="1" height="2" fill="#d94f6e"/>
+</svg>

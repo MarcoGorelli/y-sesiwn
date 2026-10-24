@@ -1139,6 +1139,43 @@ def test_home_page(page):
     assert page.locator(".tune-list li").count() == len(page.evaluate("state.groupList"))
 
 
+# The Welsh year: around Calan Gaeaf, the Mari Lwyd, Calennig and the other old feast days,
+# the carthen is in the season's colours and the home page says what the day is, with its
+# tunes; the rest of the year, neither.
+def test_seasons(page, site):
+    def on(day):
+        page.clock.set_fixed_time(f"{day}T12:00:00")
+        page.goto_site()
+        return page.evaluate("document.documentElement.dataset.season ?? null")
+    assert on("2026-10-31") == "calan-gaeaf"
+    assert page.locator(".season h2").inner_text() == "Calan Gaeaf, the first day of winter"
+    assert "Gwrachod Llanddona" in page.locator(".season li").all_inner_texts()
+    assert "carthen-calan-gaeaf.svg" in page.evaluate("getComputedStyle(document.body).backgroundImage")
+    page.click(".season li a >> nth=0")  # its tunes are links to them
+    page.wait_for_selector(".score svg")
+    # On every page: the carthen, and the season's token pinned on after the site's name (not
+    # in full screen, where the name isn't).
+    assert "carthen-calan-gaeaf.svg" in page.evaluate("getComputedStyle(document.body).backgroundImage")
+    assert page.locator(".brand .brand-season[src$='hwch-ddu-gwta.svg']").is_visible()
+    assert page.locator(".brand").get_attribute("href") and page.locator(".brand").inner_text().strip() == "Y Sesiwn"
+    assert on("2026-12-25") == "nadolig"
+    assert on("2026-12-31") == "calennig" and on("2027-01-01") == "calennig"  # New Year's Eve, in the Mari Lwyd's weeks
+    assert on("2027-01-02") == "mari-lwyd"
+    assert on("2027-01-13") == "calennig"  # the Hen Galan
+    assert on("2027-03-01") == "gwyl-dewi" and on("2028-02-29") == "gwyl-dewi"
+    assert on("2027-06-13") is None
+    assert page.locator(".season").count() == 0 and page.locator(".brand-season").count() == 0
+    assert 'carthen.svg' in page.evaluate("getComputedStyle(document.body).backgroundImage")
+    # Every season's tunes are on the site (a renamed tune would quietly drop out of its list).
+    missing = page.evaluate("SEASONS.flatMap((s) => s.tunes.filter((slug) => !state.groups.has(slug)))")
+    assert missing == []
+    # And any season can be seen at any time, with ?season=, Welsh and all.
+    page.goto_site("?season=mari-lwyd")
+    page.click(".lang-switch [data-lang=cy]")
+    assert page.locator(".season h2").inner_text() == "Mae'r Fari Lwyd wrth y drws"
+    assert page.locator(".season img").get_attribute("alt").startswith("Y Fari Lwyd")
+
+
 # The holes or tabs can be chosen on the home page, before the first tune; the music alone
 # is chosen at first, and is a choice like the others.
 def test_tablature_chosen_on_the_home_page(page):
@@ -1199,9 +1236,9 @@ def test_home_no_gap_above_the_offline_card(browser, site):
     page.goto(site + "alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-staff")
     page.evaluate("localStorage.setItem('practice', JSON.stringify({tab: 'none', open: null, tabKnown: true}))")
-    page.goto(site)
+    page.goto(site + "?season=calan-gaeaf")  # a season's card, too, whatever the date
     page.wait_for_selector(".recent-list")
-    above = page.locator(".recent").bounding_box()
+    above = page.locator(".season").bounding_box()
     card = page.locator(".offline-card").bounding_box()
     assert card["y"] - (above["y"] + above["height"]) < 60
     context.close()
@@ -1224,7 +1261,8 @@ VISIBLE_TEXT = """() => {
 
 def test_welsh_home_page(page):
     import re
-    page.goto_site()
+    page.goto_site("?season=calan-gaeaf")  # with a season's card, whatever the date
+    assert page.locator(".season").is_visible()
     assert page.evaluate("document.documentElement.lang") == "en"
     assert page.get_attribute(".lang-switch [data-lang=en]", "aria-checked") == "true"
     english = page.evaluate(VISIBLE_TEXT)
@@ -1237,7 +1275,8 @@ def test_welsh_home_page(page):
     assert page.locator(".features li").count() == 3
     # Nothing left in English: no sentence of the English page shows up in the Welsh one.
     welsh = page.evaluate(VISIBLE_TEXT)
-    names = set(page.locator(".coming-up li a").all_inner_texts())  # sessions' own names stay as they are
+    # Sessions' own names stay as they are, as do the Welsh words in the English (a season's verse, tune names).
+    names = set(page.locator(".coming-up li a").all_inner_texts()) | set(page.locator("main [lang=cy]").all_inner_texts())
     fragments = {f.strip() for f in re.split(r"[.:;?!()\n]", english) if len(f.strip()) >= 12 and not any(f.strip() in n for n in names)}
     assert fragments and not [f for f in fragments if f in welsh]
     # The choice is remembered.

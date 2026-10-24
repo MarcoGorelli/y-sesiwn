@@ -9,6 +9,7 @@ Z:MIDI transcribed with alawon-abc
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 N:The MIDI file differs from the score in places: it starts with a crotchet a, plays f4 a3 a, e2 e2 e3 f and e4 =g2 g2 where the score has f4 a4, e2 e2 e2 f2 and e4 =g4, and repeats the last line unchanged where the score ends g3 a b3 d' | c'2 a2 a4.
+N:Words from Alawon Cymru.
 M:2/2
 L:1/8
 Q:1/2=100
@@ -22,3 +23,31 @@ a4 | "A"e2 e2 e2 f2 | "A"e4 a2 a2 | "A"e2 e2 e2 f2 | "A"e6 e2 |
 "D"f4 a3 a | "E"g4 g3 f | "E"e4 f2 g2 | b8 | "A"a8 ||
 "A"e2 e2 e4 | "D"f2 f2 f4 | "E"g3 a b3 g | "A"a2 a2 a4 |
 "A"e2 e2 e4 | "D"f2 f2 f4 | "E"g3 a b3 d' | "A"c'2 a2 a4 |]
+W:1. Nawr lanciau, rhoddwn glod,
+W:y mae'r gwanwyn wedi dod,
+W:Y gaeaf a'r oerni aeth heibio;
+W:Daw y coed i wisgo'u dail,
+W:a mwyniant mwyn yr haul
+W:A'r ŵyn ar y dolydd i brancio.
+W:Cytgan: Moliannwn oll yn llon,
+W:mae amser gwell i ddyfod,
+W:Haleliwia!
+W:Ac ar ôl y tywydd drwg,
+W:fe wnawn arian fel y mwg,
+W:Mae arwyddion dymunol o'n blaenau.
+W:Ffa la la, ffa la la,
+W:ffa la la, la la la la (x2)
+W:
+W:2. Daw'r Robin Goch yn llon i diwnio ar y fron
+W:A cheiliog y rhedyn i ganu,
+W:A chawn glywed wiparwhil
+W:a llyffantod wrth y fil
+W:O'r goedwig yn mwmian chwibanu.
+W:(Cytgan)
+W:
+W:3. Fe awn i lawr i'r dre',
+W:gwir ddedwydd fydd ein lle
+W:A chawn lawnder o ganu ac o ddawnsio,
+W:A chwmpeini naw neu ddeg o enethod glân a theg
+W:Lle mae mwyniant y byd yn disgleirio.
+W:(Cytgan)

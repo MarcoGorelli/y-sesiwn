@@ -2194,6 +2194,29 @@ function endingsOnTheirBars(abc, layout) {
   return layout.wrap ? abc.replace(/(\|)[ \t]*\n[ \t]*(\[\d)/g, "$1$2\n") : abc;
 }
 
+// A song's verses after the music (W:) are drawn a line each, as long as it is: where one
+// is longer than the music is wide (on a phone), it goes on to the next line, indented,
+// after a comma if one leaves the most on the first line. Measured in the score's own
+// font (wordsfont), in abcjs's units (pixels; the font's size is in points).
+let versePen;
+function wrapVerses(abc, layout) {
+  const width = (layout.staffwidth ?? 740) - 10;
+  versePen ??= document.createElement("canvas").getContext("2d");
+  versePen.font = `${SCORE_FORMAT.wordsfont.split(" ").pop() * 4 / 3}px ${SCORE_FACE.replaceAll('"', "")}`;
+  const fits = (text) => versePen.measureText(text).width <= width;
+  const indent = "\u200b\u00a0\u00a0\u00a0\u00a0";  // abcjs trims spaces, but not a zero-width one before them
+  const wrap = (text) => {
+    if (fits(text)) return [text];
+    const words = text.split(/\s+/);
+    let n = 1;
+    while (n < words.length && fits(words.slice(0, n + 1).join(" "))) n++;
+    const comma = words.slice(0, n).findLastIndex((word, i) => i < n - 1 && /[,;:]$/.test(word));
+    if (comma >= 0 && comma >= n / 2) n = comma + 1;
+    return [words.slice(0, n).join(" "), ...wrap(indent + words.slice(n).join(" "))];
+  };
+  return abc.replace(/^W:(.*)$/gm, (line, text) => (fits(text) ? line : wrap(text.trim()).map((l) => `W:${l}`).join("\n")));
+}
+
 // The tempo mark, with the word before it when there is one ("Swing ♩ = 112", as swing
 // is marked on printed music).
 function setTempo(abc, beat, bpm, text = "") {
@@ -2509,6 +2532,9 @@ function withFingerings(abc, instrument, size = 11) {
 // first), as hornpipes are played. abcjs's player does it (its swing option), for
 // time signatures counted in crotchets only (2/4, 3/4, 4/4, C); not the MIDI file.
 const SWING = 62;
+// A song's words: under its notes (w:), or its verses after the music (W:). Shown unless
+// turned off for the tune (settings.words).
+const hasWords = (tune) => /^[wW]:/m.test(tune.abc);
 const canSwing = (tune) => /^M:\s*(C(?!\|)|[24]\/4)\s*$/m.test(tune.abc);  // not 3/4: waltzes aren't swung
 
 // Tablature under the stave. Mandolin and fiddle share their tuning (GDAE; the numbers
@@ -2623,7 +2649,9 @@ function scoreLayout(paper) {
   const staffwidth = Math.round(width / ((own >= 0.6 ? own : READABLE) * zoom) / 20) * 20;
   // As many bars as the tune's own lines would fit in that width: short bars (a polka's
   // 2/4) come more to a line than long ones, so a phone isn't left with two bars a line.
-  const bars = Math.max(1, Math.round((Number(paper.dataset.bars) || 4) * staffwidth / 740));
+  // A song's words under its notes need the room its lines were laid out with: kept to two
+  // bars a line at least, not one (a pickup, or a rest, then alone on a line).
+  const bars = Math.max(paper.dataset.sung ? 2 : 1, Math.round((Number(paper.dataset.bars) || 4) * staffwidth / 740));
   return { staffwidth, wrap: { minSpacing: 1.8, maxSpacing: 2.7, preferredMeasuresPerLine: bars } };
 }
 
@@ -2632,9 +2660,11 @@ function scoreLayout(paper) {
 // there). abcjs breaks the lines by its own rules; where they leave either, the lines are
 // broken again here (evenLines), from each bar's own width, or, for music that can't be
 // measured so, drawn with a bar more on each line, a little closer together; kept if
-// that's better. Returns the music drawn.
-function noLoneBar(visualObj, layout, draw, abc, format) {
+// that's better. Returns the music drawn. A song with its words under the notes (sung) is
+// laid out by sungLines instead: these bars' widths are measured without the words.
+function noLoneBar(visualObj, layout, draw, abc, format, sung = false) {
   if (!layout.wrap || !visualObj) return visualObj;
+  if (sung) return sungLines(layout, draw) ?? visualObj;
   const faults = (music) => {
     const lines = music.lines.filter((line) => line.staff).map((line) => line.staff[0].voices[0].filter((x) => x.el_type === "bar"));
     const most = Math.max(...lines.map((bars) => bars.length));
@@ -2654,6 +2684,37 @@ function noLoneBar(visualObj, layout, draw, abc, format) {
   if (breaks) return draw(layout) ?? visualObj;
   const again = draw({ ...layout, wrap: { ...layout.wrap, minSpacing: 1.5, preferredMeasuresPerLine: most + 1 } });
   return again && faults(again).count < count ? again : draw(layout) ?? visualObj;
+}
+
+// A song's own lines were laid out with room for its words: kept, a line with more bars
+// than the screen has room for (layout.wrap's) split as evenly as it goes. abcjs's own
+// line breaking, measuring the notes only, crowded the words, or left a bar alone. (Its
+// lineBreaks count bars its own way, around endings and bars split between lines: where
+// the split lines don't come out as planned, the tune's own lines are kept.)
+function sungLines(layout, draw) {
+  const own = draw({ staffwidth: layout.staffwidth });
+  if (!own) return null;
+  const barsOf = (music) => music.lines.filter((l) => l.staff)
+    .map((l) => l.staff[0].voices[0].filter((x, i) => x.el_type === "bar" && i > 0).length);  // a bar line a line starts with ends no bar
+  const most = layout.wrap.preferredMeasuresPerLine;
+  const counts = barsOf(own);
+  if (counts.every((n) => n <= most)) return own;
+  const planned = [], breaks = [];
+  let measures = 0, pickup = own.getPickupLength() > 0;  // a pickup isn't one of lineBreaks' bars
+  for (let n of counts) {
+    const extra = pickup ? 1 : 0;
+    n -= extra;
+    pickup = false;
+    const parts = Math.ceil(n / most);
+    for (let k = 1; k <= parts; k++) {
+      const end = Math.round((n * k) / parts);
+      planned.push(end - Math.round((n * (k - 1)) / parts) + (k === 1 ? extra : 0));
+      breaks.push(measures + end);  // lineBreaks: the bars before each break
+    }
+    measures += n;
+  }
+  const split = draw({ staffwidth: layout.staffwidth, lineBreaks: [breaks.slice(0, -1)] });
+  return split && barsOf(split).join() === planned.join() ? split : draw({ staffwidth: layout.staffwidth });
 }
 
 // Where to break the lines of music abcjs laid out (wrap), as abcjs's lineBreaks (the
@@ -2698,12 +2759,12 @@ function evenLines(music, natural) {
 
 // Each bar's width as abcjs draws it at its own spacing: the tune drawn once, out of
 // sight, in the score's fonts, as one long line that isn't stretched to fit (%%stretchlast false). The
-// holes' rows (w:) are left out; a tune with fields among its notes (a change of key
-// or voice on a line of its own) isn't measured: null.
+// holes' rows and a song's words (w:, W:) are left out; a tune with fields among its notes
+// (a change of key or voice on a line of its own) isn't measured: null.
 function naturalWidths(abc, format) {
   const all = abc.split("\n");
   const k = all.findIndex((line) => /^K:/.test(line));
-  const body = all.slice(k + 1).filter((line) => line.trim() && !/^(%|w:)/.test(line));
+  const body = all.slice(k + 1).filter((line) => line.trim() && !/^(%|[wW]:)/.test(line));
   if (k < 0 || body.some((line) => /^[A-Za-z]:/.test(line))) return null;
   const one = [...all.slice(0, k + 1).filter((line) => !/^w:/.test(line)), "%%stretchlast false",
     body.map((line) => line.replace(/\\\s*$/, "")).join(" ")].join("\n");
@@ -2834,6 +2895,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   const swung = settings.swing && canSwing(tune);
   let abc = setTempo(stripFields(tune.abc, "SZBNAHR"), tune.beat, bpm, swung ? "Swing" : "").replace(/^(T:.*) \(version \d+\)$/m, "$1");
   abc = transposeAbc(tune, abc, transpose);
+  if (!settings.words) abc = abc.replace(/^[wW]:.*\n?/gm, "");
   const tab = TABS[state.practice.tab];
   const fingered = FINGERED[state.practice.tab];
   // On a phone, at a session, the holes are drawn larger, to be read on a stand.
@@ -2842,9 +2904,10 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   // so the music starts higher. Printed, it keeps it (the heading isn't printed).
   if (!state.printing) abc = abc.replace(/^T:.*\n/gm, "");
   paper.dataset.bars = ownBarsPerLine(tune.abc);
+  paper.dataset.sung = settings.words && /^w:/m.test(tune.abc) ? "yes" : "";
   const layout = scoreLayout(paper);
   paper.dataset.layout = JSON.stringify(layout);
-  abc = endingsOnTheirBars(shortCredits(abc, layout), layout);
+  abc = wrapVerses(endingsOnTheirBars(shortCredits(abc, layout), layout), layout);
   // Full screen on a wide screen draws the music bigger, to fill it, and the credit and the
   // tempo with it, until they outgrew the tune's name above: the credit is kept at its usual
   // size. The tempo's "= 112" grows with its note (♩.), read from the stand, but no bigger
@@ -2869,7 +2932,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
       // leaves its tablature behind: given back here, before it's drawn.
       afterParsing: (parsed) => { if (tablature && !parsed.tablatures) parsed.tablatures = ABCJS.parseOnly(abc, { tablature })[0].tablatures; },
       selectTypes: ["note"], clickListener: playFrom })[0];
-  const visualObj = noLoneBar(render(layout), layout, render, abc, format);
+  const visualObj = noLoneBar(render(layout), layout, render, abc, format, !fingered && !!paper.dataset.sung);
   clicksOnTheBeat(visualObj);
   // abcjs makes each clickable note a Tab stop: hundreds, between the player and the rest
   // of the page. Keyboards have the space bar to play instead.
@@ -3347,14 +3410,15 @@ const SOURCE_SITES = { "alawoncymru.com": () => tr("Alawon Cymru, CLERA's collec
 // The tempos a tune can be played at, everywhere: the slider, "from" and "to", a link's ?tempo=.
 const MIN_BPM = 30, MAX_BPM = 240;
 // key: semitones from the written key; bpm; play (chords: "tune", "both" or "chords");
-// swing. Kept for that tune only. The tablature, count-in, click and chords on the music
-// aren't here: they're how the reader practises, for every tune (state.practice). Repeat
-// and speed up aren't kept at all: they're chosen afresh each time.
+// swing; words (a song's, shown or not). Kept for that tune only. The tablature, count-in,
+// click and chords on the music aren't here: they're how the reader practises, for every
+// tune (state.practice). Repeat and speed up aren't kept at all: they're chosen afresh each time.
 const KEPT = {
   key: (v) => Number.isInteger(v) && v >= -5 && v <= 6,
   bpm: (v) => Number.isInteger(v) && v >= MIN_BPM && v <= MAX_BPM,
   play: (v) => ["tune", "both", "chords"].includes(v),
   swing: (v) => typeof v === "boolean",
+  words: (v) => typeof v === "boolean",
 };
 function savedTunes() {
   try {
@@ -3385,11 +3449,11 @@ function saveTune(tune, name, value) {
 }
 // A tune as written: its key and tempo, nothing repeating, no click, the tune alone.
 const tuneDefaults = (tune) => ({ key: 0, bpm: tune.bpm, speedTo: tune.bpm, loop: -2, play: "tune",
-  speedUp: false, swing: canSwing(tune) && tune.type === "Pibddawns" });  // hornpipes are played swung
+  speedUp: false, swing: canSwing(tune) && tune.type === "Pibddawns", words: true });  // hornpipes are played swung
 // The settings a tune's page opens with: as written, then as kept for it.
 function keptSettings(tune, kept = savedTunes()[tune.slug]) {
   const s = { ...tuneDefaults(tune), ...kept };
-  return { transpose: s.key, bpm: s.bpm, loop: s.loop, speedUp: s.speedUp, speedTo: s.speedTo, swing: s.swing,
+  return { transpose: s.key, bpm: s.bpm, loop: s.loop, speedUp: s.speedUp, speedTo: s.speedTo, swing: s.swing, words: s.words,
     chords: { play: s.play } };
 }
 
@@ -3498,7 +3562,8 @@ function renderTune(main, group, tune) {
   const playsWith = () => [
     tune.chords != null && settings.chords.play === "both" ? tr("with chords", "gyda chordiau") : null,
     tune.chords != null && settings.chords.play === "chords" ? tr("chords only", "cordiau yn unig") : null,
-    settings.swing && canSwing(tune) && !hornpipe ? tr("swung", "gyda swing") : null];
+    settings.swing && canSwing(tune) && !hornpipe ? tr("swung", "gyda swing") : null,
+    hasWords(tune) && !settings.words ? tr("lyrics hidden", "geiriau ynghudd") : null];
   // The key is over it, always shown, so the line starts with the tempo.
   const showSummary = () => summary.replaceChildren(
     el("span", { class: "now" }, [`${settings.bpm} bpm`,
@@ -3831,12 +3896,17 @@ function renderTune(main, group, tune) {
     state.practice.click, (on) => { state.practice.click = on; savePractice(); });
   const swingToggle = canSwing(tune) ? toggle("Swing",
     settings.swing, (on) => { settings.swing = on; saveTune(tune, "swing", on); showSummary(); }, "swing") : null;
+  // Off as the other switches are: the words are shown until it's ticked.
+  const wordsToggle = hasWords(tune) ? toggle(tr("Hide lyrics", "Cuddio'r geiriau"),
+    !settings.words, (on) => { settings.words = !on; saveTune(tune, "words", !on); showSummary(); }, "hide-words") : null;
   // How it plays, kept for this tune as its key and tempo are, so it's beside them: the
-  // chords heard with the tune, and swing; for a tune with either.
-  if (chordTools || swingToggle) {
+  // chords heard with the tune, and swing; for a tune with either. A song's words beside
+  // them, kept the same way (or on their own, for a song with neither).
+  if (chordTools || swingToggle || wordsToggle) {
+    const label = chordTools || swingToggle ? tr("How it plays", "Sut mae'n chwarae") : tr("Sheet music", "Y sgôr");
     controls.querySelector(".view-tools").before(el("div", { class: "control how-it-plays", role: "group", "aria-labelledby": "how-it-plays" },
-      el("span", { class: "label", id: "how-it-plays" }, tr("How it plays", "Sut mae'n chwarae")),
-      el("div", { class: "plays-line" }, chordTools?.playback, swingToggle)));
+      el("span", { class: "label", id: "how-it-plays" }, label),
+      el("div", { class: "plays-line" }, chordTools?.playback, swingToggle, wordsToggle)));
   }
   // Chords on the sheet music, kept for every tune: under the chart, with the chords themselves.
   // The music they go on is further up: ticked with a finger or the mouse, the page goes up to
@@ -5641,10 +5711,11 @@ function setScore(tune, key) {
     let abc = setTempo(stripFields(tune.abc, "SZBNAHTR"), tune.beat, tune.bpm);
     abc = transposeAbc(tune, abc, key);
     paper.dataset.bars = ownBarsPerLine(tune.abc);
+    paper.dataset.sung = /^w:/m.test(tune.abc) ? "yes" : "";
     const layout = scoreLayout(paper);
-    abc = endingsOnTheirBars(shortCredits(abc, layout), layout);
+    abc = wrapVerses(endingsOnTheirBars(shortCredits(abc, layout), layout), layout);
     const render = (layout) => ABCJS.renderAbc(paper, abc, { responsive: "resize", add_classes: true, paddingtop: 0, format: HIDDEN_CHORDS_FORMAT, ...layout })[0];
-    paper.visualObj = noLoneBar(render(layout), layout, render, abc, HIDDEN_CHORDS_FORMAT);
+    paper.visualObj = noLoneBar(render(layout), layout, render, abc, HIDDEN_CHORDS_FORMAT, !!paper.dataset.sung);
     hideMeasuring();
     nameScore(paper);
   };

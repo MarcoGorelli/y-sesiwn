@@ -9,10 +9,33 @@ Z:MIDI transcribed with alawon-abc
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 N:The recording splits the last F of the fifth bar into two sixteenths.
+N:Words from Alawon Cymru.
 M:6/8
 L:1/8
 Q:3/8=67
 K:Em
-"Em"G2 G "B5"F F2 | "Em"E2 F E2 E | "Am"A A2 "C"G2 G | "B5"G F4 F |
-"Em"G2 G "B5"F2 F | "C"E2 F G2 A | "B5"B B2 F2 G | "Em"F E2 z3
-|: "Em"G2 E B2 B | "G"B2 G F2 F | "Em"E2 G "B5"F2 G | "Em"E E3 z2 :|
+"Em"G2 G "B5"F F2 | "Em"E2 F E2 E |
+w: Tit-rwm Tat-rwm, Gwen lliw'r wy, Ni
+"Am"A A2 "C"G2 G | "B5"G F4 F |
+w: all-ai'n hwy 'mo'r cur-o. Mae'r
+"Em"G2 G "B5"F2 F | "C"E2 F G2 A |
+w: gwynt yn oer od-di~ar y llyn, Lliw'r
+"B5"B B2 F2 G | "Em"F E2 z3 |
+w: blod-au'r dyff-ryn deff-ro.
+|: "Em"G2 E B2 B | "G"B2 G F2 F |
+w: Chwyth y tân i gyn-nau toc, Mae
+"Em"E2 G "B5"F2 G | "Em"E E3 z2 :|
+w: hi'n ddry-cin-og he-no.
+W:2. Os ymhell o'm wlad yr af,
+W:Pa beth a wnaf â'm genath,
+W:Pa un ai mynd â hi efo mi,
+W:Ai'i gadael hi mewn hira'th;
+W:Hed fy nghalon o bob man
+W:I frynia a phantia Pentra'th.
+W:
+W:3. Weithia'n Llundain, weithia yng Nghaer
+W:Ac weithia'n daer amdani,
+W:Weithia'n gwasgu'r fun mewn cell
+W:Ac weithia 'mhell oddi wrthi
+W:Mi gofleidiwn floda'r rhos
+W:Pa bawn i'n agos ati.

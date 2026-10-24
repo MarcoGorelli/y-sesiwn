@@ -12,9 +12,28 @@ N:The score has D2 z2 in the second bar of the third line; the recording holds t
 M:2/4
 L:1/8
 Q:1/4=120
+N:Words from Alawon Cymru.
 K:G
-"^Pennill""G"z2 d2 | "C"c3 c | "G"B3 A | "A"A3 G | "D"F D3 | "D"z2 G2 | "G"A2 B2 |
-"C"c3 B | "A"A3 G | "D"F D3 | "G"z2 d2 | "C"c3 c | "G"B3 A | "A"A3 G |
-"D"F D3- | "D"D2 z2 | "G"G2 AB | "C"c3 A | "A"d3 A | "A"A3 G | "D"F D3- | "D"D4 ||
-"^Cytgan""G"G4 | "G"d4 | "D"F3 E | "D"D4 | "G"z2 BG | "G"d4 | "C"c4 |
-"G"B4 | "D"AF AD | "G"G4 || "C"c4 | "G"B4 | "D"A4 | "G"G4 |]
+"^Pennill""G"z2 d2 | "C"c3 c | "G"B3 A | "A"A3 G | "D"F D3 |
+w: Fe gwyd yr haul er mach-lud he-no,
+"D"z2 G2 | "G"A2 B2 | "C"c3 B | "A"A3 G | "D"F D3 |
+w: Fe gwyd y sêr yn ddis-glair e-to,
+"G"z2 d2 | "C"c3 c | "G"B3 A | "A"A3 G | "D"F D3- | "D"D2 z2 |
+w: Mi gwyd y blod-au~o'r ddae-ar dir-ion, _
+"G"G2 AB | "C"c3 A | "A"d3 A | "A"A3 G | "D"F D3- | "D"D4 ||
+w: O-o-o-o pa bryd y cwyd fy nghal-on? _
+"^Cytgan""G"G4 | "G"d4 | "D"F3 E | "D"D4 | "G"z2 BG |
+"G"d4 | "C"c4 | "G"B4 | "D"AF AD | "G"G4 ||
+"C"c4 | "G"B4 | "D"A4 | "G"G4 |]
+W:Cytgan:
+W:Dere machgen i, Dere dere, Dere dere O.
+W:
+W:2. Mi gwyd y niwl o lawr y dyffryn,
+W:Mi gwyd y gwynt i siglo'r brigyn,
+W:Mi gwyd y môr yn donnau gwynion,
+W:O-o-o-o, pa bryd y cwyd fy nghalon? (Cytgan)
+W:
+W:3. (bachgen) Mi wn am ferch yn sir Forgannwg
+W:Hyfryd ei thwf a theg ei golwg
+W:A'i gwallt modrwyog a'i bronnau gwynion
+W:A duwch uffern yn ei chalon. (Cytgan)

@@ -9,11 +9,28 @@ Z:MIDI transcribed with alawon-abc
 %%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams o gân J. Glyn Davies
 N:The recording holds the G at the ends of the parts longer, leads into part B with G where the score has a rest, plays B3 A for the score's B4 in part B, and cA DA for cA DG near the end.
+N:Words by J. Glyn Davies, from Alawon Cymru's songbook (alawoncymru.com/alawon/Songs/Caneuon.html).
 M:2/4
 L:1/8
 Q:1/4=80
 K:G
-|: D | "G"GG B>B | "G"A G2 F | "C"EE E>E | "A"E A2 B | "D"cA DG |
-"D"BA GF | "G"G4- | "G"G3 :| z | "G"B2 B>B | "C"c3 B | "D"BA GA |
-"G"B4 | "Em"G2 G>G | "A"AB AG | "D"F2 d>e | "D"dc BA | "G"GG B>B |
-"G"A G2 F | "C"EE E>E | "A"E A2 B | "D"cA DG | "D"BA GF | "G"G4- | "G"G3 |]
+|: D | "G"GG B>B | "G"A G2 F | "C"EE E>E | "A"E A2 B |
+w: Daeth am-ser i ffar-wel-io, ag ann-wyl wlad y Cym-ro, Gan
+w: Fe god-odd gwynt yn nerth-ol y môr a'i donn-au ruth-rol, Gan
+"D"cA DG | "D"BA GF | "G"G4- | "G"G3 :|
+w: gerdd-ed dros hen dir y 'Werdd-on fras. _
+w: ol-chi dros ein llestr _ ann-wyl las. _
+z | "G"B2 B>B | "C"c3 B | "D"BA GA | "G"B4 |
+"Em"G2 G>G | "A"AB AG | "D"F2 d>e | "D"dc BA |
+"G"GG B>B | "G"A G2 F | "C"EE E>E | "A"E A2 B |
+"D"cA DG | "D"BA GF | "G"G4- | "G"G3 |]
+W:Cytgan: Dewch, Gymry glân, i wrando ar fy nghân,
+W:Fel bu y fordaith rownd yr Horn, rownd yr Horn,
+W:Sef y trydydd dydd o'r wythnos ychydig cyn y cyfnos,
+W:Gan basio ger glân creigiau glannau Môn.
+W:
+W:2. Rwyf wedi mynd a dwad mewn llongau hardd eu gwelad,
+W:Ond dyma'r wyrcws benna gefais i.
+W:Does yma ddim i'w fwyta, ond gwaith sy' llond ein breichia,
+W:O calon, pwy all beidio bod yn brudd.
+W:(Cytgan)

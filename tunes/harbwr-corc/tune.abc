@@ -6,7 +6,7 @@ Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
 %%chords From the Alawon Cymru score
-N:The score has four verses of words.
+N:Words from the Alawon Cymru score and songbook (alawoncymru.com/alawon/Songs/Caneuon.html).
 M:6/8
 L:1/8
 Q:3/8=80
@@ -15,3 +15,30 @@ D | "G"B,2 D G2 A | B3 B2 A | "C"GFG AGE | "G"D3 "C"G2 E |
 "G"D3- D2 B, | DEF G2 c | "C"B2 B AGF | "G"G4 AB |
 "C"c2 c cBA | "G"B3 B2 A | GFG "C"AGE | "G"D3 "C"G2 E |
 "G"D3- D2 B, | DEF G2 c | "C"B2 B AGF | "G"G3- G2 |]
+W:1. Yn harbwr Corc yr oeddwn,
+W:ryw fore gyda'r dydd, gyda'r dydd,
+W:O hogia bach, ryw fore gyda'r dydd,
+W:A phawb oedd yno'n llawen,
+W:'doedd yno neb yn brudd, neb yn brudd,
+W:O hogia bach, 'doedd yno neb yn brudd.
+W:
+W:2. O Rhisiart, medde Morus,
+W:a Morus, medde Twm, medde Twm,
+W:O hogie bach, a Morus, medde Twm:
+W:Well inni riffio'r hwylie,
+W:cyn del y tywydd trwm, tywydd trwm,
+W:O hogie bach, cyn del y tywydd trwm.
+W:
+W:3. O Twm Co bach a Morus,
+W:mae'n bygwth gwynt a glaw, gwynt a glaw,
+W:O hogie bach, mae'n bygwth gwynt a glaw;
+W:Daw'r cesyg gwynion allan,
+W:a Twm yn ateb 'taw', ateb 'taw',
+W:O hogie bach, a Twm yn ateb 'taw'.
+W:
+W:4. Daw'r gwynt yn ôl i'r gogledd,
+W:cawn eto dywydd teg, tywydd teg,
+W:O hogie bach, cawn eto dywydd teg;
+W:A bydd y llong yn cerdded,
+W:ag asgwrn yn ei cheg, yn ei cheg,
+W:O hogie bach, ag asgwrn yn ei cheg.

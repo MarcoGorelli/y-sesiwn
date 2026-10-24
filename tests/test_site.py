@@ -322,6 +322,35 @@ def test_swing(page):
     assert page.locator(".swing").count() == 0
 
 
+def test_words(page):
+    # A song's words are shown, with a switch to hide them, off to start with, kept for that
+    # tune (in "tunes", as swing is) and said in a phone's one line; a tune without words
+    # has no switch.
+    page.goto_site("?tune=dacw-nghariad-i-lawr-yn-y-berllan")
+    page.wait_for_selector(".score .abcjs-lyric")
+    assert not page.locator(".hide-words input").is_checked()
+    assert "lyrics hidden" not in page.inner_text(".controls-summary .now")
+    page.check(".hide-words input")
+    page.wait_for_function("!document.querySelector('.score .abcjs-lyric')")
+    assert "lyrics hidden" in page.inner_text(".controls-summary .now")
+    assert page.evaluate("JSON.parse(localStorage.getItem('tunes'))['dacw-nghariad-i-lawr-yn-y-berllan']") == {"words": False}
+    page.reload()
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.locator(".hide-words input").is_checked()
+    assert page.locator(".score .abcjs-lyric").count() == 0
+    page.uncheck(".hide-words input")  # back as written: forgotten
+    page.wait_for_selector(".score .abcjs-lyric")
+    assert page.evaluate("localStorage.getItem('tunes')") == "{}"
+    page.evaluate("navigate('alaw/pontypridd/')")  # verses after the music (W:): a switch too
+    page.wait_for_selector(".score .abcjs-staff")
+    assert "Ym Mhontypridd" in page.inner_text(".score")
+    page.check(".hide-words input")
+    page.wait_for_function("!document.querySelector('.score').innerText.includes('Ym Mhontypridd')")
+    page.evaluate("navigate('alaw/cawl-cennin/')")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.locator(".hide-words").count() == 0
+
+
 def test_whistle_fingerings(page):
     page.goto_site()
     f = lambda midi, instrument="whistle-D": page.evaluate(

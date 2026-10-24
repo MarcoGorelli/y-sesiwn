@@ -9,11 +9,77 @@ Z:MIDI transcribed with alawon-abc
 %%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
-N:The score gives the words. The recording plays B,2 B,4 A,2 and D2 B,4 C2 in the seventh and tenth bars, where the score has D2 B,4 A,2.
+N:Words from Alawon Cymru: verse 1 as the score gives it, the rest from its page. The Mari party sings the numbered verses; the house answers (Ateb). The recording plays B,2 B,4 A,2 and D2 B,4 C2 in the seventh and tenth bars, where the score has D2 B,4 A,2.
 M:4/4
 L:1/8
 Q:1/4=120
 K:D
-D2 | "D"F2 F4 D2 | "A"E2 E4 F2 | "Bm"B,2 B,4 A,2 | "A"A2 A4 A2 |
-"Bm"B2 F4 D2 | "G"D2 B,4 D2 | "Bm"D2 B,4 A,2 | "A"A2 A4 A2 |
+D2 | "D"F2 F4 D2 | "A"E2 E4 F2 |
+w: Wel dy-ma ni'n dw-ad, gy-
+"Bm"B,2 B,4 A,2 | "A"A2 A4 A2 |
+w: feill-ion di-ni-wed, I
+"Bm"B2 F4 D2 | "G"D2 B,4 D2 |
+w: of-yn 'sgawn gen-nad, i
+"Bm"D2 B,4 A,2 | "A"A2 A4 A2 |
+w: of-yn 'sgawn gen-nad, I
 "Bm"B2 F4 D2 | "A"D2 B,4 A,2 | "D"D2 D4 |]
+w: of-yn 'sgawn gen-nad i ga-nu?
+W:Ateb 1. Rhowch glywed, wyr doethion,
+W:Pa faint y'ch o ddynion
+W:A pheth yn wych union (x3)
+W:Yw'ch enwau?
+W:
+W:2. Os na chawn ni gannad,
+W:Rhowch glywad ar ganiad
+W:Pa fodd mae'r 'madawiad (x3)
+W:Nos heno.
+W:
+W:Ateb 2. Rhowch glywad, wyr difrad,
+W:O ble'r y'ch chi'n dwad,
+W:A pheth yw'ch gofyniad (x3)
+W:Gaf enwi?
+W:
+W:3. Ni dorson ein crimpa
+W:Wrth groesi'r sticila
+W:I ddyfod tuag yma (x3)
+W:Nos heno.
+W:
+W:Ateb 3. 'Dyw wiw i chi sgwto
+W:A chwnnu'r latsh (h)eno
+W:Wa'th prydydd diguro (x3)
+W:Wyf inna'.
+W:
+W:4. Os aethoch rhy gynnar
+W:I'r gwely'n ddialgar,
+W:O codwch yn hawddgar (x3)
+W:Nos heno.
+W:
+W:Ateb 4. Mi gwnnes o'r gwely
+W:Gan lwyr benderfynu
+W:Y gwnawn i dy faeddu (x3)
+W:Di'n foddau.
+W:
+W:5. Os oes yma ddynion
+W:All dorri anglynion,
+W:Rhowch glywad yn union (x3)
+W:Nos heno.
+W:
+W:Ateb 5. I ffwrdd a chwi'r lladron
+W:Ewch ymaith yn union
+W:Ni chewch chi yn hylon (x3)
+W:Fy ngwelad.
+W:
+W:6. Y dishan fras felys
+W:A phob math o sbeisys
+W:O, torrwch hi'n rhatus (x3)
+W:Y Gwyla.
+W:
+W:Ateb 6. Mi ganaf am flwyddyn
+W:Os caf Dduw i'm canlyn
+W:Heb ofni un gelyn (x3)
+W:Y gwylia.
+W:
+W:7. O tapwch y baril
+W:A llengwch a'n r(h)ugul;
+W:Na rannwch a'n gynnil (x3)
+W:Y Gwyla.

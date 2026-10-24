@@ -9,11 +9,53 @@ Z:MIDI transcribed with alawon-abc
 %%chords From the Alawon Cymru score
 C:Addaswyd gan Meurig Williams
 N:On the score, the d before the last part is a dotted minim and a crotchet d that leads into the repeat, and the last G is a dotted minim; the MIDI holds both notes for the whole bar.
+N:Words from Alawon Cymru's songbook (alawoncymru.com/alawon/Songs/Caneuon.html).
 M:4/4
 L:1/8
 Q:1/4=120
 K:G
-"G"D2 | G2 G2 "D"AG F2 | "G"G2 G4 D2 | G2 A2 B2 c2 | "G7"d6 d2 |
-"C"c2 d2 c2 B2 | "Am"A2 A4 G2 | "D"F2 A2 "A"E2 F2 | "D"D4 ||
-DE F2 | "G"G2 G2 "D"AG F2 | "G"G2 G4 D2 | "G"G2 A2 B2 c2 | "G7"d6 |:
-d2 | "C"e2 e2 "G"d2 B2 | "D"d2 c2 "Em"B2 A2 | "C"B2 A2 "D"G2 F2 | "G"G6 :|
+"G"D2 | G2 G2 "D"AG F2 | "G"G2 G4 D2 |
+w: Rwy'n lwmp-yn mawr _ o gol-iar sydd
+G2 A2 B2 c2 | "G7"d6 d2 |
+w: new-ydd ddod o'r wlad, Yn
+"C"c2 d2 c2 B2 | "Am"A2 A4 G2 |
+w: gaf-fer ach-a thal-cen, yn
+"D"F2 A2 "A"E2 F2 | "D"D4 ||
+w: enn-ill mwy na 'nhad.
+DE F2 | "G"G2 G2 "D"AG F2 | "G"G2 G4 D2 |
+w: Cer-'ed y byd i'r sawl _ a fyn-no, a
+"G"G2 A2 B2 c2 | "G7"d6 |:
+w: fin-ne'n llaw-en iach,
+d2 | "C"e2 e2 "G"d2 B2 | "D"d2 c2 "Em"B2 A2 |
+w: Llym-aid nawr ac _ yn y man o
+"C"B2 A2 "D"G2 F2 | "G"G6 :|
+w: gwr-w Mel-in Bach.
+W:2. Rwy'i lawr yn y pwll yn y bore,
+W:yn dod tua thre mor ddu,
+W:Yn iwso cymant o sepon
+W:a garith gwraig y tŷ.
+W:
+W:3. Mae gen i offer newydd,
+W:y gorau yn y sir,
+W:Rwyf newydd talu deuswllt
+W:am dair o eignion dur.
+W:
+W:4. Mae gen i fwyell notid,
+W:on'd yw ei flaen hi'n bwt,
+W:A sledge a mandrel gwaelod,
+W:a phedar mandrel cwt.
+W:
+W:5. Mae gen i far rhagorol,
+W:on'd yw ei fla'n hi'n fain,
+W:A chrwt i gario'r cwrlo
+W:yn baglu fel y drain.
+W:
+W:6. Rwy'n gallu cwto'n gwmmws,
+W:rwy'n gallu cwto'n gam,
+W:Rwy'n gallu holio tano,
+W:a llenwi petair dram.
+W:
+W:7. Rwy'n ennill sioe o arian,
+W:a'i rhoi fe i gyd mewn stôr,
+W:A phan ddaw mis y 'fale,
+W:dw i eisiau dŵr y môr.

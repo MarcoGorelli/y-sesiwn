@@ -66,6 +66,22 @@ a `%%chords` line in the header, e.g. `%%chords From the Alawon Cymru score`.
 The tune's page shows them as a chart for accompanists, in whichever key is
 chosen.
 
+A song can have its words. Put the first verse under the notes with a `w:`
+line after each line of music, a hyphen between the syllables of a word, `_`
+to hold a syllable over the next note and `*` to skip a note; another `w:`
+line under the same music is another verse:
+
+```
+D D3 D2 A A | G2 F F E2 D2 |
+w: Dac-w nghar-iad i lawr yn y ber-llan,
+w: Dac-w'r dder-wen _ wych gang-* hen-nog
+```
+
+Verses that are easier to read on their own go after the music, a `W:` line
+each, as in `tunes/pontypridd/tune.abc`. Only add words that are traditional,
+by a writer who died more than 70 years ago, or that you have permission to
+share.
+
 If you're new to ABC, the [ABC notation primer](https://abcnotation.com/learn)
 explains the notes and bar lines.
 

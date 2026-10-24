@@ -8,6 +8,7 @@ Z:MIDI transcribed with alawon-abc
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 N:The score plays part A twice, part B, then part A again (D.C. al Fine).
+N:Words from Alawon Cymru.
 M:3/4
 L:1/8
 Q:1/4=80
@@ -15,3 +16,17 @@ K:ADor
 |: c2 | "Em"B2 E2 c2 | "Am"B2 A2 cd | "Em"e2 ed B2 | "Am"A4 :|
 e>f | "C"g2 a2 g2 | "D"f2 e2 e>f | "C"g2 a2 gf | "D"e4 c2 |
 "Em"B2 E2 c2 | "Am"B2 A2 cd | "Em"e2 ed B2 | "Am"A4 |]
+W:1. Fel roeddwn i'n rhodio a'm calon yn brudd
+W:Ar ddydd Llun y bore ar doriad y dydd,
+W:Mi glywn y Gog Lwydlas yn tiwnio mor fwyn,
+W:Ar ochr bryn uchel ar gangen o lwyn.
+W:
+W:2. Fy amser i ganu yw Ebrill a Mai
+W:A hanner Mehefin chwi wyddoch bob rhai;
+W:I ffwrdd af oddi yma - fy adain sy'n fan,
+W:A chyn Dŷgŵyl Ifan fe dderfydd fy nghân.
+W:
+W:3. Ni chân y Gog Lwydlas ond Ebrill a Mai
+W:A hanner Mehefin chwi wyddoch bob rhai;
+W:Ac wedyn eheda dros donnau y môr
+W:I wledydd pellennig i 'mofyn ei stôr.

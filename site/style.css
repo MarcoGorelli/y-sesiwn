@@ -1199,7 +1199,6 @@ body.practice :is(.versions, .versions-fold, .tune-actions) { display: none; }
 /* Printing a tune: just the sheet music (in the key chosen on the page), full width. */
 @media print {
   body { display: block; padding: 0; background: none; color: #000; }
-  .fingering-how > summary { display: none; }
   .nav, .site-footer, .controls, .practice-tools, .tune-actions, .versions, .versions-fold, .tune-side, .audio, .card.chords, .chords-on-score, .tab-line, .sound-on, main > h1 { display: none !important; }
   main { padding: 0; max-width: none; animation: none; }
   .tune-layout { display: block; }
@@ -1429,24 +1428,16 @@ body.practice .set-tune-head .preview-play { display: none; }
 /* A straight hairline above the saving items (a border on the rounded button would curve) */
 .print-menu .menu-sep { position: relative; margin-top: .5rem; }
 .print-menu .menu-sep::before { content: ""; position: absolute; left: .4rem; right: .4rem; top: -.3rem; border-top: 1px solid var(--border); }
-/* How to read the holes, just above the music they're under; each sign kept with its meaning */
-/* How to read the holes, at the top of the music's paper, in its ink: which it is (and
-   Change), which way up, then each sign drawn as in the music, kept with its meaning */
+/* At the top of the music's paper, in its ink: a string's tuning, or the notes not on the
+   whistle or recorder (nothing, when every note is on it) */
 .score > .fingering-key { margin: 0 0 .6rem; color: var(--paper-muted); }
-.fingering-key[hidden] { display: none; }
+.fingering-key[hidden], .fingering-key:has(> .fit-note[hidden]:only-child) { display: none; }
 .fingering-name { margin: 0 0 .3rem; }
 .fingering-name strong { color: var(--score-ink); }
-.fingering-how > summary { width: fit-content; color: var(--paper-link); cursor: pointer; }
-.fingering-how > p { margin: .2rem 0 .3rem; }
 .fingering-key .link-button { margin: 0; font-size: inherit; color: var(--paper-link); }
 /* Notes not on the whistle chosen, and where every note is: in the paper's ink, to be read */
 .fit-note { margin: 0 0 .35rem; color: var(--score-ink); }
 .fit-note[hidden] { display: none; }
-.fingering-signs { display: flex; flex-wrap: wrap; gap: .15rem 1.1rem; margin: 0; padding: 0; list-style: none; }
-.fingering-signs li { display: inline-flex; align-items: center; gap: .4rem; white-space: nowrap; }
-.fingering-signs .hole-sample { flex: none; width: 1.05em; height: 1.05em; }
-.fingering-signs .sign { min-width: 1.05em; text-align: center; font-weight: 700; color: var(--score-ink); }
-.fingering-signs .sign.up { color: var(--accent); }  /* "8va", red as in the music */
 .score .abcjs-lyric { fill: var(--score-ink); }
 /* A whistle's or recorder's holes, drawn as circles (app.js drawHoles) in the score's ink:
    covered filled, open a ring, half-covered both; "+" and "?" larger than abcjs's lyrics;

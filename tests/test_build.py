@@ -219,6 +219,12 @@ def test_meter_as_numbers():
     assert (meter("C"), meter("C|"), meter("6/8")) == ("4/4", "2/2", "6/8")
 
 
+def test_area_leaves_out_wales():
+    # Every tune here is Welsh: "Wales" alone says nothing, a place in Wales still does.
+    area = lambda a: dict(b.details({"A": [a]})[0]).get("Area")
+    assert (area("Wales"), area("Gower Peninsula, Wales"), area("Llanfyllin")) == (None, "Gower Peninsula", "Llanfyllin")
+
+
 def test_places():
     groups = {b.tune_record(p)["group"] for p in TUNES}
     places = b.places(groups)  # stops with an error if a tune doesn't exist

@@ -140,9 +140,8 @@ const state = {
   // For every tune, kept on this device (savedPractice): the tablature (the reader's
   // instrument), the count-in and click, chords on the music, and the practice tools folded or not; whether the holes or tabs have had
   // their answer (tabKnown), and how many tunes have been played with the music alone before
-  // they had (heard), whether a tune has shown how to read the holes (holesSeen), and whether
-  // another version has been opened from the tabs (versionsSeen). The rest is kept per tune (savedTunes).
-  practice: savedPractice("practice", { tab: "none", countIn: false, click: false, chordsOnScore: false, open: null, tabKnown: false, heard: 0, holesSeen: false, versionsSeen: false }),
+  // they had (heard), and whether another version has been opened from the tabs (versionsSeen). The rest is kept per tune (savedTunes).
+  practice: savedPractice("practice", { tab: "none", countIn: false, click: false, chordsOnScore: false, open: null, tabKnown: false, heard: 0, versionsSeen: false }),
   browseOpen: { types: false, keys: false },  // Browse's More types / More keys, once opened
   lang: savedLang(),    // "cy" or "en", for the whole site (tune names and the tunes' own notes stay as written)
   musicSize: savedSize(),  // the music's size, an index into SIZES (1: as drawn)
@@ -185,7 +184,7 @@ function savedPractice(name, defaults) {
   try {
     const saved = JSON.parse(localStorage.getItem(name));
     const valid = { tab: (v) => typeof v === "string", open: (v) => v === null || typeof v === "boolean", tabKnown: (v) => typeof v === "boolean",
-      heard: (v) => Number.isInteger(v) && v >= 0, holesSeen: (v) => typeof v === "boolean", versionsSeen: (v) => typeof v === "boolean",
+      heard: (v) => Number.isInteger(v) && v >= 0, versionsSeen: (v) => typeof v === "boolean",
       countIn: (v) => typeof v === "boolean", click: (v) => typeof v === "boolean", chordsOnScore: (v) => typeof v === "boolean" };
     return Object.fromEntries(Object.entries(defaults).map(([key, value]) =>
       [key, saved && key in saved && valid[key](saved[key]) ? saved[key] : value]));
@@ -2435,14 +2434,6 @@ function holeMark(parent, mark, cx, cy, r) {
     parent.append(half);
   }
 }
-// The same, on its own, for the key to them above the music.
-function holeSample(mark) {
-  const svg = document.createElementNS(SVG_NS, "svg");
-  for (const [name, value] of Object.entries({ viewBox: "0 0 12 12", class: "holes hole-sample", "aria-hidden": "true" })) svg.setAttribute(name, value);
-  holeMark(svg, mark, 6, 6, 4.8);
-  return svg;
-}
-
 // The tune's notes (MIDI; a chord's highest), as written: worked out once a tune, to say
 // which keys, or which whistles, have every note of it.
 const tunePitches = new WeakMap();
@@ -2985,7 +2976,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
     if (playing && startAt !== null && controller.timer) { controller.seek(startAt); startAt = null; }
     if (playing !== audioFocus.playing && state.synth === controller) audioFocus.hold(playing, tune.title);
     audio.classList.toggle("playing", !!playing);  // pinned while it plays (style.css)
-    if (playing) { heardWithTheMusic(tune); heardWithTheHoles(); }
+    if (playing) heardWithTheMusic(tune);
     start?.setAttribute("aria-label", playing ? tr("Pause (space bar)", "Oedi (bylchwr)") : tr("Play (space bar)", "Chwarae (bylchwr)"));
     const percent = Math.round((startAt ?? controller.percent ?? 0) * 100);
     if (document.activeElement !== seek) seek.value = percent;
@@ -3025,10 +3016,10 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   }
   // Fetch and decode this tune's notes now, so pressing play doesn't wait. The
   // audio stays paused until play is clicked; abcjs shares the decoded notes.
-  // Not on a phone's browser until something has been played there: at the session the
-  // music is mostly read, not played, so a phone downloads no piano notes until Play is
-  // pressed (the first press waits a moment for them). Kept so by a test.
-  if (!isPhone() || isInstalled() || state.played) {
+  // Not until something has been played on this device: the music is often read, not
+  // played, so a first visit downloads no piano notes until Play is pressed (the first
+  // press waits a moment for them). Kept so by a test.
+  if (isInstalled() || state.played) {
     new ABCJS.synth.CreateSynth().init({ visualObj, options: audioParams }).catch(() => {});
   }
   return { parts };
@@ -3328,7 +3319,7 @@ const CY_DETAILS = { "Tune type": "Math o alaw", Key: "Cywair", "Time signature"
 function detailValue(label, value) {
   if (label === "Key") return keyLabel(value);
   if (label === "Tune type") return value.charAt(0).toUpperCase() + value.slice(1);  // "jig" -> "Jig", as on Browse
-  if (label === "Area" && state.lang === "cy") return value.replace("Gower Peninsula", "Penrhyn Gŵyr").replace(/\bWales\b/, "Cymru");
+  if (label === "Area" && state.lang === "cy") return value.replace("Gower Peninsula", "Penrhyn Gŵyr");
   // A source that's a web address is a link, and any words after it (who added the tune
   // there) stay text; other sources (a recording, a book) are just text.
   // The link is named for the site it's on ("Alawon Cymru (alawoncymru.com)"), not the
@@ -3744,40 +3735,13 @@ function renderTune(main, group, tune) {
       speedSaid = tr(`Back to ${settings.bpm} bpm.`, `Yn ôl i ${settings.bpm} bpm.`);
     }
   };
-  // With one chosen, how to read it, just above the music (the menu above names which):
-  // a string's tuning and frets, or a whistle's or recorder's holes, each sign kept on a
-  // line with what it means.
+  // With one chosen, just above the music (the menu above names which): a string's
+  // tuning, or for a whistle or recorder, any notes not on it.
   const fingerKey = () => {
     const strings = TABS[state.practice.tab];
-    const f = FINGERED[state.practice.tab];
-    const sign = (mark, meaning) => el("li", {},
-      // A hole is said by what it means alone ("covered", not "black circle, covered").
-      "●○◐".includes(mark) ? holeSample(mark) : [el("span", { class: `sign${mark === "8va" ? " up" : ""}`, "aria-hidden": "true" }, mark),
-        el("span", { class: "visually-hidden" }, `${mark} `)], meaning);
-    // A fiddle has no frets: the same numbers are said as its fingers, in first position.
-    const howUp = strings === TABS.mandolin
-      ? tr("A line for each string, the highest at the top. On a mandolin the number is the fret; on a fiddle, 2 is the first finger, 3 or 4 the second, 5 the third (0: open)",
-        "Llinell i bob tant, yr uchaf ar y brig. Ar fandolin, y rhif yw'r ffret; ar ffidil, 2 yw'r bys cyntaf, 3 neu 4 yr ail, 5 y trydydd (0: ar agor)")
-      : strings
-      ? tr("A line for each string, the highest at the top; the number is the fret (0: open)",
-        "Llinell i bob tant, yr uchaf ar y brig; y rhif yw'r ffret (0: ar agor)")
-      : f.recorder
-        ? tr("The thumb (at the back), then from the mouthpiece down: left hand, then right",
-          "Y bawd (yn y cefn), yna o'r darn ceg i lawr: y llaw chwith, yna'r dde")
-        : tr("From the mouthpiece down: left hand, then right", "O'r darn ceg i lawr: y llaw chwith, yna'r dde");
-    if (strings) return [el("p", { class: "fingering-name" }, el("strong", {}, `${tr("Tuning", "Tiwnio")}: ${strings.tuning}`), el("br"), howUp)];
-    const signs = el("ul", { class: "fingering-signs" },
-      sign("●", tr("covered", "ar gau")), sign("○", tr("open", "ar agor")),
-      f.recorder ? sign("◐", tr("half-covered (the thumb: pinched)", "hanner ar gau (y bawd: wedi'i binsio)")) : sign("◐", tr("half-covered", "hanner ar gau")),
-      f.recorder ? sign("8va", tr("too low, so an octave up", "rhy isel, felly wythfed yn uwch")) : sign("+", tr("blow harder", "chwythu'n galetach")),
-      sign("?", f.recorder ? tr("not on the recorder", "ddim ar y recorder") : tr("not on the whistle", "ddim ar y chwisl")));
+    if (strings) return [el("p", { class: "fingering-name" }, el("strong", {}, `${tr("Tuning", "Tiwnio")}: ${strings.tuning}`))];
     showFit();
-    // On a phone, once the holes have been read on a tune, how to read them folds away, so
-    // Play and the music come sooner.
-    if (holesFolded) return [fitNote,
-      el("details", { class: "fingering-how fold" }, el("summary", {}, tr("How to read the holes", "Sut i ddarllen y tyllau")),
-        el("p", {}, howUp), signs)];
-    return [el("p", { class: "fingering-name" }, howUp), fitNote, signs];
+    return [fitNote];
   };
   // A tune that goes beyond the whistle or recorder chosen: how many notes aren't on it
   // (marked ?), and where every note is: the nearest key in the Key menu that has them all
@@ -3808,7 +3772,6 @@ function renderTune(main, group, tune) {
         : tr(`${missing} notes aren't on ${thisOne} (?).`, `Dydy ${missing} nodyn ddim ar ${thisOne} (?).`),
       ...(either.length ? [...either, tr(", every note is there.", ", mae pob nodyn yno.")] : []));
   };
-  const holesFolded = state.practice.holesSeen && matchMedia("(max-width: 800px)").matches;
   // From "Plays with … · Change" by Play: the practice tools, opened and in view. Opened
   // for that, they aren't kept open for the next tune (only the reader's own fold is).
   let openedForMenu = false;
@@ -4070,10 +4033,9 @@ function renderEmbed(main, group, tune) {
   const audio = el("div", { class: "audio" });
   const page = () => `https://ysesiwn.cymru/${tuneLink(group, tune, settings, state.practice.tab)}`;
   const toPage = el("a", { href: page(), target: "_blank", rel: "noopener" }, group.title);
-  const howTo = el("a", { href: page(), target: "_blank", rel: "noopener" }, tr("How to read them", "Sut i'w darllen"));
   const redraw = () => {
     drawScore(tune, paper, audio, null);
-    toPage.href = howTo.href = page();
+    toPage.href = page();
   };
   let key = null;
   if (tune.key) {
@@ -4102,7 +4064,7 @@ function renderEmbed(main, group, tune) {
         el("img", { src: "static/harp.svg", alt: "", width: 18, height: 18 }), "Y Sesiwn")),
     el("div", { class: "embed-controls" }, key, el("div", { class: "control" }, tempoLabel, slider)),
     strings || holes ? el("p", { class: "caption fingering-key" },
-      el("strong", {}, strings ? `${strings.label()} (${strings.tuning})` : holes.label()), " · ", howTo) : null,
+      el("strong", {}, strings ? `${strings.label()} (${strings.tuning})` : holes.label())) : null,
     el("div", { class: "score" }, audio, soundNote(), paper),
     // Its arranger is on the score (C:); where it came from is said here, as on its page.
     alawonPage(tune) ? el("p", { class: "caption embed-source" }, tr("From ", "O "),
@@ -5178,14 +5140,6 @@ function heardWithTheMusic(tune) {
   heardAlone.add(tune);
   state.practice.heard += 1;
   if (state.practice.heard >= HEARD_ENOUGH) state.practice.tabKnown = true;
-  savePractice();
-}
-
-// How to read the holes has been read once a tune has been played with them: from then on,
-// on a phone, it folds away (holesSeen). Only drawn, it may not have been read at all.
-function heardWithTheHoles() {
-  if (!FINGERED[state.practice.tab] || state.practice.holesSeen) return;
-  state.practice.holesSeen = true;
   savePractice();
 }
 
@@ -6591,14 +6545,11 @@ if ("serviceWorker" in navigator && !EMBED) {
 window.addEventListener("beforeprint", () => {
   state.printing = true;
   state.redrawScore?.();
-  // Printed, how to read the holes is always there, folded on the phone or not.
-  for (const how of document.querySelectorAll(".fingering-how:not([open])")) { how.open = true; how.dataset.printOpened = ""; }
 });
 window.addEventListener("afterprint", () => {
   if (!state.printing) return;
   state.printing = false;
   state.redrawScore?.();
-  for (const how of document.querySelectorAll(".fingering-how[data-print-opened]")) { how.open = false; delete how.dataset.printOpened; }
 });
 
 // The bar pinned to the top on a phone: its height, so the player can pin just under it

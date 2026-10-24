@@ -369,11 +369,10 @@ def test_tab_line(page, width):
     top = page.locator("#tab-select").bounding_box()["y"]
     page.select_option("#tab-select", "whistle-D")
     page.wait_for_selector(".score .abcjs-lyric")
-    assert page.locator(".fingering-key").is_visible()
     assert page.locator("#tab-select").bounding_box()["y"] == top
     assert page.locator(".practice-tools").evaluate("d => !d.open")
     page.wait_for_timeout(100)  # (a toggle event would come a moment after)
-    assert page.evaluate("state.practice") == {"tab": "whistle-D", "countIn": False, "click": False, "chordsOnScore": False, "open": None, "tabKnown": True, "heard": 0, "holesSeen": False, "versionsSeen": False}
+    assert page.evaluate("state.practice") == {"tab": "whistle-D", "countIn": False, "click": False, "chordsOnScore": False, "open": None, "tabKnown": True, "heard": 0, "versionsSeen": False}
     page.reload()
     page.wait_for_selector(".score .abcjs-lyric")
     assert page.input_value("#tab-select") == "whistle-D"
@@ -397,28 +396,6 @@ def test_tab_question_answered_by_reading(page, how):
         page.evaluate("heardWithTheMusic([...state.bySlug.values()][2])")
     page.wait_for_timeout(100)
     assert page.evaluate("JSON.parse(localStorage.getItem('practice')).tabKnown") is True
-
-
-# On a phone, once a tune has been played with the holes, the next folds how to read them
-# away; only drawn, they may not have been read. Printed, it's there.
-def test_hole_key_folds_on_a_phone(page):
-    page.set_viewport_size({"width": 390, "height": 844})
-    page.goto_site("alaw/llancesau-trefaldwyn/")
-    page.wait_for_selector(".score .abcjs-staff")
-    page.evaluate("localStorage.setItem('practice', JSON.stringify({tab: 'whistle-D', open: null, tabKnown: true}))")
-    page.reload()
-    page.wait_for_selector(".score g.holes", state="attached")
-    assert page.locator(".fingering-signs").is_visible() and page.locator(".fingering-how").count() == 0
-    page.goto_site("alaw/glandyfi/")
-    page.wait_for_selector(".score g.holes", state="attached")
-    assert page.locator(".fingering-how").count() == 0  # drawn, not yet played
-    page.evaluate("heardWithTheHoles()")
-    assert page.evaluate("state.practice.holesSeen")
-    page.goto_site("alaw/llancesau-trefaldwyn/")
-    page.wait_for_selector(".score g.holes", state="attached")
-    assert page.locator(".fingering-how").evaluate("d => !d.open") and page.locator(".fingering-signs").is_hidden()
-    page.click(".fingering-how > summary")
-    assert page.locator(".fingering-signs").is_visible()
 
 
 # A tune that goes beyond the whistle says how many notes aren't on it, and offers the
@@ -452,15 +429,15 @@ def test_whistle_fit_note_follows_the_octave_drawn(page):
     assert page.inner_text(".fit-note").startswith(f"{marks} notes aren't on this whistle (?).")
 
 
-# A fiddle has no frets: its tablature is read as fingers.
-def test_fiddle_tab_has_no_frets(page):
+# Above tablature, its tuning alone: players know how to read tabs.
+def test_tab_key_is_the_tuning(page):
     page.goto_site()
     page.evaluate("localStorage.setItem('practice', JSON.stringify({tab: 'mandolin', open: null, tabKnown: true}))")
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-staff")
-    assert "on a fiddle, 2 is the first finger" in page.inner_text(".fingering-key")
+    assert page.inner_text(".fingering-key").strip() == "Tuning: GDAE"
     page.select_option("#tab-select", "guitar")
-    assert "on a fiddle" not in page.inner_text(".fingering-key") and "the number is the fret" in page.inner_text(".fingering-key")
+    assert page.inner_text(".fingering-key").strip() == "Tuning: EADGBE"
 
 
 def test_whistle_on_a_tune(page):
@@ -470,7 +447,7 @@ def test_whistle_on_a_tune(page):
     assert page.locator(".fingering-key").is_hidden()
     page.select_option("#tab-select", "whistle-D")
     page.wait_for_selector(".score .abcjs-lyric")
-    assert page.locator(".fingering-key").is_visible()
+    assert page.locator(".fingering-key").is_hidden()  # every note on the whistle: nothing to say
     lyrics = lambda: "".join(page.locator(".score .abcjs-lyric").all_text_contents())
     in_d = lyrics()
     assert "?" not in in_d and "+" in in_d  # all on a D whistle, some in the second octave
@@ -488,7 +465,6 @@ def test_whistle_on_a_tune(page):
     assert len(gaps) == 7 and gaps[0] == gaps[3] > gaps[1] == gaps[2] == gaps[4]
     page.click("#key-select [data-shift='0']")  # back to D: all where they're written
     page.wait_for_function("() => !document.querySelector('.score .octave-up')")
-    assert "recorder" in page.locator(".fingering-key").text_content()
     page.select_option("#tab-select", "none")
     page.wait_for_function("!document.querySelector('.score .abcjs-lyric')")
     assert page.locator(".fingering-key").is_hidden()
@@ -1184,10 +1160,10 @@ def test_tablature_chosen_on_the_home_page(page):
     assert page.locator(".tab-choice [aria-checked=true]").inner_text() == "Just the music"
     page.click(".tab-choice button:has-text('Descant recorder')")
     assert page.inner_text(".tab-said") == "Descant recorder under the notes, on every tune. Kept on this device."
-    assert page.evaluate("state.practice") == {"tab": "recorder", "countIn": False, "click": False, "chordsOnScore": False, "open": None, "tabKnown": True, "heard": 0, "holesSeen": False, "versionsSeen": False}
+    assert page.evaluate("state.practice") == {"tab": "recorder", "countIn": False, "click": False, "chordsOnScore": False, "open": None, "tabKnown": True, "heard": 0, "versionsSeen": False}
     page.goto_site("alaw/llancesau-trefaldwyn/")
     page.wait_for_selector(".score g.holes", state="attached")
-    assert page.locator(".tab-invite").is_hidden() and "recorder" in page.locator(".fingering-key").text_content()
+    assert page.locator(".tab-invite").is_hidden() and page.input_value("#tab-select") == "recorder"
     # And in the practice tools' menu, the music alone is named as it is in the pills.
     assert page.locator("#tab-select option[value=none]").text_content() == "Just the music"
 
@@ -2295,7 +2271,7 @@ def test_practice_tools_remembered(page):
     assert page.input_value("#tab-select") == "mandolin"
     assert page.inner_text(".sound-on") == "Plays with count-in, click · Change"  # never a surprise
     assert page.evaluate("state.practice") == {"tab": "mandolin", "countIn": True, "click": True, "chordsOnScore": True, "open": True,
-                                               "tabKnown": True, "heard": 0, "holesSeen": False, "versionsSeen": False}
+                                               "tabKnown": True, "heard": 0, "versionsSeen": False}
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.is_checked(".practice-row label:has-text('Count-in') input")
@@ -2324,7 +2300,7 @@ def test_practice_tools_remembered(page):
     page.goto_site("?tune=glandyfi")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.evaluate("state.practice") == {"tab": "none", "countIn": False, "click": False, "chordsOnScore": False, "open": None,
-                                               "tabKnown": False, "heard": 0, "holesSeen": False, "versionsSeen": False}
+                                               "tabKnown": False, "heard": 0, "versionsSeen": False}
 
 
 def test_controls_not_refilled_going_back(page):
@@ -3531,11 +3507,12 @@ def test_copy_link(page):
     assert link.startswith("https://ysesiwn.cymru/alaw/glandyfi/")
 
 
-def test_phone_downloads_no_piano_notes_until_play(browser, site):
-    # On a phone (not the installed app), reading the music downloads no piano notes, on
-    # any page, until Play is pressed: at the session the music is mostly read. Then that
-    # tune's notes come, and the rest of the piano's in the background.
-    context = browser.new_context(**PHONE)
+@pytest.mark.parametrize("device", ["phone", "computer"])
+def test_no_piano_notes_until_play(browser, site, device):
+    # Reading the music (not in the installed app) downloads no piano notes, on any page,
+    # until Play is pressed: the music is often read, not played. Then that tune's notes
+    # come, and the rest of the piano's in the background.
+    context = browser.new_context(**(PHONE if device == "phone" else {}))
     fetched = []
     context.on("request", lambda r: fetched.append(r.url) if "/soundfont/" in r.url else None)
     page = context.new_page()
@@ -3544,7 +3521,8 @@ def test_phone_downloads_no_piano_notes_until_play(browser, site):
         page.wait_for_timeout(1500)
     page.goto(site + "alaw/glandyfi/")
     page.wait_for_function("state.offlineReady && state.sounds", timeout=30000)
-    page.click(".controls-summary")  # changing the key or tempo doesn't play either
+    if device == "phone":
+        page.click(".controls-summary")  # changing the key or tempo doesn't play either
     page.click("#key-select [data-shift='2']")
     page.wait_for_timeout(1000)
     assert fetched == []

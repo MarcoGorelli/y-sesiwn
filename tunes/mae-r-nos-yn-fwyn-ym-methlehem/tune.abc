@@ -6,11 +6,23 @@ Z:MIDI transcribed with alawon-abc
 %%alawon track=1 transpose=2 pickup=1/8
 %%alawon-reviewed
 %%chords From the Alawon Cymru score
+C:Caradog Roberts (1878–1935)
 C:Trefniant Meurig Williams
+N:Words by W. Rhys Nicholas (1914–96), from Caneuon Ffydd (431), sent by Steve Jeans.
 N:In D, as on the score; the alawoncymru recording is a tone lower.
 M:6/8
 L:1/8
 Q:3/8=53
 K:D
 d | "A"c2 B "D"A2 d | "A"c2 B "D"A2 A | "G"B2 B "D"A2 D | "Em"G3- "A"G2 G |
+w: Mae'r nos yn fwyn ym Meth-le-hem, a chlyd yw'r gwe-ly gwair _ a'r
+w: O'r dwy-rain pell daw doeth-ion dri, i geis-io Bren-in nef _ gan
+w: Ar faes y preidd-iau dan y sêr yn hedd y daw-el nos, _ bu-
+w: Mae'r cly-chau'n can-u oll yng-hyd eu mel-o-dï-au glân, _ a
+w: "Go-gon-iant i'r gor-uch-af Dduw, tang-nef-edd i'r holl fyd; _ e-
 "D"FBA "A"GcB | "D"Adc "G"B2 B | "D"A2 A "A"ABA | "D"A3- A2 :|
+w: bab-* an bach _ yn gwen-* u'n hael ar wyn-eb add-* fwyn Mair. _
+w: roi _ yr aur _ a'r thus _ a'r myrr yn off-rwm idd-* o ef. _
+w: geil-* iad sydd _ yn oed-* i'n syn i wran-do an-* them dlos. _
+w: daw'r _ tri-gol-* ion yn _ eu tro i gan-u geir-* iau'r gân. _
+w: wyll-* ys da _ a fydd-* o rhan y ddae-ar oll _ i gyd." _

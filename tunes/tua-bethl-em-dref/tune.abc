@@ -7,14 +7,27 @@ Z:MIDI transcribed with alawon-abc
 %%alawon-reviewed
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams o alaw Edward Arthur (David Evans)
+N:Words by Wil Ifan (1883-1968), supplied by Steve Jeans.
 N:The score plays part A, part B, then part A again (D.C.).
 M:6/8
 L:1/8
 Q:3/8=47
 K:Am
-"Am"A,3 E3 | "Dm"DCD "Am"E3 | "Am"A,2 E EDE | "G"G2 F "Am"E3 |
-"Dm"D2 A, A,2 B, | "F"C2 B, "Em"A,2 G, | "Am"A,6 || "Am"A3 "G"GEG |
-"Am"A3 A3 | "Am"A3 GEC | "Dm"D3 "Em"E3 | "Am"A,3 A,B,C |
-"Dm"D3 A,2 B, | "F"C3 B,3 | "Em"B,6 | "Am"A,3 E3 |
-"Dm"DCD "Am"E3 | "Am"A,2 E EDE | "G"G2 F "Am"E3 | "Dm"D2 A, A,2 B, |
-"F"C2 B, "Em"A,2 G, | "Am"A,6 |]
+"Am"A,3 E3 | "Dm"(DC)D "Am"E3 | "Am"(A,2 E) (EDE) | "G"G2 F "Am"E3 |
+w: Tu-a Beth-*lem dref, awn _ yn _ _ fin-tai gref,
+w: I fach-gen-*nyn Mair, y _ tra-* * gwydd-ol Air
+"Dm"(D2 A,) (A,2 B,) | "F"(C2 B,) "Em"(A,2 G,) | "Am"A,6 ||
+w: ac _ a-* ddol-*wn _ Ef,
+w: yn _ y _ gwellt _ a'r _ gwair.
+"Am"A3 "G"(GEG) | "Am"A3 A3 | "Am"A3 (GEC) | "Dm"D3 "Em"E3 |
+w: Gy-da'r _ _ llwy-thau un-wn _ _ nin-nau
+w: dy-gwn _ _ rodd-ion, serch y _ _ gal-on
+"Am"(A,3 A,B,)C | "Dm"D3 (A,2 B,) | "F"C3 B,3 | "Em"B,6 ||
+w: ar _ _ y llwy-brau _ at y crud.
+w: aur _ _ an-rheg-ion _ thus a myrr.
+"Am"A,3 E3 | "Dm"(DC)D "Am"E3 | "Am"(A,2 E) (EDE) | "G"G2 F "Am"E3 |
+w: Tu-a'r pres-*eb awn, gy-*da _ _ chal-on lawn,
+w: Tu-a Beth-*lem dref, awn _ yn _ _ fin-tai gref,
+"Dm"(D2 A,) (A,2 B,) | "F"(C2 B,) "Em"(A,2 G,) | "Am"A,6 |]
+w: a _ phen-* lin-*io _ wnawn.
+w: ac _ a-* ddol-*wn _ Ef,

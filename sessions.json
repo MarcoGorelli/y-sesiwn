@@ -180,12 +180,13 @@
       "lon": -3.6788,
       "repeat": "dates",
       "dates": [
-        "2026-10-22"
+        "2026-10-22",
+        "2026-11-19"
       ],
       "start": "19:30",
       "music": "Traditional Welsh music: bring an instrument and join in, or just sit and enjoy the tunes and the energy.",
       "music_cy": "Cerddoriaeth Gymreig draddodiadol: dewch ag offeryn ac ymuno, neu eisteddwch a mwynhau'r alawon a'r egni.",
-      "confirmed": "2026-10-04"
+      "confirmed": "2026-10-27"
     },
     {
       "name": "Sesiwn Werin",

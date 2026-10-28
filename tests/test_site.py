@@ -34,14 +34,8 @@ def test_every_tune_draws(page):
 # Bars that don't fill the time signature, other than a lead-in and the short bars at
 # the end of a part, are usually a slip (a bar line missing or one too many).
 EXPECTED_ODD_BARS = {
-    "blwyddyn-newydd-dda": "changes to 6/8 for two bars",
-    "erddigan-caer-waen-version-2": "its third part is in 6/8",
-    "llongau-caernarfon": "has one bar in 6/4",
-    "jig-y-ddwy-goes-chwith-version-2": "has one bar in 9/8",
     "bonheddwr-mawr-o-r-bala": "its second part starts with a lead-in, without a double bar",
     "merch-megan-version-2": "its third part starts with a lead-in, without a double bar",
-    "erddigan-caer-waen": "has a part in 6/8",
-    "ffarwel-trwy-r-pwll": "has a part in 6/8",
     # A note short in Brian Martin's file, and in the tune's N: line; the right note isn't known.
     "castell-aberystwyth": "bar 4 of part B is a quaver short",
     "megan-a-gollodd-ei-gardas-version-3": "two bars are a quaver short",
@@ -61,21 +55,28 @@ def test_bars_fill_the_time_signature(page):
     page.goto_site()
     odd = page.evaluate("""() => state.data.tunes.map((t) => {
       const v = ABCJS.renderAbc('*', t.abc)[0];
-      const { num, den } = v.getMeterFraction();
+      let { num, den } = v.getMeterFraction();
+      // Follow metre changes, an M: line or an inline [M:].
+      const setMeter = (m) => {
+        if (m?.type === 'common_time') [num, den] = [4, 4];
+        else if (m?.type === 'cut_time') [num, den] = [2, 2];
+        else if (m?.value?.length) [num, den] = [+m.value[0].num, +m.value[0].den];
+      };
       const bars = [];
       let length = 0, tuplet = 1;
-      for (const line of v.lines) for (const item of line.staff?.[0]?.voices?.[0] ?? []) {
-        if (item.el_type === 'note') {
+      for (const line of v.lines) for (const item of (setMeter(line.staff?.[0]?.meter), line.staff?.[0]?.voices?.[0] ?? [])) {
+        if (item.el_type === 'timeSignature') setMeter(item);
+        else if (item.el_type === 'note') {
           if (item.startTriplet) tuplet = item.tripletMultiplier ?? 1;
           length += (item.duration ?? 0) * tuplet;
           if (item.endTriplet) tuplet = 1;
         } else if (item.el_type === 'bar') {
-          if (length > 1e-6) bars.push({ length, type: item.type });
+          if (length > 1e-6) bars.push({ length, full: num / den, type: item.type });
           length = 0;
         }
       }
       const partEnd = (type) => /repeat|thin_thin|thin_thick/.test(type ?? '');
-      return [t.slug, bars.filter((b, i) => i > 0 && i < bars.length - 1 && Math.abs(b.length - num / den) > 1e-6
+      return [t.slug, bars.filter((b, i) => i > 0 && i < bars.length - 1 && Math.abs(b.length - b.full) > 1e-6
         && !partEnd(b.type) && !partEnd(bars[i - 1].type)).length];
     }).filter(([, n]) => n).map(([slug]) => slug)""")
     assert sorted(odd) == sorted(EXPECTED_ODD_BARS)
@@ -1472,7 +1473,8 @@ def test_new_version_straight_away(browser, site):
     page = context.new_page()
     try:
         page.goto(site)
-        page.wait_for_function("navigator.serviceWorker.controller !== null", timeout=30000)
+        # Polled on a timer: this page gets no animation frames, which wait_for_function polls on by default.
+        page.wait_for_function("navigator.serviceWorker.controller !== null", polling=100, timeout=30000)
         app.write_text(original + "\nwindow.newVersion = true;\n", encoding="utf-8")  # a deploy
         page.goto(site + "?set=5A3V~h&n=Nos%20Iau")
         page.wait_for_selector(".set-list li", state="attached")
@@ -1511,7 +1513,8 @@ def test_a_deploy_updates_the_offline_copy(browser, site):
     page = context.new_page()
     try:
         page.goto(site)
-        page.wait_for_function("navigator.serviceWorker.controller !== null", timeout=30000)
+        # Polled on a timer: this page gets no animation frames, which wait_for_function polls on by default.
+        page.wait_for_function("navigator.serviceWorker.controller !== null", polling=100, timeout=30000)
         page.goto(site + "?tune=glandyfi")
         page.wait_for_selector(".score .abcjs-staff")
         time.sleep(1.1)  # the test server's "last modified" is to the second
@@ -1549,7 +1552,8 @@ def test_a_page_left_open_gets_a_deploy(browser, site):
     page = context.new_page()
     try:
         page.goto(site + "?tune=glandyfi")
-        page.wait_for_function("navigator.serviceWorker.controller !== null", timeout=30000)
+        # Polled on a timer: this page gets no animation frames, which wait_for_function polls on by default.
+        page.wait_for_function("navigator.serviceWorker.controller !== null", polling=100, timeout=30000)
         page.wait_for_selector(".score .abcjs-staff")
         page.evaluate("window.oldPage = true")
         time.sleep(1.1)  # the test server's "last modified" is to the second
@@ -1557,7 +1561,7 @@ def test_a_page_left_open_gets_a_deploy(browser, site):
         (out / "sw.js").write_text(re.sub(r'const VERSION = "[^"]+"', 'const VERSION = "deployed"', originals["sw.js"]), encoding="utf-8")
         # What coming back into view does, without its ten minutes' wait.
         page.evaluate("navigator.serviceWorker.getRegistration().then((r) => r.update())")
-        page.wait_for_function("state.updated", timeout=30000)
+        page.wait_for_function("state.updated", polling=100, timeout=30000)
         assert page.evaluate("window.oldPage") is True  # still the same page
         context.set_offline(True)
         page.click(".sidebar-links a[href='?page=browse']")

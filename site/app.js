@@ -438,6 +438,10 @@ function searchQuery(query) {
   const typed = normalize(query);
   return typed.replace(/ (version|fersiwn) \d+$/, "") || typed;
 }
+// A to Z by name, a part in brackets after the rest: it's usually another version, so
+// "Meillionen Meirionnydd" comes before "Meillionen (minor)".
+const nameKey = (group) => group.search[0].replace(/ \(/g, " \uffff");
+const byTitle = (a, b) => (nameKey(a) < nameKey(b) ? -1 : 1);
 const SHOWN = 20;  // under the box; the rest on the page of all of them
 
 function search(query) {
@@ -452,7 +456,7 @@ function search(query) {
   const scored = state.groupList
     .map((tune) => [tune === own ? 3 : score(q, tune), tune])
     .filter(([s]) => s >= 0.7)
-    .sort((x, y) => y[0] - x[0] || (x[1].search[0] < y[1].search[0] ? -1 : 1));  // A to Z, as the list of all of them
+    .sort((x, y) => y[0] - x[0] || byTitle(x[1], y[1]));  // A to Z, as the list of all of them
   const found = scored.map(([, tune]) => tune);
   // Where the names only spelt a little like it start (after every name that has it): -1, none.
   found.close = scored.findIndex(([s]) => s < 1);
@@ -2668,10 +2672,11 @@ function scoreLayout(paper) {
   return { staffwidth, wrap: { minSpacing: 1.8, maxSpacing: 2.7, preferredMeasuresPerLine: bars } };
 }
 
-// Not one bar left alone on a line (a whole line of the screen for a few notes), and no
+// Not one bar left alone on a line (a whole line of the screen for a few notes), no
 // first or second ending starting at the very end of a line (its bracket left hanging
-// there). abcjs breaks the lines by its own rules; where they leave either, the lines are
-// broken again here (evenLines), from each bar's own width, or, for music that can't be
+// there), and no pickup at the end of a line or alone on one: it starts the line of the bar
+// it leads into. abcjs breaks the lines by its own rules; where they leave any of these, the
+// lines are broken again here (evenLines), from each bar's own width, or, for music that can't be
 // measured so, drawn with a bar more on each line, a little closer together; kept if
 // that's better. Returns the music drawn. A song with its words under the notes (sung) is
 // laid out by sungLines instead: these bars' widths are measured without the words.
@@ -2681,22 +2686,26 @@ function noLoneBar(visualObj, layout, draw, abc, format, sung = false) {
   const faults = (music) => {
     const lines = music.lines.filter((line) => line.staff).map((line) => line.staff[0].voices[0].filter((x) => x.el_type === "bar"));
     const most = Math.max(...lines.map((bars) => bars.length));
+    const pickups = pickupBars(music);
     return {
       most,
       count: lines.length < 2 || most < 2 ? 0
         : lines.filter((bars) => bars.length === 1 || bars.at(-1)?.startEnding).length,
+      pickups: lines.filter((bars, i) => i < lines.length - 1 && pickups.has(bars.at(-1))).length,
     };
   };
-  const { most, count } = faults(visualObj);
-  if (!count) return visualObj;
+  // Fewer pickups left at the end of a line, then fewer of the others.
+  const better = (a, b) => a.pickups < b.pickups || (a.pickups === b.pickups && a.count < b.count);
+  const was = faults(visualObj), { most } = was;
+  if (!was.count && !was.pickups) return visualObj;
   const breaks = evenLines(visualObj, naturalWidths(abc, format));
   const even = breaks && draw({ staffwidth: layout.staffwidth, lineBreaks: [breaks] });
-  if (even && faults(even).count < count) return even;
+  if (even && better(faults(even), was)) return even;
   // Measured, the lines can't be better without crowding them: as abcjs had them. (Its own
   // measure, for "a bar more on each line", takes a short line's bars for wide ones.)
   if (breaks) return draw(layout) ?? visualObj;
   const again = draw({ ...layout, wrap: { ...layout.wrap, minSpacing: 1.5, preferredMeasuresPerLine: most + 1 } });
-  return again && faults(again).count < count ? again : draw(layout) ?? visualObj;
+  return again && better(faults(again), was) ? again : draw(layout) ?? visualObj;
 }
 
 // A song's own lines were laid out with room for its words: kept, a line with more bars
@@ -2730,6 +2739,29 @@ function sungLines(layout, draw) {
   return split && barsOf(split).join() === planned.join() ? split : draw({ staffwidth: layout.staffwidth });
 }
 
+// The bar lines that end a pickup: a bar shorter than the time signature's at the start of
+// the tune or of a part (after a repeat or a double bar), the notes leading into the bar
+// after it. Not the short bar a part ends with, before the repeat.
+function pickupBars(music) {
+  const meter = music.getMeterFraction?.();
+  const whole = meter?.num && meter?.den ? meter.num / meter.den : 0;
+  const found = new Set();
+  if (!whole) return found;
+  let length = 0, times = 1, partStart = true;
+  for (const x of music.lines.filter((line) => line.staff).flatMap((line) => line.staff[0].voices[0])) {
+    if (x.el_type === "note") {
+      if (x.startTriplet) times = x.tripletMultiplier ?? 1;
+      length += (x.duration ?? 0) * times;
+      if (x.endTriplet) times = 1;
+    } else if (x.el_type === "bar") {
+      if (length > 0 && length < whole * 0.99 && partStart) found.add(x);
+      partStart = length === 0 || x.type !== "bar_thin";  // (nothing before it: the bar line a part starts with)
+      length = 0;
+    }
+  }
+  return found;
+}
+
 // Where to break the lines of music abcjs laid out (wrap), as abcjs's lineBreaks (the
 // bars each line ends on), from each bar's own width (naturalWidths): lines as evenly
 // full as they'll go (one a little closer together, where that helps), no short bar alone
@@ -2749,18 +2781,21 @@ function evenLines(music, natural) {
   const room = (measured.staffWidth - measured.widths.left) * ROOM, tight = room * 1.2;
   const bars = music.lines.filter((line) => line.staff).flatMap((line) => line.staff[0].voices[0].filter((x) => x.el_type === "bar"));
   if (bars.length < n - 1) return null;
+  const pickups = pickupBars(music);
   // best[j]: the least cost of the music up to bar j (its lines, and where the last ended)
   const best = [{ cost: 0, from: -1 }];
   for (let j = 1; j <= n; j++) {
     best[j] = { cost: Infinity, from: 0 };
-    let width = 0;
+    if (j < n && pickups.has(bars[j - 1])) continue;  // a pickup goes with the bar after it
+    let width = 0, full = 0;  // full: the line's bars that aren't pickups (or a bar line it starts with)
     for (let i = j - 1; i >= 0; i--) {
       width += widths[i];
-      if (width > tight && i < j - 1) break;
-      const full = Math.min(width / room, 1);
-      let cost = j === n ? Math.max(0, 0.5 - full) ** 2 : (1 - full) ** 2;
+      if (widths[i] && !pickups.has(bars[i])) full++;
+      if (width > tight && full > 1) break;  // a pickup and its bar together, however wide
+      const filled = Math.min(width / room, 1);
+      let cost = j === n ? Math.max(0, 0.5 - filled) ** 2 : (1 - filled) ** 2;
       if (width > room && i < j - 1) cost += 3 + (10 * (width - room)) / room;  // closer together
-      if (i === j - 1 && full < 0.55 && n > 1) cost += 4;  // a short bar alone
+      if (i === j - 1 && filled < 0.55 && n > 1) cost += 4;  // a short bar alone
       if (j < n && bars[j - 1]?.startEnding) cost += 16;  // an ending's bracket left at the end
       if (best[i].cost + cost < best[j].cost) best[j] = { cost: best[i].cost + cost, from: i };
     }
@@ -6490,7 +6525,7 @@ function buildGroups() {
     const credits = group.versions.flatMap((v) => v.details.filter(([label]) => CREDIT_LABELS.has(label)).map(([, text]) => text));
     group.credits = [...new Set(credits)].map((text) => [text, normalize(text)]);
   }
-  state.groupList = [...state.groups.values()].sort((a, b) => (a.search[0] < b.search[0] ? -1 : 1));
+  state.groupList = [...state.groups.values()].sort(byTitle);
   // A renamed tune: its old folder name, and its old codes in set links, find the new one.
   for (const move of state.data.moved ?? []) {
     state.moved.set(move.from, move.to);

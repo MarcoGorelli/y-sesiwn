@@ -608,6 +608,7 @@ def test_no_chord_box_without_chords(page):
     ("llwyn onn version 2", "Llwyn Onn"),              # a version, as a tune's page names it
     ("llwyn-onn-version-2", "Llwyn Onn"),              # a folder's name
     ("llwytcoed-version-3", "Jig Llwytcoed"),          # a folder's name, renamed since (moved.json)
+    ("meillionen", "Meillionen Meirionnydd"),          # before "Meillionen (minor)": a name in brackets is another version
 ])
 def test_search_by_name(page, query, expected):
     page.goto_site()
@@ -1712,6 +1713,23 @@ def test_no_ending_left_hanging_on_a_phone(browser, site):
     assert len(per_line) > 4
     assert min(per_line.values()) >= 2, per_line
     assert endings and all(place < per_line[line] - 1 for line, place in endings), (endings, per_line)
+    context.close()
+
+
+def test_pickups_on_the_line_of_their_bar_on_a_phone(browser, site):
+    # A tune whose bars fill a phone's line one at a time: its pickups (the G it starts with,
+    # the E F before the second part) aren't left at the end of a line, or on one of their own,
+    # but start the line of the bar they lead into.
+    context = browser.new_context(service_workers="block", **PHONE)
+    page = context.new_page()
+    page.goto(site + "alaw/meillionen-meirionnydd/")
+    page.wait_for_selector(".score .abcjs-staff")
+    # abcjs marks each note with its line (abcjs-l2) and its bar in the tune (abcjs-mm5).
+    line_of = page.evaluate("""() => Object.fromEntries([...document.querySelectorAll('.score svg .abcjs-note')]
+      .map((n) => n.getAttribute('class').match(/abcjs-l(\\d+) .*abcjs-mm(\\d+)/).slice(1).map(Number)).map(([l, m]) => [m, l]))""")
+    lines = set(line_of.values())
+    assert len(lines) > 4
+    assert line_of["0"] == line_of["1"] and line_of["5"] == line_of["6"], line_of
     context.close()
 
 

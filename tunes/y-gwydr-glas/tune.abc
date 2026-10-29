@@ -1,12 +1,41 @@
 X:1
 T:Y Gwydr Glas
+R:cân
+S:Sent by Steve Jeans
+N:As sung by Steve Jeans, from the Ar Log CD. Collected by Cymdeithas Alawon Gwerin Cymru around 1910.
+%%chords Supplied by Steve Jeans
 M:3/4
 L:1/8
-R:cân
 K:G
-D2 |: G B3 AG | A c3 BA | B d3 z2 | z4 c2 |
-B G3 z2 | A F3 z2 | G6 |1 z4 D2 :|2 z2 A2 B2 ||
-c2 B2 c2 | e2 d2 c2 | B d3 z2 | z4 e2 |
-d2 B2 A2 | G2 A2 B2 | A6 | z4 D2 |
-G B3 AG | A c3 BA | B d3 z2 | z4 c2 |
-B G3 z2 | A F3 z2 | G4 |]
+(DD) | "G"G B3 AG | "D7"A c3 BA | "G"B2 d4- | "C"d4 z c |
+w: Os daw | nghar-iad ym-a | hen-o ym-a | hen-o, | _ i |
+w: Pe _ | medd-wn ed-yn | er-yr, ed-yn | er-yr | _ Mi |
+w: Fy _ | nghal-on sydd cyn | drym-ed, sydd cyn | drym-ed | _ A'r |
+"G"B G3 z A | "D"F4-F z | "G"G6- | G2 z2 || D2 |
+w: gur-o gwy- | dr _ | glas, | _ | Rhowch |
+w: fydd-wn law- | er _ | gwell, | _ | I |
+w: march sy'n dring- | o _ | rhiw, | _ | Wrth |
+"G"G B3 AG | "D7"A c3 BA | "G"B2 d4- | "C"d4 z c |
+w: at-eb gwedd-us | idd-o gwedd-us | idd-o, | _ na |
+w: hed-eg at fy | nghar-iad, at fy | nghar-iad, | _ sydd |
+w: geis-io, bod yn | llaw-en, bod yn | llaw-en | _ ni |
+"G"B G3 z A | "D"F4-F z | "G"G6- | G2 z2 || (AB) |
+w: 'teb-wch mon- | o'n _ | gas, | _ | Nad _ |
+w: yn y gwled- | ydd _ | pell, | _ | Dros _ |
+w: fed-rwn yn | fy _ | myw | _ | Mae'r _ |
+"C"(c2 B2) c2 | "D7"(e2 d2) c2 | "G"B2 d4- | d4 e2 |
+w: yd-* yw | ferch _ ddim | gar-tre | _ neu'i |
+w: dir-* oedd | maith _ a | mor-oedd | _ go- |
+w: es-* gid | sydd _ yn | was-gu | _ mewn |
+"Em"(d2 B2) A2 | "A"G4 B-B | "D"A6- | "D7"A2 z2 || D2 |
+w: hewy-* llus | da yn y | tŷ, | _ | Llanc |
+w: beith-io i | fod e'n _ | iach, | _ | Rwy'n |
+w: man _ nas | gwydd-och _ | chi, | _ | A |
+"G"G B3 AG | "D7"A c3 BA | "G"B2 d4- | "C"d4 z c |
+w: if-anc o'r plwy' | ar-all o'r plwy' | ar-all | _ sydd |
+w: car-u tir lle | cerdd-odd tir lle | cerdd-odd | _ O |
+w: llaw-er gof-id | medd-wl, gof-id | medd-wl, | _ Sy'n |
+"G"B G3 z A | "D"F4-F z | "G"G6- | G2 z2 |]
+w: wed-i mynd | â _ | hi. | _ |
+w: wraidd y gal- | on _ | fach. | _ |
+w: tor-ri nghal- | on _ | i. | _ |

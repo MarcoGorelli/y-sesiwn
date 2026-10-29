@@ -82,6 +82,23 @@ def test_bars_fill_the_time_signature(page):
     assert sorted(odd) == sorted(EXPECTED_ODD_BARS)
 
 
+def test_the_lit_notes_end_with_the_sound(page):
+    # abcjs plays and lights the notes from two readings of the repeats, which can differ: a
+    # :| with no |: after a part with endings (the lit notes went back for it, the sound
+    # didn't), or a :|: (the sound didn't know it). The notes went on lighting up in silence.
+    page.goto_site()
+    late = page.evaluate("""() => state.data.tunes.map((t) => {
+      const v = ABCJS.renderAbc('*', t.abc)[0];
+      const notes = v.setUpAudio({}).tracks.flat().filter((n) => n.duration);
+      const sound = Math.max(...notes.map((n) => n.start + n.duration));  // in whole notes
+      const last = new ABCJS.TimingCallbacks(v, {}).noteTimings.filter((e) => e.type === 'event').at(-1);
+      const { num, den } = v.getMeterFraction();
+      const lit = (last.milliseconds / last.millisecondsPerMeasure) * num / den;
+      return [t.slug, lit - sound > num / den];  // more than a bar after the sound ends
+    }).filter(([, late]) => late).map(([slug]) => slug)""")
+    assert late == []
+
+
 @pytest.mark.parametrize("slug", ["pibddawns-gwyr-gwrecsam", "glandyfi", "nyth-y-gog", "erddygan-y-pibydd-coch"])
 def test_tune_page(page, slug):
     page.goto_site(f"?tune={slug}")

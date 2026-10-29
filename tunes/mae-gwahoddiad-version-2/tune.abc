@@ -1,0 +1,61 @@
+X:1
+T:Mae Gwahoddiad (version 2)
+R:carol Plygain
+B:Llyfr Hen Garolau Cymru
+S:Sent by Steve Jeans
+N:A Plygain carol in three parts, with the tune in the middle part, as in most Plygain carols. Four verses are commonly sung.
+N:Headed "Eos Powys" in the book, mesur (metre) Mentra Gwen.
+M:4/4
+L:1/4
+%%score 1 2 3
+V:1 treble nm="T"
+V:2 treble nm="A"
+V:3 bass nm="B"
+K:G
+[V:1] G3/2 G/ D D | B, D G G | d2 c3/2 c/ | B4 ||
+[V:2] G3/2 G/ D D | B, D G G | B2 A3/2 A/ | G4 ||
+w: 1.~Mae gwa-hodd-iad in-ni hedd-iw i gad-w gŵyl,
+w: 2.~Y gwŷr doeth-ion cy-wir deith-ient, ar dor-iad dydd,
+w: 3.~Gy-da'r rhain yn deul-u ffydd-iog, awn nin-nau'n awr,
+w: 4.~Crist ag-or-odd ffordd i'n gwar-ed, clod idd-o byth.
+[V:3] G,3/2 G,/ D, D, | B,, D, G, G, | D,2 D,3/2 D,/ | G,,4 ||
+%
+[V:1] G3/2 G/ D D | B, D G G | d2 c3/2 c/ | B4 ||
+[V:2] G3/2 G/ D D | B, D G G | B2 A3/2 A/ | G4 ||
+w: Clwch heb gêl y clych yn can-u O! cad-wn ŵyl.
+w: O mor for-e y cyf-eir-iant, ar dor-iad dydd.
+w: I ym-o-fyn Crist en-ein-iog, awn nin-nau, awr.
+w: Crist a'n dyg-odd o'n caeth-i-wed, clod idd-o byth.
+[V:3] G,3/2 G,/ D, D, | B,, D, G, G, | D,2 D,3/2 D,/ | G,,4 ||
+%
+[V:1] d d B B | c c A A | B (c/d/) e c | d B c !fermata!A ||
+[V:2] B B G G | A A F F | G (A/B/) c A | B G A !fermata!F ||
+w: Gŵyl i goff-a bor-e dedd-wyd, gen-e- * di-gaeth Crist yr Ar-glwydd,
+w: Yn hyd-er-us caent eu har-wen, gan rhy- * fedd-ol, sir-iol ser-en,
+w: Awn i wel-ed y mab bych-an draw yn _ gor-wedd, ag-wedd, eg-wan,
+w: Ies-u hyn-od roes ei hun-an dros bech- * ad-ur eu-og af-lan,
+[V:3] G, G, E, E, | C, C, D, D, | G, G, G, G, | G, E, D, !fermata!D, ||
+%
+[V:1] G3/2 G/ D D | B, D G G | d2 c3/2 c/ | B4 ||
+[V:2] G3/2 G/ D D | B, D G G | B2 A3/2 A/ | G4 ||
+w: rhodd-wn fol-iant am y new-ydd, O! cad-wn ŵyl.
+w: i ym-of-yn am y bach-gen, ar dor-iad dydd.
+w: yn y pres-eb, awd-dur an-ian, O! gwel-wn Ef.
+w: i'w war-ed\-u o fedd-iant Sat-an, clod idd-o byth.
+[V:3] G,3/2 G,/ D, D, | B,, D, G, G, | D,2 D,3/2 D,/ | G,,4 ||
+%
+[V:1] d d B B | c c A A | B (c/d/) e c | d B c !fermata!A ||
+[V:2] B B G G | A A F F | G (A/B/) c A | B G A !fermata!F ||
+w: Hedd-iw gan-ed draw ym Meth-lem yr gwir _ seil-o aer Caer-sal-em
+w: Yn-o'n hawdd-gar iawn an-rheg-ion a ddy- * gas-ant en-wog weis-ion,
+w: Awn i gan-fod mawr ry-fedd-od, Duw a _ dyn yn un mewn han-fod,
+w: Ar ei lais bech-ad-ur gwrand-o nid yw'n _ gwrth-od neb ddaw at-o,
+[V:3] G, G, E, E, | C, C, D, D, | G, G, G, G, | G, E, D, !fermata!D, ||
+%
+[V:1] G3/2 G/ D D | B, D G G | d2 c3/2 c/ | B4 |]
+[V:2] G3/2 G/ D D | B, D G G | B2 A3/2 A/ | G4 |]
+w: Ei add-ol-i Ef a ddyl-em, O! cad-wn ŵyl.
+w: mewn modd parch-us, ddawn-us ddyn-ion, ar dor-iad dydd.
+w: y Mes-i-a wed-i dyf-od, O! gwel-wn Ef.
+w: ond yn derb-yn pawb a gred-o, clod idd-o byth.
+[V:3] G,3/2 G,/ D, D, | B,, D, G, G, | D,2 D,3/2 D,/ | G,,4 |]

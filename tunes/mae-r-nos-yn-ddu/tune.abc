@@ -1,17 +1,42 @@
 X:1
 T:Mae'r Nos yn Ddu
+R:carol
 S:http://alawoncymru.com/alawon/Tunes/DyddEstyn/DyddEstyn.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
 %%alawon-follows-score
 %%chords From the Alawon Cymru score
+C:D. G. Corner (1649)
 C:Trefniant Meurig Williams
+N:Words by A. L. Salmon (1865–1952), in Welsh by T. Gwynn Jones (1871–1949), sent by Steve Jeans.
 N:The score has a counter-melody (cyfalaw) as well. The recording holds the last note longer.
 M:3/4
 L:1/8
 Q:1/4=120
 K:D
 |: F2 | "D"F2 G2 A2 | "D"D4 D2 | "A"E2 D2 E2 | "D"F4 D2 |
+w: Mae'r | nos _ yn | ddu, a | gwynt _ nid | oes, un
+w: A | nin-* nau'n | croes-i | maes _ y | bryn, i'r
 "A"E4 F2 | "G"G2 A2 G2 | "F#"F6- | "F#"F4 :| B,2 |
+w: ser-en | sy'n _ y | nef | _ |
+w: fan y | gor-* wedd | ef | _ | Holl
 "E"B,2 C2 D2 | "A"E2 F2 E2 | "D"D6- | D4 |]
+w: o-* baith | dyn _ yw | ef. | _ |
+W:2. Nid oes ogoniant yn y fan,
+W:dim ond yr eiddo ef,
+W:A'r golau mwyn a gwyneb Mair,
+W:fel gweddi tua'r nef,
+W:O galon mam i'r nef.
+W:
+W:3. Nid mangre geni t'wysog yw,
+W:nid man i lawen lu,
+W:Er hynny, clywodd nef a llawr
+W:ganiadau'r engyl fry,
+W:Orfoledd engyl fry.
+W:
+W:4. O Faban glân, mor brudd yw'n bron,
+W:gan wae sy'n gwywo'n gwedd:
+W:O canwn iti'r bore hwn
+W:ganiadau newydd hedd,
+W:Ganiadau bythol hedd.

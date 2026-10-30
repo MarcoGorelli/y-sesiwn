@@ -36,6 +36,7 @@ def test_every_tune_draws(page):
 EXPECTED_ODD_BARS = {
     "bonheddwr-mawr-o-r-bala": "its second part starts with a lead-in, without a double bar",
     "merch-megan-version-2": "its third part starts with a lead-in, without a double bar",
+    "ar-gyfer-heddiw-r-bore": "the score bars each pause, and the lead-in after it, as half bars",
     # A note short in Brian Martin's file, and in the tune's N: line; the right note isn't known.
     "castell-aberystwyth": "bar 4 of part B is a quaver short",
     "megan-a-gollodd-ei-gardas-version-3": "two bars are a quaver short",

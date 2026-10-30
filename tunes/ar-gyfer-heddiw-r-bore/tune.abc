@@ -1,0 +1,52 @@
+X:1
+T:Ar Gyfer Heddiw'r Bore
+R:carol Plygain
+B:Plygain carol books
+S:Sent by Steve Jeans
+N:A Plygain carol in three parts, with the tune in the middle part.
+M:4/4
+L:1/4
+%%score 1 2 3
+V:1 treble nm="Ten" snm="T"
+V:2 treble nm="Alaw" snm="A"
+V:3 bass nm="Bas" snm="B"
+K:G
+[V:1] G2 | B A G F | G D B d | d2 B d | !fermata!d2 |
+[V:2] G2 | B A G F | G D G A | B2 G B | !fermata!A2 |
+w: 1.~Ar gy-fer hedd-iw'r bor-e'n fab-an bach, Fab-an bach,
+w: 2.~Caed bwy-iol ddwfr Es-ec-ial, ar lin Mair, ar lin Mair,
+w: 3.~Di-os-godd Crist o'i go-ron, o'i wir fodd, o'i wir fodd,
+w: 4.~Am hyn, bech-ad-dur, bry-sia, fel yr wyt, fel yr wyt,
+[V:3] G,2 | B, A, G, F, | G, D, B,, D, | G,2 G, G, | !fermata!D,2 |
+%
+[V:1] B2 | d c B B | c c B A | !fermata!B2 |
+[V:2] G2 | B A G F | E A G F | !fermata!G2 |
+w: Y gan-wyd gwreidd-yn Jess-e'n Fab-an bach.
+w: A gwir Fes-ï-a Dan-iel ar lin Mair.
+w: Er mwyn cor-on-i Sei-on, o'i wir fodd;
+w: I 'mof-yn am y Nodd-fa, fel yr wyt;
+[V:3] G,2 | G, D, E, B,, | C, A,, D, D, | !fermata!G,2 |
+%
+[V:1] B2 | d d B d | d !fermata!c | c2 | c c A c | c !fermata!B |
+[V:2] G2 | B B G B | B !fermata!A | A2 | A A F A | A !fermata!G |
+w: Y Cad-arn ddaeth o Bos-ra; Y Dedd-fwr gynt ar Sin-a
+w: Caed Bach-gen doeth Es-ei-a; 'R'add-ew-id roead i Add-a,
+w: I bly-gu'i ben di-hal-og, O dan y go-ron drein-iog,
+w: I ti'r ag-or-wyd ffyn-non, A ylch dy glwy-fau du-on,
+[V:3] G,2 | G, G, G, G, | D, !fermata!D, | D,2 | D, D, D, D, | D, !fermata!G,, |
+%
+[V:1] G2 | B A G F | G D B d | d2 B d | !fermata!d2 |
+[V:2] G2 | B A G F | G D G A | B2 G B | !fermata!A2 |
+w: Yr Iawn gaed ar Gal-far-ian'n Fab-an bach, Fab-an bach,
+w: Yr Alff-a a'r O-me-ga ar lin Mair, ar lin Mair,
+w: I ddio-def dir-myg llid-iog o'i wir fodd, o'i wir fodd,
+w: Fel eir-a gwyn yn Sal-mon fel yr wyt; fel yr wyt,
+[V:3] G,2 | B, A, G, F, | G, D, B,, D, | G,2 G, G, | !fermata!D,2 |
+%
+[V:1] B2 | d c B B | c c B A | B2 |]
+[V:2] G2 | B A G F | E A G F | G2 |]
+w: Yn sug-no bron Mar-i-a'n Fab-an bach.
+w: Mewn côr ym Meth-le'm Jw-da ar lin Mair.
+w: Er co-di pen yr eu-og o'i wir fodd.
+w: Gan hyn-ny tyrd yn bryd-lon fel yr wyt;
+[V:3] G,2 | G, D, E, B,, | C, A,, D, D, | G,,2 |]

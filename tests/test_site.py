@@ -231,6 +231,46 @@ def test_transposing_keeps_a_sensible_range(page):
     assert page.evaluate("semitones(state.bySlug.get('glandyfi'), 0)") == 0
 
 
+def test_transposing_a_part_for_voices_keeps_to_the_upper_voices(page):
+    # A carol in three parts, its bass on a bass stave: a key a semitone down is a semitone
+    # down, the bass line not counted as notes under the treble stave.
+    page.goto_site("alaw/ar-gyfer-heddiw-r-bore/")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.evaluate("semitones(state.bySlug.get('ar-gyfer-heddiw-r-bore'), -1)") == -1
+
+
+def test_key_arrowed_to_then_chosen_is_drawn(page):
+    # The arrow keys wait a moment before drawing the key stopped on; chosen straight
+    # away (Enter), it's drawn then, not left in the key before.
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.focus("#key-select [aria-checked=true]")
+    page.keyboard.press("ArrowRight")
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(600)
+    assert page.evaluate("document.querySelector('#key-select').dataset.value") == "1"
+    assert page.evaluate("state.synth.visualObj.getKeySignature().root") == "A"  # from G
+
+
+def test_abc_notation_follows_the_key(page):
+    page.goto_site("alaw/glandyfi/?key=A")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.click("details.abc summary")
+    assert "\nK:A" in page.inner_text("details.abc pre")
+    page.click("#key-select [data-shift='0']")
+    assert "\nK:G" in page.inner_text("details.abc pre")
+
+
+def test_tempo_changes_in_the_music_follow_the_tempo(page):
+    # A Q: in the music (a slower last part) is made faster or slower with the tune.
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    abc = "X:1\nM:4/4\nL:1/8\nQ:1/4=100\nK:C\nCDEF GABc|\nQ:1/4=50\ncBAG FEDC|\n[Q:1/4=80] C8|]\n"
+    out = page.evaluate("(a) => setTempo(a, '1/4', 120, '', 100)", abc)
+    assert "Q:1/4=120\nK:C" in out and "\nQ:1/4=60\n" in out and "[Q:1/4=96]" in out
+    assert page.evaluate("(a) => setTempo(a, '1/4', 100)", abc).count("Q:1/4=100") == 1
+
+
 def test_chord_chart(page):
     page.goto_site("alaw/glandyfi/?v=1")  # Alawon Cymru's score
     page.open_tools()
@@ -2106,6 +2146,23 @@ def test_loop_parts(page, slug, parts):
     assert page.locator(".speed-up").is_visible()
     page.select_option("#loop-select", "0")
     assert page.locator(".speed-up").is_visible()
+
+
+@pytest.mark.parametrize("abc, parts", [
+    ("|: CDEF | GABc :| defg | abc'2 :|", ["|: CDEF | GABc ", ":| defg | abc'2 :|"]),
+    ("CDEF | GABc || defg | abc'2 |]", ["CDEF | GABc ", "|| defg | abc'2 |]"]),
+    # A second ending stays with its part; the lead-in after a double bar starts the next.
+    ("|: CDEF |1 GABc :|2 GAB2 || d | efga | bc'2 |]", ["|: CDEF |1 GABc :|2 GAB2 ", "|| d | efga | bc'2 |]"]),
+    ("|: CDEF |1 GABc :| [2 GAB2 || defg | abc'2 |]", ["|: CDEF |1 GABc :| [2 GAB2 ", "|| defg | abc'2 |]"]),
+])
+def test_parts_start_at_their_bar_line(page, abc, parts):
+    # A part starts at a repeat sign or at the double bar line before it, not a bar later.
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    tune = f"X:1\nM:4/4\nL:1/4\nK:C\n{abc}\n"
+    found = page.evaluate("""(a) => tuneParts(ABCJS.renderAbc('*', a)[0])
+      .map((p) => a.slice(Math.max(p.from, a.indexOf('K:C') + 4), Math.min(p.to, a.length)).trim())""", tune)
+    assert found == [p.strip() for p in parts]
 
 
 def test_loop_part_and_speed_up(browser, site):
@@ -4225,6 +4282,47 @@ def test_full_screen_set_is_just_the_music(browser, site):
     page.click(".practice-toggle")
     assert not page.is_visible(".set-tune-head .preview-play >> nth=0") and not page.is_visible(".set-actions .music-size")
     assert page.is_visible(".set-tune-head h2 >> nth=0") and page.is_visible(".practice-toggle")
+    context.close()
+
+
+def test_set_laid_out_again_when_turned(browser, site):
+    # A phone turned from landscape to portrait: the set's music is laid out again for the
+    # new width, as if opened there (not the landscape lines shrunk to fit).
+    context = browser.new_context(service_workers="block", viewport={"width": 915, "height": 412}, is_mobile=True, has_touch=True)
+    page = context.new_page()
+    staves = "() => [...document.querySelectorAll('.set-paper')].filter((p) => p.drawn).map((p) => p.querySelectorAll('.abcjs-staff').length)"
+    page.goto(site + "?set=5A3V~h&n=Nos%20Iau")
+    page.wait_for_selector(".set-tune .abcjs-staff")
+    landscape = page.evaluate(staves)
+    page.set_viewport_size({"width": 412, "height": 915})
+    page.wait_for_timeout(500)
+    turned = page.evaluate(staves)
+    page.reload()
+    page.wait_for_selector(".set-tune .abcjs-staff")
+    assert turned == page.evaluate(staves) != landscape
+    context.close()
+
+
+def test_set_links_say_the_key(page):
+    # A tune's link in a set opens it in the set's key, even its own: not the key the
+    # reader keeps for it.
+    page.goto_site("?set=5A3V~h&n=Nos%20Iau")
+    page.wait_for_selector(".set-list li", state="attached")
+    links = page.eval_on_selector_all(".set-list li > a", "as => as.map((a) => a.getAttribute('href'))")
+    assert links and all("key=" in link for link in links)
+
+
+def test_escape_leaves_full_screen_without_the_browsers(browser, site):
+    # Where the browser has no full screen of its own (Safari on an iPhone), Esc still leaves it.
+    context = browser.new_context(service_workers="block")
+    page = context.new_page()
+    page.add_init_script("Object.defineProperty(Document.prototype, 'fullscreenEnabled', { get: () => false })")
+    page.goto(site + "alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.click(".practice-toggle")
+    assert page.evaluate("document.body.classList.contains('practice')")
+    page.keyboard.press("Escape")
+    assert not page.evaluate("document.body.classList.contains('practice')")
     context.close()
 
 

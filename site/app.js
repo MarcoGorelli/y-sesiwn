@@ -907,8 +907,10 @@ const PREVIEWS = 5;  // results shown with their opening bars
 // A small round Play button for some drawn music (an opening, a tune in a set): while it
 // plays it's a stop button. One sound at a time: another button, a key of the keyboard or
 // leaving the page stops it, and so does another app's sound (audioFocus). label(playing)
-// names it for a screen reader; title, on the phone's lock screen.
-function playButton(music, label, title) {
+// names it for a screen reader; title, on the phone's lock screen. The tune alone, as its
+// page plays it unless asked otherwise (abcjs's own chords drown it), swung if it's kept so.
+function playButton(music, label, tune) {
+  const title = tune.base;
   const button = el("button", { type: "button", class: "preview-play", "aria-label": label(false), "data-playing": "false" }, playIcon());
   let playing = null;
   const done = () => {
@@ -933,7 +935,8 @@ function playButton(music, label, title) {
     button.replaceChildren(stopIcon());
     button.dataset.playing = "true";
     button.setAttribute("aria-label", label(true));
-    synth.init({ visualObj, options: AUDIO_PARAMS }).then(() => synth.prime()).then(({ duration }) => {
+    const options = { ...AUDIO_PARAMS, chordsOff: true, ...(canSwing(tune) && keptSettings(tune).swing ? { swing: SWING } : {}) };
+    synth.init({ visualObj, options }).then(() => synth.prime()).then(({ duration }) => {
       if (state.keyNote !== sound || playing !== sound) return;
       synth.start();
       // Another app's sound stops it, as it does a tune's; the lock screen's play starts it again.
@@ -960,7 +963,7 @@ function tunePreview(tune) {
   let visualObj = null;
   const button = playButton(() => visualObj, (playing) => playing
     ? tr(`Stop the opening of ${tune.base}`, `Stopio dechrau ${tune.base}`)
-    : tr(`Play the opening of ${tune.base}`, `Chwarae dechrau ${tune.base}`), tune.base);
+    : tr(`Play the opening of ${tune.base}`, `Chwarae dechrau ${tune.base}`), tune);
   const box = el("div", { class: "preview" }, button, paper);
   requestAnimationFrame(() => {
     // On a phone, drawn at the box's own width (not drawn wide and shrunk), so the notes are full size.
@@ -1147,7 +1150,7 @@ function tuneUrl(group, version) {
 function tuneLink(group, tune, settings, tab = "none") {
   const query = new URLSearchParams();
   if (tune !== group.versions[0]) query.set("v", tune.version);
-  if (settings?.transpose && tune.key) query.set("key", keyNote(tune.key.pitch + settings.transpose, tune.key.modeName));
+  if ((settings?.transpose || settings?.keyAlways) && tune.key) query.set("key", keyNote(tune.key.pitch + settings.transpose, tune.key.modeName));
   if (settings?.bpm && settings.bpm !== tune.bpm) query.set("tempo", settings.bpm);  // "learn it at 70"
   if (tab !== "none") query.set("tab", tab);
   return `alaw/${encodeURIComponent(group.slug)}/${query.size ? `?${query}` : ""}`;
@@ -1322,6 +1325,14 @@ document.addEventListener("keydown", (event) => {
   if (!document.querySelector(".practice-toggle")) return;
   event.preventDefault();
   setPractice(!document.body.classList.contains("practice"));
+});
+// Esc leaves full screen. The browser's own full screen does that itself (fullscreenchange);
+// without it (Safari on an iPhone or iPad, a page in a frame, or refused), it's done here.
+// An open menu or box closes first: they stop the key there.
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape" || event.defaultPrevented || document.fullscreenElement) return;
+  if (!document.body.classList.contains("practice") || document.querySelector("dialog[open]")) return;
+  setPractice(false);
 });
 
 // On a tune's page, hands on the instrument: [ and ] make it slower or faster (5 bpm),
@@ -2096,9 +2107,16 @@ function heroSearch(value = "") {
 // tune that's already low. The tune's own key never moves.
 const STAVE = { low: 59, high: 81 };  // MIDI: B3 … A5
 
+// (a part for several voices: not its bass line, on a bass stave of its own)
 function melodyRange(tune) {
   if (!tune.range) {
-    const pitches = melodyOf(tune);
+    const bass = new Set([...tune.abc.matchAll(/^V:\s*(\S+)(.*)$/gm)].filter((m) => /\bbass\b/.test(m[2])).map((m) => m[1]));
+    let voice = null;
+    const upper = bass.size ? tune.abc.split("\n").filter((line) => {
+      voice = /^(?:\[V:|V:)\s*([^\]\s]+)/.exec(line)?.[1] ?? voice;
+      return !bass.has(voice) || line.startsWith("K:");
+    }).join("\n") : null;
+    const pitches = upper ? melodyOf({ abc: upper }) : melodyOf(tune);
     tune.range = pitches.length ? [Math.min(...pitches), Math.max(...pitches)] : null;
   }
   return tune.range;
@@ -2237,9 +2255,15 @@ function wrapVerses(abc, layout) {
 
 // The tempo mark, with the word before it when there is one ("Swing ♩ = 112", as swing
 // is marked on printed music).
-function setTempo(abc, beat, bpm, text = "") {
+function setTempo(abc, beat, bpm, text = "", written = bpm) {
   const tempo = `Q:${text ? `"${text}" ` : ""}${beat}=${bpm}`;
-  return /^Q:/m.test(abc) ? abc.replace(/^Q:.*$/m, tempo) : abc.replace(/^K:/m, `${tempo}\nK:`);
+  // A change of tempo later in the tune (abcjs plays a Q: in the music from there on) is
+  // made as much faster or slower as the tune is (written: the tune's own tempo).
+  const later = (abc) => abc.replace(/(^Q:|\[Q:)([^\]\n]*?)(\d+)(\s*(?:"[^"]*")?\s*)(?=$|\])/gm,
+    (_, field, before, n, after) => `${field}${before}${Math.round((n * bpm) / written)}${after}`);
+  const k = Math.max(0, abc.search(/^K:/m));
+  const head = abc.slice(0, k);
+  return (/^Q:/m.test(head) ? head.replace(/^Q:.*$/m, tempo) : `${head}${tempo}\n`) + later(abc.slice(k));
 }
 
 // abcjs names each score "Sheet Music for "<title>"" (its <title> and aria-label), in English.
@@ -2330,15 +2354,21 @@ class Cursor {  // highlights the notes as they play, and keeps playback inside 
 // ---- Practice: loop a part, speed up, count-in, click, tablature -------------------------
 
 // A tune's parts (A, B, …) as ranges of its ABC text: a part starts at a repeat sign or
-// after a double bar line (as in the chord chart), and runs to the next.
+// at a double bar line (as in the chord chart), and runs to the next. A second ending
+// after a repeat stays with its part, so a :| only ends one if notes come next.
 function tuneParts(visualObj) {
   const starts = [0];
-  let ended = false;
+  let ended = null;  // where the last double bar line or :| is, until the notes after it
   for (const line of visualObj.lines) {
     for (const item of line.staff?.[0]?.voices?.[0] ?? []) {
-      if (item.el_type !== "bar") continue;
-      if ((REPEAT_START.has(item.type) || ended) && !item.startEnding) starts.push(item.startChar);
-      ended = PART_END.has(item.type) && !REPEAT_START.has(item.type);
+      if (item.el_type === "note") {
+        if (ended != null) starts.push(ended);
+        ended = null;
+      } else if (item.el_type === "bar") {
+        if (item.startEnding) ended = null;
+        else if (REPEAT_START.has(item.type)) { starts.push(item.startChar); ended = null; }
+        else if (PART_END.has(item.type)) ended = item.startChar;
+      }
     }
   }
   const unique = [...new Set(starts)].sort((a, b) => a - b);
@@ -2355,7 +2385,7 @@ function tuneParts(visualObj) {
 // speedUp, each time round is 5% (of the starting tempo) faster, up to speedTo bpm.
 function repeatLoop(controller, part, settings, onSpeed) {
   let jumping = false, inside = false, last = -1;
-  const firstNote = () => controller.timer.noteTimings.find((e) => e.type === "event" && e.startChar >= part.from && e.startChar < part.to);
+  const firstNote = () => controller.timer.noteTimings.find((e) => e.type === "event" && e.startChar != null && e.startChar >= part.from && e.startChar < part.to);
   const cap = () => Math.round((100 * settings.speedTo) / settings.bpm);
   let faster = false;  // the sound being made again, faster
   // Faster for the next time round, if speeding up (then, for a part, back to its start).
@@ -2386,10 +2416,13 @@ function repeatLoop(controller, part, settings, onSpeed) {
       // While the sound is made again, the old player's last notes still come (with no timer).
       if (faster || !controller.timer) return;
       if (event.startChar == null) return;  // a count-in click
+      // Where this time round starts, as a fraction of the tune: its first note (a
+      // count-in is for the first time through only).
+      const at = () => firstNote().milliseconds / (controller.midiBuffer.duration * 1000);
       if (part.whole) {
         // Round again: playback has gone from late in the tune back to its start.
         const end = controller.timer.noteTimings.at(-1)?.milliseconds ?? 0;
-        if (last > end / 2 && event.milliseconds + 1000 < last) roundAgain(0);
+        if (last > end / 2 && event.milliseconds + 1000 < last) roundAgain(at());
         last = event.milliseconds;
         return;
       }
@@ -2397,9 +2430,13 @@ function repeatLoop(controller, part, settings, onSpeed) {
       if (within) { jumping = false; inside = true; return; }
       if (jumping) return;
       jumping = true;
-      // (its time is looked up again after: a faster sound has faster timings)
-      const seek = () => controller.seek(firstNote().milliseconds / 1000, "seconds");
-      if (inside) roundAgain(firstNote().milliseconds / (controller.midiBuffer.duration * 1000), seek); else seek();
+      // (its time is looked up again after: a faster sound has faster timings). Not straight
+      // away: this note may come from a seek (Back to the start, a note tapped), which moves
+      // the sound once it has moved the timer, and would undo this one.
+      const seek = () => setTimeout(() => {
+        if (state.synth === controller && controller.timer) controller.seek(firstNote().milliseconds / 1000, "seconds");
+      });
+      if (inside) roundAgain(at(), seek); else seek();
       inside = false;
     },
   };
@@ -2631,7 +2668,17 @@ function clicksOnTheBeat(visualObj) {
 }
 
 function stopPlayback() {
-  if (state.synth) { state.synth.destroy(); state.synth = null; }
+  const synth = state.synth;
+  if (synth?.isLoading) {
+    // Still getting its sound ready (the first Play, fetching the piano): taken apart now,
+    // abcjs fails and nothing plays again. So when ready it pauses instead of starting
+    // (its play turns isStarted over), and goes then.
+    synth.isStarted = true;
+    synth.control = null;  // the buttons are the next player's now
+    const gone = () => { if (synth.isLoading) setTimeout(gone, 100); else synth.destroy(); };
+    gone();
+  } else if (synth) synth.destroy();
+  state.synth = null;
   audioFocus.hold(false);
 }
 
@@ -2931,7 +2978,8 @@ function playFrom(abcElem, tuneNumber, classes, analysis, drag, event) {
   const ms = [abcElem.currentTrackMilliseconds ?? []].flat()[0];
   const player = state.synth;
   if (ms == null || !player?.isStarted) return;
-  player.seek(ms / 1000, "seconds");
+  // The note's time is at the written tempo; sped up (setWarp), the sound gets there sooner.
+  player.seek(ms / 1000 / ((player.warp || 100) / 100), "seconds");
 }
 
 function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
@@ -2942,7 +2990,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   // the Details box, so leave them off the score; the version tabs say which version it is.
   // Played swung, the score says so in its tempo mark, printed too.
   const swung = settings.swing && canSwing(tune);
-  let abc = setTempo(stripFields(tune.abc, "SZBNAHR"), tune.beat, bpm, swung ? "Swing" : "").replace(/^(T:.*) \(version \d+\)$/m, "$1");
+  let abc = setTempo(stripFields(tune.abc, "SZBNAHR"), tune.beat, bpm, swung ? "Swing" : "", tune.bpm).replace(/^(T:.*) \(version \d+\)$/m, "$1");
   abc = transposeAbc(tune, abc, transpose);
   if (!settings.words) abc = abc.replace(/^[wW]:.*\n?/gm, "");
   const tab = TABS[state.practice.tab];
@@ -3016,7 +3064,9 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
       chart.parentElement.querySelector(".print-key").textContent = `${tr("Key", "Cywair")}: ${keyName(pitch + transpose, tune.key.modeName)}`;
     }
   }
-  const audioParams = { ...AUDIO_PARAMS, chordsOff: settings.chords.play === "tune", voicesOff: settings.chords.play === "chords",
+  // (a tune whose chords have gone since "Chords only" was kept for it: the tune)
+  const audioParams = { ...AUDIO_PARAMS, chordsOff: tune.chords == null || settings.chords.play === "tune",
+    voicesOff: tune.chords != null && settings.chords.play === "chords",
     ...(settings.swing ? { swing: SWING } : {}),
     ...clickParams(visualObj, tune) };
   const parts = tuneParts(visualObj);
@@ -3125,6 +3175,15 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
     cursor.loop = repeatLoop(controller, part, settings, onSpeed);
     cursor.part = part;
     if (!controller.isLooping) controller.toggleLoop();
+    // The player's loop starts the tune again from its very start, the count-in too: it's
+    // for the first time through, so the second starts on the first note.
+    const finished = controller.finished;
+    controller.finished = () => {
+      const result = finished();
+      const first = audioParams.drumIntro && controller.timer?.noteTimings.find((e) => e.type === "event" && e.startChar != null);
+      if (result === "continue" && first) controller.seek(first.milliseconds / 1000, "seconds");
+      return result;
+    };
   }
   // Fetch and decode this tune's notes now, so pressing play doesn't wait. The
   // audio stays paused until play is clicked; abcjs shares the decoded notes.
@@ -3374,7 +3433,7 @@ function printButton(tune, paper, settings) {
   const titled = (abc) => abc.replace(/^T:(.*?)(?: \(version \d+\))?$/m, (_, title) => `T:${title}${tune.shown > 1 ? ` (version ${tune.shown})` : ""}`);
   const saveAbc = () => download(fileName("abc"), "text/vnd.abc", transposed(titled(tune.abc)));
   const saveMidi = () => {
-    const abc = transposed(setTempo(stripFields(tune.abc, "SZBNAH"), tune.beat, settings.bpm));
+    const abc = transposed(setTempo(stripFields(tune.abc, "SZBNAH"), tune.beat, settings.bpm, "", tune.bpm));
     const [bytes] = ABCJS.synth.getMidiFile(accompaniment(abc, settings.chords.play), {
       midiOutputType: "binary", ...AUDIO_PARAMS,
       chordsOff: tune.chords == null || settings.chords.play === "tune", voicesOff: tune.chords != null && settings.chords.play === "chords" });
@@ -3527,6 +3586,11 @@ function renderTune(main, group, tune) {
   const paper = el("div");
   const audio = el("div", { class: "audio" });
   const chords = chordCard(tune);
+  // The ABC notation, in the page's key (as Save as ABC has it): written out when it's opened.
+  const abcText = el("pre", { tabindex: 0 });
+  const showAbc = () => {
+    if (abcText.parentElement?.open) abcText.textContent = stripFields(transposeAbc(tune, tune.abc, settings.transpose), "Z");
+  };
   const speedNote = el("span", { class: "caption speed-note", "aria-live": "polite" });
   // While it plays, the page follows the music and the note above scrolls away: the pinned
   // player says it too, in place of its clock ("85 / 112 bpm", then "Da iawn! 112 bpm" by a
@@ -3577,7 +3641,8 @@ function renderTune(main, group, tune) {
   const redraw = () => {
     speedHint();
     const playingAt = state.synth?.isStarted ? state.synth.percent ?? 0
-      : starting && starting.player === state.synth ? starting.at : null;
+      : starting && starting.player === state.synth ? starting.at
+      : state.synth?.isLoading ? 0 : null;  // Play pressed, the piano still coming
     drawn = drawScore(tune, paper, audio, chords?.querySelector(".chart-box"), onSpeed);
     // A new player starts at the tempo: its bar says so (when speeding up), after its clock.
     showPace(settings.bpm, false);
@@ -3586,6 +3651,7 @@ function renderTune(main, group, tune) {
     if (settings.loop >= (drawn.parts.length > 1 ? drawn.parts.length : 0)) settings.loop = -2;
     showPracticeOn?.();
     showFit?.();
+    showAbc();
     const player = state.synth;
     if (playingAt !== null && player) {
       starting = { player, at: playingAt };
@@ -3636,7 +3702,8 @@ function renderTune(main, group, tune) {
     // the written one says which that was.
     const keyLabel = el("span", { class: "key-now", id: "key-label" });
     const usual = el("span", { class: "caption usual-key" });
-    const keptKey = shift === null && kept.key && kept.key === settings.transpose ? kept.key : null;
+    // (the address says the key too, once the page has opened: reloaded, it's still the kept one)
+    const keptKey = (shift === null || shift === kept.key) && kept.key && kept.key === settings.transpose ? kept.key : null;
     const showUsual = () => {
       const written = `${root} ${mode}`;
       keyLabel.textContent = `${tr("Key", "Cywair")}: ${keyName(pitch + settings.transpose, tune.key.modeName)}`
@@ -3651,14 +3718,20 @@ function renderTune(main, group, tune) {
     let arrowingKey = null;
     chooseKey = (to, byArrows) => {
       to = Math.max(-5, Math.min(6, to));
+      const pending = arrowingKey !== null;
       clearTimeout(arrowingKey);
+      arrowingKey = null;
       checkRadios(strip, (radio) => +radio.dataset.shift === to);
-      if (to === settings.transpose) return;
+      // The key arrowed to, chosen again (Enter, a click) before it was drawn: drawn now.
+      if (to === settings.transpose) {
+        if (pending) { if (byArrows) arrowingKey = setTimeout(() => { arrowingKey = null; redraw(); }, 400); else redraw(); }
+        return;
+      }
       settings.transpose = to;
       strip.dataset.value = to;
       saveTune(tune, "key", settings.transpose);
       showUsual(); showInAddress();
-      if (byArrows) arrowingKey = setTimeout(redraw, 400);
+      if (byArrows) arrowingKey = setTimeout(() => { arrowingKey = null; redraw(); }, 400);
       else redraw();
     };
     for (let shift = -5; shift <= 6; shift++) {  // semitones, nearest direction
@@ -4061,7 +4134,7 @@ function renderTune(main, group, tune) {
       el("div", { class: "tune-side" }, actions,
         el("section", { class: "card" }, el("h2", {}, tr("Details", "Manylion")), details, gloss || null),
         placeCard(group),
-        el("details", { class: "abc" }, el("summary", {}, tr("ABC notation", "Nodiant ABC")), el("pre", { tabindex: 0 }, stripFields(tune.abc, "Z"))),
+        el("details", { class: "abc", ontoggle: showAbc }, el("summary", {}, tr("ABC notation", "Nodiant ABC")), abcText),
         el("p", { class: "report-line" }, report))),
   ].flat().filter(Boolean));
   redraw();
@@ -4152,9 +4225,16 @@ function renderEmbed(main, group, tune) {
   const audio = el("div", { class: "audio" });
   const page = () => `https://ysesiwn.cymru/${tuneLink(group, tune, settings, state.practice.tab)}`;
   const toPage = el("a", { href: page(), target: "_blank", rel: "noopener" }, group.title);
+  // Drawn again (a new key or tempo, a narrower frame) while it plays: it carries on from the
+  // same point, as on the tune's page.
   const redraw = () => {
+    const playingAt = state.synth?.isStarted ? state.synth.percent ?? 0 : state.synth?.isLoading ? 0 : null;
     drawScore(tune, paper, audio, null);
     toPage.href = page();
+    const player = state.synth;
+    if (playingAt !== null && player) {
+      player.play().then(() => { if (state.synth === player && player.isStarted) player.seek(playingAt); }).catch(() => {});
+    }
   };
   let key = null;
   if (tune.key) {
@@ -5762,6 +5842,7 @@ function setScore(tune, key) {
     paper.dataset.bars = ownBarsPerLine(tune.abc);
     paper.dataset.sung = /^w:/m.test(tune.abc) ? "yes" : "";
     const layout = scoreLayout(paper);
+    paper.dataset.layout = JSON.stringify(layout);
     abc = wrapVerses(endingsOnTheirBars(shortCredits(abc, layout), layout), layout);
     const render = (layout) => ABCJS.renderAbc(paper, abc, { responsive: "resize", add_classes: true, paddingtop: 0, format: HIDDEN_CHORDS_FORMAT, ...layout })[0];
     paper.visualObj = noLoneBar(render(layout), layout, render, abc, HIDDEN_CHORDS_FORMAT, !!paper.dataset.sung);
@@ -5826,7 +5907,7 @@ function renderSet(main) {
     for (const e of entries) if (e.isIntersecting) { e.target.draw(); observer.unobserve(e.target); }
   }, { rootMargin: "800px" });
   const colour = Object.fromEntries(state.data.types.map((t) => [t.name, t.colour]));
-  const inItsKey = ({ tune, key }) => tuneLink(state.groups.get(tune.group), tune, { transpose: key });
+  const inItsKey = ({ tune, key }) => tuneLink(state.groups.get(tune.group), tune, { transpose: key, keyAlways: true });  // not the reader's own key for it
   const swatch = (tune) => el("span", { class: "swatch", style: `--c: ${colour[state.groups.get(tune.group).type] ?? "var(--muted)"}` });
   const icon = (name) => el("span", { class: `icon ${name}`, "aria-hidden": "true" });
   // A tune taken out, until another is: "Removed Calon Lân. Undo", back in its place and key
@@ -5868,6 +5949,8 @@ function renderSet(main) {
             onclick: () => remove(i) }, icon("cross"))));
     }));
     observer.disconnect();
+    // A tune playing is stopped: its button is about to go (and the tune may have changed).
+    if (music.querySelector('.preview-play[data-playing="true"]')) state.keyNote?.stop();
     music.replaceChildren(...items.map((item, i) => {
       const paper = setScore(item.tune, item.key);
       observer.observe(paper);
@@ -5875,7 +5958,7 @@ function renderSet(main) {
       const key = item.tune.key ? keyName(item.tune.key.pitch + item.key, item.tune.key.modeName) : null;
       const play = playButton(() => { paper.draw(); return paper.visualObj; }, (playing) => playing
         ? tr(`Stop ${item.tune.base}`, `Stopio ${item.tune.base}`)
-        : tr(`Play ${item.tune.base}${key ? ` in ${key}` : ""}`, `Chwarae ${item.tune.base}${key ? ` yn ${key}` : ""}`), item.tune.base);
+        : tr(`Play ${item.tune.base}${key ? ` in ${key}` : ""}`, `Chwarae ${item.tune.base}${key ? ` yn ${key}` : ""}`), item.tune);
       return el("section", { class: "set-tune" },
         el("div", { class: "set-tune-head" },
           el("h2", {}, swatch(item.tune), `${i + 1}. `,
@@ -6067,6 +6150,15 @@ function renderSet(main) {
   if (mine && state.naming === my) { state.naming = null; title.select(); }
   if (mine) setCurrentSet(my);
   draw();
+  // A phone turned on its side, a window made narrower or full screen: the music drawn so
+  // far laid out again when its lines would change, as a tune's is (the rest, when it's seen).
+  const resized = new ResizeObserver(() => {
+    if (!music.isConnected) return resized.disconnect();
+    music.querySelectorAll(".set-paper").forEach((paper) => {
+      if (paper.drawn && JSON.stringify(scoreLayout(paper)) !== paper.dataset.layout) { paper.drawn = false; paper.draw(); }
+    });
+  });
+  resized.observe(music);
 }
 
 // ---- Writing to Y Sesiwn: sending a tune, the contact page ------------------------------

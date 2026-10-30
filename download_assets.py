@@ -51,6 +51,25 @@ PATCHES = {
         ("if(g.gracenotes)for(var A=0;A<g.gracenotes.length;A++){var N=b(g.gracenotes[A].name,n,a,u);"
          "N.acc&&(u[N.name.toUpperCase()]=N.acc);var B=m(N,s,l,u);B.acc&&(d[B.upper]=B.acc),"
          "c.push(x(e,g.startChar,g.endChar,B.acc+B.name,A))}", "/* Y Sesiwn: no second change to grace notes */"),
+        # strTranspose renamed a key with its mode written out as if it were major
+        # (K:G dorian down a semitone came out K:Gb dorian, its notes written for F# dorian):
+        # the K: line's own change (changeAllKeySigs) knew a mode only by its short name
+        # (dor, mix, m). It now goes by the first three letters, as ABC does.
+        # Test: test_transposing_accidentals.
+        # Reported: https://github.com/paulrosen/abcjs/issues/1199 (drop this once a release fixes it).
+        ('h=l(o[5])?o[5]:""', 'h=l(o[5].slice(0,3))?o[5]:""'),
+        # strTranspose remembered a bar's accidentals by letter only, in the tune (so ^G
+        # made a later g sharp too, which abcjs itself doesn't) and in what it wrote, where it
+        # stored them as B, and looked them up as B (so a note below or above the middle
+        # octave lost the natural or flat it needed). Both now go by letter and octave
+        # (parseNote, the notes loop and transposePitch). Test: test_transposing_accidentals.
+        # Reported: https://github.com/paulrosen/abcjs/issues/1200 (drop these once a release fixes it).
+        ('var l=n[s]||r[s]||"=";return{acc:i[1],name:s,pitch:o,oct:c,adj:w(i[1],r[s],n[s]),courtesy:i[1]===l}',
+         'var l=n[s+c]||r[s]||"=";return{acc:i[1],name:s,pitch:o,oct:c,adj:w(i[1],r[s],n[s+c]),courtesy:i[1]===l}'),
+        ("E.acc&&(u[E.name.toUpperCase()]=E.acc)", "E.acc&&(u[E.name+E.oct]=E.acc)"),
+        ('switch(n[h]!==u&&(n[h]||u!==p)||e.courtesy||(u=""),c)', 'switch(n[h+c]!==u&&(n[h+c]||u!==p)||e.courtesy||(u=""),c)'),
+        ("return c>4&&(h=h.toLowerCase()),{acc:u,name:h,upper:h.toUpperCase()}",
+         "return c>4&&(h=h.toLowerCase()),{acc:u,name:h,upper:d[s]+c}"),
     ],
 }
 

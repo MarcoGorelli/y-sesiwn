@@ -189,6 +189,23 @@ def test_transposing_grace_notes(page, before, after):
     assert out.split("\n")[3] == f"{after}|"
 
 
+@pytest.mark.parametrize("key, before, shift, new_key, after", [
+    # a mode written out: renamed as if major (Gb dorian), the notes written for F# dorian
+    ("G dorian", "A2", -1, "F# dorian", "G2"), ("D dorian", "e", -1, "C# dorian", "d"),
+    # a bar's accidentals: ^G made a later g sharp too
+    ("D", "A ^G a g", -11, "Eb", "B, =A, B A"),
+    # and a note below the middle octave lost the flat or natural it needed
+    ("F", "^F A =F", -7, "Bb", "=B, D _B,"), ("Am", "^G A =G", -8, "C#m", "^B, C =B,"),
+])
+def test_transposing_accidentals(page, key, before, shift, new_key, after):
+    # abcjs got these wrong (Cwympiad y Dail in F# dorian, Yr Hen Don in Bb, Polka'r
+    # Rheilffordd in Eb). Fixed in our copy of abcjs (PATCHES in download_assets.py).
+    page.goto_site()
+    abc = f"X:1\nL:1/8\nK:{key}\n{before}|\n"
+    out = page.evaluate("([abc, k]) => ABCJS.strTranspose(abc, ABCJS.renderAbc('*', abc), k)", [abc, shift])
+    assert out.split("\n")[2:4] == [f"K:{new_key}", f"{after}|"]
+
+
 def drawn_range(page, abc_js):
     # The lowest and highest MIDI pitch of a tune's notes, as abcjs reads them.
     return page.evaluate("""(abc) => { const v = ABCJS.renderAbc('*', abc)[0]; v.setUpAudio();

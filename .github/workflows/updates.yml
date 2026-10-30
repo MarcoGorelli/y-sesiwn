@@ -43,7 +43,8 @@ jobs:
                latest("https://registry.npmjs.org/abcjs/latest", "version"),
                "https://github.com/paulrosen/abcjs/blob/main/RELEASE.md",
                "Change the version in `download_assets.py`, delete `static/abcjs/`, run "
-               "`python download_assets.py`, and update the version in README.md."),
+               "`python download_assets.py`, and update the version in README.md. It makes our fixes "
+               "to abcjs again (`PATCHES` in `download_assets.py`); if one no longer fits, it says so."),
               ("marked", re.search(r"marked@([\d.]+)", assets)[1],
                latest("https://registry.npmjs.org/marked/latest", "version"),
                "https://github.com/markedjs/marked/releases",

@@ -172,6 +172,20 @@ def test_transposing(page):
     assert "F♯m" in page.locator(".chart").inner_text()  # Em -> F#m
 
 
+@pytest.mark.parametrize("before, after", [
+    ("{^F}G2", "{^G}A2"), ("{=F}G2", "{=G}A2"), ("{/^F}G2", "{/^G}A2"), ("!trill!{^F}G2", "!trill!{^G}A2"),
+    ("{^FG}A2", "{^GA}B2"), ("{_G/A/}A2", "{_A/B/}B2"), ("{F}G2", "{G}A2"),
+])
+def test_transposing_grace_notes(page, before, after):
+    # abcjs lost a grace note's closing brace, or a grace note, when one had an accidental:
+    # Hud y Bibell's last bar, {^F}G6, came out {^GA6 in A minor. Fixed in our copy of
+    # abcjs (PATCHES in download_assets.py): this fails if an update loses the fix.
+    page.goto_site()
+    abc = f"X:1\nL:1/8\nK:G\n{before}|\n"
+    out = page.evaluate("(abc) => ABCJS.strTranspose(abc, ABCJS.renderAbc('*', abc), 2)", abc)
+    assert out.split("\n")[3] == f"{after}|"
+
+
 def drawn_range(page, abc_js):
     # The lowest and highest MIDI pitch of a tune's notes, as abcjs reads them.
     return page.evaluate("""(abc) => { const v = ABCJS.renderAbc('*', abc)[0]; v.setUpAudio();
@@ -1637,6 +1651,10 @@ def test_share_in_a_key(page, site):
     page.wait_for_selector(".score .abcjs-staff")
     assert page.get_attribute("#key-select", "data-value") == "3" and page.input_value("#tempo") == "70"
     assert page.url == site + "alaw/glandyfi/?v=1&key=Bb&tempo=70"
+    page.goto_site("alaw/hud-y-bibell/?key=Am")  # typed with its mode: Hud y Bibell is in G minor
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.get_attribute("#key-select", "data-value") == "2"
+    assert page.url == site + "alaw/hud-y-bibell/?key=A"
     page.goto_site("?tune=glandyfi&key=D")  # an older link: moves to the tune's address, key kept
     page.wait_for_selector(".score .abcjs-staff")
     assert page.url == site + "alaw/glandyfi/?key=D&tempo=150"  # at the tempo kept for it (chosen above)

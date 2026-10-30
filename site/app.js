@@ -1154,8 +1154,9 @@ function tuneLink(group, tune, settings, tab = "none") {
 }
 
 // ?key=A (or A#, Bb, Bs for B sharp…): the shift in semitones, nearest way (-5 … +6).
+// The tune keeps its own mode, so a key typed with one (Am, F#m, Gmaj) is read by its note.
 function keyShift(tune, name) {
-  const m = /^([A-Ga-g])(#|s|b)?$/.exec(name ?? "");
+  const m = /^([A-Ga-g])(#|s|b)?(?:m|min|minor|maj|major)?$/.exec(name ?? "");
   if (!m || !tune.key) return null;
   const pc = (LETTER_PITCH[m[1].toUpperCase()] + ({ "#": 1, s: 1, b: -1 }[m[2]] ?? 0) + 12) % 12;
   const up = (pc - tune.key.pitch + 12) % 12;

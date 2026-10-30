@@ -175,6 +175,9 @@ def test_transposing(page):
 @pytest.mark.parametrize("before, after", [
     ("{^F}G2", "{^G}A2"), ("{=F}G2", "{=G}A2"), ("{/^F}G2", "{/^G}A2"), ("!trill!{^F}G2", "!trill!{^G}A2"),
     ("{^FG}A2", "{^GA}B2"), ("{_G/A/}A2", "{_A/B/}B2"), ("{F}G2", "{G}A2"),
+    # and the ones a first fix got wrong: two groups on one note (Diddanwch Gruffydd ap
+    # Cynan), three grace notes, a grace note's length
+    ("{DE}{D}D4", "{EF}{E}E4"), ("{B,DF}c2", "{CEG}d2"), ("{A/}G4", "{B/}A4"),
 ])
 def test_transposing_grace_notes(page, before, after):
     # abcjs lost a grace note's closing brace, or a grace note, when one had an accidental:

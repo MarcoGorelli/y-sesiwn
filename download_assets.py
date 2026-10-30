@@ -43,20 +43,14 @@ FILES = {
 PATCHES = {
     "abcjs/abcjs-basic-min.js": [
         # strTranspose broke grace notes with an accidental ({^F}G2 up a tone came out
-        # {^GA2): they were moved twice, as notes (findNotes) and as grace notes
-        # (replaceGrace), which counted 3 regex groups a note instead of 4 and replaced
-        # each grace note's length with it. Test: test_transposing_grace_notes.
-        # 1. findNotes skips {...}, as it does "chords" and !decorations!.
-        ("for(var o=/(![^!]+!)+/g;null!==(n=o.exec(a));)i.push({start:o.lastIndex-n[0].length,end:o.lastIndex});",
-         "for(var o=/(![^!]+!)+/g;null!==(n=o.exec(a));)i.push({start:o.lastIndex-n[0].length,end:o.lastIndex});"
-         "for(var p=/\\{[^}]*\\}/g;null!==(n=p.exec(a));)i.push({start:p.lastIndex-n[0].length,end:p.lastIndex});"),
-        # 2. replaceGrace counts 4 groups a note, and replaces the pitch only.
-        ("s[3*c+2]&&(o+=s[3*c+2].length),s[3*c+3]&&(o+=s[3*c+3].length),s[3*c+4]&&(o+=s[3*c+4].length),"
-         "s[3*c+5]&&(o+=s[3*c+5].length);s[3*a+2]&&(o+=s[3*c+2].length),t+=o;var l=s[3*a+3]?s[3*a+3].length:0;"
-         "l+=s[3*a+4]?s[3*a+4].length:0,r=t+(l+=s[3*a+5]?s[3*a+5].length:0)",
-         "s[4*c+2]&&(o+=s[4*c+2].length),s[4*c+3]&&(o+=s[4*c+3].length),s[4*c+4]&&(o+=s[4*c+4].length),"
-         "s[4*c+5]&&(o+=s[4*c+5].length);s[4*a+2]&&(o+=s[4*a+2].length),t+=o;var l=s[4*a+3]?s[4*a+3].length:0;"
-         "r=t+l"),
+        # {^GA2): it moved each grace note twice, with the notes (findNotes finds grace
+        # notes too) and again on its own (replaceGrace), and the second change, made to
+        # the text the first had already changed, took the } or a note with it. Without
+        # the second one, the notes' own change does it right. Test: test_transposing_grace_notes.
+        # Reported: https://github.com/paulrosen/abcjs/issues/1197 (drop this once a release fixes it).
+        ("if(g.gracenotes)for(var A=0;A<g.gracenotes.length;A++){var N=b(g.gracenotes[A].name,n,a,u);"
+         "N.acc&&(u[N.name.toUpperCase()]=N.acc);var B=m(N,s,l,u);B.acc&&(d[B.upper]=B.acc),"
+         "c.push(x(e,g.startChar,g.endChar,B.acc+B.name,A))}", "/* Y Sesiwn: no second change to grace notes */"),
     ],
 }
 

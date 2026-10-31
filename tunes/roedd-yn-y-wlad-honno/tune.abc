@@ -1,6 +1,6 @@
 X:1
 T:Roedd yn y Wlad Honno
-R:cân/alaw
+R:carol
 S:http://alawoncymru.com/alawon/Tunes/Nadolig24/Nadolig24.html
 Z:MIDI transcribed with alawon-abc
 %%alawon track=1
@@ -8,13 +8,38 @@ Z:MIDI transcribed with alawon-abc
 %%alawon-follows-score
 %%chords From the Alawon Cymru score
 C:Addasiad Meurig Williams
+N:Words by Siôn Ebrill (1745–1836), to the metre of Duw Gadwo'r Brenin, sent by Steve Jeans.
 M:3/4
 L:1/8
 Q:1/4=120
 K:Am
 |: E2 | "Am"A2 A2 A2 | "E"^G2 "Am"A2 B2 | "C"c2 c2 c2 | "G"B2 d2 B2 |
+w: Roedd | yn y wlad | hon-no, fu-|geil-iaid yn | gwyl-io, eu
+w: Daeth | ang-el yr | Arg-lwydd mewn | di-dwyll fodd | ded-wydd i
 "Am"c2 A2 A2 | "E"E2 A2 ^G2 | "Am"A6- | A4 :: B2 |
+w: praidd rhag eu | llarp-io un | lle. | _ | Gan
+w: drae-thu iddynt | ne-wydd o'r | ne, | _ | Mab
 "C"c2 e2 e2 | "C"e2 d2 c2 | "G"B2 d2 d2 | "G"d2 c2 B2 |
+w: hy-ddysg gy-|hoe-ddi fod | Crist we-di'i | en-i, mawr
+w: Duw tra-gwy-|ddol-deb yn | gor-wedd mewn | pres-eb tri'n
 "Am"A2 e2 e2 | "F"e2 d2 c2 | "E"B6- | "E"B4 E2 |
+w: y-dyw dai-|o-ni Duw | Iôr, | _ Bu-
+w: un-deb mewn | pur-deb heb | ball, | _ Cyd-
 "Am"A2 A2 A2 | "Am"^G2 A2 B2 | "C"c2 c2 c2 | "G"B2 d2 B2 |
+w: geil-iaid pan | aeth-on i | Feth-lem dre | dir-ion, hwy
+w: gan-wn og-|on-iant yn | fel-ys ei | fol-iant, fe'n
 "Am"c2 A2 A2 | "E"E2 A2 ^G2 | "Am"A6- | "Am"A4 :|
+w: gaw-son un | cyf-ior mewn | côr. | _ |
+w: tyn-nodd o | fedd-iant y | fall. | _ |
+W:2. Ni chafodd Mair burlan, o amgylch ei bachgen,
+W:na rhwymyn o wlanen yn glyd,
+W:Na pherlan, na pharlwr, na seigiau na siwgwr,
+W:i brynwr a barnwr y byd.
+W:Hi roes am yr Iesu gadachau i'w g'nesu,
+W:a'r preseb yn wely'n ddi-wâd,
+W:Fe genir yn uchel fod morwen yn Israel
+W:yn magu'n dra thawel ei Thad.
+W:Rhoes laeth i famaetha y brenin o'i bronau,
+W:a'i drin ar ei gliniau drwy glod,
+W:O'i chroth yr esgynnodd, o'i dwyfron y porthodd,
+W:'r hwn ydoedd cyn bydoedd yn bod.

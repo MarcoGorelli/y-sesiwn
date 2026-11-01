@@ -69,6 +69,7 @@
     {"name": "Llantrisant", "lat": 51.542, "lon": -3.375, "tunes": ["ffoles-llantrisant"]},
     {"name": "Llwydcoed", "lat": 51.728, "lon": -3.466, "tunes": ["jig-llwytcoed", "llwytcoed"]},
     {"name": "Llyn Gwernan", "lat": 52.735, "lon": -3.93, "tunes": ["llyn-gwernen"]},
+    {"name": "Llynnau Cregennan", "lat": 52.703, "lon": -3.988, "tunes": ["cregennan"]},
     {"name": "Machynlleth", "lat": 52.591, "lon": -3.851, "tunes": ["machynlleth"]},
     {"name": "Malltraeth", "lat": 53.192, "lon": -4.39, "tunes": ["malltraeth"]},
     {"name": "Margam", "lat": 51.561, "lon": -3.721, "tunes": ["difyrrwch-gwyr-margam"]},

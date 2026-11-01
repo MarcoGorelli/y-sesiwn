@@ -256,9 +256,10 @@ def test_abc_notation_follows_the_key(page):
     page.goto_site("alaw/glandyfi/?key=A")
     page.wait_for_selector(".score .abcjs-staff")
     page.click("details.abc summary")
-    assert "\nK:A" in page.inner_text("details.abc pre")
+    # The text is written out on the toggle event, which fires a moment after the click.
+    page.wait_for_function("document.querySelector('details.abc pre').textContent.includes('\\nK:A')")
     page.click("#key-select [data-shift='0']")
-    assert "\nK:G" in page.inner_text("details.abc pre")
+    page.wait_for_function("document.querySelector('details.abc pre').textContent.includes('\\nK:G')")
 
 
 def test_tempo_changes_in_the_music_follow_the_tempo(page):

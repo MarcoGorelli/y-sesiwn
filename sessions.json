@@ -307,6 +307,38 @@
       "confirmed": "2026-10-13"
     },
     {
+      "venue": "The Stag Inn",
+      "address": "Bridge Street, Dolgellau LL40 1AU",
+      "town": "Dolgellau",
+      "county": "Gwynedd",
+      "lat": 52.7438,
+      "lon": -3.8852,
+      "day": "Sunday",
+      "repeat": "fortnightly",
+      "from": "2026-10-25",
+      "start": "16:00",
+      "music": "Tunes and songs.",
+      "music_cy": "Alawon a chaneuon.",
+      "link": "https://www.facebook.com/thestaginnsnowdonia",
+      "confirmed": "2026-11-01"
+    },
+    {
+      "venue": "George III",
+      "address": "Penmaenpool, Dolgellau LL40 1YD",
+      "town": "Penmaenpool",
+      "town_cy": "Llyn Penmaen",
+      "county": "Gwynedd",
+      "lat": 52.7467,
+      "lon": -3.9365,
+      "day": "Sunday",
+      "repeat": "monthly",
+      "nth": 2,
+      "start": "20:00",
+      "music": "Welsh tunes.",
+      "music_cy": "Alawon Cymreig.",
+      "confirmed": "2026-11-01"
+    },
+    {
       "venue": "The Old New Inn",
       "address": "High Street, Llanfyllin SY22 5AA",
       "town": "Llanfyllin",

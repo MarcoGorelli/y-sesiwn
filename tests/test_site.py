@@ -42,7 +42,7 @@ EXPECTED_ODD_BARS = {
     "megan-a-gollodd-ei-gardas-version-3": "two bars are a quaver short",
     "plygiad-y-bedol": "bar 8 is two quavers short",
     # The same in Peter Dunk's transcription of Davidson's 250 Welsh Airs.
-    "hew-wraig-llanallgo": "bar 18 is three quavers short",
+    "hen-wraig-llanallgo": "bar 18 is three quavers short",
     "hoffedd-howell": "bar 21 is two quavers short",
     "sion-ab-ifan-version-2": "bar 6 is two quavers long",
     "the-damsels-of-cardigan": "bar 9 is a quaver long",
@@ -2392,11 +2392,11 @@ def test_click_keeps_the_beat_across_a_lead_in(page):
     # The tune starts with a lead-in, and part A ends on a short bar and part B starts with
     # one, the two making one 6/8 bar: the clicks carry on every dotted crotchet through
     # them, none doubled or off the beat. The count-in alone is a bar, less the lead-in.
-    page.goto_site("?tune=y-nant-wrth-fy-nyh")
+    page.goto_site("?tune=y-nant-wrth-fy-nhy")
     page.open_tools()
     page.wait_for_selector(".score .abcjs-staff")
     clicks = """() => {
-      const p = { ...AUDIO_PARAMS, ...clickParams(state.synth.visualObj, state.bySlug.get('y-nant-wrth-fy-nyh')) };
+      const p = { ...AUDIO_PARAMS, ...clickParams(state.synth.visualObj, state.bySlug.get('y-nant-wrth-fy-nhy')) };
       const [melody, drums] = state.synth.visualObj.setUpAudio(p).tracks.map((t) => t.filter((e) => e.cmd === 'note'));
       return { melodyStarts: melody[0].start, starts: drums ? drums.map((e) => e.start) : [] }; }"""
     page.check(".practice-row label:has-text('Count-in')")

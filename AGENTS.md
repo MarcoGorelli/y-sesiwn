@@ -10,6 +10,8 @@ After adding, renaming or merging anything in `tunes/`, fill these in yourself i
 - `places.json`: a tune named after a place in Wales (or just over the border) goes on the map, under the place's Welsh name. Rivers aren't mapped. Names that only look like places go in `not_places`.
 - `tune_numbers.json`: run `python build_site.py --number-tunes` to give new tunes their permanent set-link number. It only appends. Never edit or reuse an existing number, or old set links will open the wrong tune.
 
+- Spelling: proofread the Welsh in every new or submitted tune (titles, `w:`/`W:` words, notes) and fix clear typos: wrong or swapped letters, missing circumflexes (lân, gân, môr, â), mutations that are plainly wrong. Put the corrected spelling as the first `T:` and keep the source's spelling as a later `T:`, so searches for it still work. If the slug changes, rename the folder and add the old name to `moved.json`. Old or dialect spellings (Pibddawns, yspryd, hogie) aren't typos; ask when unsure. Also add the well-known English name as a `T:` if there is one (Llwyn Onn: The Ash Grove).
+
 `tests/test_build.py` fails until the first two are done (`test_every_tune_has_a_pronunciation_or_is_english`, `test_place_names_decided`). The place test only flags names that look likely, so read new titles yourself too.
 
 ## Writing ABC

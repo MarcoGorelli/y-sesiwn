@@ -1004,7 +1004,7 @@ function renderNotesPage(main) {
     el("p", { class: "lead" }, tr("Know how a tune goes but not what it's called? Play its first few notes on your "
       + "instrument, tap them on the keyboard or type them, in any key or octave.",
       "Gwybod sut mae alaw'n mynd ond nid beth yw ei henw? Chwaraewch ei hychydig nodau cyntaf ar eich offeryn, "
-      + "tapiwch nhw ar y bysellfwrdd neu teipiwch nhw, mewn unrhyw gywair neu wythfed.")),
+      + "tapiwch nhw ar y bysellfwrdd neu deipiwch nhw, mewn unrhyw gywair neu wythfed.")),
     notesSearch({ autoListen }),
     el("section", { class: "guide notes-how" },
       el("h2", { class: "section-heading" }, tr("How it works", "Sut mae'n gweithio")),
@@ -4911,6 +4911,15 @@ function sessionCalendar(session, first) {
 // engines), and what it's called there: its name, or what it is and where; with the town
 // if its name doesn't say it, and the venue too if it says neither (build_site.py: session_title).
 const sessionUrl = (session) => `sesiynau/${encodeURIComponent(session.id)}/`;
+
+// "yn" before a Welsh place name, with its nasal mutation: yng Nghaerdydd, ym Mangor, yn Nolgellau
+// (build_site.py: yn_place).
+const NASAL = { C: "yng Ngh", P: "ym Mh", T: "yn Nh", G: "yng Ng", B: "ym M", D: "yn N" };
+function ynPlace(place) {
+  if (/^(Ch|Ph|Th|Dd)/.test(place)) return `yn ${place}`;
+  if (place[0] in NASAL) return NASAL[place[0]] + place.slice(1);
+  return `${place[0] === "M" ? "ym" : "yn"} ${place}`;
+}
 function sessionTitle(session) {
   const town = tr(session.town, session.town_cy);
   if (!session.name) {
@@ -5292,7 +5301,7 @@ async function renderSession(main, id) {
     el("div", { class: "session-page" },
       sessionCard(session, { own: true }),
       here ? el("section", { class: "card place" }, el("h2", {}, tr(session.town, session.town_cy)), walesMap(here, towns)) : null),
-    others.length ? el("section", {}, el("h2", { class: "section-heading" }, tr(`Also in ${session.town}`, `Hefyd yn ${session.town_cy}`)),
+    others.length ? el("section", {}, el("h2", { class: "section-heading" }, tr(`Also in ${session.town}`, `Hefyd ${ynPlace(session.town_cy)}`)),
       el("ul", {}, others.map((s) => el("li", {}, el("a", { href: sessionUrl(s), "data-route": true }, s.name ?? s.venue),
         ` · ${sessionDays(s)}, ${sessionTime(s)}`)))) : null,
     all,
@@ -5798,7 +5807,7 @@ function renderSets(main) {
       el("p", { class: "lead" }, tr("Tunes to play together, in order and in the keys you choose: for a session, a workshop "
         + "or your practice. They're kept on this device; share one with its link or QR code.",
         "Alawon i'w chwarae gyda'i gilydd, yn eu trefn ac yn y cyweiriau a ddewiswch: ar gyfer sesiwn, gweithdy "
-        + "neu eich ymarfer. Maen nhw'n cael eu cadw ar y ddyfais hon; rhannwch un gyda'i dolen neu ei god QR.")),
+        + "neu eich ymarfer. Maen nhw'n cael eu cadw ar y ddyfais hon; rhannwch un gyda'i dolen neu ei chod QR.")),
       list,
       undo,
       el("p", {}, el("button", { type: "button", class: "primary", onclick: () => {

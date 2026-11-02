@@ -1244,6 +1244,18 @@ def session_events(sessions: list[dict], today: "date") -> list[dict]:
     return events
 
 
+NASAL = {"C": "yng Ngh", "P": "ym Mh", "T": "yn Nh", "G": "yng Ng", "B": "ym M", "D": "yn N"}
+
+
+def yn_place(place: str) -> str:
+    """"yn" before a Welsh place name, with its nasal mutation: 'Caerdydd' -> 'yng Nghaerdydd' (app.js: ynPlace)."""
+    if place.startswith(("Ch", "Ph", "Th", "Dd")):
+        return f"yn {place}"
+    if place[0] in NASAL:
+        return NASAL[place[0]] + place[1:]
+    return f"{'ym' if place[0] == 'M' else 'yn'} {place}"
+
+
 def session_title(s: dict) -> str:
     """A session's own page's title: its name, or what it is and where ('Session at Tŷ
     Tawe, Swansea'). A name that doesn't say where gets the town, and the venue too if it
@@ -1285,7 +1297,7 @@ def sessions_page(template: str, sessions: list[dict]) -> None:
         kind = "Tune club" if s.get("kind") == "tune club" else "Folk session"
         cy_kind = "Clwb alawon" if s.get("kind") == "tune club" else "Sesiwn werin"
         description = (f"{kind} with Welsh tunes: {describe_session(s)}. {s['venue']}, {s['address']}. "
-                       f"{cy_kind} gydag alawon Cymreig yn {s['town_cy']}.")
+                       f"{cy_kind} gydag alawon Cymreig {yn_place(s['town_cy'])}.")
         ld = json.dumps({"@context": "https://schema.org", "@graph": session_events([s], date.today())},
                         ensure_ascii=False).replace("</", "<\\/")
         url = f"{SITE_URL}{SESSIONS_DIR}/{s['id']}/"

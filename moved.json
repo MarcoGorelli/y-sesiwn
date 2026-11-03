@@ -28,7 +28,7 @@
     "ffarwel-jeuengetid": "ffarwel-i-f-ieuenctyd-version-2",
     "the-merry-wife-at-home": "hafod-y-wraig-lawn-version-2",
     "the-war-camp": "o-uchel-dras-oedd-siencyn-version-3",
-    "melusgan": "mwynen-meirionydd-version-2",
+    "melusgan": "mwynen-meirionnydd-version-2",
     "glanbran": "gwreiddyn-y-pren-ffawydd-version-2",
     "cynset-evan-glan-teifi": "rhuban-morfudd-version-3",
     "nyth-y-gog-version-3": "nyth-y-gwcw",
@@ -38,7 +38,7 @@
     "pibddawns-dowlais-version-3": "pibddawns-dowlais-fel-ril",
     "difyrrwch-y-melinydd-version-2": "jig-y-melinydd",
     "glanbargoed-version-3": "jig-glanbargoed",
-    "llwytcoed-version-3": "jig-llwytcoed",
+    "llwytcoed-version-3": "jig-llwydcoed",
     "nos-galan-version-4": "jig-nos-galan",
     "pen-rhaw-version-4": "jig-pen-rhaw",
     "y-dydd-version-2": "jig-y-dydd",
@@ -83,6 +83,14 @@
     "polka-r-pryf-tan": "polca-r-pryf-tan",
     "polka-r-rheilffordd": "polca-r-rheilffordd",
     "philip-tha-active-s-adieu": "philip-the-active-s-adieu",
-    "per-oslef-fersiwn-bob-evans": "per-oslef"
+    "per-oslef-fersiwn-bob-evans": "per-oslef",
+    "mwynen-meirionydd": "mwynen-meirionnydd",
+    "mwynen-meirionydd-version-2": "mwynen-meirionnydd-version-2",
+    "ymdaith-meirionydd": "ymdaith-meirionnydd",
+    "llwytcoed": "llwydcoed",
+    "llwytcoed-version-2": "llwydcoed-version-2",
+    "jig-llwytcoed": "jig-llwydcoed",
+    "erddygan-y-pibydd-coch": "erddigan-y-pibydd-coch",
+    "pennod-bach": "pennod-fach"
   }
 }

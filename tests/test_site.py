@@ -103,7 +103,7 @@ FOLLOWED_DIRECTIONS = {
     "craig-y-bwlch", "dawns-y-glocsen", "deio-i-dywyn", "delights-of-glamorgan",
     "difyrrwch-bleddyn-ap-cynfyn-version-2", "difyrrwch-gwyr-caernarfon-version-2", "galar-gwyr-ffrainc",
     "hafod-y-wraig-lawn-version-2", "man-ddarlun-version-2", "merch-y-tafarnwr-version-2",
-    "mursen-yn-ei-menyg-version-2", "polca-r-cymro", "polca-redowa-version-2", "polka-r-pryf-tan",
+    "mursen-yn-ei-menyg-version-2", "polca-r-cymro", "polca-redowa-version-2", "polca-r-pryf-tan",
     "quadrille-barwn-merthyr", "sion-ab-ifan", "tafarn-y-wheatsheaf-version-2", "taith-i-ddenmarc",
     "walts-senghennydd", "ymdaith-gyflym-cyfeiliog",
 }
@@ -187,7 +187,7 @@ def test_da_capo_lights_the_notes_played(browser, site):
     context.close()
 
 
-@pytest.mark.parametrize("slug", ["pibddawns-gwyr-gwrecsam", "glandyfi", "nyth-y-gog", "erddygan-y-pibydd-coch"])
+@pytest.mark.parametrize("slug", ["pibddawns-gwyr-gwrecsam", "glandyfi", "nyth-y-gog", "erddigan-y-pibydd-coch"])
 def test_tune_page(page, slug):
     page.goto_site(f"?tune={slug}")
     page.wait_for_selector(".score .abcjs-staff")
@@ -903,7 +903,7 @@ def test_no_chord_box_without_chords(page):
     ("car gwyllt", "Y Car Gwyllt"),                    # its "Y" doesn't count: before "Jig y Car Gwyllt"
     ("llwyn onn version 2", "Llwyn Onn"),              # a version, as a tune's page names it
     ("llwyn-onn-version-2", "Llwyn Onn"),              # a folder's name
-    ("llwytcoed-version-3", "Jig Llwytcoed"),          # a folder's name, renamed since (moved.json)
+    ("llwytcoed-version-3", "Jig Llwydcoed"),          # a folder's name, renamed since (moved.json)
     ("meillionen", "Meillionen Meirionnydd"),          # before "Meillionen (minor)": a name in brackets is another version
 ])
 def test_search_by_name(page, query, expected):

@@ -43,7 +43,7 @@ Manylion pob alaw yn dweud o ble.
 Lle mae alaw yn y ddau gasgliad, mae ei thudalen yn dangos pob un fel
 fersiwn, gyda thabiau i newid rhyngddynt.
 
-Mae pob alaw yn dangos pwy a'i chyfansoddodd, ei threfnu neu ei haddasu, fel
+Mae pob alaw yn dangos pwy a'i chyfansoddodd, a'i threfnodd neu a'i haddasodd, fel
 y'i hargraffwyd ar ei sgôr wreiddiol.
 
 **Diolch yn fawr** i bawb a ysgrifennodd, a drefnodd ac a rannodd yr alawon

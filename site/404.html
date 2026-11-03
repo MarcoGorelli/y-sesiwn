@@ -9,22 +9,36 @@
        (…/alaw/<folder>/) that has none, because the tune was renamed or removed, opens
        the app at ?tune=<folder>, which says so and suggests the nearest names; a session's
        that has none (…/sesiynau/<id>/) opens the sessions page; an address
-       with something stuck to its end goes to the address without it. -->
+       with something stuck to its end goes to the address without it. A tune's, a type's
+       or an embedded tune's written with capitals, accents or punctuation (alaw/Glandyfi/,
+       math/rîl/) goes to the folder build_site.py makes of it, and a version's folder for
+       another website (embed/glandyfi-version-3/) to the tune's, at that version. The
+       address's query (?key=A&tempo=80) and #… go along. -->
   <script>
     // A link pasted with something stuck to its end (a space or non-breaking space, a
     // full stop or bracket: …/alaw/glandyfi/%C2%A0): go to the address without it.
-    var path = location.pathname, clean;
-    try { clean = decodeURIComponent(path); } catch (e) { clean = path; }
+    var path = location.pathname, clean = decodeURIComponentSafe(path), rest = location.search + location.hash;
     clean = clean.replace(/[\s\u00a0\u200b.,;:!?'"\u2019\u201d)\]>]+$/, "");
-    if (clean !== decodeURIComponentSafe(path)) location.replace(encodeURI(clean) + location.search);
+    if (clean !== decodeURIComponentSafe(path)) location.replace(encodeURI(clean) + rest);
     else {
-      var m = path.match(/^(.*\/)alaw\/([^/]+)\/?$/);
-      if (m) location.replace(m[1] + "?tune=" + m[2]);
+      var m = clean.match(/^(.*\/)(alaw|math|embed)\/([^/]+)\/?$/), folder = m && slugify(m[3]), version;
+      if (m && folder && folder !== m[3]) location.replace(encodeURI(m[1] + m[2] + "/" + folder + "/") + rest);
+      else if (m && m[2] === "alaw") location.replace(encodeURI(m[1]) + "?tune=" + encodeURIComponent(m[3])
+        + location.search.replace(/^\?/, "&") + location.hash);
+      else if (m && m[2] === "embed" && (version = m[3].match(/^(.+)-version-(\d+)$/))) {
+        var query = new URLSearchParams(location.search);
+        query.set("v", version[2]);
+        location.replace(encodeURI(m[1] + "embed/" + version[1] + "/") + "?" + query + location.hash);
+      }
       // A session that has stopped, or moved to another day (a new address): all of them.
       var s = path.match(/^(.*\/)sesiynau\/[^/]+\/?$/);
       if (s) location.replace(s[1] + "sesiynau/");
     }
     function decodeURIComponentSafe(p) { try { return decodeURIComponent(p); } catch (e) { return p; } }
+    // build_site.py's slugify (app.js: typeSlug): "Codi'r Hwyl" -> "codi-r-hwyl".
+    function slugify(name) {
+      return name.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    }
   </script>
   <style>
     :root { color-scheme: light dark; }
@@ -43,5 +57,13 @@
     <p><a href="/">Y Sesiwn: Welsh folk tunes · <span lang="cy">alawon gwerin Cymru</span></a></p>
     <p><a href="/?page=browse">Browse every tune · <span lang="cy">Pori pob alaw</span></a></p>
   </main>
+  <script>
+    // In someone else's website (an embedded tune's address that has none): the site opens
+    // in a tab of its own, not inside their page.
+    if (window.top !== window) for (var i = 0; i < document.links.length; i++) {
+      document.links[i].target = "_blank";
+      document.links[i].rel = "noopener";
+    }
+  </script>
 </body>
 </html>

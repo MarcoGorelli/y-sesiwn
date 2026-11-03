@@ -80,6 +80,8 @@ const PAGE_WAIT = 10000;
 const SAVED_NEXT_WAIT = 5000;
 const FRESH = new Set(["", "index.html", "app.js", "style.css", "tunes.json", "sessions.json",
   "about.md", "about.cy.md", "guides.cy.md", "CONTRIBUTING.md"]);
+// The app's own addresses: the home page (?set=…, ?page=…), a tune's, a type's, the sessions'.
+const APP_PAGE = /^(index\.html|((alaw|math|sesiynau)\/[^/]+|sesiynau)\/?)?$/;
 const pageFrom = new Map();  // client id -> "network" or "saved"
 let savedNext = 0;  // until when the next page comes from the saved copy
 
@@ -133,6 +135,12 @@ self.addEventListener("fetch", (event) => {
     });
   };
   const saved = async () => {
+    // An address that isn't one of the app's gets the saved 404.html, as it would online
+    // (which also sends one with something stuck to its end, or in capitals, to the right one).
+    if (!APP_PAGE.test(path)) {
+      const missing = await caches.match("404.html");
+      if (missing) return new Response(missing.body, { status: 404, headers: missing.headers });
+    }
     const app = await caches.match("./", { ignoreSearch: true });
     if (!app || !up) return app;
     const html = (await app.text()).replace('<base href="./">', `<base href="${up}">`);

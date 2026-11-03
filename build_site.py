@@ -203,7 +203,7 @@ def meter_length(abc: str) -> Fraction | None:
     """A bar's length in whole notes, from M: (C is 4/4, C| is 2/2)."""
     meter = (parse_headers(abc).get("M") or [""])[0].strip()
     meter = METER_SYMBOLS.get(meter, meter)
-    m = re.match(r"(\d+)/(\d+)", meter)
+    m = re.match(r"(\d+)/([1-9]\d*)", meter)  # (M:0/0 is no metre)
     return Fraction(int(m.group(1)), int(m.group(2))) if m else None
 
 
@@ -214,7 +214,7 @@ def lead_in(abc: str) -> int:
     if not bar:
         return 0
     unit = (parse_headers(abc).get("L") or [""])[0].strip()
-    unit = Fraction(unit) if re.fullmatch(r"\d+/\d+", unit) else Fraction(1, 8 if bar >= Fraction(3, 4) else 16)
+    unit = Fraction(unit) if re.fullmatch(r"\d+/[1-9]\d*", unit) else Fraction(1, 8 if bar >= Fraction(3, 4) else 16)
     total, notes, tuplet, left = Fraction(0), 0, Fraction(1), 0
     for m in LENGTH_TOKEN.finditer(re.sub(r"\[K:[^\]]*\]", " ", music(abc))):
         if m.group(1):
@@ -310,8 +310,8 @@ def beat_unit(meter: str, slow: bool = False) -> Fraction:
     slow air or song, which is counted in four.
     """
     meter = {"C": "4/4", "C|": "2/2"}.get(meter.strip(), meter.strip())
-    m = re.match(r"^(\d+)/(\d+)$", meter)
-    if not m:
+    m = re.match(r"^(\d+)/([1-9]\d*)$", meter)
+    if not m:  # (no M:, or M:0/0)
         return Fraction(1, 4)
     num, den = int(m.group(1)), int(m.group(2))
     if den >= 8 and num % 3 == 0 and num > 3:
@@ -420,7 +420,10 @@ def chords_source(abc: str) -> str | None:
 
 
 def tune_record(path: Path) -> dict:
-    abc = path.read_text(encoding="utf-8")
+    try:
+        abc = path.read_text(encoding="utf-8")
+    except UnicodeDecodeError as e:
+        raise SystemExit(f"{path}: not UTF-8 ({e.reason} at byte {e.start}): save it as UTF-8")
     headers = parse_headers(abc)
     titles = headers.get("T") or [path.parent.name]
     parsed = parse_key((headers.get("K") or [""])[0])
@@ -429,6 +432,8 @@ def tune_record(path: Path) -> dict:
     # Versions of a tune ("Rheged (version 2)") share one page, under the base title.
     m = VERSION.match(titles[0])
     base, number = (m.group(1), int(m.group(2))) if m else (titles[0], 1)
+    if not slugify(base):  # its page would be alaw/index.html
+        raise SystemExit(f"{path}: the title {base!r} has no letters or numbers to name its folder after (T:)")
     return {
         "slug": path.parent.name,
         "group": slugify(base),
@@ -539,15 +544,18 @@ def set_code(slug: str, numbers: dict[str, int]) -> str:
     return digits(n, 2) if n < 62 ** 2 else "-" + digits(n, 3)
 
 
-def moved_tunes(slugs: set[str], numbers: dict[str, int]) -> list[dict]:
+def moved_tunes(slugs: set[str], numbers: dict[str, int], groups: set[str] = frozenset()) -> list[dict]:
     """moved.json: tunes whose folder was renamed (or that became another tune's
-    version), with the old folder's set codes, so old links still find them."""
+    version), with the old folder's set codes, so old links still find them. An old
+    name can't be a tune's address now (alaw/<group>/): its page would be replaced."""
     path = ROOT / "moved.json"
     moved = json.loads(path.read_text(encoding="utf-8"))["moved"] if path.exists() else {}
     result = []
     for old, new in moved.items():
         if old in slugs:
             raise SystemExit(f"moved.json: {old} is still a folder in tunes/ (only list folders that have gone)")
+        if old in groups:
+            raise SystemExit(f"moved.json: {old} is a tune's address now (alaw/{old}/): take it out of moved.json")
         if new not in slugs:
             raise SystemExit(f"moved.json: {old} moved to {new}, but there's no tunes/{new}/")
         result.append({"from": old, "to": new, "code": set_code(old, numbers), "id": short_id(old)})
@@ -612,7 +620,7 @@ def score_bars(abc: str) -> tuple[list[Bar], Fraction] | None:
     if not bar_len or re.search(r"^V:", abc, re.M):
         return None
     unit = (parse_headers(abc).get("L") or [""])[0].strip()
-    unit = Fraction(unit) if re.fullmatch(r"\d+/\d+", unit) else Fraction(1, 8 if bar_len >= Fraction(3, 4) else 16)
+    unit = Fraction(unit) if re.fullmatch(r"\d+/[1-9]\d*", unit) else Fraction(1, 8 if bar_len >= Fraction(3, 4) else 16)
     lines = abc.split("\n")
     k = next(i for i, line in enumerate(lines) if line.startswith("K:"))
     signature = key_signature(lines[k][2:])
@@ -905,7 +913,7 @@ def main() -> None:
         "tunes": tunes,
         "places": places({t["group"] for t in tunes}),
         "say": pronunciations({t["group"] for t in tunes}),
-        "moved": moved_tunes({t["slug"] for t in tunes}, numbers),
+        "moved": moved_tunes({t["slug"] for t in tunes}, numbers, {t["group"] for t in tunes}),
         "mapSize": [float(n) for n in re.search(
             r'viewBox="0 0 ([\d.]+) ([\d.]+)"', (ROOT / "site" / "wales.svg").read_text()).groups()],
     }
@@ -931,9 +939,9 @@ def main() -> None:
 
 
 # Not needed offline: link-preview images, the source of the service worker itself, and
-# GitHub Pages' "not found" page (offline, sw.js answers every address with the app), and
-# GridinSoft's file proving we own the domain.
-NOT_OFFLINE = {"sw.js", "og-image.png", "CNAME", "sitemap.xml", "robots.txt", "404.html", "embed.html",
+# GridinSoft's file proving we own the domain. (GitHub Pages' "not found" page is kept: offline,
+# sw.js answers an address that isn't the app's with it, as the site does online.)
+NOT_OFFLINE = {"sw.js", "og-image.png", "CNAME", "sitemap.xml", "robots.txt", "embed.html",
                "gridinsoft-qwhiwg62aaa11k3qbqvvhusx8eo7c6v2tjj40adno3rw650jcp1du72cqupbn9ay.txt"}
 
 
@@ -951,12 +959,18 @@ def type_slug(name: str) -> str:
     return slugify(name)
 
 
+# index.html's loading line, which the pages made from it replace with their own.
+LOADING = '<p class="loading" data-cy="Yn llwytho\'r alawon…">Loading tunes…</p>'
+
+
 def app_page(template: str, *, title: str, description: str, url: str, head: str, main: str,
-             scripts: str = "", up: str = "../../", loading: str = "Loading…", kind: str = "other") -> str:
+             scripts: str = "", up: str = "../../", loading: tuple[str, str] = ("Loading…", "Yn llwytho…"),
+             kind: str = "other") -> str:
     """The app (index.html) in a folder (two down, unless up says otherwise), with its
     own title, description and address in the head, for link previews and search
     engines (which don't run the app), and what they should read in <main> (hidden from
-    readers whose browser runs the app, which shows loading until it takes over)."""
+    readers whose browser runs the app, which shows loading, in English and Welsh, until
+    it takes over)."""
     def swap(page: str, old: str, new: str) -> str:
         if page.count(old) != 1:
             raise SystemExit(f"site/index.html: expected one {old!r} (for the tune and type pages)")
@@ -974,8 +988,9 @@ def app_page(template: str, *, title: str, description: str, url: str, head: str
                 f'<meta property="og:title" content="{esc(title)} · Y Sesiwn">')
     page = swap(page, f'<meta property="og:url" content="{SITE_URL}">',
                 f'<meta property="og:url" content="{url}">\n  <link rel="canonical" href="{url}">' + head)
-    return swap(page, '<main id="main" tabindex="-1"><p class="loading">Loading tunes…</p></main>',
-                f'<main id="main" tabindex="-1"><div class="static">{main}</div><p class="loading">{esc(loading)}</p></main>')
+    return swap(page, f'<main id="main" tabindex="-1">{LOADING}</main>',
+                f'<main id="main" tabindex="-1"><div class="static">{main}</div>'
+                f'<p class="loading" data-cy="{esc(loading[1])}">{esc(loading[0])}</p></main>')
 
 
 def write_page(folder: Path, page: str) -> None:
@@ -1041,7 +1056,7 @@ def tune_pages(tunes: list[dict], index: dict) -> None:
                  + (f'<p class="caption">Also known as: {esc(", ".join(titles[1:]))}</p>' if len(titles) > 1 else "")
                  + f"<p>{esc(description)}</p><dl>{details}</dl>"
                  + f'<pre>{esc(first["abc"])}</pre><p>{type_link(first["type"])}</p>',
-            loading="Loading the sheet music…", kind="tune"))
+            loading=("Loading the sheet music…", "Yn llwytho'r gerddoriaeth…"), kind="tune"))
         page = embed_template.replace("<title>Y Sesiwn</title>", f"<title>{esc(name)} · Y Sesiwn</title>\n"
                                       f'  <link rel="canonical" href="{url}">\n'
                                       f'  <script type="application/json" id="tune-data">{own}</script>', 1)
@@ -1062,20 +1077,27 @@ def tune_pages(tunes: list[dict], index: dict) -> None:
             template, title=heading, description=description, url=url, head="",
             main=f"<h1>{esc(heading)}</h1><p>{esc(description)}</p><ul>"
                  + "".join(f'<li><a href="{TUNE_DIR}/{t["group"]}/">{esc(t["base"])}</a></li>' for t in listed)
-                 + "</ul>", loading="Loading tunes…"))
+                 + "</ul>", loading=("Loading tunes…", "Yn llwytho'r alawon…")))
 
-    # A moved tune's old address sends people (and search engines) on to the new one;
-    # the app does the same offline, from tunes.json's "moved".
+    # A moved tune's old address sends people (and search engines) on to the new one, and
+    # its old embed/ address (in someone else's website) to its new one; the app does the
+    # same offline, from tunes.json's "moved". The link's key, tempo, tabs and language
+    # go too (a version the move gives takes the place of the link's).
     by_slug = {t["slug"]: t for t in tunes}
     for move in index["moved"]:
         new = by_slug[move["to"]]
         to = f"../{new['group']}/" + (f"?v={new['version']}" if new["shown"] > 1 else "")  # from alaw/<old>/
         url = f"{SITE_URL}{TUNE_DIR}/{to[3:]}"
-        write_page(OUT / TUNE_DIR / move["from"], (
+        redirect = (
             '<!doctype html>\n<html lang="en">\n<head>\n  <meta charset="utf-8">\n'
             f'  <title>{esc(new["base"])} · Y Sesiwn</title>\n  <link rel="canonical" href="{esc(url)}">\n'
-            f'  <meta http-equiv="refresh" content="0; url={esc(to)}">\n</head>\n'
-            f'<body><p>This tune has moved: <a href="{esc(to)}">{esc(new["base"])}</a>.</p></body>\n</html>\n'))
+            f'  <script>\n    var to = new URL({json.dumps(to)}, location.href), query = new URLSearchParams(location.search);\n'
+            '    to.searchParams.forEach(function (value, name) { query.set(name, value); });\n'
+            '    to.search = query; to.hash = location.hash;\n    location.replace(to.href);\n  </script>\n'
+            f'  <noscript><meta http-equiv="refresh" content="0; url={esc(to)}"></noscript>\n</head>\n'
+            f'<body><p>This tune has moved: <a href="{esc(to)}">{esc(new["base"])}</a>.</p></body>\n</html>\n')
+        write_page(OUT / TUNE_DIR / move["from"], redirect)
+        write_page(OUT / EMBED_DIR / move["from"], redirect.replace("</title>", '</title>\n  <meta name="robots" content="noindex">', 1))
 
     sessions = session_data()
     sessions_page(template, sessions)
@@ -1085,10 +1107,9 @@ def tune_pages(tunes: list[dict], index: dict) -> None:
     home = OUT / "index.html"
     nav = "".join(f"<li>{type_link(name)}</li>" for name in types)
     page = home.read_text(encoding="utf-8")
-    old = '<p class="loading">Loading tunes…</p>'
-    if page.count(old) != 1:
-        raise SystemExit(f"site/index.html: expected one {old!r}")
-    home.write_text(page.replace(old, f'<div class="static"><ul class="type-links">{nav}</ul></div>' + old), encoding="utf-8")
+    if page.count(LOADING) != 1:
+        raise SystemExit(f"site/index.html: expected one {LOADING!r}")
+    home.write_text(page.replace(LOADING, f'<div class="static"><ul class="type-links">{nav}</ul></div>' + LOADING), encoding="utf-8")
 
     pages = [SITE_URL] + [f"{SITE_URL}?page={p}" for p in ("browse", "notes", "map", "about", "add", "fix", "embed", "offline", "contact")]
     (OUT / "sitemap.xml").write_text(
@@ -1290,7 +1311,7 @@ def sessions_page(template: str, sessions: list[dict]) -> None:
     write_page(OUT / SESSIONS_DIR, app_page(
         template, title="Active sessions", description=description, url=f"{SITE_URL}{SESSIONS_DIR}/",
         head=f'\n  <script type="application/ld+json">{ld}</script>', up="../", main=f"<h1>Active sessions</h1><p>{esc(description)}</p>{body}",
-        loading="Loading the sessions…"))
+        loading=("Loading the sessions…", "Yn llwytho'r sesiynau…")))
 
     for s in sessions:
         title = session_title(s)
@@ -1309,7 +1330,7 @@ def sessions_page(template: str, sessions: list[dict]) -> None:
                  + (f'<p><a href="{esc(s["link"])}">{esc(s["link"])}</a></p>' if s.get("link") else "")
                  + f"<p>Last confirmed {esc(s['confirmed'])}.</p>"
                  + f'<p><a href="{SESSIONS_DIR}/">All sessions, on a map</a></p>',
-            loading="Loading the session…"))
+            loading=("Loading the session…", "Yn llwytho'r sesiwn…")))
 
 
 def type_heading(kind: dict) -> str:

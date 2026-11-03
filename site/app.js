@@ -315,6 +315,8 @@ const keyLabel = (text) => tr(text, text.replace(/\b(major|minor|Dorian|Phrygian
 const CY_TYPE = { Jig: "jig", "Jig naid": "jig naid", Polca: "polca", Walts: "walts", "Rîl": "rîl", Pibddawns: "pibddawns", Ymdaith: "ymdaith",
   Dawns: "dawns", Alaw: "alaw", "Cân": "cân", Carol: "carol", Other: "alaw arall" };
 const typeName = (name) => (name === "Other" ? tr("Other", "Arall") : name);
+// The same on the page: the types' names are Welsh in both languages, so marked as Welsh (for a screen reader).
+const typeInWelsh = (name) => (name === "Other" ? typeName(name) : el("span", { lang: "cy" }, name));
 // One tune of a type, in words: "hornpipe" in English, "pibddawns" in Welsh (build_site.py's TYPE_SINGULAR).
 const EN_TYPE = { Jig: "jig", "Jig naid": "slip jig", Polca: "polka", Walts: "waltz", "Rîl": "reel", Pibddawns: "hornpipe", Ymdaith: "march",
   Dawns: "dance", Alaw: "air", "Cân": "song", Carol: "carol", Other: "tune" };
@@ -449,7 +451,8 @@ function search(query) {
   // "Llwyn Onn version 2", as a tune's page names its versions, is Llwyn Onn; a folder's
   // name ("llwytcoed-version-3", even one renamed since: moved.json) is that tune, first.
   const typed = normalize(query);
-  if (!typed) return state.groupList;
+  // Nothing typed: every tune. Only symbols or emoji (🎻, %): no name has those.
+  if (!typed) return query.trim() ? Object.assign([], { close: -1 }) : state.groupList;
   const q = searchQuery(query);
   const slug = movedTo(typed.replace(/ /g, "-"));
   const own = state.groups.get(slug) ?? state.groups.get(state.bySlug.get(slug)?.group);
@@ -473,6 +476,9 @@ function search(query) {
 
 const LETTER_PITCH = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 const MIN_NOTES = 4;
+// Only a query's first MAX_NOTES notes are looked for: far more than finding a tune
+// needs, and a whole tune pasted in (or a link with one) would take seconds a keystroke.
+const MAX_NOTES = 30;
 const KEYBOARD = { from: 55, to: 81 };  // G3 (fiddle's open G string) to A5
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
@@ -627,7 +633,7 @@ function editDistance(query, steps, fromStart, octaves) {
 }
 
 function searchByNotes(text) {
-  const notes = parseNotes(text);
+  const notes = parseNotes(text.slice(0, MAX_NOTES * 8)).slice(0, MAX_NOTES);
   const octaves = notes.length > 0 && notes.every((n) => n.midi !== null);
   const values = notes.map((n) => (octaves ? n.midi : n.pc));
   if (collapse(values).length < MIN_NOTES) return null;
@@ -980,7 +986,7 @@ function renderNotesPage(main) {
   const autoListen = state.autoListen;
   state.autoListen = false;
   const how = state.lang === "cy" ? [
-    [el("strong", {}, "Chwaraewch hi i mi"), " sy'n gwrando ar ffidil, chwisl, ffliwt neu gitâr drwy'ch meicroffon ",
+    ["Mae ", el("strong", {}, "Chwaraewch hi i mi"), " yn gwrando ar ffidil, chwisl, ffliwt neu gitâr drwy'ch meicroffon ",
       "ac yn ysgrifennu'r nodau wrth i chi chwarae (dyw e ddim yn gweithio i hymian). Does dim yn cael ei recordio na'i anfon i unman."],
     ["Mae chwech i wyth nodyn fel arfer yn ddigon. Gallwch adael nodau arwain alaw allan, neu eu chwarae; ",
       "y naill ffordd neu'r llall, caiff ei chanfod."],
@@ -1013,7 +1019,7 @@ function renderNotesPage(main) {
 
 function notesSearch({ autoListen = false } = {}) {
   const input = el("input", {
-    id: "notes-search", type: "text", autocomplete: "off", spellcheck: "false",
+    id: "notes-search", type: "text", autocomplete: "off", spellcheck: "false", maxlength: MAX_NOTES * 8,
     placeholder: tr("e.g. D E F# G A (any key)", "e.e. D E F# G A (unrhyw gywair)"), "aria-describedby": "notes-help",
     value: new URLSearchParams(location.search).get("q") ?? "",
   });
@@ -1199,11 +1205,11 @@ function loadFailed() {
 const movedTo = (slug) => state.moved.get(slug) ?? slug;
 
 // A type's own page, math/<slug>/ (build_site.py, for search engines): the browse
-// page with that type chosen.
+// page with that type chosen (math/rîl/ or math/JIG/ too: the folder made of it).
 const typeSlug = (name) => normalize(name).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");  // build_site.py's slugify
 function addressType() {
   const match = sitePath().match(/^math\/([^/]+)\/?$/);
-  return match ? state.data.types.find((t) => typeSlug(t.name) === match[1])?.name ?? null : null;
+  return match ? state.data.types.find((t) => typeSlug(t.name) === typeSlug(match[1]))?.name ?? null : null;
 }
 
 // Moving to another page cross-fades the old one into the new (View Transitions, where
@@ -1370,18 +1376,23 @@ function render() {
   state.keyNote?.stop();
   dropLinkTab();  // a link's holes or tabs were for its own page
   const params = new URLSearchParams(location.search);
-  const slug = movedTo(addressTune());
+  const known = (slug) => state.groups.has(slug) || state.bySlug.has(slug);
+  let address = addressTune();
   // A tune's own page starts with only that tune (see start()): anything else waits for the rest.
-  if (!state.complete && !state.groups.has(slug) && !state.bySlug.has(slug)) {
+  if (!state.complete && !known(movedTo(address))) {
     state.loaded.then(render, loadFailed);
     return;
   }
+  // An address written with capitals, accents or punctuation (alaw/Glandyfi/,
+  // alaw/codi'r-hwyl/): the folder build_site.py makes of it, if that's a tune.
+  if (address && !known(movedTo(address)) && known(movedTo(typeSlug(address)))) address = typeSlug(address);
+  const slug = movedTo(address);
   let group = state.groups.get(slug);
   let version = Number(params.get("v")) || null;
   const file = state.bySlug.get(slug);
   // A version's own folder, or a moved tune (which is that version, even when its new
   // folder is also the tune's address: "glandyfi" is version 1, not the first shown).
-  if (file && (!group || slug !== addressTune())) [group, version] = [state.groups.get(file.group), file.version];
+  if (file && (!group || slug !== address)) [group, version] = [state.groups.get(file.group), file.version];
   // Older links (?tune=…) and a version's folder move to the tune's own address; an
   // unknown tune (removed, renamed, mistyped) gets a page saying so.
   if (group && (params.has("tune") || !location.pathname.endsWith(`/alaw/${group.slug}/`))) {
@@ -1479,12 +1490,13 @@ function renderSearchPage(main, query) {
   // as the list under the box has it; and a credit other than the one said above.
   const item = ({ group, credit }, grouped) => {
     const key = group.versions[0].key;
-    const what = [grouped ? null : typeName(group.type), key && shortKey(key.pitch, key.modeName)].filter(Boolean).join(" · ");
+    const what = [grouped ? null : typeInWelsh(group.type), key && shortKey(key.pitch, key.modeName)]
+      .filter(Boolean).flatMap((part, i) => (i ? [" · ", part] : [part]));
     const aka = credit === undefined ? foundAs(group, query) : null;  // found by another of its names
     return el("li", {},
       el("a", { href: tuneUrl(group.slug), "data-route": true }, tuneName(group.slug, group.title)),
       aka ? el("span", { class: "aka" }, `(${aka})`) : null,
-      what ? el("span", { class: "tune-key" }, what) : null,
+      what.length ? el("span", { class: "tune-key" }, what) : null,
       own(credit) ? el("span", { class: `tune-key tune-credit${own(credit).length > 16 ? " own-line" : ""}`, title: credit }, own(credit)) : null);
   };
   // A long list is grouped by type, as Browse is, each type under its colourway.
@@ -1644,7 +1656,7 @@ const SEASONS = [
     about: ["Nos Galan Gaeaf, the last night of October, is an ysbrydnos, a spirit night, when the dead walk and the Tylwyth Teg are abroad. Bonfires were lit on the hills, and once they burned low everyone ran home before the Hwch Ddu Gwta, the tailless black sow, caught the last one:",
       "Ysbrydnos yw Nos Galan Gaeaf, noson olaf Hydref, pan fydd y meirw'n cerdded a'r Tylwyth Teg ar grwydr. Arferid cynnau coelcerthi ar y bryniau, ac wedi iddyn nhw losgi'n isel byddai pawb yn rhedeg adref rhag i'r Hwch Ddu Gwta ddal yr olaf:"],
     verse: ["Adref, adref, am y cynta',", "Hwch ddu gwta a gipio'r ola'."],
-    tunes: ["gwrachod-llanddona", "breuddwyd-y-wrach", "dawns-y-tylwyth-teg", "noson-oer", "daw-r-gaeaf"] },
+    tunes: ["gwrachod-llanddona", "breuddwyd-y-wrach", "dawns-y-tylwyth-teg", "daw-r-gaeaf"] },
   { id: "calennig", days: [[12, 31, 1, 1], [1, 13, 1, 13]], art: "afal-calennig",
     name: ["Calennig", "Calennig"],
     title: ["Blwyddyn Newydd Dda: a happy New Year", "Blwyddyn Newydd Dda!"],
@@ -1673,7 +1685,7 @@ const SEASONS = [
     title: ["Dydd Santes Dwynwen, 25 January", "Dydd Santes Dwynwen, 25 Ionawr"],
     alt: ["A carved Welsh lovespoon", "Llwy garu"],
     about: ["Dwynwen is the Welsh saint of lovers, and her church stands in ruins on Ynys Llanddwyn, off Anglesey. Her day is for cards, and for lovespoons: carved from one piece of wood, to give as a token of love.",
-      "Dwynwen yw nawddsant cariadon Cymru, ac mae adfeilion ei heglwys ar Ynys Llanddwyn, ger Môn. Mae ei diwrnod hi'n ddiwrnod i gardiau, ac i lwyau caru: wedi'u cerfio o un darn o bren, i'w rhoi'n arwydd o gariad."],
+      "Dwynwen yw nawddsantes cariadon Cymru, ac mae adfeilion ei heglwys ar Ynys Llanddwyn, ger Môn. Mae ei diwrnod hi'n ddiwrnod i gardiau, ac i lwyau caru: wedi'u cerfio o un darn o bren, i'w rhoi'n arwydd o gariad."],
     tunes: ["serch-hudol", "dilyn-serch", "caru-doli", "cariadgan-y-sguthan"] },
   { id: "gwyl-dewi", days: [[2, 25, 3, 1]], art: "cenhinen-bedr",
     name: ["Gŵyl Dewi", "Gŵyl Dewi"],
@@ -1979,11 +1991,12 @@ function renderBrowse(main) {
 function notesInvite() {
   const notes = (text) => el("a", { href: "?page=notes", "data-route": true }, text);
   return el("p", { class: "notes-invite" }, el("strong", {}, tr("Know the tune but not its name?", "Gwybod yr alaw ond nid ei henw?")), " ",
-    // (Tapping them is on the notes page too, beside the microphone.)
+    // (Tapping them is on the notes page too, beside the microphone. The comma is kept with
+    // the button, so a line doesn't start with it.)
     canListen()
-      ? [el("button", { type: "button", class: "link-button listen-start",
-          onclick: () => { state.autoListen = true; navigate("?page=notes"); } }, micIcon(), tr("Play it to me", "Chwaraewch hi i mi")),
-        tr(", or ", ", neu "), notes(tr("type the notes", "deipiwch y nodau"))]
+      ? [el("span", { class: "nowrap" }, el("button", { type: "button", class: "link-button listen-start",
+          onclick: () => { state.autoListen = true; navigate("?page=notes"); } }, micIcon(), tr("Play it to me", "Chwaraewch hi i mi")), ","),
+        tr(" or ", " neu "), notes(tr("type the notes", "deipiwch y nodau"))]
       : notes(tr("Tap or type the notes", "Tapio neu deipio'r nodau")));
 }
 
@@ -2254,17 +2267,35 @@ function wrapVerses(abc, layout) {
 }
 
 // The tempo mark, with the word before it when there is one ("Swing ♩ = 112", as swing
-// is marked on printed music).
+// is marked on printed music), or the tune's own ("Maestoso").
 function setTempo(abc, beat, bpm, text = "", written = bpm) {
-  const tempo = `Q:${text ? `"${text}" ` : ""}${beat}=${bpm}`;
-  // A change of tempo later in the tune (abcjs plays a Q: in the music from there on) is
-  // made as much faster or slower as the tune is (written: the tune's own tempo).
-  const later = (abc) => abc.replace(/(^Q:|\[Q:)([^\]\n]*?)(\d+)(\s*(?:"[^"]*")?\s*)(?=$|\])/gm,
-    (_, field, before, n, after) => `${field}${before}${Math.round((n * bpm) / written)}${after}`);
   const k = Math.max(0, abc.search(/^K:/m));
-  const head = abc.slice(0, k);
-  return (/^Q:/m.test(head) ? head.replace(/^Q:.*$/m, tempo) : `${head}${tempo}\n`) + later(abc.slice(k));
+  let head = abc.slice(0, k), body = abc.slice(k);
+  // A Q: after the K: but before the music (The Norman's) is the tune's first tempo, as
+  // one in the head is: it's taken up there, so the tempo chosen replaces it.
+  const opening = /^Q:/m.test(head) ? null : body.match(/^(?:(?:[A-Za-z]:|%).*\n)*?(Q:.*(?:\n|$))/);
+  if (opening) {
+    head += opening[1].endsWith("\n") ? opening[1] : `${opening[1]}\n`;
+    body = body.slice(0, opening[0].length - opening[1].length) + body.slice(opening[0].length);
+  }
+  // A change of tempo later in the tune (abcjs plays a Q: in the music from there on) is
+  // made as much faster or slower as the tune is: against its first tempo (its Q:, or with
+  // none, written: the tempo it's played at). In whole notes a minute, as they may count
+  // in different notes (Q:3/8=80, Q:1/4=120). And a bare number (Q:120, crotchets) is
+  // given its note: abcjs took a bare Q: in the music for the tune's tempo from the start.
+  const [bn, bd] = beat.split("/").map(Number);
+  const own = head.match(/^Q:(.*?)(\d+)\s*("[^"]*")?\s*$/m);
+  const first = own ? own[2] * tempoNote(own[1]) : (written * bn) / bd;
+  const words = text || `${own?.[1] ?? ""}${own?.[3] ?? ""}`.match(/"\s*([^"]*?)\s*"/)?.[1];
+  const tempo = `Q:${words ? `"${words}" ` : ""}${beat}=${bpm}`;
+  const later = body.replace(/(^Q:|\[Q:)([^\]\n]*?)(\d+)(\s*(?:"[^"]*")?\s*)(?=$|\])/gm, (_, field, before, n, after) =>
+    `${field}${before.includes("=") ? before : `${before}1/4=`}${Math.round((n * bpm * bn) / bd / first)}${after}`);
+  return (/^Q:/m.test(head) ? head.replace(/^Q:.*$/m, tempo) : `${head}${tempo}\n`) + later;
 }
+// The note a Q: counts in, in whole notes: "3/8=" 3/8; "1/4 1/8=" the two together; none
+// (a bare number), a crotchet, as abcjs takes it.
+const tempoNote = (before) => [...before.replace(/"[^"]*"/g, "").matchAll(/(\d+)\/(\d+)/g)]
+  .reduce((sum, [, n, d]) => sum + n / d, 0) || 1 / 4;
 
 // abcjs names each score "Sheet Music for "<title>"" (its <title> and aria-label), in English.
 // about (its key and time, say) is added on, for screen readers: the picture says nothing else.
@@ -2346,16 +2377,125 @@ class Cursor {  // highlights the notes as they play, and keeps playback inside 
     if (!next || (this.part && !(next.startChar >= this.part.from && next.startChar < this.part.to))) return null;
     return next;
   }
+  // A jump made by hand (a note tapped, the slider, Back to the start): not a time round.
+  jumped() { this.loop?.jumped(); }
   onStart() { soundPlayed(); }
   onReady(controller) { keepToTheSound(controller); }
   onFinished() { this.onEvent(null); this.line = this.playing = this.note = undefined; }
+}
+
+// ---- D.C., D.S. and Fine ------------------------------------------------------------------
+// abcjs draws them (!D.C.!, !fine!, !segno!, or words over the notes, "^D.C. al Fine"), but
+// plays on past them: Polca'r Cymro played A A B and stopped. So the sound and the lit notes
+// are made from the tune in the order it's played: through once with its repeats, then from
+// the start (D.C.) or the segno (D.S.) to the Fine, or to the end if there's none, the
+// repeats not taken again (of a part's endings, the last; or the one with the Fine in it). A
+// direction over a note is taken at the end of its bar, as it's written over a part's last
+// note. A Fine with nothing sending playback back to it does nothing; a D.S. with no segno
+// goes back to the start.
+
+// What a note or bar line says: its decorations, and the words written over it.
+function directionsAt(item) {
+  const said = new Set();
+  for (const name of item.decoration ?? []) {
+    if (/^D\.[CS]\./.test(name)) said.add(name.slice(0, 4));  // D.C.alfine: D.C.
+    else if (name === "fine" || name === "segno") said.add(name);
+  }
+  for (const { name, position } of item.chord ?? []) {
+    if (position === "default") continue;  // a chord
+    const text = name.trim();
+    if (/^(D\.\s*C\.|da capo)/i.test(text)) said.add("D.C.");
+    else if (/^(D\.\s*S\.|dal segno)/i.test(text)) said.add("D.S.");
+    else if (/^(fine|segno)$/i.test(text)) said.add(text.toLowerCase());
+  }
+  return said;
+}
+
+// Where playback goes back to and where it stops, as bars counted from 0 (a bar line is
+// in the bar it ends): null for a tune played straight through.
+function directionsPlan(lines) {
+  const voice = lines.flatMap((line) => line.staff?.[0]?.voices?.[0] ?? []);
+  const fines = [], endings = [];
+  let bar = 0, notes = 0, back = null, segno = null, ending = null;
+  for (const item of voice) {
+    const said = directionsAt(item);
+    if (said.has("segno") && segno === null) segno = item.el_type === "bar" ? bar + 1 : bar;
+    if (said.has("fine")) fines.push(bar);
+    if (back === null && (said.has("D.C.") || said.has("D.S."))) back = { bar, toSegno: said.has("D.S.") };
+    if (item.el_type === "note") notes++;
+    if (item.el_type !== "bar") continue;
+    if (ending && (item.endEnding || item.startEnding)) { ending.to = bar; ending.notes = notes; ending = null; }
+    if (item.startEnding) {
+      // Straight after another ending (no notes between): that one's an earlier time through.
+      if (endings.at(-1)?.notes === notes) endings.at(-1).earlier = true;
+      ending = { from: bar + 1 };
+      endings.push(ending);
+    }
+    bar++;
+  }
+  if (back === null) return null;
+  const last = voice.at(-1)?.el_type === "bar" ? bar - 1 : bar;
+  if (ending) ending.to = last;
+  const from = back.toSegno ? segno ?? 0 : 0;
+  const fine = fines.find((at) => at >= from && at <= back.bar);
+  const skip = new Set(endings.filter((e) => e.earlier && !(fine >= e.from && fine <= e.to))
+    .flatMap((e) => Array.from({ length: e.to - e.from + 1 }, (_, i) => e.from + i)));
+  return { back: back.bar, from, to: fine ?? last, skip };
+}
+
+const playedAgain = (plan, bar) => bar >= plan.from && bar <= plan.to && !plan.skip.has(bar);
+// A bar line played the second time: no repeat, no ending.
+const plainBar = (bar) => ({ ...bar, type: REPEAT_START.has(bar.type) || REPEAT_END.has(bar.type) ? "bar_thin" : bar.type,
+  startEnding: undefined, endEnding: undefined });
+
+// abcjs makes the sound from the tune's lines (setUpAudio reads visualObj.lines): a copy of
+// the tune with other lines, the rest of it as it is.
+const withLines = (visualObj, lines) => Object.assign(Object.create(visualObj), { lines });
+
+// The lines as played, for the sound: up to the D.C. as written, then again what's played
+// again, each line's staff (its key, clef and time signature) going with its notes.
+function playedLines(lines, plan) {
+  const counted = new Map();  // bar lines so far, in each voice ("staff/voice")
+  const bars = lines.map((line) => line.staff?.map((staff, s) => staff.voices.map((voice, v) => {
+    let n = counted.get(`${s}/${v}`) ?? 0;
+    const each = voice.map((item) => (item.el_type === "bar" ? n++ : n));
+    counted.set(`${s}/${v}`, n);
+    return each;
+  })));
+  const pass = (played, as) => lines.flatMap((line, l) => {
+    if (!line.staff) return [];
+    const staff = line.staff.map((st, s) => ({ ...st, voices: st.voices.map((voice, v) => voice.filter((_, i) => played(bars[l][s][v][i])).map(as)) }));
+    return staff.some((st) => st.voices.some((voice) => voice.length)) ? [{ ...line, staff }] : [];
+  });
+  return [...pass((bar) => bar <= plan.back, (item) => item),
+    ...pass((bar) => playedAgain(plan, bar), (item) => (item.el_type === "bar" ? plainBar(item) : item))];
+}
+
+// The same for the lit notes: a voice of the drawn music (abcjs's makeVoicesArray), in the
+// order it's played. The drawn notes themselves, so they light up each time round.
+function playedVoice(voice, plan) {
+  let n = 0;
+  const bars = voice.map((item) => (item.elem.type === "bar" ? n++ : n));
+  const again = voice.filter((_, i) => playedAgain(plan, bars[i])).map((item) => (item.elem.type !== "bar" ? item
+    : { ...item, elem: Object.create(item.elem, { abcelem: { value: plainBar(item.elem.abcelem) } }) }));
+  return [...voice.filter((_, i) => bars[i] <= plan.back), ...again];
+}
+
+function followDirections(visualObj) {
+  const plan = directionsPlan(visualObj.lines);
+  if (!plan) return;
+  const { setUpAudio, makeVoicesArray } = visualObj;
+  visualObj.setUpAudio = function (options) { return setUpAudio.call(withLines(this, playedLines(this.lines, plan)), options); };
+  visualObj.makeVoicesArray = function () { return makeVoicesArray.call(this).map((voice) => playedVoice(voice, plan)); };
 }
 
 // ---- Practice: loop a part, speed up, count-in, click, tablature -------------------------
 
 // A tune's parts (A, B, …) as ranges of its ABC text: a part starts at a repeat sign or
 // at a double bar line (as in the chord chart), and runs to the next. A second ending
-// after a repeat stays with its part, so a :| only ends one if notes come next.
+// after a repeat stays with its part, so a :| only ends one if notes come next. A lead-in
+// on its own (before the first |:, or between a :| and the next |:) is shorter than a bar:
+// it goes with the part it leads into (Angharad Siân's "a" was a part A, repeated alone).
 function tuneParts(visualObj) {
   const starts = [0];
   let ended = null;  // where the last double bar line or :| is, until the notes after it
@@ -2374,17 +2514,34 @@ function tuneParts(visualObj) {
   const unique = [...new Set(starts)].sort((a, b) => a - b);
   // Only ranges with notes in them count (a final |] starts nothing).
   const notes = visualObj.lines.flatMap((l) => l.staff?.[0]?.voices?.[0] ?? []).filter((e) => e.el_type === "note");
-  return unique.map((from, i) => ({ from, to: unique[i + 1] ?? Infinity }))
-    .filter((p) => notes.some((n) => n.startChar >= p.from && n.startChar < p.to))
-    .map((p, i) => ({ ...p, label: String.fromCharCode(65 + i) }));
+  let tuplet = 1;
+  const lengths = notes.map((n) => {
+    if (n.startTriplet) tuplet = n.tripletMultiplier ?? 1;
+    const length = (n.duration ?? 0) * tuplet;
+    if (n.endTriplet) tuplet = 1;
+    return length;
+  });
+  const short = (p) => notes.reduce((sum, n, i) => sum + (n.startChar >= p.from && n.startChar < p.to ? lengths[i] : 0), 0)
+    < visualObj.getBarLength() - 1e-6;
+  const parts = [];
+  for (const p of unique.map((from, i) => ({ from, to: unique[i + 1] ?? Infinity }))
+    .filter((p) => notes.some((n) => n.startChar >= p.from && n.startChar < p.to))) {
+    if (parts.length && short(parts.at(-1))) parts.at(-1).to = p.to;
+    else parts.push(p);
+  }
+  // (and anything short left at the end, with the part before)
+  if (parts.length > 1 && short(parts.at(-1))) parts.at(-2).to = parts.pop().to;
+  return parts.map((p, i) => ({ ...p, label: String.fromCharCode(65 + i) }));
 }
 
 // Repeating the whole tune or one part. The player's own loop brings playback round at
 // the end of the tune; for a part, whenever playback reaches a note outside it, it jumps
 // to the part's first note, played the way it's written (its repeat included). With
-// speedUp, each time round is 5% (of the starting tempo) faster, up to speedTo bpm.
+// speedUp, each time round is 5% (of the starting tempo) faster, up to speedTo bpm. Only
+// playback coming round counts as a time round: a jump made by hand (back to the start, or
+// a note tapped outside the part) doesn't make it faster.
 function repeatLoop(controller, part, settings, onSpeed) {
-  let jumping = false, inside = false, last = -1;
+  let jumping = false, inside = false, round = false;
   const firstNote = () => controller.timer.noteTimings.find((e) => e.type === "event" && e.startChar != null && e.startChar >= part.from && e.startChar < part.to);
   const cap = () => Math.round((100 * settings.speedTo) / settings.bpm);
   let faster = false;  // the sound being made again, faster
@@ -2412,6 +2569,9 @@ function repeatLoop(controller, part, settings, onSpeed) {
     }
   };
   return {
+    // The player's own loop has brought playback round to the start of the tune.
+    cameRound() { round = true; },
+    jumped() { inside = false; round = false; },
     onEvent(event) {
       // While the sound is made again, the old player's last notes still come (with no timer).
       if (faster || !controller.timer) return;
@@ -2420,10 +2580,8 @@ function repeatLoop(controller, part, settings, onSpeed) {
       // count-in is for the first time through only).
       const at = () => firstNote().milliseconds / (controller.midiBuffer.duration * 1000);
       if (part.whole) {
-        // Round again: playback has gone from late in the tune back to its start.
-        const end = controller.timer.noteTimings.at(-1)?.milliseconds ?? 0;
-        if (last > end / 2 && event.milliseconds + 1000 < last) roundAgain(at());
-        last = event.milliseconds;
+        if (round) roundAgain(at());
+        round = false;
         return;
       }
       const within = event.startChar >= part.from && event.startChar < part.to;
@@ -2464,6 +2622,8 @@ const FINGERED = {
   "whistle-D": whistle("D", 62), "whistle-C": whistle("C", 60), "whistle-G": whistle("G", 67), "whistle-Bb": whistle("Bb", 70),
   recorder: { recorder: true, jumpUp: true, label: () => tr("Descant recorder", "Recorder desgant"), low: 60, holes: (n) => RECORDER_HOLES[n] ?? null, high: () => false },
 };
+// A recorder note played an octave up, or two: what's written over its holes.
+const OCTAVES_UP = [null, "8va", "15ma"];
 // Where a gap goes between the holes, so a column reads as hands do: a whistle's two
 // hands (3 | 3); a recorder's thumb, then its left hand and right (1 | 3 | 4).
 const HOLE_GROUPS = { 6: [3], 8: [1, 4] };
@@ -2480,7 +2640,7 @@ function drawHoles(text, holes) {
   for (const row of text.children) {
     const dy = Number(row.getAttribute("dy"));
     if (dy) y += dy;
-    if (row.textContent === "8va") row.setAttribute("class", "octave-up");
+    if (OCTAVES_UP.includes(row.textContent)) row.setAttribute("class", "octave-up");
     else if (row.textContent === "+" || row.textContent === "?") row.setAttribute("class", "sign");
     else if (row.textContent === ".") row.textContent = "";  // the room under the holes (withFingerings)
     if (!"●○◐".includes(row.textContent) || !row.textContent) continue;
@@ -2512,6 +2672,40 @@ function holeMark(parent, mark, cx, cy, r) {
     parent.append(half);
   }
 }
+// A part for several voices (a Plygain carol's): the tune is the voice named Alaw, or else
+// the one the words (w:) are sung to, or else the first. null: a tune with one voice.
+const VOICE_LINE = /^(?:\[V:|V:)\s*([^\]\s]+)/;
+function melodyVoice(abc) {
+  const voices = [...abc.matchAll(/^V:\s*(\S+)(.*)$/gm)];
+  if (!voices.length) return null;
+  const named = voices.find((m) => /\bs?nm="Alaw"/i.test(m[2]));
+  if (named) return named[1];
+  let voice = null;
+  for (const line of abc.split("\n")) {
+    voice = VOICE_LINE.exec(line)?.[1] ?? voice;
+    if (line.startsWith("w:") && voice) return voice;
+  }
+  return voices[0][1];
+}
+// The melody's notes as abcjs parsed them (not rests), each with the line of the ABC it's
+// on: melodyVoice's notes, for a part for several voices (abc: the ABC that was parsed).
+function melodyNotes(abc, parsed, voice = melodyVoice(abc)) {
+  const starts = [], voiceOn = [];
+  let at = 0, current = null;
+  for (const line of abc.split("\n")) {
+    starts.push(at);
+    at += line.length + 1;
+    current = VOICE_LINE.exec(line)?.[1] ?? current;
+    voiceOn.push(current);
+  }
+  const lineOf = (char) => { let i = 0; while (i + 1 < starts.length && starts[i + 1] <= char) i++; return i; };
+  const voices = (staffLine) => (voice == null ? [staffLine.staff?.[0]?.voices?.[0] ?? []]
+    : (staffLine.staff ?? []).flatMap((staff) => staff.voices));
+  return parsed.lines.flatMap(voices).flat()
+    .filter((note) => note.el_type === "note" && !note.rest)
+    .map((note) => ({ note, line: lineOf(note.startChar) }))
+    .filter(({ line }) => voice == null || voiceOn[line] === voice);
+}
 // The tune's notes (MIDI; a chord's highest), as written: worked out once a tune, to say
 // which keys, or which whistles, have every note of it.
 const tunePitches = new WeakMap();
@@ -2519,50 +2713,38 @@ function pitchesOf(tune) {
   if (!tunePitches.has(tune)) {
     const drawn = ABCJS.renderAbc("*", tune.abc)[0];
     drawn.setUpAudio();
-    const pitches = [];
-    for (const line of drawn.lines) {
-      for (const note of line.staff?.[0]?.voices?.[0] ?? []) {
-        if (note.el_type === "note" && !note.rest && note.midiPitches?.length) pitches.push(Math.max(...note.midiPitches.map((m) => m.pitch)));
-      }
-    }
-    tunePitches.set(tune, pitches);
+    tunePitches.set(tune, melodyNotes(tune.abc, drawn).filter(({ note }) => note.midiPitches?.length)
+      .map(({ note }) => Math.max(...note.midiPitches.map((m) => m.pitch))));
   }
   return tunePitches.get(tune);
 }
 const notOn = (pitches, instrument, shift) => pitches.filter((p) => !fingering(p + shift, instrument)).length;
 
 // A recorder's notes below its lowest are played an octave up (or two), as recorder players
-// do at a session: marked "up" so the jump shows.
+// do at a session: marked "up" so the jump shows (up: how many octaves, 0 for none).
 function fingering(midi, instrument) {
   let n = midi - instrument.low;
-  let up = false;
-  while (n < 0 && instrument.jumpUp) { n += 12; up = true; }
+  let up = 0;
+  while (n < 0 && instrument.jumpUp) { n += 12; up++; }
   const holes = n < 0 ? null : instrument.holes(n);
   return holes && { holes, high: instrument.high(n), up };  // null: not on this instrument
 }
 
 // size: the holes' rows, in abcjs's units (a phone draws the music smaller: larger there).
-function withFingerings(abc, instrument, size = 11) {
+// voice: the melody's, for a part for several voices (melodyVoice), from the tune as written:
+// its words, which can say which, may be gone from abc already (hidden).
+function withFingerings(abc, instrument, size = 11, voice = melodyVoice(abc)) {
   const lines = abc.split("\n").filter((line) => !/^w:/.test(line));  // a tune's own lyrics would clash
   abc = lines.join("\n");
   const tune = ABCJS.renderAbc("*", abc)[0];
   tune.setUpAudio();  // gives each note its MIDI pitch (midiPitches), key signature and accidentals included
-  // Which line of the ABC each note is on, from where it starts in the text.
-  const lineStarts = [];
-  let at = 0;
-  for (const line of lines) { lineStarts.push(at); at += line.length + 1; }
-  const lineOf = (char) => { let i = 0; while (i + 1 < lineStarts.length && lineStarts[i + 1] <= char) i++; return i; };
   const perLine = new Map();
-  for (const staffLine of tune.lines) {
-    for (const note of staffLine.staff?.[0]?.voices?.[0] ?? []) {
-      if (note.el_type !== "note" || note.rest) continue;
-      const i = lineOf(note.startChar);
-      if (!perLine.has(i)) perLine.set(i, []);
-      // A tied note's continuation has no pitch of its own (it's one sound), but it does
-      // take a lyric's place: leave that place empty so the rest stay under their notes.
-      perLine.get(i).push(note.midiPitches?.length
-        ? fingering(Math.max(...note.midiPitches.map((m) => m.pitch)), instrument) : "tied");
-    }
+  for (const { note, line } of melodyNotes(abc, tune, voice)) {
+    if (!perLine.has(line)) perLine.set(line, []);
+    // A tied note's continuation has no pitch of its own (it's one sound), but it does
+    // take a lyric's place: leave that place empty so the rest stay under their notes.
+    perLine.get(line).push(note.midiPitches?.length
+      ? fingering(Math.max(...note.midiPitches.map((m) => m.pitch)), instrument) : "tied");
   }
   const out = [`%%vocalfont ${SCORE_FACE} ${size}`];
   const holes = instrument.holes(0).length;
@@ -2570,14 +2752,16 @@ function withFingerings(abc, instrument, size = 11) {
     out.push(line);
     const notes = perLine.get(i);
     if (!notes) return;
+    // A note with nothing in a row has "." there, blanked once drawn (drawHoles): not abcjs's
+    // "*", which a rest takes when it comes first, so every note after it got the next one's.
     const row = (mark) => out.push(`w:${notes.map(mark).join(" ")}`);
-    // What to do differently comes first, next to the note: an octave up, or blow harder.
-    if (notes.some((f) => f?.up)) row((f) => (f?.up ? "8va" : "*"));
-    if (notes.some((f) => f?.high)) row((f) => (f?.high ? "+" : "*"));
+    // What to do differently comes first, next to the note: an octave up (or two), or blow harder.
+    if (notes.some((f) => f?.up)) row((f) => (f?.up ? OCTAVES_UP[f.up] : "."));
+    if (notes.some((f) => f?.high)) row((f) => (f?.high ? "+" : "."));
     // The holes, a row each; drawn as circles once abcjs has placed them (drawHoles).
-    for (let hole = 0; hole < holes; hole++) row((f) => (f === "tied" ? "*" : f ? f.holes[hole] : hole === 0 ? "?" : "*"));
-    // Then a row of room, blanked once drawn (drawHoles), so the holes don't run into the
-    // next line's stave and read as its own. abcjs leaves no room for a row of nothing.
+    for (let hole = 0; hole < holes; hole++) row((f) => (f === "tied" ? "." : f ? f.holes[hole] : hole === 0 ? "?" : "."));
+    // Then a row of room, blanked too, so the holes don't run into the next line's stave
+    // and read as its own. abcjs leaves no room for a row of nothing.
     row(() => ".");
   });
   return out.join("\n");
@@ -2609,11 +2793,60 @@ function clickParams(visualObj, tune) {
   const { countIn, click } = state.practice;
   if (!countIn && !click) return {};
   const { num, den } = visualObj.getMeterFraction();
-  const [bn, bd] = tune.beat.split("/").map(Number);
+  return { drum: clickBar(num, den, tune.beat), drumBars: 1, drumIntro: countIn ? 1 : 0, drumOff: !click };
+}
+
+// A bar of num/den's clicks, a beat apart, as abcjs's "drum" pattern.
+function clickBar(num, den, beat) {
+  const [bn, bd] = beat.split("/").map(Number);
   const beats = Math.max(1, Math.round((num / den) / (bn / (bd || 1))));
   const notes = [76, ...Array(beats - 1).fill(77)].join(" ");
   const loud = [110, ...Array(beats - 1).fill(80)].join(" ");
-  return { drum: `${"d".repeat(beats)} ${notes} ${loud}`, drumBars: 1, drumIntro: countIn ? 1 : 0, drumOff: !click };
+  return `${"d".repeat(beats)} ${notes} ${loud}`;
+}
+
+// The beat in a bar of another time signature than the tune's first: the tune's own beat
+// if it fits the bar (a 9/8 bar in a 6/8 jig: three dotted crotchets; 6/4 in a slow 4/4
+// air: six crotchets), or else the bar's own (6/8 in a march counted in minims: two
+// dotted crotchets).
+function beatIn(num, den, tune, first) {
+  const compound = (n, d) => d >= 8 && n % 3 === 0 && n > 3;
+  const [bn, bd] = tune.beat.split("/").map(Number);
+  if (compound(num, den) === compound(first.num, first.den) && (num * bd) % (den * bn) === 0) return tune.beat;
+  return compound(num, den) ? `3/${den}` : `1/${den}`;
+}
+
+// A time signature's bar, as numbers: { num: 6, den: 8 } (C is 4/4, C| 2/2).
+function meterNumbers(meter) {
+  if (meter?.type === "common_time") return { num: 4, den: 4 };
+  if (meter?.type === "cut_time") return { num: 2, den: 2 };
+  const value = meter?.value?.[0];
+  return value ? { num: value.num.split("+").reduce((sum, n) => sum + Number(n), 0), den: Number(value.den) } : null;
+}
+
+// abcjs lays out the click, and a jig's strum, for the tune's first time signature, and
+// keeps to them through a change of it: a bar of 9/8 in a 6/8 jig had two clicks, half a
+// bar apart, and a strum for six of its nine quavers. So after each time signature (an M:
+// line, or [M:] in the music) the sound is given what make() makes for it: abcjs's own
+// "%%MIDI drum" or "gchord" for that bar. Tunes with only the one are left as they are.
+function inEachMetre(visualObj, make) {
+  const meters = (line) => [line.staff?.[0]?.meter, ...(line.staff?.[0]?.voices?.[0] ?? []).filter((item) => item.el_type === "timeSignature")];
+  if (new Set(visualObj.lines.flatMap(meters).map(meterNumbers).filter(Boolean).map(({ num, den }) => `${num}/${den}`)).size < 2) return;
+  const setUpAudio = visualObj.setUpAudio;
+  visualObj.setUpAudio = function (options = {}) {
+    const after = (meter) => {
+      const size = meterNumbers(meter);
+      return size ? make(size.num, size.den, options).map(([cmd, ...params]) => ({ el_type: "midi", cmd, params })) : [];
+    };
+    const lines = this.lines.map((line) => {
+      const [staff, ...others] = line.staff ?? [];
+      if (!staff?.voices?.length) return line;
+      const voice = [...(staff.meter ? after(staff.meter) : []),
+        ...staff.voices[0].flatMap((item) => (item.el_type === "timeSignature" ? [item, ...after(item)] : [item]))];
+      return { ...line, staff: [{ ...staff, voices: [voice, ...staff.voices.slice(1)] }, ...others] };
+    });
+    return setUpAudio.call(withLines(this, lines), options);
+  };
 }
 
 // abcjs writes a whole bar of clicks at every bar line, however short the bar. Where a part
@@ -2978,6 +3211,7 @@ function playFrom(abcElem, tuneNumber, classes, analysis, drag, event) {
   const ms = [abcElem.currentTrackMilliseconds ?? []].flat()[0];
   const player = state.synth;
   if (ms == null || !player?.isStarted) return;
+  player.cursorControl?.jumped();
   // The note's time is at the written tempo; sped up (setWarp), the sound gets there sooner.
   player.seek(ms / 1000 / ((player.warp || 100) / 100), "seconds");
 }
@@ -2996,7 +3230,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   const tab = TABS[state.practice.tab];
   const fingered = FINGERED[state.practice.tab];
   // On a phone, at a session, the holes are drawn larger, to be read on a stand.
-  if (fingered) abc = withFingerings(abc, fingered, paper.clientWidth && paper.clientWidth < 600 ? 13 : 11);
+  if (fingered) abc = withFingerings(abc, fingered, paper.clientWidth && paper.clientWidth < 600 ? 13 : 11, melodyVoice(tune.abc));
   // The tune's name is the page's heading, just above: on screen the score leaves it out,
   // so the music starts higher. Printed, it keeps it (the heading isn't printed).
   if (!state.printing) abc = abc.replace(/^T:.*\n/gm, "");
@@ -3030,6 +3264,14 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
       afterParsing: (parsed) => { if (tablature && !parsed.tablatures) parsed.tablatures = ABCJS.parseOnly(abc, { tablature })[0].tablatures; },
       selectTypes: ["note"], clickListener: playFrom })[0];
   const visualObj = noLoneBar(render(layout), layout, render, abc, format, !fingered && !!paper.dataset.sung);
+  // The sound as the music says: the click's beats and the strum change with the time
+  // signature (the tune's own %%MIDI gchord kept), and D.C. and D.S. are followed.
+  const strum = settings.chords.play !== "tune" && !/^%%MIDI\s+gchord/m.test(tune.abc);
+  inEachMetre(visualObj, (num, den, options) => [
+    ...(options.drum ? [["drum", ...clickBar(num, den, beatIn(num, den, tune, visualObj.getMeterFraction())).split(" ")]] : []),
+    ...(strum ? [["gchord", STRUMS[`${num}/${den}`] ?? ""]] : []),
+  ]);
+  followDirections(visualObj);
   clicksOnTheBeat(visualObj);
   // abcjs makes each clickable note a Tab stop: hundreds, between the player and the rest
   // of the page. Keyboards have the space bar to play instead.
@@ -3107,6 +3349,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
     "aria-label": tr("Position in the tune", "Lle yn yr alaw"),
     oninput: (e) => {
       const at = Math.min(.999, +e.target.value / 100);
+      cursor.jumped();
       if (controller.timer) controller.seek(at); else startAt = at;
       showState();
     } });
@@ -3154,6 +3397,8 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   // A new player: Play waits for a signal if there are no sounds to play (fillSoundNote).
   queueMicrotask(() => paper.closest(".score")?.querySelectorAll(".sound-note").forEach(fillSoundNote));
   audio.querySelector(".abcjs-midi-reset")?.addEventListener("click", () => { startAt = null; showState(); });
+  // (said before abcjs's own goes back, which lights the first note straight away)
+  audio.addEventListener("click", (e) => { if (e.target.closest(".abcjs-midi-reset")) cursor.jumped(); }, true);
   for (const node of [start, clock].filter(Boolean)) {
     new MutationObserver(showState).observe(node, { attributes: true, attributeFilter: ["class"], childList: true, characterData: true, subtree: true });
   }
@@ -3179,6 +3424,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
     // for the first time through, so the second starts on the first note.
     const finished = controller.finished;
     controller.finished = () => {
+      cursor.loop.cameRound();  // (before abcjs starts again, which plays the first note at once)
       const result = finished();
       const first = audioParams.drumIntro && controller.timer?.noteTimings.find((e) => e.type === "event" && e.startChar != null);
       if (result === "continue" && first) controller.seek(first.milliseconds / 1000, "seconds");
@@ -3464,6 +3710,10 @@ function dropMenu(id, label, buttons, toggleClass = null) {
   };
   const menu = el("div", { class: "print-menu", id, hidden: true, onclick: (e) => { if (e.target.closest("button")) show(false); } },
     buttons);
+  // The button pressed goes with the menu, so the focus goes back to the menu's own button
+  // first (before the button's own work: a box it opens, the QR code, gives the focus back
+  // there when closed, not to the page).
+  menu.addEventListener("click", (e) => { if (e.target.closest("button") && menu.contains(document.activeElement)) toggle.focus(); }, true);
   const toggle = el("button", { type: "button", class: toggleClass, "aria-expanded": "false", "aria-controls": id, onclick: () => show(menu.hidden) },
     ...label, el("span", { class: "chevron", "aria-hidden": "true" }));
   // Clicking anywhere else closes it (and once the page has gone, stop listening).
@@ -3538,8 +3788,10 @@ function savedTunes() {
     const out = {};
     for (const [slug, kept] of Object.entries(all)) if (!state.moved.has(slug)) out[slug] = kept;
     for (const [slug, kept] of Object.entries(all)) if (state.moved.has(slug)) out[movedTo(slug)] ??= kept;
-    for (const kept of Object.values(out)) {
-      for (const [name, value] of Object.entries(kept ?? {})) if (!KEPT[name]?.(value)) delete kept[name];
+    // Anything that isn't one tune's settings (edited by hand, say) is left out, not let lose the rest.
+    for (const [slug, kept] of Object.entries(out)) {
+      if (!kept || typeof kept !== "object" || Array.isArray(kept)) { delete out[slug]; continue; }
+      for (const [name, value] of Object.entries(kept)) if (!KEPT[name]?.(value)) delete kept[name];
     }
     return out;
   } catch { return {}; }
@@ -3634,6 +3886,7 @@ function renderTune(main, group, tune) {
   let drawn = { parts: [] };
   let showPracticeOn = null;  // the practice tools' summary: what's on (see practiceTools)
   let showFit = null;  // notes not on the whistle or recorder chosen (see fitNote)
+  let showWordsToggle = null;  // the switch to hide a song's words, while there are any (see wordsToggle)
   // Drawing it again (a new tempo or key, a phone turned on its side) makes a new player:
   // if the tune was playing, it carries on from the same point in it. So does one drawn
   // again while it's still getting its sound ready to carry on (two quick tempo changes).
@@ -3651,6 +3904,7 @@ function renderTune(main, group, tune) {
     if (settings.loop >= (drawn.parts.length > 1 ? drawn.parts.length : 0)) settings.loop = -2;
     showPracticeOn?.();
     showFit?.();
+    showWordsToggle?.();
     showAbc();
     const player = state.synth;
     if (playingAt !== null && player) {
@@ -3936,14 +4190,15 @@ function renderTune(main, group, tune) {
   const fitNote = el("p", { class: "fit-note", hidden: true });
   showFit = () => {
     const f = FINGERED[state.practice.tab];
-    const pitches = f && tune.key ? pitchesOf(tune) : [];
+    const pitches = f ? pitchesOf(tune) : [];
     const now = settings.transpose;
     // As the music is drawn: in the octave semitones() chooses, not just the key.
     const drawnAt = (shift) => semitones(tune, shift);
     const missing = f ? notOn(pitches, f, drawnAt(now)) : 0;
     fitNote.hidden = !missing;
     if (!missing) return fitNote.replaceChildren();
-    const shift = [0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6].find((s) => s !== now && !notOn(pitches, f, drawnAt(s)));
+    // (A tune with no key has no Key menu: no other key to offer.)
+    const shift = tune.key ? [0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6].find((s) => s !== now && !notOn(pitches, f, drawnAt(s))) : undefined;
     const other = f.recorder ? null : Object.keys(FINGERED).find((value) => !FINGERED[value].recorder && !notOn(pitches, FINGERED[value], drawnAt(now)));
     const toKey = shift !== undefined && el("button", { type: "button", class: "link-button", onclick: () => chooseKey(shift) },
       keyName(tune.key.pitch + shift, tune.key.modeName));
@@ -4024,12 +4279,19 @@ function renderTune(main, group, tune) {
   // How it plays, kept for this tune as its key and tempo are, so it's beside them: the
   // chords heard with the tune, and swing; for a tune with either. A song's words beside
   // them, kept the same way (or on their own, for a song with neither).
-  if (chordTools || swingToggle || wordsToggle) {
-    const label = chordTools || swingToggle ? tr("How it plays", "Sut mae'n chwarae") : tr("Sheet music", "Y sgôr");
-    controls.querySelector(".view-tools").before(el("div", { class: "control how-it-plays", role: "group", "aria-labelledby": "how-it-plays" },
-      el("span", { class: "label", id: "how-it-plays" }, label),
-      el("div", { class: "plays-line" }, chordTools?.playback, swingToggle, wordsToggle)));
-  }
+  const playsGroup = chordTools || swingToggle || wordsToggle ? el("div", { class: "control how-it-plays", role: "group", "aria-labelledby": "how-it-plays" },
+    el("span", { class: "label", id: "how-it-plays" }, chordTools || swingToggle ? tr("How it plays", "Sut mae'n chwarae") : tr("Sheet music", "Y sgôr")),
+    el("div", { class: "plays-line" }, chordTools?.playback, swingToggle, wordsToggle)) : null;
+  if (playsGroup) controls.querySelector(".view-tools").before(playsGroup);
+  // The holes take the words' place under the notes (withFingerings): with them, a song with
+  // no verses after the music (W:) has no words to hide, so no switch (and no group, if
+  // that was all it had).
+  showWordsToggle = () => {
+    if (!wordsToggle) return;
+    wordsToggle.hidden = !!FINGERED[state.practice.tab] && !/^W:/m.test(tune.abc);
+    playsGroup.hidden = wordsToggle.hidden && !chordTools && !swingToggle;
+  };
+  showWordsToggle();
   // Chords on the sheet music, kept for every tune: under the chart, with the chords themselves.
   // The music they go on is further up: ticked with a finger or the mouse, the page goes up to
   // it, as for the holes; from the keyboard it stays where it was.
@@ -4132,7 +4394,8 @@ function renderTune(main, group, tune) {
         practiceTools, chords),
       // Taking it with you first, in reach beside the music (on a phone, after the practice tools)
       el("div", { class: "tune-side" }, actions,
-        el("section", { class: "card" }, el("h2", {}, tr("Details", "Manylion")), details, gloss || null),
+        // (none, when all there is to say is shown elsewhere: no empty card)
+        details.childElementCount || gloss ? el("section", { class: "card" }, el("h2", {}, tr("Details", "Manylion")), details, gloss || null) : null,
         placeCard(group),
         el("details", { class: "abc", ontoggle: showAbc }, el("summary", {}, tr("ABC notation", "Nodiant ABC")), abcText),
         el("p", { class: "report-line" }, report))),
@@ -4163,12 +4426,14 @@ function linkCarries(tune, settings, tab = "none") {
 }
 
 // ---- QR code: this tune's link, for someone across the table to scan ----------------------
-// The QR library (static/qrcode, 56 KB) is only loaded when it's first needed.
+// The QR library (static/qrcode, 56 KB) is only loaded when it's first needed (and tried
+// again next time if that failed).
 
 let qrLibrary = null;
 function loadQr() {
   qrLibrary ??= new Promise((resolve, reject) => document.head.append(
-    el("script", { src: "static/qrcode/qrcode.js", onload: () => resolve(window.qrcode), onerror: reject })));
+    el("script", { src: "static/qrcode/qrcode.js", onload: () => resolve(window.qrcode),
+      onerror: (e) => { qrLibrary = null; reject(e); } })));
   return qrLibrary;
 }
 
@@ -4313,8 +4578,9 @@ function showEmbed(group, tune, settings) {
     el("label", { for: "embed-code", class: "pills-label" }, tr("The code", "Y cod")),
     box,
     el("p", { class: "embed-buttons" }, el("button", { type: "button", class: "primary", onclick: copy }, tr("Copy the code", "Copïo'r cod")), status),
-    el("p", { class: "pills-label" }, tr("How it will look", "Sut y bydd yn edrych")),
-    el("div", { class: "embed-preview-box" }, preview),
+    el("p", { class: "pills-label", id: "embed-preview-label" }, tr("How it will look", "Sut y bydd yn edrych")),
+    // (it scrolls sideways on a small screen: by the arrow keys too, once it has the focus)
+    el("div", { class: "embed-preview-box", tabindex: "0", role: "region", "aria-labelledby": "embed-preview-label" }, preview),
     el("form", { method: "dialog" }, el("button", {}, tr("Close", "Cau"))));
   dialog.addEventListener("close", () => dialog.remove());
   dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
@@ -4325,10 +4591,11 @@ function showEmbed(group, tune, settings) {
 const EMBED_WIDTH = 720, EMBED_HEIGHT = 480;  // px: the most it's drawn across, and its height until measured
 
 async function showQr(title, link, caption) {
-  await loadQr();
+  const loaded = await loadQr().then(() => true, () => false);
   const dialog = el("dialog", { class: "qr-dialog", "aria-labelledby": "qr-title" },
     el("h2", { id: "qr-title" }, title),
-    qrSvg(link),
+    loaded ? qrSvg(link) : el("p", {}, tr("Couldn't load the QR code. Check your connection and try again.",
+      "Methu llwytho'r cod QR. Gwiriwch eich cysylltiad a rhoi cynnig arall arni.")),
     el("p", { class: "caption" }, caption),
     el("p", { class: "caption qr-link" }, link.length > 120 ? `${link.slice(0, 60)}…` : link),
     el("form", { method: "dialog" }, el("button", { class: "primary" }, tr("Close", "Cau"))));
@@ -4922,6 +5189,7 @@ function ynPlace(place) {
 }
 function sessionTitle(session) {
   const town = tr(session.town, session.town_cy);
+  // (The venue's "yn" isn't mutated: its name is a pub's, mostly English, "yn The Stag Inn", not a place's.)
   if (!session.name) {
     return session.kind === "tune club" ? tr(`Tune club at ${session.venue}, ${town}`, `Clwb alawon yn ${session.venue}, ${town}`)
       : tr(`Session at ${session.venue}, ${town}`, `Sesiwn yn ${session.venue}, ${town}`);
@@ -5067,13 +5335,15 @@ function upcomingSessions() {
 async function renderSessions(main) {
   document.title = tr("Active sessions · Y Sesiwn", "Sesiynau cyfredol · Y Sesiwn");
   let sessions;
+  const left = () => !/^sesiynau\/?$/.test(sitePath());  // left while loading
   try { ({ sessions } = await loadSessions()); } catch {
+    if (left()) return;
     main.replaceChildren(el("h1", {}, tr("Active sessions", "Sesiynau cyfredol")),
       el("p", {}, tr("Couldn't load the sessions. Check your connection and try again.", "Methu llwytho'r sesiynau. Gwiriwch eich cysylltiad a rhoi cynnig arall arni.")),
       el("button", { type: "button", class: "primary", onclick: () => renderSessions(main) }, tr("Try again", "Rhoi cynnig arall arni")));
     return;
   }
-  if (!/^sesiynau\/?$/.test(sitePath())) return;  // left while loading
+  if (left()) return;
 
   // One dot per town, where its sessions are; the list is in towns too.
   const towns = [];
@@ -5261,8 +5531,10 @@ async function renderSessions(main) {
   ].filter(Boolean));
   show();  // now the map is on the page, its names can be placed
   // Come from a link to one session (sesiynau/#session-…, on the home page): its card,
-  // after the page's own move to the top and its heading.
-  const linked = location.hash.startsWith("#session-") && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+  // after the page's own move to the top and its heading. (A link cut short mid-letter,
+  // #session-%E0%A4, is no session's.)
+  let linked = null;
+  try { linked = location.hash.startsWith("#session-") && document.getElementById(decodeURIComponent(location.hash.slice(1))); } catch {}
   if (linked) setTimeout(() => { linked.scrollIntoView({ block: "start" }); linked.focus({ preventScroll: true }); }, 0);
 }
 
@@ -5272,6 +5544,7 @@ async function renderSessions(main) {
 async function renderSession(main, id) {
   let sessions;
   try { ({ sessions } = await loadSessions()); } catch {
+    if (addressSession() !== id) return;  // left while loading
     main.replaceChildren(el("h1", {}, tr("Active sessions", "Sesiynau cyfredol")),
       el("p", {}, tr("Couldn't load the sessions. Check your connection and try again.", "Methu llwytho'r sesiynau. Gwiriwch eich cysylltiad a rhoi cynnig arall arni.")),
       el("button", { type: "button", class: "primary", onclick: () => renderSession(main, id) }, tr("Try again", "Rhoi cynnig arall arni")));
@@ -5353,7 +5626,8 @@ function heardWithTheMusic(tune) {
 
 const doneText = (text) => [el("span", { class: "tick-icon", "aria-hidden": "true" }), text];
 
-const SHARE_ICON = () => svg("svg", { viewBox: "0 0 24 24", class: "share-icon", "aria-label": "Share" },
+// Safari's Share button, drawn; its name follows it in words, so a screen reader hears that alone.
+const SHARE_ICON = () => svg("svg", { viewBox: "0 0 24 24", class: "share-icon", "aria-hidden": "true" },
   svg("path", { d: "M12 3v12M7.5 7.5 12 3l4.5 4.5M7 10.5H5.5v10h13v-10H17", fill: "none",
     stroke: "currentColor", "stroke-width": 1.8, "stroke-linecap": "round", "stroke-linejoin": "round" }));
 
@@ -5459,7 +5733,7 @@ function fillOfflineCard(card) {
   } else if (isMacSafari()) {
     how = el("p", {}, tr("In Safari's menu bar, choose ", "Ym mar dewislen Safari, dewiswch "), ui("File → Add to Dock"),
       tr(" (macOS Sonoma or later). Y Sesiwn then opens from the Dock in its own window.",
-        " (macOS Sonoma neu'n hwyrach). Wedyn mae'r Sesiwn yn agor o'r Doc yn ei ffenest ei hun."));
+        " (macOS Sonoma neu'n ddiweddarach). Wedyn mae'r Sesiwn yn agor o'r Doc yn ei ffenest ei hun."));
   } else if (isFirefox()) {
     how = el("p", {}, tr("Firefox can't install websites as apps, but you don't need to: once it's loaded, Y Sesiwn "
       + "works offline in this browser too. For an app with its own window, open it in Chrome, Edge or Safari.",
@@ -5504,7 +5778,7 @@ function renderOffline(main) {
         el("h2", {}, "Ar gyfrifiadur"),
         el("ul", {},
           el("li", {}, b("Chrome neu Edge"), " (Windows, Mac, Linux): yr eicon gosod ym mhen draw'r bar cyfeiriad ar y dde."),
-          el("li", {}, b("Safari ar Mac"), ": ", ui("File → Add to Dock"), " (macOS Sonoma neu'n hwyrach)."),
+          el("li", {}, b("Safari ar Mac"), ": ", ui("File → Add to Dock"), " (macOS Sonoma neu'n ddiweddarach)."),
           el("li", {}, b("Firefox"), ": all e ddim gosod gwefannau fel apiau, ond mae'r Sesiwn yn dal i weithio all-lein yn y porwr unwaith y bydd wedi llwytho.")),
         el("h2", {}, "Sut mae'n gweithio"),
         el("p", {}, "Mae'ch porwr yn cadw copi o'r wefan, fel y mae'n ei wneud gyda thudalennau rydych chi wedi ymweld â nhw, ",
@@ -5567,7 +5841,9 @@ function decodeSet(text) {
     if (tune) items.push({ tune, key: m[2] ? KEY_LETTERS.indexOf(m[2]) - 5 : 0 });
     else missing++;
   }
-  return { items, missing };
+  // Anything left over isn't a tune's code: a link cut short or mistyped (?set=0, ?set=00~z).
+  const unread = (text ?? "").replace(SET_ITEM, "") !== "";
+  return { items, missing, unread };
 }
 
 // The first form of set links, and of the sets kept in browsers: short_ids with dots.
@@ -5604,10 +5880,14 @@ function loadSets() {
   if (changed) saveSets(sets);
   return sets;
 }
+// Whether they were kept: a private window, or a browser out of space, may not let them be.
 function saveSets(sets) {
-  try { localStorage.setItem("sets", JSON.stringify(sets)); } catch {}
+  try { localStorage.setItem("sets", JSON.stringify(sets)); } catch { return false; }
   keepStorage();
+  return true;
 }
+const notKept = () => tr("Not saved: this browser isn't letting the site keep anything (a private window, or out of space). ",
+  "Heb ei gadw: dyw'r porwr hwn ddim yn gadael i'r wefan gadw dim (ffenest breifat, neu dim lle ar ôl). ");
 // Browsers may clear what a site keeps when space runs short (and Safari after a week
 // without a visit); asking to keep it helps where it's granted without a question.
 // Firefox would ask with a pop-up, so it isn't asked there: the links are the backup.
@@ -5668,7 +5948,11 @@ function addToSetButton(tune, settings) {
     // code yet (it loads with only its own), and decoding would drop the ones it hasn't.
     set.c += encodeSet([{ tune, key: settings.transpose }]);
     set.updated = Date.now();
-    saveSets(sets);
+    if (!saveSets(sets)) {  // the set's link has it, with the tune in (as its code is: see above)
+      status.replaceChildren(notKept(), el("a", { href: `?set=${set.c}&n=${encodeURIComponent(set.name)}`, "data-route": true },
+        tr("Open the set's link", "Agor dolen y set")));
+      return;
+    }
     // In the key it went in, which may not be the written one: "Added to Tuesday at the Ship in A major"
     const key = tune.key ? keyName(tune.key.pitch + settings.transpose, tune.key.modeName) : null;
     status.replaceChildren(drawnIcon("tick"),
@@ -5684,7 +5968,7 @@ function addToSetButton(tune, settings) {
       const before = set.c;
       set.c = withoutTune(set.c, tune);
       set.updated = Date.now();
-      saveSets(sets);
+      if (!saveSets(sets)) { status.replaceChildren(notKept()); redraw(byKeyboard(e)); return; }
       status.replaceChildren(tr(`Taken out of ${set.name}. `, `Wedi'i thynnu o ${set.name}. `),
         el("button", { type: "button", class: "link-button", onclick: (e) => {
           const again = loadSets();
@@ -5755,11 +6039,11 @@ function addToSetButton(tune, settings) {
         // With any ticked, the rest leave the tick's room, so the names line up. Its count
         // (and, ticked, what choosing it does) on a line of its own under the name, so a long
         // name doesn't strand a "·"; a screen reader hears what it does first.
-        const count = countText(tuneCount(setSize(set)));
+        const size = tuneCount(setSize(set));
         return el("button", { type: "button", class: ticked ? (has ? "has-tune" : "ticks") : null, onclick: (e) => choose(set.id, e),
-          "aria-label": has ? tr(`Take it out of ${set.name} (${count})`, `Ei thynnu allan o ${set.name} (${count})`) : null },
+          "aria-label": has ? tr(`Take it out of ${set.name} (${size})`, `Ei thynnu allan o ${set.name} (${size})`) : null },
           has ? drawnIcon("tick") : null, el("span", { class: "set-choice" }, set.name,
-            el("span", { class: "caption" }, count, has ? tr(" · take it out", " · ei thynnu allan") : "")));
+            el("span", { class: "caption" }, countText(size), has ? tr(" · take it out", " · ei thynnu allan") : "")));
       }),
       el("button", { type: "button", class: "menu-sep", onclick: (e) => choose(null, e) }, drawnIcon("plus"), tr("A new set", "Set newydd"))],
     "add-to-set");
@@ -5891,11 +6175,12 @@ function renderSet(main) {
   const params = new URLSearchParams(location.search);
   const my = params.get("my");
   const mine = my && loadSets().find((x) => x.id === my);
-  let { items, missing } = params.has("set") ? decodeSet(params.get("set")) : decodeLegacy(params.get("s"));
+  let { items, missing, unread } = params.has("set") ? decodeSet(params.get("set")) : decodeLegacy(params.get("s"));
   let name = params.get("n") || params.get("name") || (mine ? mine.name : tr("A set", "Set"));
   // An older link (or a tune's longer code, from before it had a number): the address in
-  // its shortest form, unless that would drop tunes the site doesn't have (any more).
-  if (!params.has("set") || (!missing && params.get("set") !== encodeSet(items))) {
+  // its shortest form, unless that would drop tunes the site doesn't have (any more), or
+  // part of the link it couldn't read.
+  if (!params.has("set") || (!missing && !unread && params.get("set") !== encodeSet(items))) {
     history.replaceState(null, "", setUrl(items, name, mine ? my : null));
   }
   document.title = `${name} · Y Sesiwn`;
@@ -6144,6 +6429,10 @@ function renderSet(main) {
     missing ? el("p", { class: "caption" }, tr(missing === 1 ? "1 tune in this set isn't on the site any more."
       : `${missing} tunes in this set aren't on the site any more.`,
       `Dyw ${tuneCount(missing)} yn y set hon ddim ar y wefan bellach.`)) : null,
+    unread ? el("p", { class: "caption" }, tr("Part of this set's link couldn't be read: it may have been cut short, or changed on the way. "
+      + "Ask whoever sent it for the whole link.",
+      "Methu darllen rhan o ddolen y set hon: efallai iddi gael ei thorri'n fyr, neu ei newid ar y ffordd. "
+      + "Gofynnwch i bwy bynnag a'i hanfonodd am y ddolen gyfan.")) : null,
     // A set from a link has Save too: on its own line on a phone, so the rest stay one row.
     el("div", { class: "set-actions" }, saveButton, saveButton && el("span", { class: "row-break", "aria-hidden": "true" }), share,
       el("button", { type: "button", onclick: printAll }, tr("Print", "Argraffu")),
@@ -6353,15 +6642,25 @@ function markdownSections(text) {
 
 // The guides are Markdown from this repo, which anyone can suggest changes to: marked
 // passes HTML in it through, so anything that could run (scripts, on… handlers,
-// javascript: links, frames) is taken out before it goes on the page. A <template>'s
+// javascript: links, frames, and SVG and MathML, whose <animate>, <set> and <use> can
+// change a link or bring in more after this) is taken out before it goes on the page.
+// A link's address is kept only if it's http:, https:, mailto: or on this site; the
+// browser ignores spaces, tabs, line breaks and control characters in one
+// (java&#9;script:), so they're taken out before its scheme is looked at. A <template>'s
 // contents are inert: nothing in them loads or runs while they're cleaned.
+const URL_ATTRIBUTES = /^(href|src|xlink:href|action|formaction|poster|background|cite|data|longdesc|ping|lowsrc|dynsrc|codebase|manifest|icon)$/i;
+function safeUrl(value) {
+  const scheme = value.replace(/[\u0000-\u0020\u007f-\u00a0]/g, "").match(/^([^/?#]*?):/);
+  return !scheme || /^(https?|mailto)$/i.test(scheme[1]);
+}
 function cleanHtml(html) {
   const template = document.createElement("template");
   template.innerHTML = html;
-  template.content.querySelectorAll("script, style, iframe, frame, object, embed, form, base, link, meta").forEach((n) => n.remove());
+  template.content.querySelectorAll("script, style, iframe, frame, frameset, object, embed, applet, form, base, link, meta, "
+    + "template, svg, math, animate, set, use, foreignObject").forEach((n) => n.remove());
   for (const node of template.content.querySelectorAll("*")) {
     for (const { name, value } of [...node.attributes]) {
-      if (/^on/i.test(name) || (/^(href|src|action|formaction|xlink:href)$/i.test(name) && /^\s*(javascript|data|vbscript):/i.test(value))) {
+      if (/^on/i.test(name) || /^srcset$/i.test(name) || (URL_ATTRIBUTES.test(name) && !safeUrl(value))) {
         node.removeAttribute(name);
       }
     }
@@ -6370,11 +6669,11 @@ function cleanHtml(html) {
 }
 
 // The Markdown reader (static/marked, 40 KB) is only needed for these pages, so it's
-// loaded the first time one is opened.
+// loaded the first time one is opened (and tried again next time if that failed).
 let markedLibrary = null;
 function loadMarked() {
   markedLibrary ??= new Promise((resolve, reject) => document.head.append(
-    el("script", { src: "static/marked/marked.min.js", onload: resolve, onerror: reject })));
+    el("script", { src: "static/marked/marked.min.js", onload: resolve, onerror: (e) => { markedLibrary = null; reject(e); } })));
   return markedLibrary;
 }
 
@@ -6446,7 +6745,7 @@ function suggestion(group, credit = null, aka = null) {
   const key = group.versions[0].key;
   const gloss = state.lang !== "cy" && GLOSSED.has(group.type) ? el("span", { class: "gloss" }, ` (${EN_TYPE[group.type]})`) : null;
   // Found by its book or arranger: that instead of the key, so it's plain why it's there.
-  const what = [[typeName(group.type), gloss], credit ? el("span", { class: "credit" }, credit) : key && `${key.root} ${modeName(key.modeName)}`]
+  const what = [[typeInWelsh(group.type), gloss], credit ? el("span", { class: "credit" }, credit) : key && `${key.root} ${modeName(key.modeName)}`]
     .filter(Boolean).flatMap((part, i) => (i ? [" · ", part] : [part]));
   return [el("span", { class: "swatch", style: type ? `--c: ${type.colour}` : null, "aria-hidden": "true" }),
     tuneName(group.slug, group.title), aka ? el("span", { class: "aka" }, `(${aka})`) : null,
@@ -6654,6 +6953,13 @@ async function start() {
   document.getElementById("shortcuts-button").addEventListener("click", showShortcuts);
   document.getElementById("menu-button").addEventListener("click", () =>
     setMenu(!document.querySelector(".sidebar").classList.contains("menu-open")));
+  // Esc closes it, as it does every other menu, back to its button.
+  document.querySelector(".sidebar").addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || !e.currentTarget.classList.contains("menu-open")) return;
+    e.stopPropagation();
+    setMenu(false);
+    document.getElementById("menu-button").focus();
+  });
   for (const button of document.querySelectorAll(".lang-switch button")) {
     button.addEventListener("click", () => setLang(button.dataset.lang));
   }

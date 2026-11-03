@@ -7,6 +7,10 @@ chwarae a'r newid cywair i gyd yn cael eu gwneud o'r ffeil honno. I ychwanegu
 alaw, rydych chi'n ysgrifennu ei ffeil ABC ac yn ei chynnig drwy *pull
 request*. Unwaith y caiff ei derbyn, mae'r ap yn diweddaru ohono'i hun.
 
+Ddim ar GitHub, neu ddim yn gwybod ABC? Defnyddiwch y ffurflen ar
+[fersiwn y wefan o'r dudalen hon](https://ysesiwn.cymru/?page=add) yn lle hynny:
+mae'n anfon yr alaw (neu lun neu recordiad ohoni) aton ni drwy e-bost.
+
 ## 1. Ysgrifennu'r alaw mewn ABC
 
 Dyma enghraifft gyflawn:
@@ -32,7 +36,7 @@ Y *pennawd* yw'r llinellau ar y dechrau:
 |---|---|---|
 | `X:1` | oes | `X:1` bob tro. |
 | `T:` | oes | Y teitl, fel y mae ar y sgôr. |
-| `R:` | argymhellir | Math o alaw, e.e. `jig`, `rîl`, `polca`, `walts`, `pibddawns`. Mae'n gosod y tempo arferol: jigiau 112, riliau 90, polcas 100, alawon a chaneuon (`alaw`, `cân`) yn araf ar grosiet 66, unrhyw beth arall 100 bpm. |
+| `R:` | argymhellir | Math o alaw, e.e. `jig` (6/8), `jig naid` (9/8), `rîl`, `polca`, `walts`, `pibddawns`. Mae'n gosod y tempo arferol: jigiau 112, riliau 90, polcas 100, alawon a chaneuon (`alaw`, `cân`) yn araf ar grosiet 66, unrhyw beth arall 100 bpm. |
 | `M:` | oes | Amseriad, e.e. `6/8`, `4/4`, `3/4`. |
 | `L:` | oes | Hyd arferol nodyn, fel arfer `1/8`. |
 | `K:` | oes, **olaf** | Cywair, e.e. `D`, `Em`, `ADor`. Mae'r nodau'n dechrau ar y llinell nesaf. |
@@ -46,9 +50,13 @@ Am deitlau:
 - Os oes alaw gyda'r un enw yn yr ap yn barod, galwch eich un chi
   `<Enw> (version 2)` (neu 3, 4, …). Mae pob fersiwn o alaw yn rhannu un
   dudalen, gyda thab i bob un; mae llinell `B:` (y llyfr y daw ohono) yn
-  enwi eich tab chi.
+  enwi eich tab chi. Os dysgoch chi hi gan gerddor yn lle hynny, mae llinell
+  `%%version Bob Evans` yn y pennawd yn rhoi enw'r cerddor ar y tab. Mae
+  fersiwn newydd yn mynd ar ôl y rhai sydd yno'n barod; os mai eich un chi
+  ddylai fod yr un y mae'r dudalen yn agor arni, dywedwch hynny yn y pull request.
 - Mae llinellau tempo (`Q:`) yn cael eu hanwybyddu: llithrydd tempo'r ap sy'n
-  penderfynu.
+  penderfynu. Os yw'r cyfansoddwr yn rhoi tempo, rhowch e mewn llinell
+  `%%bpm 114` yn y pennawd, a bydd yr alaw'n dechrau ar y tempo hwnnw.
 - Os yw'r gerddoriaeth wedi'i hysgrifennu mewn nodau ddwywaith mor hir ag arfer
   (polca yn 2/4 sy'n grosietau gan mwyaf, yn cael ei theimlo fel dau finim i'r
   bar, nid dau grosiet), ychwanegwch linell `%%beat 1/2` i'r pennawd, fel ei bod
@@ -59,6 +67,22 @@ nodyn y mae'n dechrau arno (`"G"B2 G GFG | "D7"A2 A ABc |`), a dywedwch o ble
 maen nhw'n dod mewn llinell `%%chords` yn y pennawd, e.e.
 `%%chords From the Alawon Cymru score`. Mae tudalen yr alaw yn eu dangos fel
 siart i gyfeilyddion, ym mha bynnag gywair a ddewisir.
+
+Mae modd rhoi geiriau cân hefyd. Rhowch y pennill cyntaf dan y nodau gyda
+llinell `w:` ar ôl pob llinell o gerddoriaeth, cysylltnod rhwng sillafau gair,
+`_` i ddal sillaf dros y nodyn nesaf a `*` i hepgor nodyn; mae llinell `w:`
+arall dan yr un gerddoriaeth yn bennill arall:
+
+```
+D D3 D2 A A | G2 F F E2 D2 |
+w: Dac-w nghar-iad i lawr yn y ber-llan,
+w: Dac-w'r dder-wen _ wych gang-* hen-nog
+```
+
+Mae penillion sy'n haws eu darllen ar eu pennau eu hunain yn mynd ar ôl y
+gerddoriaeth, llinell `W:` yr un, fel yn `tunes/pontypridd/tune.abc`.
+Ychwanegwch eiriau dim ond os ydyn nhw'n draddodiadol, gan awdur a fu farw fwy
+na 70 mlynedd yn ôl, neu os oes gennych chi ganiatâd i'w rhannu.
 
 Os ydych chi'n newydd i ABC, mae'r
 [cyflwyniad i nodiant ABC](https://abcnotation.com/learn) (yn Saesneg) yn

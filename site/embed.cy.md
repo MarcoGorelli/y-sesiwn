@@ -47,4 +47,4 @@ arni: os gwelwch chi far sgrolio wrth ochr y gerddoriaeth, gwnewch y rhif ar
 - Mae'r Sesiwn yn cyfrif ymweliadau heb gwcis
   ([GoatCounter](https://www.goatcounter.com)), gan gynnwys alawon a ddangosir
   ar wefannau eraill. Does dim byd arall yn cael ei gasglu.
-- Cwestiynau, neu alaw yr hoffech ei gweld yma? [Ysgrifennwch atom](?page=contact).
+- Cwestiynau, neu alaw yr hoffech ei gweld yma? [Ysgrifennwch aton ni](?page=contact).

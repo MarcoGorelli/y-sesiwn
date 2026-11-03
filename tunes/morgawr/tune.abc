@@ -10,7 +10,7 @@ C:Alaw Simon Owen
 M:4/4
 L:1/8
 Q:1/4=90
-K:D
-|: "D"DF AF "C"G2 AG | "D"FE DE "C"=C2 A,2 | "D"DF AF "C"G2 AG | "C"FE D=C "D"D4 :|
-|: "D"D =c2 D "G"B4 | "C"=cB AG "D"FG A2 | "D"D =c2 D "G"B4 | "C"=cB AF "D"d4 :|
-|: "D"DF Ad "C"=c2 Ad | "D"=c2 Ad "C"cA GE | "D"DF Ad "C"=c2 Ad | "C"=cA GE "D"D4 :|
+K:DMix
+|: "D"DF AF "C"G2 AG | "D"FE DE "C"C2 A,2 | "D"DF AF "C"G2 AG | "C"FE DC "D"D4 :|
+|: "D"D c2 D "G"B4 | "C"cB AG "D"FG A2 | "D"D c2 D "G"B4 | "C"cB AF "D"d4 :|
+|: "D"DF Ad "C"c2 Ad | "D"c2 Ad "C"cA GE | "D"DF Ad "C"c2 Ad | "C"cA GE "D"D4 :|

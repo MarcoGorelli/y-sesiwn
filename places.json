@@ -79,7 +79,7 @@
     {"name": "Merthyr Tudful", "lat": 51.746, "lon": -3.378, "tunes": ["mwynen-merthyr", "polca-rhyd-y-car", "pibddawns-merthyr-tydfil", "walts-penydarren", "quadrille-barwn-merthyr"]},
     {"name": "Môn", "lat": 53.27, "lon": -4.35, "tunes": ["mon", "mwynen-mon", "fair-maids-of-mona"]},
     {"name": "Morfa Rhuddlan", "lat": 53.3, "lon": -3.48, "tunes": ["morfa-rhuddlan", "morfa-rhuddlan-mary-richards", "morfa-rhuddlan-robin-huw-bowen"]},
-    {"name": "Morgannwg", "lat": 51.6, "lon": -3.6, "tunes": ["gwyngalch-morgannwg", "morys-morgannwg", "pibddawns-morgannwg", "triban-morgannwg", "triban-morgannwg-amrywiadau-offerynnol", "triban-morgannwg-hoff-bethau", "triban-morgannwg-syml", "triban-gwyr-morganwg", "delights-of-glamorgan", "ymdaith-morgannwg"]},
+    {"name": "Morgannwg", "lat": 51.6, "lon": -3.6, "tunes": ["gwyngalch-morgannwg", "morys-morgannwg", "pibddawns-morgannwg", "triban-morgannwg", "triban-morgannwg-amrywiadau-offerynnol", "triban-morgannwg-hoff-bethau", "triban-morgannwg-syml", "triban-gwyr-morgannwg", "delights-of-glamorgan", "ymdaith-morgannwg"]},
     {"name": "Mynachlog Nedd", "lat": 51.662, "lon": -3.827, "tunes": ["mynachlog-nedd"]},
     {"name": "Mynwy", "lat": 51.75, "lon": -2.85, "tunes": ["pibddawns-mynwy", "gwenynen-gwent"]},
     {"name": "Mynydd Gelliwastad", "lat": 51.697, "lon": -3.914, "tunes": ["mynydd-gelliwastad"]},

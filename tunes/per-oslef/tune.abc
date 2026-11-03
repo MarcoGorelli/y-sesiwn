@@ -1,4 +1,5 @@
 X:1
+T:Pêr Oslef
 T:Per Oslef fersiwn Bob Evans
 R:alaw - polca
 S:http://alawoncymru.com/alawon/Tunes/CanColst/CanColSt.htm
@@ -6,6 +7,7 @@ Z:MIDI transcribed with alawon-abc
 %%alawon track=1
 %%alawon-reviewed
 %%chords From the Alawon Cymru score
+%%version Bob Evans
 C:Addaswyd gan Meurig Williams
 M:4/4
 L:1/8

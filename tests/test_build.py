@@ -1,4 +1,5 @@
 """Quick checks of the tune files and build_site.py (no browser)."""
+import html
 import json
 import os
 import re
@@ -379,22 +380,57 @@ def test_moved_tunes(tmp_path, monkeypatch):
         b.moved_tunes({"glandyfi", "hen-enw"}, numbers)
     with pytest.raises(SystemExit, match="no tunes/glandyfi"):
         b.moved_tunes({"other"}, numbers)
+    # An old name that's a tune's address now (its versions' folders): its page would be replaced.
+    with pytest.raises(SystemExit, match="hen-enw is a tune's address now"):
+        b.moved_tunes({"glandyfi", "hen-enw-version-2"}, numbers, {"glandyfi", "hen-enw"})
+
+
+def test_no_moved_name_is_a_tune():
+    # moved.json's old names are none of the tunes' folders or addresses now.
+    moved = json.loads((b.ROOT / "moved.json").read_text(encoding="utf-8"))["moved"]
+    records = [b.tune_record(p) for p in TUNES]
+    taken = {r["slug"] for r in records} | {r["group"] for r in records}
+    assert not taken & set(moved)
 
 
 def test_moved_tune_pages(tmp_path, monkeypatch):
     # The old address of a moved tune is a page sending people on to the new one: to its
     # version (Alawon Cymru's, shown after the book's), or the tune's own address for
-    # the version it opens on.
-    monkeypatch.setattr(b, "moved_tunes", lambda slugs, numbers: [
+    # the version it opens on. The link's key, tempo and so on go along (a version the move
+    # gives taking the place of the link's); without JavaScript, the meta refresh. Its old
+    # address for other websites (embed/) goes to its new one there.
+    monkeypatch.setattr(b, "moved_tunes", lambda slugs, numbers, groups=(): [
         {"from": "hen-enw", "to": "sawdl-y-fuwch", "code": "zz", "id": "zzzzz"},
         {"from": "enw-arall", "to": "sawdl-y-fuwch-version-2", "code": "zy", "id": "zzzzy"}])
     monkeypatch.setattr(b, "OUT", tmp_path / "_site")
     b.main()
     page = (b.OUT / "alaw" / "hen-enw" / "index.html").read_text(encoding="utf-8")
-    assert '<meta http-equiv="refresh" content="0; url=../sawdl-y-fuwch/?v=1">' in page
+    assert '<noscript><meta http-equiv="refresh" content="0; url=../sawdl-y-fuwch/?v=1"></noscript>' in page
     assert '<link rel="canonical" href="https://ysesiwn.cymru/alaw/sawdl-y-fuwch/?v=1">' in page
+    assert 'new URL("../sawdl-y-fuwch/?v=1", location.href), query = new URLSearchParams(location.search)' in page
+    assert "to.search = query; to.hash = location.hash;" in page
     page = (b.OUT / "alaw" / "enw-arall" / "index.html").read_text(encoding="utf-8")
-    assert '<meta http-equiv="refresh" content="0; url=../sawdl-y-fuwch/">' in page
+    assert '<noscript><meta http-equiv="refresh" content="0; url=../sawdl-y-fuwch/"></noscript>' in page
+    embed = (b.OUT / "embed" / "hen-enw" / "index.html").read_text(encoding="utf-8")
+    assert 'new URL("../sawdl-y-fuwch/?v=1", location.href)' in embed and '<meta name="robots" content="noindex">' in embed
+
+
+def test_bad_tune_files(tmp_path):
+    # A tune file the build can't use says which file, and why; a metre of 0/0 is no metre.
+    def tune(folder, text, encoding="utf-8"):
+        path = tmp_path / folder / "tune.abc"
+        path.parent.mkdir()
+        path.write_bytes(text.encode(encoding))
+        return path
+
+    zero = b.tune_record(tune("zero", "X:1\nT:Zero\nM:0/0\nL:1/0\nK:G\nGABc|d4|]\n"))
+    assert zero["beat"] == "1/4" and zero["lead"] == 0
+    assert b.beat_unit("0/0") == b.Fraction(1, 4)
+    with pytest.raises(SystemExit, match=r"latin.*tune\.abc: not UTF-8"):
+        b.tune_record(tune("latin", "X:1\nT:Ffarwel i'r Bal\xe2\nK:G\nGABc|]\n", "latin-1"))
+    for folder, title in [("marks", "???"), ("greek", "Ωμέγα")]:  # its page would be alaw/index.html
+        with pytest.raises(SystemExit, match=f"{folder}.*no letters or numbers"):
+            b.tune_record(tune(folder, f"X:1\nT:{title}\nK:G\nGABc|]\n"))
 
 
 def test_decorations_are_not_notes():
@@ -541,7 +577,8 @@ def test_embed_pages(site):
     # engines and out of the offline copy; the template itself isn't published.
     out = b.OUT
     groups = {t["group"] for t in json.loads((out / "tunes.json").read_text(encoding="utf-8"))["tunes"]}
-    assert {p.name for p in (out / "embed").iterdir()} == groups
+    moved = {m["from"] for m in json.loads((out / "tunes.json").read_text(encoding="utf-8"))["moved"]}
+    assert {p.name for p in (out / "embed").iterdir()} == groups | moved  # a moved tune's old one goes to its new one
     page = (out / "embed" / "glandyfi" / "index.html").read_text(encoding="utf-8")
     assert '<base href="../../">' in page and '<meta name="robots" content="noindex">' in page
     assert "<title>Glandyfi · Y Sesiwn</title>" in page and '<link rel="canonical" href="https://ysesiwn.cymru/alaw/glandyfi/">' in page
@@ -555,12 +592,15 @@ def test_embed_pages(site):
 
 def test_static_copy_is_marked(site):
     # What each page says for search engines is in <main>'s .static, which readers whose
-    # browser runs the app don't see (style.css); then the page's loading line.
-    pages = {"index.html": "Loading tunes…", "alaw/glandyfi/index.html": "Loading the sheet music…",
-             "math/jig/index.html": "Loading tunes…", "sesiynau/index.html": "Loading the sessions…"}
-    for path, loading in pages.items():
+    # browser runs the app don't see (style.css); then the page's loading line, with its
+    # Welsh for app.js (applyLang).
+    pages = {"index.html": ("Loading tunes…", "Yn llwytho'r alawon…"),
+             "alaw/glandyfi/index.html": ("Loading the sheet music…", "Yn llwytho'r gerddoriaeth…"),
+             "math/jig/index.html": ("Loading tunes…", "Yn llwytho'r alawon…"),
+             "sesiynau/index.html": ("Loading the sessions…", "Yn llwytho'r sesiynau…")}
+    for path, (loading, cy) in pages.items():
         main = re.search(r'<main id="main" tabindex="-1">(.*)</main>', (b.OUT / path).read_text(encoding="utf-8"), re.S).group(1)
-        assert main.startswith('<div class="static">') and main.endswith(f'</div><p class="loading">{loading}</p>'), path
+        assert main.startswith('<div class="static">') and html.unescape(main).endswith(f'</div><p class="loading" data-cy="{cy}">{loading}</p>'), path
 
 
 def test_sessions_on_dates(tmp_path, monkeypatch, capsys):

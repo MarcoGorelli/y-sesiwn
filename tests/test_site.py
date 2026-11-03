@@ -42,11 +42,8 @@ EXPECTED_ODD_BARS = {
     "megan-a-gollodd-ei-gardas-version-3": "two bars are a quaver short",
     "plygiad-y-bedol": "bar 8 is two quavers short",
     # The same in Peter Dunk's transcription of Davidson's 250 Welsh Airs.
-    "hen-wraig-llanallgo": "bar 18 is three quavers short",
     "hoffedd-howell": "bar 21 is two quavers short",
     "sion-ab-ifan-version-2": "bar 6 is two quavers long",
-    "the-damsels-of-cardigan": "bar 9 is a quaver long",
-    "the-tune-of-morvydd-s-pipes": "bar 31 is a quaver long",
     "the-vale-of-clwyd": "bar 5 is a quaver short",
     "y-berllan": "bar 12 is a quaver long",
 }
@@ -100,6 +97,96 @@ def test_the_lit_notes_end_with_the_sound(page):
     assert late == []
 
 
+# The tunes whose D.C. or D.S. sends playback back (a Fine with nothing sending it back,
+# as in Y Facsen Felen, does nothing).
+FOLLOWED_DIRECTIONS = {
+    "craig-y-bwlch", "dawns-y-glocsen", "deio-i-dywyn", "delights-of-glamorgan",
+    "difyrrwch-bleddyn-ap-cynfyn-version-2", "difyrrwch-gwyr-caernarfon-version-2", "galar-gwyr-ffrainc",
+    "hafod-y-wraig-lawn-version-2", "man-ddarlun-version-2", "merch-y-tafarnwr-version-2",
+    "mursen-yn-ei-menyg-version-2", "polca-r-cymro", "polca-redowa-version-2", "polka-r-pryf-tan",
+    "quadrille-barwn-merthyr", "sion-ab-ifan", "tafarn-y-wheatsheaf-version-2", "taith-i-ddenmarc",
+    "walts-senghennydd", "ymdaith-gyflym-cyfeiliog",
+}
+
+
+def test_directions_lengthen_the_sound_and_the_lit_notes_alike(page):
+    # Every tune with a D.C. or D.S. plays on past it, and its notes are lit as long as
+    # they sound (not ending a time through early, nor lighting on in silence).
+    page.goto_site()
+    found = page.evaluate("""() => state.data.tunes.map((t) => {
+      const v = ABCJS.renderAbc('*', t.abc)[0];
+      const length = () => {
+        const notes = v.setUpAudio({}).tracks.flat().filter((n) => n.duration);
+        const last = new ABCJS.TimingCallbacks(v, {}).noteTimings.filter((e) => e.type === 'event').at(-1);
+        const { num, den } = v.getMeterFraction();
+        return [Math.max(...notes.map((n) => n.start + n.duration)), (last.milliseconds / last.millisecondsPerMeasure) * num / den];
+      };
+      const [written] = length();
+      followDirections(v);
+      const [sound, lit] = length();
+      return [t.slug, sound > written, Math.abs(sound - lit) < 1];
+    }).filter(([, longer]) => longer)""")
+    assert {slug for slug, _, _ in found} == FOLLOWED_DIRECTIONS
+    assert [slug for slug, _, together in found if not together] == []
+
+
+# What's played, note by note: the second time through, repeats aren't taken, and of a
+# part's endings only the last is played (or the one with the Fine).
+@pytest.mark.parametrize("abc, played", [
+    # D.C. al Fine: A twice, B, A to the Fine.
+    ('|: CD | "^Fine"EF :| GA | "^D.C. al Fine"Bc |]', "CD EF CD EF GA Bc CD EF"),
+    # As decorations; the Fine on the bar line.
+    ("CD | EF !fine!|| GA | Bc !D.C.!|]", "CD EF GA Bc CD EF"),
+    # D.S.: back to the segno, past a first ending to the second, which has the Fine.
+    ('C |: !segno! DE |1 FG :|2 "^Fine" AB || cd | "^D.S." ef |]', "C DE FG DE AB cd ef DE AB"),
+    ('C |: S DE |1 FG :|2 AB || cd | "^D.S. al Fine" ef |]', "C DE FG DE AB cd ef DE AB cd ef"),
+    # D.C. with no Fine: to the end once more; a Fine with no D.C. does nothing.
+    ('|: CD :| EF | "^D.C." GA |]', "CD CD EF GA CD EF GA"),
+    ('|: CD | "^Fine" EF :| GA |]', "CD EF CD EF GA"),
+    # A D.S. with no segno: back to the start.
+    ('CD | "^D.S." EF |]', "CD EF CD EF"),
+])
+def test_directions_are_followed(page, abc, played):
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    tune = f"X:1\nM:2/4\nL:1/4\nK:C\n{abc}\n"
+    heard = page.evaluate("""(a) => {
+      const v = ABCJS.renderAbc('*', a)[0];
+      followDirections(v);
+      const notes = v.setUpAudio({}).tracks[0].filter((e) => e.cmd === 'note');
+      const lit = new ABCJS.TimingCallbacks(v, {}).noteTimings.filter((e) => e.type === 'event');
+      const letter = (from, to) => a.slice(from, to).replace(/"[^"]*"|![^!]*!|[^A-Ga-g]/g, '');
+      return [notes.map((n) => letter(n.startChar, n.endChar)).join(''), lit.map((e) => letter(e.startChar, e.endChar)).join('')];
+    }""", tune)
+    assert heard == [played.replace(" ", "")] * 2  # the sound, and the notes lit
+
+
+def test_da_capo_lights_the_notes_played(browser, site):
+    # Polca'r Cymro: "D.C." at the end of part B, "Fine" at the end of part A. Playback goes
+    # from the end of B back to the start, the notes lit with it, and stops at the Fine.
+    context = browser.new_context(service_workers="block")
+    page = context.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(site + "alaw/polca-r-cymro/?tempo=200")
+    page.wait_for_selector(".score .abcjs-staff")
+    fine, end = page.evaluate("""() => { const v = state.synth.visualObj, notes = v.lines.flatMap((l) => l.staff?.[0].voices[0] ?? []);
+      const at = (word) => notes.find((n) => n.chord?.some((c) => c.name === word)).startChar;
+      return [at('Fine'), at('D.C.')]; }""")
+    page.click(".abcjs-midi-start")
+    page.wait_for_function("document.querySelector('.abcjs-note_playing') && state.synth.timer")
+    # The last note of part B, then part A's first: the notes lit go back to the start.
+    timings = page.evaluate("state.synth.timer.noteTimings.filter((e) => e.type === 'event').map((e) => [e.milliseconds, e.startChar])")
+    dc = next(i for i, (_, char) in enumerate(timings) if char == end)
+    assert timings[-1][1] == fine and timings[dc + 1][1] < fine
+    page.evaluate(f"state.synth.seek(({timings[dc][0]} - 600) / 1000, 'seconds')")
+    first = "document.querySelector('.abcjs-note_playing') === document.querySelector('.score .abcjs-note')"
+    page.wait_for_function(first, timeout=10000)
+    page.wait_for_function("!state.synth.isStarted", timeout=30000)  # and stops at the Fine
+    assert not errors, errors
+    context.close()
+
+
 @pytest.mark.parametrize("slug", ["pibddawns-gwyr-gwrecsam", "glandyfi", "nyth-y-gog", "erddygan-y-pibydd-coch"])
 def test_tune_page(page, slug):
     page.goto_site(f"?tune={slug}")
@@ -117,6 +204,10 @@ def test_details(page):
     link = page.locator(".card dd a")
     assert link.get_attribute("href") == "https://trillian.mit.edu/~jc/music/abc/mirror/BrianMartin/msg/welsh_tunes_1.abc"
     assert "Transcribed by Brian Martin" not in page.locator(".card dl").inner_text()
+    # With nothing to say that isn't said elsewhere on the page, no empty Details card.
+    page.goto_site("alaw/ceffylyn-rhygyngog/")
+    page.wait_for_selector(".tune-side")
+    assert page.locator(".tune-side .card h2:text-is('Details')").count() == 0
 
 
 def test_recently_opened(page):
@@ -270,6 +361,30 @@ def test_tempo_changes_in_the_music_follow_the_tempo(page):
     out = page.evaluate("(a) => setTempo(a, '1/4', 120, '', 100)", abc)
     assert "Q:1/4=120\nK:C" in out and "\nQ:1/4=60\n" in out and "[Q:1/4=96]" in out
     assert page.evaluate("(a) => setTempo(a, '1/4', 100)", abc).count("Q:1/4=100") == 1
+    # Against the tune's own first tempo, whatever note it counts in; a bare number is a
+    # crotchet's, and is written as one (abcjs took a bare Q: for the opening tempo).
+    abc = "X:1\nM:6/8\nL:1/8\nQ:3/8=60\nK:C\nCDE FGA|\nQ:90\ncBA GFE|]\n"
+    assert "\nQ:1/4=60\n" in page.evaluate("(a) => setTempo(a, '3/8', 40, '', 100)", abc)
+    # A Q: after the K: but before the music is the opening tempo, its words kept.
+    abc = "X:1\nM:C\nL:1/8\nK:C\nQ:1/4=130 \"Maestoso\"\nK:Am\nCDEF GABc|]\n"
+    assert page.evaluate("(a) => setTempo(a, '1/4', 66, '', 66)", abc) == \
+        "X:1\nM:C\nL:1/8\nQ:\"Maestoso\" 1/4=66\nK:C\nK:Am\nCDEF GABc|]\n"
+
+
+@pytest.mark.parametrize("slug", ["erddigan-caer-waen", "the-norman"])
+def test_tempo_heard_is_the_tempo_chosen(page, slug):
+    # Erddigan Caer Waen's last part has a Q:120 (Q:140 at the top): abcjs took it for the
+    # tempo of the whole tune, played at 120 whatever the tempo said. The Norman's Q:1/4=130
+    # after its K: played it at 130. Both play at the tempo chosen, sound and lit notes.
+    page.goto_site(f"alaw/{slug}/?tempo=40")
+    page.wait_for_selector(".score .abcjs-staff")
+    sound, lit = page.evaluate("""() => {
+      const v = state.synth.visualObj, audio = v.setUpAudio({});
+      const notes = audio.tracks[0].filter((e) => e.cmd === 'note');
+      const [a, b] = new ABCJS.TimingCallbacks(v, {}).noteTimings.filter((e) => e.type === 'event');
+      return [audio.tempo, 60000 / ((b.milliseconds - a.milliseconds) / ((notes[1].start - notes[0].start) * 4))];
+    }""")
+    assert sound == 40 and round(lit) == 40
 
 
 def test_chord_chart(page):
@@ -445,6 +560,24 @@ def test_words(page):
     assert page.locator(".hide-words").count() == 0
 
 
+# The holes take the words' place under the notes: with them, a song with its words only
+# there has none to hide, so no switch; one with verses after the music keeps it.
+def test_no_words_switch_under_holes(page):
+    page.goto_site("?tune=dacw-nghariad-i-lawr-yn-y-berllan")
+    page.wait_for_selector(".score .abcjs-lyric")
+    page.select_option("#tab-select", "whistle-D")
+    page.wait_for_selector(".score g.holes", state="attached")
+    assert page.locator(".hide-words").is_hidden()
+    page.select_option("#tab-select", "none")
+    page.wait_for_function("!document.querySelector('.score g.holes')")
+    assert page.locator(".hide-words").is_visible()
+    page.select_option("#tab-select", "whistle-D")
+    page.evaluate("navigate('alaw/pontypridd/')")  # verses after the music (W:)
+    page.wait_for_selector(".score g.holes", state="attached")
+    assert "Ym Mhontypridd" in page.inner_text(".score")
+    assert page.locator(".hide-words").count() == 1 and not page.locator(".hide-words").evaluate("e => e.hidden")
+
+
 def test_whistle_fingerings(page):
     page.goto_site()
     f = lambda midi, instrument="whistle-D": page.evaluate(
@@ -460,11 +593,64 @@ def test_whistle_fingerings(page):
     assert f(65, "recorder") == ["●●●●●○●●", False]  # F, forked
     assert f(76, "recorder") == ["◐●●●●●○○", False]  # E, second octave: thumb pinched
     assert f(59, "recorder") == ["●●○○○○○○", False, "up"] and f(88, "recorder") is None  # too low: an octave up
-    # Lined up under their notes, a tied note's continuation included; rests take none. Each
-    # ends in the row of room below the holes (".", blanked once drawn).
+    # Lined up under their notes, a tied note's continuation included (blank: "." in each row);
+    # rests take none. Each ends in the row of room below the holes (".", blanked once drawn).
     rows = page.evaluate("""() => { const v = ABCJS.renderAbc('*', withFingerings('X:1\\nM:6/8\\nL:1/8\\nK:D\\nD3- D2 E | F2 z G z A|', FINGERED['whistle-D']))[0];
       return v.lines[0].staff[0].voices[0].filter((e) => e.el_type === 'note' && !e.rest).map((n) => (n.lyric || []).map((l) => l.syllable).join('')); }""")
-    assert rows == ["●●●●●●.", ".", "●●●●●○.", "●●●●○○.", "●●●○○○.", "●●○○○○."]
+    assert rows == ["●●●●●●.", ".......", "●●●●●○.", "●●●●○○.", "●●●○○○.", "●●○○○○."]
+    # Two octaves below the recorder: two up, and said so.
+    assert f(47, "recorder") == ["●●○○○○○○", False, "up"] and page.evaluate("fingering(47, FINGERED.recorder).up") == 2
+
+
+# Every note's signs and holes are its own, in every tune, as written and in other keys: a
+# note with nothing in a row has a blank there that a rest can't take (abcjs's "*" was taken
+# by a rest before it, and the notes after it each got the next note's "+" or holes).
+def test_fingerings_under_their_own_notes(page):
+    page.goto_site()
+    wrong = page.evaluate("""() => {
+      const wrong = [];
+      const said = (f) => f === null ? "?" : f === "tied" ? "" : (OCTAVES_UP[f.up] ?? "") + (f.high ? "+" : "") + f.holes;
+      for (const tune of state.data.tunes) {
+        for (const [tab, key] of [["whistle-D", 0], ["whistle-D", 2], ["whistle-G", -3], ["recorder", 0], ["recorder", 5]]) {
+          const voice = melodyVoice(tune.abc);
+          const abc = withFingerings(transposeAbc(tune, tune.abc, key), FINGERED[tab], 11, voice);
+          const drawn = ABCJS.renderAbc("*", abc)[0];
+          drawn.setUpAudio();
+          const notes = melodyNotes(abc, drawn, voice).map(({ note }) => note);
+          const off = notes.findIndex((note) => {
+            const f = note.midiPitches?.length ? fingering(Math.max(...note.midiPitches.map((m) => m.pitch)), FINGERED[tab]) : "tied";
+            return (note.lyric ?? []).map((l) => l.syllable).join("").replaceAll(".", "") !== said(f);
+          });
+          if (off >= 0) { wrong.push(`${tune.slug} ${tab} ${key}: note ${off}`); break; }
+        }
+      }
+      return wrong;
+    }""")
+    assert wrong == []
+    # The case found: a "+" with a rest before the note without one, and after it.
+    rows = page.evaluate("""() => ABCJS.renderAbc('*', withFingerings('X:1\\nL:1/8\\nK:D\\nD2 z2 E2 d2|]', FINGERED['whistle-D']))[0]
+      .lines[0].staff[0].voices[0].filter((e) => e.el_type === 'note' && !e.rest).map((n) => n.lyric[0].syllable)""")
+    assert rows == [".", ".", "+"]
+
+
+# A part for several voices: the holes, and the notes not on the whistle, are the tune's
+# (the voice named Alaw, or the one its words are under), not the first voice's.
+def test_fingerings_follow_the_melody_voice(page):
+    page.goto_site()
+    assert page.evaluate("melodyVoice(state.bySlug.get('ar-gyfer-heddiw-r-bore').abc)") == "2"  # nm="Alaw"
+    assert page.evaluate("melodyVoice(state.bySlug.get('mae-gwahoddiad-version-2').abc)") == "2"  # its words
+    assert page.evaluate("melodyVoice('X:1\\nK:D\\nDEF|')") is None
+    # The tune's "G D G A" in its first line, not the tenor's "G D B d".
+    assert page.evaluate("pitchesOf(state.bySlug.get('ar-gyfer-heddiw-r-bore')).slice(5, 9)") == [67, 62, 67, 69]
+    page.goto_site("alaw/ar-gyfer-heddiw-r-bore/?tab=whistle-G")
+    page.wait_for_selector(".score g.holes", state="attached")
+    # The holes are under the second voice (abcjs counts from 0), and the note above says
+    # how many of its notes have a "?".
+    staves = page.evaluate("""() => [...document.querySelectorAll('.score .abcjs-lyric')]
+      .map((t) => [...t.classList].find((c) => /^abcjs-v\\d+$/.test(c)))""")
+    assert staves and set(staves) == {"abcjs-v1"}
+    marks = page.evaluate("[...document.querySelectorAll('.score .abcjs-lyric .sign')].filter((t) => t.textContent === '?').length")
+    assert marks > 0 and page.inner_text(".fit-note").startswith(f"{marks} notes aren't on this whistle (?).")
 
 
 # Each note's box, holes and all, is where the note is: following the music while it plays
@@ -550,6 +736,22 @@ def test_whistle_fit_note_follows_the_octave_drawn(page):
     marks = page.evaluate("[...document.querySelectorAll('.score .abcjs-lyric .sign')].filter((t) => t.textContent === '?').length")
     assert marks > 0
     assert page.inner_text(".fit-note").startswith(f"{marks} notes aren't on this whistle (?).")
+
+
+def test_whistle_fit_note_without_a_key(page):
+    # A tune with no key (K: missing or not understood) has its "?" marks counted too; it
+    # has no Key menu, so no other key is offered.
+    page.goto_site()
+    page.evaluate("localStorage.setItem('practice', JSON.stringify({tab: 'whistle-D', open: null, tabKnown: true}))")
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score g.holes", state="attached")
+    page.evaluate("async () => { await state.loaded; state.bySlug.get('tros-y-garreg').key = null; navigate('alaw/tros-y-garreg/'); }")
+    page.wait_for_function("document.querySelector('h1').textContent.includes('Tros')")
+    page.wait_for_selector(".score g.holes", state="attached")
+    marks = page.evaluate("[...document.querySelectorAll('.score .abcjs-lyric .sign')].filter((t) => t.textContent === '?').length")
+    assert marks > 0
+    assert page.inner_text(".fit-note").startswith(f"{marks} notes aren't on this whistle (?).")
+    assert " In " not in page.inner_text(".fit-note")
 
 
 # Above tablature, its tuning alone: players know how to read tabs.
@@ -720,7 +922,7 @@ def test_search_says_the_other_name_it_found(page):
     page.goto_site()
     page.fill("#hero-search", "pontnewydd quickstep")
     first = page.locator("#hero-suggestions li").first
-    assert first.locator("span[lang]").inner_text() == "Cwicstep y Bontnewydd"
+    assert first.locator(":scope > span[lang]").inner_text() == "Cwicstep y Bontnewydd"
     assert first.locator(".aka").inner_text() == "(The Pontnewydd Quickstep)"
     page.fill("#hero-search", "pont cleddau")
     assert page.locator("#hero-suggestions li").first.locator(".aka").count() == 0
@@ -728,6 +930,19 @@ def test_search_says_the_other_name_it_found(page):
     assert page.locator("#hero-suggestions .aka").count() == 0
     page.goto_site("?page=search&q=pontnewydd+quickstep")
     assert page.locator(".search-part .tune-list li").first.locator(".aka").inner_text() == "(The Pontnewydd Quickstep)"
+
+
+def test_search_marks_the_types_welsh(page):
+    # The types' names are Welsh in both languages, as Browse marks them, so a screen
+    # reader says "Walts" and "Pibddawns" as Welsh; Other is English.
+    page.goto_site()
+    page.fill("#hero-search", "walts")
+    page.wait_for_selector("#hero-suggestions li .what")
+    assert "Walts" in page.locator("#hero-suggestions li .what [lang=cy]").all_inner_texts()
+    page.goto_site("?page=search&q=pibddawns")
+    page.wait_for_selector(".search-part .tune-key")
+    assert "Pibddawns" in page.locator(".search-part .tune-key [lang=cy]").all_inner_texts()
+    assert page.locator(".search-part .tune-key [lang=cy]:text-is('Other')").count() == 0
 
 
 def test_tunes_sharing_a_name(page):
@@ -827,9 +1042,50 @@ def test_phone_menu(browser, site):
     page.click("#menu-button")
     assert page.locator(".sidebar-links").is_visible()
     assert page.get_attribute("#menu-button", "aria-expanded") == "true"
+    page.focus(".sidebar-links a[href='?page=map']")
+    page.keyboard.press("Escape")  # as every menu closes, back to its button
+    assert not page.locator(".sidebar-links").is_visible()
+    assert page.get_attribute("#menu-button", "aria-expanded") == "false"
+    assert page.evaluate("document.activeElement.id") == "menu-button"
+    page.click("#menu-button")
     page.click(".sidebar-links a[href='?page=map']")  # opening a page closes the menu
     page.wait_for_selector(".wales-map .merged circle")
     assert not page.locator(".sidebar-links").is_visible()
+    context.close()
+
+
+def test_focus_not_under_the_phone_top_bar(browser, site):
+    # Tabbed to, a button is scrolled into sight below the pinned top bar, not under it.
+    context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True,
+                                  service_workers="block")
+    page = context.new_page()
+    page.goto(site + "alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    # Through the page to Take it with you (on a phone, Share is tabbed to from the chords,
+    # below it on the screen, so the page is scrolled up to it)
+    bar = page.evaluate("document.querySelector('.topbar').getBoundingClientRect().bottom")
+    seen = []
+    while "Add to set" not in seen and len(seen) < 60:
+        page.keyboard.press("Tab")
+        if page.evaluate("document.activeElement.closest('main') !== null"):
+            seen.append(page.evaluate("document.activeElement.textContent.trim()"))
+            assert page.evaluate("document.activeElement.getBoundingClientRect().top") >= bar, seen[-1]
+    assert "Share" in seen and "Print / save" in seen
+    context.close()
+
+
+def test_short_phone_on_its_side_while_playing(browser, site):
+    # A phone on its side has little height: while the player is pinned, the top bar isn't
+    # pinned over it too, and the player has the top of the screen.
+    context = browser.new_context(viewport={"width": 740, "height": 360}, is_mobile=True, has_touch=True,
+                                  service_workers="block")
+    page = context.new_page()
+    page.goto(site + "alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.evaluate("getComputedStyle(document.querySelector('.topbar')).position") == "sticky"
+    page.evaluate("document.querySelector('.score > .audio').classList.add('playing')")
+    assert page.evaluate("getComputedStyle(document.querySelector('.topbar')).position") != "sticky"
+    assert page.evaluate("getComputedStyle(document.querySelector('.score > .audio')).top") == "0px"
     context.close()
 
 
@@ -917,12 +1173,37 @@ def test_embed_code(page, site):
     assert page.inner_text("article.guide h1") == "Put a tune on your website" and not page.locator(".embed-dialog").count()
 
 
+def test_share_boxes_give_the_focus_back(page):
+    # The QR code and "Put it on a website", opened from the keyboard: closed, the focus
+    # is back on the Share menu's button, not lost to the page.
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    share = ".tune-actions .print-wrap > button:has-text('Share')"
+    for item, box in [("QR code", "dialog.qr-dialog svg.qr"), ("Put it on a website", "dialog.embed-dialog")]:
+        page.focus(share)
+        page.keyboard.press("Enter")
+        page.focus(f".print-menu button:text-is('{item}')")
+        page.keyboard.press("Enter")
+        page.wait_for_selector(box)
+        page.keyboard.press("Escape")
+        page.wait_for_selector("dialog", state="detached")
+        assert page.evaluate("document.activeElement.matches('.tune-actions .print-wrap > button')"), item
+        assert page.evaluate("document.activeElement.textContent").startswith("Share")
+    # The preview scrolls sideways on a small screen: by the keyboard too, as a named region.
+    page.click(share)
+    page.click(".print-menu button:has-text('Put it on a website')")
+    box = page.locator(".embed-preview-box")
+    assert box.get_attribute("tabindex") == "0" and box.get_attribute("role") == "region"
+    assert page.inner_text(f"#{box.get_attribute('aria-labelledby')}") == "How it will look"
+
+
 def test_embedded_tune(page, site):
     # embed/<folder>/: one tune, nothing of the site around it, as the address says (key,
     # version, holes, language); its name opens it on Y Sesiwn, in a new tab, as chosen here.
     page.goto(site + "embed/glandyfi/?v=3&key=A&tab=whistle-D&lang=cy")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.evaluate("EMBED") and not page.locator(".nav, .sidebar, .site-footer").count()
+    assert page.locator(".embed-brand").bounding_box()["height"] >= 24  # a target big enough to hit
     assert page.locator(".abcjs-lyric").count() > 0  # the whistle's holes
     assert page.evaluate("document.documentElement.lang") == "cy" and page.inner_text("label[for=key-select]") == "Cywair"
     assert page.input_value("#key-select") == "2" and "Chwisl" in page.inner_text(".fingering-key")
@@ -1016,6 +1297,22 @@ def test_home_page_on_a_phone(browser, site):
     assert page.locator(".features li").count() == 3 and page.locator(".features li").last.is_visible()
     # Surprise me is folded in the menu, so the home page's own line keeps it in sight.
     assert page.locator(".home-more button:has-text('surprise me')").is_visible()
+    # Play it to me keeps its comma, so no line starts with ", or type the notes".
+    if page.locator(".notes-invite .listen-start").count():
+        assert page.locator(".notes-invite .listen-start").evaluate("(b) => b.parentElement.textContent.endsWith(',')")
+        assert page.locator(".notes-invite .listen-start").evaluate("(b) => getComputedStyle(b.parentElement).whiteSpace") == "nowrap"
+    context.close()
+
+
+def test_keys_in_even_rows_on_a_tablet(browser, site):
+    # A tablet upright hasn't the room for the twelve keys in a row: two rows of six, not
+    # ten and two.
+    context = browser.new_context(viewport={"width": 820, "height": 1180}, service_workers="block")
+    page = context.new_page()
+    page.goto(site + "alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    tops = page.eval_on_selector_all(".key-strip button", "(bs) => bs.map((b) => Math.round(b.getBoundingClientRect().top))")
+    assert len(tops) == 12 and sorted(tops.count(t) for t in set(tops)) == [6, 6]
     context.close()
 
 
@@ -1209,7 +1506,9 @@ def test_map_on_a_phone(browser, site):
 @pytest.mark.parametrize("lang", ["en", "cy"])  # Welsh labels are often longer
 @pytest.mark.parametrize("path", ["", "?page=browse", "?tune=glandyfi", "?tune=llancesau-trefaldwyn", "?page=map",
                                   "?page=offline", "?page=about", "?page=add", "?page=embed", "?page=contact",
-                                  "?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A", "embed/glandyfi/?tab=whistle-D"])
+                                  "?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A", "embed/glandyfi/?tab=whistle-D",
+                                  # a set's name of one long word
+                                  "?set=3Uh10k~c4hhw&n=Llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch"])
 def test_fits_a_phone(browser, site, path, lang):
     context = browser.new_context(viewport={"width": 360, "height": 800}, service_workers="block")
     page = context.new_page()
@@ -2155,6 +2454,8 @@ def test_loop_parts(page, slug, parts):
     # A second ending stays with its part; the lead-in after a double bar starts the next.
     ("|: CDEF |1 GABc :|2 GAB2 || d | efga | bc'2 |]", ["|: CDEF |1 GABc :|2 GAB2 ", "|| d | efga | bc'2 |]"]),
     ("|: CDEF |1 GABc :| [2 GAB2 || defg | abc'2 |]", ["|: CDEF |1 GABc :| [2 GAB2 ", "|| defg | abc'2 |]"]),
+    # A lead-in before the first |:, or between a :| and the next |:, goes with the part after.
+    ("G |: CDEF | GABc :| d |: efga | bc'2 :|", ["G |: CDEF | GABc ", ":| d |: efga | bc'2 :|"]),
 ])
 def test_parts_start_at_their_bar_line(page, abc, parts):
     # A part starts at a repeat sign or at the double bar line before it, not a bar later.
@@ -2164,6 +2465,23 @@ def test_parts_start_at_their_bar_line(page, abc, parts):
     found = page.evaluate("""(a) => tuneParts(ABCJS.renderAbc('*', a)[0])
       .map((p) => a.slice(Math.max(p.from, a.indexOf('K:C') + 4), Math.min(p.to, a.length)).trim())""", tune)
     assert found == [p.strip() for p in parts]
+
+
+def test_no_part_is_shorter_than_a_bar(page):
+    # A part repeated on its own is at least a bar of music: Angharad Siân's lead-in "a"
+    # was its part A, played over and over.
+    page.goto_site()
+    short = page.evaluate("""() => state.data.tunes.filter((t) => {
+      const v = ABCJS.renderAbc('*', t.abc)[0];
+      const notes = v.lines.flatMap((l) => l.staff?.[0]?.voices?.[0] ?? []).filter((e) => e.el_type === 'note');
+      return tuneParts(v).some((p) => notes.filter((n) => n.startChar >= p.from && n.startChar < p.to)
+        .reduce((sum, n) => sum + n.duration, 0) < v.getBarLength() - 1e-6);
+    }).map((t) => t.slug)""")
+    assert short == []
+    page.goto_site("alaw/angharad-sian/")
+    page.wait_for_selector(".score .abcjs-staff")
+    options = page.eval_on_selector_all("#loop-select option", "os => os.map((o) => o.textContent)")
+    assert options == ["Off", "The whole tune", "Part A", "Part B"]
 
 
 def test_loop_part_and_speed_up(browser, site):
@@ -2261,6 +2579,50 @@ def test_other_sound_pauses_the_tune(browser, site):
     page.wait_for_function("audioFocus.playing && !audioFocus.element.paused && state.synth.timer.isRunning")
     page.click(".abcjs-midi-start")  # pause
     page.wait_for_function("!audioFocus.playing && audioFocus.element.paused")
+    context.close()
+
+
+def tap_a_note(page, n):
+    # In the middle of the page, out from under the player pinned at the top as it plays.
+    note = page.locator(".score .abcjs-note").nth(n)
+    note.evaluate("(n) => n.scrollIntoView({ block: 'center' })")
+    box = note.bounding_box()
+    page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+
+
+def test_speed_up_not_for_a_jump_back(browser, site):
+    # Only playback coming round makes it faster: going back by hand (a note tapped, the
+    # slider, Back to the start) used to count as a time round, from late in the tune.
+    context = browser.new_context(service_workers="block")
+    page = context.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(site + "?tune=glandyfi")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.click(".practice-tools summary")  # folded at first
+    page.check("text=Speed up each time")  # the whole tune
+    page.click(".abcjs-midi-start")
+    page.wait_for_function("document.querySelector('.abcjs-note_playing') && state.synth.timer")
+    late = "() => { const s = document.querySelector('.seek'); s.value = 70; s.dispatchEvent(new Event('input')); }"
+    page.evaluate(late)
+    tap_a_note(page, 2)  # on the first line
+    page.wait_for_timeout(500)
+    page.evaluate(late)
+    page.click(".abcjs-midi-reset")
+    page.wait_for_timeout(500)
+    page.evaluate(late)
+    page.evaluate("() => { const s = document.querySelector('.seek'); s.value = 5; s.dispatchEvent(new Event('input')); }")
+    page.wait_for_timeout(1000)
+    assert page.evaluate("state.synth.warp") == 100 and page.inner_text(".speed-note").startswith("Starting at 78 bpm")
+    # Repeating part B: a note tapped in part A goes back to B, no faster.
+    page.select_option("#loop-select", "1")
+    page.wait_for_function("state.synth.isStarted && document.querySelector('.abcjs-note_playing')")
+    tap_a_note(page, 2)
+    page.wait_for_function("[...document.querySelectorAll('.score .abcjs-note')].indexOf(document.querySelector('.abcjs-note_playing')) >= 30")
+    page.wait_for_timeout(500)
+    assert page.evaluate("state.synth.warp") == 100
+    page.click(".abcjs-midi-start")  # pause
+    assert not errors, errors
     context.close()
 
 
@@ -2407,6 +2769,40 @@ def test_click_keeps_the_beat_across_a_lead_in(page):
     starts = page.evaluate(clicks)["starts"]
     gaps = [b - a for a, b in zip(starts, starts[1:])]
     assert len(gaps) > 30 and all(abs(g - 3 / 8) < 1e-3 for g in gaps), " ".join(f"{g * 8:g}" for g in gaps)
+
+
+@pytest.mark.parametrize("slug, beat, bars", [
+    ("blwyddyn-newydd-dda", 3 / 8, {9 / 8, 6 / 8}),  # 9/8, two bars of [M:6/8] near the end
+    ("jig-y-ddwy-goes-chwith-version-2", 3 / 8, {6 / 8, 9 / 8}),  # a jig with a bar of 9/8
+    ("llongau-caernarfon", 1 / 2, {1, 3 / 2}),  # 4/4 counted in minims, with a bar of 6/4
+])
+def test_click_follows_the_time_signature(page, slug, beat, bars):
+    # The click kept the first time signature's beats, stretched over a bar of another:
+    # two clicks in a bar of 9/8, three in one of 6/8. Every beat now, of every bar.
+    page.goto_site(f"?tune={slug}")
+    page.open_tools()
+    page.wait_for_selector(".score .abcjs-staff")
+    page.check(".practice-row label:has-text('Click · on every beat')")
+    clicks = page.evaluate(f"""() => {{
+      const p = {{ ...AUDIO_PARAMS, ...clickParams(state.synth.visualObj, state.bySlug.get('{slug}')) }};
+      const drums = state.synth.visualObj.setUpAudio(p).tracks.at(-1).filter((e) => e.cmd === 'note');
+      return drums.map((e) => [e.start, Number(e.pitch) === 76]); }}""")
+    starts = [start for start, _ in clicks]
+    assert all(abs(b - a - beat) < 1e-3 for a, b in zip(starts, starts[1:]))
+    firsts = [start for start, first in clicks if first]
+    assert bars <= {round(b - a, 3) for a, b in zip(firsts, firsts[1:])}
+
+
+def test_strum_follows_the_time_signature(page):
+    # A jig's strum is on every quaver of a 6/8 bar; it was laid over Jig y Ddwy Goes
+    # Chwith's bar of 9/8 too, so its last three quavers went unstrummed.
+    page.goto_site("?tune=jig-y-ddwy-goes-chwith-version-2")
+    page.open_tools()
+    page.wait_for_selector(".score .abcjs-staff")
+    page.select_option("#chord-playback", "both")
+    quavers = page.evaluate("""() => [...new Set(state.synth.visualObj.setUpAudio({ ...AUDIO_PARAMS }).tracks[1]
+      .filter((e) => e.cmd === 'note').map((e) => Math.round(e.start * 8)))].sort((a, b) => a - b)""")
+    assert quavers == list(range(quavers[0], quavers[-1] + 1))
 
 
 def test_count_in_lights_the_notes_after_it(browser, site):
@@ -2810,6 +3206,20 @@ def test_send_a_tune(page):
     # For anyone without an email app: the address and message to copy.
     assert ADDRESS in page.inner_text(".email-sent")
     assert page.locator(".email-sent button").all_inner_texts() == ["Copy the message", "Copy the address"]
+
+
+def test_welsh_guide_keeps_up(page):
+    # The Welsh guide (guides.cy.md) says what CONTRIBUTING.md does, and leaves out the
+    # note for GitHub readers here too.
+    page.goto_site()
+    page.evaluate("localStorage.setItem('lang', 'cy')")
+    page.goto_site("?page=add")
+    page.wait_for_selector(".github-way")
+    page.click(".github-way > summary")
+    text = page.inner_text("main")
+    assert "Ddim ar GitHub" not in text
+    for said in ["jig naid", "%%version", "%%bpm", "w:", "W:"]:
+        assert said in text, said
 
 
 def test_send_a_tune_without_abc(page):
@@ -4595,3 +5005,258 @@ def test_home_features_only_on_a_first_visit(page):
     page.goto_site()
     page.wait_for_selector(".recent-list")
     assert page.locator(".features").count() == 0
+
+
+# ---- Odd input: links, addresses and what's kept, written wrong ----------------------------
+
+@pytest.mark.parametrize("html", [
+    '<a href="java&#9;script:window.ran = 1">here</a>',      # what marked makes of [here](java&#9;script:…)
+    '<a href="jav&#x0A;ascript:window.ran = 1">here</a>',
+    '<a href="&#1;javascript:window.ran = 1">here</a>',
+    '<a href=" JavaScript:window.ran = 1">here</a>',
+    '<a href="vbscript:window.ran = 1">here</a>',
+    '<a href="data:text/html,<script>parent.ran = 1</script>">here</a>',
+    '<svg><a><animate attributeName="href" values="javascript:window.ran = 1"/><text y="20">here</text></a></svg>',
+    '<svg><a><set attributeName="href" to="javascript:window.ran = 1"/><text y="20">here</text></a></svg>',
+    '<svg><use href="#x"/><foreignObject><a href="javascript:window.ran = 1">here</a></foreignObject></svg>',
+    '<math><mi xlink:href="javascript:window.ran = 1">here</mi></math>',
+    '<form><button formaction="javascript:window.ran = 1">here</button></form>',
+])
+def test_guides_keep_only_safe_links(page, html):
+    # Only http:, https:, mailto: and the site's own addresses are kept, however the scheme
+    # is disguised (tabs, line breaks, control characters), and nothing that can change a
+    # link afterwards (SVG's <animate> and <set>) is kept at all.
+    page.goto_site()
+    kept = page.evaluate("""(html) => { const box = document.createElement("div"); box.append(cleanHtml(html));
+      return box.innerHTML; }""", html)
+    assert not re.search(r"script:|data:|<svg|<math|<animate|<set|<use|<form", re.sub(r"[\x00-\x20]", "", kept), re.I), kept
+    safe = page.evaluate("""() => { const box = document.createElement("div");
+      box.append(cleanHtml('<a href="https://example.com/">a</a><a href="mailto:post@ysesiwn.cymru">b</a>'
+        + '<a href="?page=add">c</a><a href="#top">d</a><img src="static/harp.svg" alt="">'));
+      return [...box.querySelectorAll("[href], [src]")].map((n) => n.getAttribute("href") ?? n.getAttribute("src")); }""")
+    assert safe == ["https://example.com/", "mailto:post@ysesiwn.cymru", "?page=add", "#top", "static/harp.svg"]
+
+
+def test_guides_markdown_link_disguised(page):
+    # The same through marked, as a guide's Markdown is.
+    page.goto_site()
+    hrefs = page.evaluate("""async () => { await loadMarked(); const box = document.createElement("div");
+      box.append(cleanHtml(marked.parse("[a](java&#9;script:window.ran=1) [b](https://example.com/)")));
+      return [...box.querySelectorAll("a")].map((a) => a.getAttribute("href")); }""")
+    assert hrefs == [None, "https://example.com/"]
+
+
+def test_libraries_tried_again_after_failing(page):
+    # The QR code's and the guides' libraries, if they didn't come once (a bad signal), are
+    # asked for again the next time, not given up on for the rest of the visit.
+    failed = []
+
+    def once(route):
+        if route.request.url in failed:
+            route.continue_()
+        else:
+            failed.append(route.request.url)
+            route.abort()
+
+    page.route("**/static/qrcode/qrcode.js", once)
+    page.route("**/static/marked/marked.min.js", once)
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.click(".tune-actions .share")
+    page.click(".tune-actions button:text-is('QR code')")
+    page.wait_for_selector("dialog.qr-dialog[open] :text(\"Couldn't load the QR code\")")
+    page.click("dialog.qr-dialog button:text-is('Close')")
+    page.click(".tune-actions .share")
+    page.click(".tune-actions button:text-is('QR code')")
+    page.wait_for_selector("dialog.qr-dialog[open] svg.qr")
+    page.click("dialog.qr-dialog button:text-is('Close')")
+    page.evaluate("navigate('?page=about')")
+    page.wait_for_selector("main p:has-text('load this page')")
+    page.evaluate("navigate('?page=fix')")
+    page.wait_for_selector("article.guide h1")
+    assert len(failed) == 2
+
+
+def test_moved_tune_keeps_the_link(page, site):
+    # A renamed tune's old address (Noson Oer, now Chwefror Creulon), on the site and for
+    # other websites, goes on to the new one with the link's key, tempo and language.
+    page.goto(site + "alaw/noson-oer/?key=B&tempo=80")
+    page.wait_for_url("**/alaw/chwefror-creulon/?key=B&tempo=80")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.inner_text("main h1") == "Chwefror Creulon"
+    assert page.input_value("#tempo") == "80"
+    page.goto(site + "embed/noson-oer/?tempo=80&lang=cy#x")
+    page.wait_for_url("**/embed/chwefror-creulon/?tempo=80&lang=cy#x")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.input_value("#tempo") == "80"
+    # A tune moved to a version of another: that version, whatever the link said.
+    page.goto(site + "alaw/caerphilly/?v=9&key=A")
+    page.wait_for_url("**/alaw/ar-foren-teg/?v=2&key=A")
+
+
+@pytest.mark.parametrize("address, opens", [
+    ("alaw/glandyfi-version-3/?key=A&tempo=80", "alaw/glandyfi/?v=3&key=A&tempo=80"),  # a version's folder
+    ("alaw/Glandyfi/?key=A", "alaw/glandyfi/?key=A"),                                     # capitals
+    ("alaw/%C5%B5yn-y-gwanwyn/", "alaw/wyn-y-gwanwyn/"),                                  # ŵyn
+    ("alaw/codi'r-hwyl/", "alaw/codi-r-hwyl/"),
+    ("math/JIG/", "math/jig/"),
+    ("math/r%C3%AEl/", "math/ril/"),                                                      # rîl
+    ("embed/glandyfi-version-3/?key=A", "embed/glandyfi/?key=A&v=3"),
+    ("embed/Glandyfi/?tempo=80", "embed/glandyfi/?tempo=80"),
+])
+def test_not_found_page_finds_the_address(page, site, address, opens):
+    # GitHub Pages shows 404.html for an address with no page: one written another way
+    # than the site's own (capitals, accents, punctuation, a version's folder) goes on to
+    # it, keeping the link's key and tempo.
+    import build_site
+    body = (build_site.OUT / "404.html").read_text(encoding="utf-8")
+    not_found = lambda route: route.fulfill(status=404, body=body, content_type="text/html")
+    page.route(lambda url: url.startswith(site + address.split("?")[0].replace("'", "%27")) or url.startswith(site + address.split("?")[0]),
+               not_found)
+    page.goto(site + address)
+    page.wait_for_url(site + opens)
+    page.wait_for_selector("main h1:not(:has-text('not found'))")
+
+
+def test_not_found_page_in_someone_elses_website(page, site):
+    # An embedded tune's address that has none, in another website's <iframe>: the 404
+    # page's links open the site in a tab of its own, not inside their page.
+    import build_site
+    body = (build_site.OUT / "404.html").read_text(encoding="utf-8")
+    page.route(site + "embed/no-such-tune/", lambda route: route.fulfill(status=404, body=body, content_type="text/html"))
+    page.route(site + "their-page.html", lambda route: route.fulfill(
+        body=f'<iframe src="{site}embed/no-such-tune/"></iframe>', content_type="text/html"))
+    page.goto(site + "their-page.html")
+    frame = page.frame_locator("iframe")
+    frame.locator("h1").wait_for()
+    assert frame.locator("a").evaluate_all("(links) => links.map((a) => a.target)") == ["_blank", "_blank"]
+
+
+@pytest.mark.parametrize("address, heading", [
+    ("alaw/Glandyfi/", "Glandyfi"),
+    ("alaw/ŵyn-y-gwanwyn/", "Ŵyn y Gwanwyn"),
+    ("alaw/codi'r-hwyl/", "Codi'r Hwyl"),
+])
+def test_app_finds_the_address(page, site, address, heading):
+    # Offline the app opens at whatever address was asked for: one written another way than
+    # the site's own finds the tune too (as 404.html does online), at its own address.
+    page.goto_site()
+    page.evaluate(f"history.pushState(null, '', {address!r}); render()")
+    page.wait_for_function(f"document.querySelector('main h1')?.textContent === {heading!r}")
+    assert re.fullmatch(re.escape(site) + r"alaw/[a-z-]+/", page.url)
+
+
+@pytest.mark.parametrize("address, chosen", [("math/JIG/", "Jig"), ("math/rîl/", "Rîl")])
+def test_app_finds_the_type(page, address, chosen):
+    page.goto_site()
+    page.evaluate(f"history.pushState(null, '', {address!r}); render()")
+    page.wait_for_selector(f".pills [data-type='{chosen}'][aria-pressed='true']")
+
+
+def test_session_link_cut_short(page):
+    # A link to one session cut off mid-letter (#session-%E0%A4%A) opens the sessions, no error.
+    page.goto_site("sesiynau/#session-%E0%A4%A")
+    page.wait_for_selector(".card.session")
+
+
+def test_offline_address_with_no_page(browser, site):
+    # Offline, an address with no page says so, as it does online (the saved 404.html),
+    # rather than showing the home page as if the address were right.
+    context = browser.new_context()  # service worker allowed
+    page = context.new_page()
+    page.goto(site)
+    page.wait_for_function("navigator.serviceWorker.controller !== null", timeout=30000)
+    context.set_offline(True)
+    answer = page.goto(site + "no-such-page/")
+    assert answer.status == 404 and "Page not found" in page.inner_text("h1")
+    page.goto(site + "alaw/Glandyfi/")  # the app's own addresses are still the app
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.inner_text("main h1") == "Glandyfi"
+    context.close()
+
+
+def test_long_notes_search(page):
+    # A whole tune's notes pasted in (or a link with them) is searched by its start, at
+    # once, not after seconds of a frozen page; the box takes no more than that.
+    notes = " ".join(["D", "G", "B", "D", "C", "B", "G", "A"] * 150)
+    page.goto_site()
+    took, same = page.evaluate("""(notes) => {
+      const groups = (text) => searchByNotes(text).map((r) => r.tune.group);
+      const t = performance.now(); const found = groups(notes); const took = performance.now() - t;
+      return [took, JSON.stringify(found) === JSON.stringify(groups(notes.split(" ").slice(0, MAX_NOTES).join(" ")))]; }""", notes)
+    assert same and took < 5000  # (1,200 notes took 8 seconds)
+    page.goto_site("?page=notes&q=" + notes.replace(" ", "+"))
+    page.wait_for_selector(".notes-results li")
+    assert int(page.get_attribute("#notes-search", "maxlength")) >= page.evaluate("MAX_NOTES") * 4
+
+
+@pytest.mark.parametrize("link", ["?set=0", "?set=00~z", "?set=3V~h5A0"])
+def test_set_link_partly_unreadable(page, site, link):
+    # A set link cut short or mistyped says part of it couldn't be read, and isn't rewritten
+    # without that part (the tunes it could read are still there).
+    page.goto_site(link)
+    page.wait_for_selector(".set-count")
+    assert "Part of this set's link couldn't be read" in page.inner_text("main")
+    assert page.url == site + link
+
+
+def test_add_to_set_says_what_its_menu_does(page):
+    # A set that has the tune: its menu item says, to a screen reader, it takes it out of
+    # that set, and how many tunes the set has.
+    page.goto_site("alaw/glandyfi/")
+    code = page.evaluate("state.groups.get('glandyfi').versions[0].code")  # the version it opens on
+    page.evaluate(f"""() => localStorage.setItem('sets', JSON.stringify([
+      {{ id: 'aaaaaa', name: 'Nos Iau', c: '{code}', updated: 2 }}, {{ id: 'bbbbbb', name: 'Class', c: '', updated: 1 }}]))""")
+    page.reload()
+    page.wait_for_selector(".score .abcjs-staff")
+    page.click(".add-to-set")
+    labels = page.locator(".add-to-set-wrap .print-menu button").evaluate_all("(b) => b.map((x) => x.getAttribute('aria-label'))")
+    assert labels[0] == "Take it out of Nos Iau (1 tune)" and labels[1] is None
+
+
+def test_add_to_set_when_nothing_can_be_kept(page):
+    # A browser that won't let the site keep anything (a private window, or full): adding
+    # to a set says it wasn't saved, and offers the set's link instead.
+    page.add_init_script("""Storage.prototype.setItem = function (name) {
+      throw new DOMException("full", "QuotaExceededError"); }""")
+    page.goto_site("alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    page.click(".add-to-set")
+    page.press(".set-namer input", "Enter")
+    status = page.inner_text(".add-status")
+    assert status.startswith("Not saved") and "Added" not in status
+    assert page.get_attribute(".add-status a", "href").startswith("?set=")
+
+
+def test_sessions_failing_after_leaving(page):
+    # The sessions failing to come after the reader has gone on to another page: that
+    # page stays as it is.
+    page.goto_site("?page=browse")
+    for address in ["sesiynau/", "sesiynau/chapter-cardiff-tuesday/"]:
+        page.evaluate("""(address) => { loadSessions = () => new Promise((_, no) => setTimeout(() => no(new Error("offline")), 300));
+          navigate(address); navigate("?page=browse"); }""", address)
+        page.wait_for_timeout(600)
+        assert "Couldn't load the sessions" not in page.inner_text("main")
+        assert page.locator(".pills [data-type]").count()
+    page.evaluate("navigate('sesiynau/')")  # staying: it says so
+    page.wait_for_selector("main p:has-text(\"Couldn't load the sessions\")")
+
+
+def test_one_damaged_tune_setting(page):
+    # One tune's kept settings damaged (edited by hand): the rest are kept, not lost at the
+    # next change.
+    page.goto_site()
+    page.evaluate("""() => localStorage.setItem("tunes", JSON.stringify({ "llwyn-onn": { key: 2 }, foo: "x", bar: [1] }))""")
+    assert page.evaluate("savedTunes()") == {"llwyn-onn": {"key": 2}}
+    page.evaluate("saveTune(state.bySlug.get('glandyfi'), 'key', 3)")
+    assert page.evaluate("JSON.parse(localStorage.getItem('tunes'))") == {"llwyn-onn": {"key": 2}, "glandyfi": {"key": 3}}
+
+
+@pytest.mark.parametrize("query", ["🎻", "%", "?!"])
+def test_search_for_symbols_finds_nothing(page, query):
+    # A search of only symbols or emoji has no name in it: nothing found, not every tune.
+    page.goto_site()
+    page.fill("#hero-search", query)
+    page.wait_for_timeout(200)
+    assert page.locator("#hero-suggestions li > span[lang]").count() == 0
+    assert page.evaluate("(q) => searchAll(q).named.length", query) == 0

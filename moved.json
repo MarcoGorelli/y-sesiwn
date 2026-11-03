@@ -19,7 +19,7 @@
     "si-hei-lwli-mabi": "si-hei-lwli-version-2",
     "pwt-ar-y-bys-syml": "pwt-ar-y-bys-version-3",
     "ty-coch-caerdydd-harmoni": "ty-coch-caerdydd-version-3",
-    "glamorganshire-march": "triban-gwyr-morganwg-version-2",
+    "glamorganshire-march": "triban-gwyr-morgannwg-version-2",
     "griffith-ap-cynan-s-delight": "diddanwch-gruffydd-ap-cynan-version-2",
     "the-delight-of-the-men-of-dovey": "difyrrwch-gwyr-dyfi-version-4",
     "hufen-melyn-32-bar": "hufen-melyn-version-2",
@@ -76,6 +76,13 @@
     "pibddawns-meillionnen": "pibddawns-meillionen",
     "y-nant-wrth-fy-nyh": "y-nant-wrth-fy-nhy",
     "y-garrey-lwyd": "y-garreg-lwyd",
-    "noson-oer": "chwefror-creulon"
+    "noson-oer": "chwefror-creulon",
+    "triban-gwyr-morganwg": "triban-gwyr-morgannwg",
+    "triban-gwyr-morganwg-version-2": "triban-gwyr-morgannwg-version-2",
+    "torried-y-dydd": "toriad-y-dydd-version-2",
+    "polka-r-pryf-tan": "polca-r-pryf-tan",
+    "polka-r-rheilffordd": "polca-r-rheilffordd",
+    "philip-tha-active-s-adieu": "philip-the-active-s-adieu",
+    "per-oslef-fersiwn-bob-evans": "per-oslef"
   }
 }

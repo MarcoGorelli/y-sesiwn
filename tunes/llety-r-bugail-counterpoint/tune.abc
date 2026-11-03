@@ -1,8 +1,7 @@
 X:1
 T:Llety'r Bugail - counterpoint
 S:http://alawoncymru.com/alawon/Tunes/LletBugl/LletBugl.htm
-Z:MIDI transcribed with alawon-abc
-%%alawon track=1
+Z:Transcribed from the Alawon Cymru score (the site's MIDI plays only the melody)
 %%alawon-reviewed
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
@@ -11,11 +10,11 @@ M:4/4
 L:1/8
 Q:1/4=90
 K:G
-"G"G4 B3 c | "D"d4 A4 | "Em"G4 G3 A | "Bm"B4 F4 |
-"C"E4 E2 F2 | "G"G4 B4 | "D"A2 d2 "A"f2 e2 | "D"d8 |
-"G"G4 B3 c | "D"d4 A4 | "Em"G4 G3 A | "Bm"B4 F4 |
-"C"E4 E2 F2 | "G"G4 "C"G2 A2 | "G"B2 d2 "D"F2 A2 | "G"G8 ||
-"Em"e4 B2 d2 | "Am"c4 A4 | "D"d6 c2 | "G"B4 G4 |
-"Em"B4 A2 G2 | "D"A4 d4 | "A"e4 f2 g2 | "D"f4 d4 |
-"G"G4 B3 c | "D"d4 A4 | "Em"G4 G3 A | "Bm"B4 F4 |
-"C"E4 E2 F2 | "G"G4 G2 A2 | "G"B2 d2 "D"F2 A2 | "G"G8 |]
+"G"G2 B2 d2 G2 | "D"F2 A2 d2 F2 | "Em"E2 G2 B2 E2 | "Bm"D2 F2 B2 D2 |
+"C"C2 E2 G2 C2 | "G"B,2 D2 G2 B2 | "D"A2 d2 "A"f2 e2 | "D"[Fd]2 e2 d2 c2 |
+"G"G2 B2 d2 G2 | "D"F2 A2 d2 F2 | "Em"E2 G2 B2 E2 | "Bm"D2 F2 B2 D2 |
+"C"C2 E2 G2 C2 | "G"B,2 D2 "C"E2 A2 | "G"G4 "D"F4 | "G"G4 G4 ||
+"Em"B2 c2 B2 E2 | "Am"A2 G2 F2 E2 | "D"F2 G2 F2 D2 | "G"G2 F2 E2 D2 |
+"Em"B,2 E2 F2 G2 | "D"F2 D2 F2 A2 | "A"E2 A2 e2 A2 | "D"d2 c2 B2 A2 |
+"G"G2 B2 d2 G2 | "D"F2 A2 d2 F2 | "Em"E2 G2 B2 E2 | "Bm"D2 F2 B2 D2 |
+"C"C2 G2 E2 C2 | "G"B,2 G2 E2 A2 | "G"G4 "D"B2 A2 | "G"G4 G4 |]

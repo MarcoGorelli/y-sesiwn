@@ -1,6 +1,7 @@
 """The site itself, in a headless browser: every tune draws, the searches find what
 they should, and the chords, map, phone layout, offline copy and microphone work."""
 import math
+import os
 import random
 import re
 import struct
@@ -1867,7 +1868,11 @@ def test_new_version_straight_away(browser, site):
         page.goto(site)
         # Polled on a timer: this page gets no animation frames, which wait_for_function polls on by default.
         page.wait_for_function("navigator.serviceWorker.controller !== null", polling=100, timeout=30000)
+        saved_at = app.stat().st_mtime
         app.write_text(original + "\nwindow.newVersion = true;\n", encoding="utf-8")  # a deploy
+        # The test server's "last modified" is to the second: written in the same second
+        # as the copy just saved, the server would answer "not modified".
+        os.utime(app, (saved_at + 2, saved_at + 2))
         page.goto(site + "?set=5A3V~h&n=Nos%20Iau")
         page.wait_for_selector(".set-list li", state="attached")
         assert page.evaluate("window.newVersion") is True

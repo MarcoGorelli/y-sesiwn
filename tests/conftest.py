@@ -49,6 +49,14 @@ def site(worker_id, tmp_path_factory):
         def log_message(self, *args):
             pass
 
+        def end_headers(self):
+            # Without it, the browser guesses how long a file stays fresh from its "last
+            # modified" time, and may reuse a file it holds without asking the service
+            # worker (a "last modified" in the future, after the clock steps back, counts
+            # as fresh): the tests would see the browser's cache, not the site's.
+            self.send_header("Cache-Control", "no-cache")
+            super().end_headers()
+
     handler = functools.partial(Quiet, directory=str(build_site.OUT))
     server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()

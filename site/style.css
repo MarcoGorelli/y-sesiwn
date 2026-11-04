@@ -298,6 +298,15 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .js .static { display: none; }
 .js main > .loading { animation: loading-shows .3s ease-in .6s both; }
 @keyframes loading-shows { from { opacity: 0; } }
+/* Under it, a strip of carthen going through the loom: its weave slides along, one repeat
+   (24px at 7px tall) a turn, while it waits. Still under reduced motion. */
+.js main > .loading::after {
+  content: ""; display: block; width: 6rem; height: 7px; margin-top: .6rem;
+  background: var(--carthen) repeat-x 0 center / auto 7px;
+  animation: on-the-loom 1.2s linear infinite;
+}
+@keyframes on-the-loom { to { background-position-x: 24px; } }
+@media (prefers-reduced-motion: reduce) { .js main > .loading::after { animation: none; } }
 .caption { font-size: .9rem; }
 .lead { font-size: 1.1rem; max-width: 40rem; }  /* about 70 characters a line */
 
@@ -1055,6 +1064,8 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .setlists h3 { margin: 1.25rem 0 .4rem; font-size: 1rem; }
 .setlists ol, .setlists ul, .setlist { padding-left: 1.5rem; }
 .setlists li, .setlist li { padding: .15rem 0; }
+.setlists .more-list { margin: .2rem 0 0 1.5rem; }  /* under the list's names, past the bullets or numbers */
+.setlists .more-list .link-button { margin: 0; font-size: inherit; }
 .send-setlist { margin-top: 1.25rem; }
 .send-setlist > summary { color: var(--link); text-decoration: underline; width: fit-content; }
 .send-setlist > summary::before { display: none; }

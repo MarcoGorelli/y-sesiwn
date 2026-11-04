@@ -147,6 +147,8 @@ const state = {
   practice: savedPractice("practice", { tab: "none", countIn: false, click: false, chordsOnScore: false, open: null, tabKnown: false, heard: 0, versionsSeen: false,
     timesThrough: 1 }),
   browseOpen: { types: false, keys: false },  // Browse's More types / More keys, once opened
+  nightsOpen: new Set(),  // the sessions whose earlier nights have been opened (setlistsParts)
+  mostShown: new Map(),  // session id -> how many of its most played tunes are shown, once more are (setlistsParts)
   lang: savedLang(),    // "cy" or "en", for the whole site (tune names and the tunes' own notes stay as written)
   musicSize: savedSize(),  // the music's size, an index into SIZES (1: as drawn)
   redrawScore: null,    // draws the open tune's score again (for printing, see "beforeprint")
@@ -5657,19 +5659,78 @@ const setlistTune = (tune) => (tune.tune
   ? el("a", { href: tuneUrl(tune.tune, tune.version), "data-route": true }, tuneName(tune.tune, tune.name))
   : [tune.name, el("span", { class: "caption" }, tr(" (not on Y Sesiwn yet)", " (ddim ar Y Sesiwn eto)"))]);
 
+const RECENT_NIGHTS = 5;  // nights shown before "Earlier nights"
+const MOST_SHOWN = 5;  // most played tunes shown at first, and how many more "More tunes" shows
+
 // A session's setlists: the tunes played there most (once it has a few), then each night's.
 // A night is { date, tunes } (or, in the archive, { date, count }).
 function setlistsParts(id, { setlists, most }, heading = el("h2", { class: "section-heading" }, tr("Tunes played here", "Alawon a chwaraewyd yma"))) {
   const count = (night) => night.count ?? night.tunes.length;
+  const listId = (what) => `${what}-${id}`;
+
+  // The most played: the first few, then "More tunes" shows a few more each time (not leaving
+  // one or two: a button in place of two lines saves nothing), and "Fewer tunes" goes back.
+  // How many are shown stays when the page is drawn again (in the other language, say).
+  const mostList = el("ol", { class: "most-played", id: listId("most") }, most.map((tune) => el("li", {}, setlistTune(tune),
+    el("span", { class: "caption" }, tr(` · ${tune.nights} of ${setlists.length} nights`, ` · ${tune.nights} o'r ${setlists.length} noson`)))));
+  const mostShown = () => state.mostShown.get(id) ?? MOST_SHOWN;
+  const showMost = (n) => {
+    state.mostShown.set(id, n >= most.length - 2 ? most.length : n);
+    foldMost();
+  };
+  const moreTunes = el("button", { type: "button", class: "link-button", "aria-controls": listId("most"), onclick: () => {
+    const from = mostShown();
+    showMost(from + MOST_SHOWN);
+    // On to the first of them; a tune not on the site has no link: the button, or the one left.
+    (mostList.children[from].querySelector("a") ?? (moreTunes.isConnected ? moreTunes : fewerTunes)).focus();
+  } });
+  const fewerTunes = el("button", { type: "button", class: "link-button", "aria-controls": listId("most"), onclick: () => {
+    showMost(MOST_SHOWN);
+    // The button that's left has moved up past the tunes folded away: into sight, and focused.
+    moreTunes.focus();
+    moreTunes.scrollIntoView({ block: "nearest" });
+  } }, tr("Fewer tunes", "Llai o alawon"));
+  const mostMore = el("p", { class: "more-list" });
+  const foldMost = () => {
+    const n = mostShown(), left = most.length - n;
+    [...mostList.children].forEach((li, i) => { li.hidden = i >= n; });
+    moreTunes.textContent = tr(`More tunes (${left})`, `Rhagor o alawon (${left})`);
+    mostMore.replaceChildren(...(left ? [moreTunes] : []), ...(left && n > MOST_SHOWN ? [" · "] : []),
+      ...(n > MOST_SHOWN ? [fewerTunes] : []));
+  };
+  const mostFolds = most.length > MOST_SHOWN + 2;
+  if (mostFolds) foldMost();
+
+  // The latest few nights; the earlier ones behind "Earlier nights", as Browse's More keys
+  // (not for one or two). Opened, they stay open (when the page is drawn again), until
+  // "Fewer nights" folds them away again.
+  const earlier = setlists.length > RECENT_NIGHTS + 2 ? setlists.length - RECENT_NIGHTS : 0;
+  const nights = el("ul", { class: "nights", id: listId("nights") }, setlists.map((night) => el("li", {},
+    el("a", { href: setlistUrl(id, night.date), "data-route": true }, nightLabel(night.date)),
+    el("span", { class: "caption" }, tr(` · ${count(night)} tune${count(night) === 1 ? "" : "s"}`, ` · ${count(night)} alaw`)))));
+  const toggle = el("button", { type: "button", class: "link-button", "aria-controls": listId("nights"), onclick: () => {
+    const open = !state.nightsOpen.has(id);
+    if (open) state.nightsOpen.add(id); else state.nightsOpen.delete(id);
+    foldNights();
+    // Opened, on to the first of the earlier nights; folded, the button stays focused but
+    // has moved up past them, so it's brought back into sight.
+    if (open) nights.children[RECENT_NIGHTS].querySelector("a").focus();
+    else toggle.scrollIntoView({ block: "nearest" });
+  } });
+  const foldNights = () => {
+    const open = state.nightsOpen.has(id);
+    [...nights.children].forEach((li, i) => { li.hidden = !open && i >= RECENT_NIGHTS; });
+    toggle.setAttribute("aria-expanded", open);
+    toggle.textContent = open ? tr("Fewer nights", "Llai o nosweithiau") : tr(`Earlier nights (${earlier})`, `Nosweithiau cynt (${earlier})`);
+  };
+  if (earlier) foldNights();
+
   return [
     heading,
-    most.length ? [el("h3", {}, tr("Most played", "Yr alawon a chwaraeir amlaf")),
-      el("ol", { class: "most-played" }, most.map((tune) => el("li", {}, setlistTune(tune),
-        el("span", { class: "caption" }, tr(` · ${tune.nights} of ${setlists.length} nights`, ` · ${tune.nights} o'r ${setlists.length} noson`)))))] : null,
+    most.length ? [el("h3", {}, tr("Most played", "Yr alawon a chwaraeir amlaf")), mostList, mostFolds ? mostMore : null] : null,
     el("h3", {}, tr("Night by night", "Noson wrth noson")),
-    el("ul", { class: "nights" }, setlists.map((night) => el("li", {},
-      el("a", { href: setlistUrl(id, night.date), "data-route": true }, nightLabel(night.date)),
-      el("span", { class: "caption" }, tr(` · ${count(night)} tune${count(night) === 1 ? "" : "s"}`, ` · ${count(night)} alaw`))))),
+    nights,
+    earlier ? el("p", { class: "more-list" }, toggle) : null,
   ];
 }
 

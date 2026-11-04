@@ -3199,6 +3199,63 @@ def test_setlists(page, site):
 
 
 
+def test_earlier_nights_folded(page):
+    # A session with many nights shows the latest five; the rest wait behind "Earlier nights",
+    # which opens them in place, moves on to the first of them, and stays open; "Fewer nights"
+    # folds them away again.
+    nights = [{"date": f"2026-{m:02d}-{d:02d}", "tunes": [{"name": "Drowsy Maggie"}]}
+              for m, d in [(10, 20), (10, 13), (10, 6), (9, 29), (9, 22), (9, 15), (9, 8), (9, 1), (8, 25)]]
+    page.route("**/sesiynau/chapter-cardiff-tuesday/setlists.json",
+               lambda route: route.fulfill(json={"setlists": nights, "most": []}))
+    page.goto_site("sesiynau/chapter-cardiff-tuesday/")
+    page.wait_for_selector(".setlists .nights")
+    shown = page.locator(".setlists .nights li:visible")
+    assert shown.count() == 5
+    assert shown.nth(4).inner_text() == "Tuesday 22 September 2026 · 1 tune"
+    toggle = page.locator(".setlists .nights + .more-list button")
+    assert toggle.get_attribute("aria-expanded") == "false"
+    toggle.click()
+    assert shown.count() == 9 and toggle.inner_text() == "Fewer nights" and toggle.get_attribute("aria-expanded") == "true"
+    assert page.evaluate("document.activeElement.getAttribute('href')") == "sesiynau/chapter-cardiff-tuesday/2026-09-15/"
+    page.click(".lang-switch [data-lang=cy]")  # drawn again: still open
+    page.wait_for_function("document.querySelector('.setlists h3:last-of-type')?.textContent === 'Noson wrth noson'")
+    assert shown.count() == 9
+    page.click(".lang-switch [data-lang=en]")
+    page.click(".more-list button:has-text('Fewer nights')")
+    assert shown.count() == 5 and toggle.inner_text() == "Earlier nights (4)"
+    assert page.evaluate("document.activeElement === document.querySelector('.nights + .more-list button')")
+
+
+def test_most_played_a_few_at_a_time(page):
+    # The tunes played most at a session: the first five, then "More tunes" shows five more
+    # each time (taking the last one or two with it, rather than leaving them), moving on to
+    # the first of them; how many are shown stays when the page is drawn again; "Fewer tunes"
+    # goes back to five.
+    nights = [{"date": f"2026-10-{d:02d}", "tunes": [{"name": "Drowsy Maggie"}]} for d in (20, 13, 6)]
+    most = [{"name": f"Tune {i}", "nights": 3} for i in range(17)]
+    most[5] = {"tune": "glandyfi", "name": "Glandyfi", "nights": 3}
+    page.route("**/sesiynau/chapter-cardiff-tuesday/setlists.json",
+               lambda route: route.fulfill(json={"setlists": nights, "most": most}))
+    page.goto_site("sesiynau/chapter-cardiff-tuesday/")
+    page.wait_for_selector(".setlists .most-played")
+    shown = page.locator(".most-played li:visible")
+    more = page.locator(".most-played + .more-list")
+    assert shown.count() == 5 and more.inner_text() == "More tunes (12)"
+    more.locator("button").click()
+    assert shown.count() == 10 and more.inner_text() == "More tunes (7) · Fewer tunes"
+    assert page.evaluate("document.activeElement.textContent") == "Glandyfi"
+    page.click(".more-list button:has-text('More tunes')")  # 5 more would leave 2: all of them
+    assert shown.count() == 17 and more.inner_text() == "Fewer tunes"
+    assert page.evaluate("document.activeElement.textContent") == "Fewer tunes"  # Tune 10 has no page
+    page.click(".lang-switch [data-lang=cy]")  # drawn again: as many shown
+    page.wait_for_function("document.querySelector('.setlists h3')?.textContent === 'Yr alawon a chwaraeir amlaf'")
+    assert shown.count() == 17 and more.inner_text() == "Llai o alawon"
+    page.click(".lang-switch [data-lang=en]")
+    page.click(".more-list button:has-text('Fewer tunes')")
+    assert shown.count() == 5 and more.inner_text() == "More tunes (12)"
+    assert page.evaluate("document.activeElement.textContent") == "More tunes (12)"
+
+
 def test_a_nights_tunes_play(page):
     # On a night's page each tune has its opening, and a Play for the whole tune in the key and at
     # the tempo chosen, so many times through; no more of the music than that.
@@ -3269,6 +3326,20 @@ def test_archive(page, site):
     page.click(".setlists .nights a >> nth=0")
     page.wait_for_selector("ol.setlist")
     assert page.url == site + "sesiynau/chapter-cardiff-tuesday/2026-10-20/"
+
+def test_archive_most_played_a_few_at_a_time(page):
+    # In the archive too, each session's tunes played most start with five, and show more as asked.
+    most = [{"name": f"Tune {i}", "nights": 3} for i in range(17)]
+    sessions = [{"id": "chapter-cardiff-tuesday", "name": "Noson Lawen", "venue": "Chapter", "town": "Cardiff", "town_cy": "Caerdydd", "active": True,
+                 "setlists": [{"date": "2026-10-20", "count": 5}, {"date": "2026-10-13", "count": 4}, {"date": "2026-10-06", "count": 4}],
+                 "most": most}]
+    page.route("**/archif/archif.json", lambda route: route.fulfill(json={"sessions": sessions}))
+    page.goto_site("archif/")
+    page.wait_for_selector(".setlists .most-played")
+    assert page.locator(".most-played li:visible").count() == 5
+    page.click(".most-played + .more-list button:has-text('More tunes (12)')")
+    assert page.locator(".most-played li:visible").count() == 10
+
 
 def test_send_a_setlist(page):
     # Every session's page asks for a night's tunes; the email says which session.

@@ -1356,7 +1356,8 @@ def sessions_page(template: str, sessions: list[dict], setlists: dict[str, dict]
 
 
 # A session's page lists the tunes played most there, once it has MOST_PLAYED_FROM setlists:
-# up to MOST_PLAYED of them, each played on at least two nights.
+# every one played on at least two nights (the app shows a few, and more as asked), and on
+# the page as written (for search engines) the first MOST_PLAYED.
 MOST_PLAYED, MOST_PLAYED_FROM = 10, 3
 
 
@@ -1456,8 +1457,8 @@ def setlist_key(own: dict | None, key: str | None, where: str) -> dict:
 
 def most_played(nights: list[dict]) -> list[dict]:
     """The tunes played on the most nights (each night counted once), most first, then A to
-    Z, each with how many: up to MOST_PLAYED, once there are MOST_PLAYED_FROM nights, and
-    only those played on two nights or more."""
+    Z, each with how many: once there are MOST_PLAYED_FROM nights, and only those played on
+    two nights or more."""
     if len(nights) < MOST_PLAYED_FROM:
         return []
     counts, tunes = {}, {}
@@ -1466,7 +1467,7 @@ def most_played(nights: list[dict]) -> list[dict]:
             counts[key] = counts.get(key, 0) + 1
             tunes.setdefault(key, {k: tune[k] for k in ("tune", "name") if k in tune})
     ranked = sorted((k for k in counts if counts[k] > 1), key=lambda k: (-counts[k], normalize(tunes[k]["name"])))
-    return [{**tunes[k], "nights": counts[k]} for k in ranked[:MOST_PLAYED]]
+    return [{**tunes[k], "nights": counts[k]} for k in ranked]
 
 
 def setlist_link(tune: dict) -> str:
@@ -1487,7 +1488,8 @@ def setlists_html(sid: str, kept: dict, heading: str = "<h2>Tunes played here</h
         for night in kept["setlists"]) + "</ul>")
 
 
-# The archive lists the tunes played most at each session: its first few.
+# The archive's page as written (for search engines) lists the tunes played most at each
+# session: its first few. The app has them all, as on the session's page, and shows more as asked.
 ARCHIVE_MOST = 5
 
 
@@ -1501,7 +1503,7 @@ def archive_page(template: str, active: dict[str, dict], setlists: dict[str, dic
     order = sorted(setlists, key=lambda sid: setlists[sid]["setlists"][0]["date"], reverse=True)
     sessions = [{**about(sid), "active": sid in active,
                  "setlists": [{"date": n["date"], "count": len(n["tunes"])} for n in setlists[sid]["setlists"]],
-                 "most": setlists[sid]["most"][:ARCHIVE_MOST]} for sid in order]
+                 "most": setlists[sid]["most"]} for sid in order]
     (OUT / ARCHIVE_DIR).mkdir(parents=True, exist_ok=True)
     (OUT / ARCHIVE_DIR / "archif.json").write_text(json.dumps({"sessions": sessions}, ensure_ascii=False, separators=(",", ":")),
                                                    encoding="utf-8")

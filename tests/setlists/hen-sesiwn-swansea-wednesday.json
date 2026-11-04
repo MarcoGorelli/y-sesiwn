@@ -3,6 +3,6 @@
   "town": "Swansea",
   "town_cy": "Abertawe",
   "setlists": [
-    {"date": "2025-03-12", "tunes": ["ffarwel-i-aberystwyth", "y-gelynnen"]}
+    {"date": "2025-03-12", "tunes": [{"tune": "ffarwel-i-aberystwyth", "key": "D minor"}, {"tune": "y-gelynnen", "key": "G major"}]}
   ]
 }

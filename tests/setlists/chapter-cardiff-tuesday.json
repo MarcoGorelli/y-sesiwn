@@ -1,7 +1,16 @@
 {
   "setlists": [
-    {"date": "2026-10-06", "tunes": ["glandyfi", "y-derwydd", "llwyn-onn", {"name": "Drowsy Maggie"}]},
-    {"date": "2026-10-20", "tunes": ["y-derwydd", {"tune": "glandyfi", "key": "A"}, "hela-r-ysgyfarnog", "calon-lan", {"name": "Drowsy Maggie"}]},
-    {"date": "2026-10-13", "tunes": ["glandyfi", "dafydd-y-garreg-wen", {"name": "drowsy maggie"}, "glandyfi"]}
+    {"date": "2026-10-06", "tunes": [
+      {"tune": "glandyfi", "key": "G major"}, {"tune": "y-derwydd", "key": "D major"}, {"tune": "llwyn-onn", "key": "G major"},
+      {"name": "Drowsy Maggie"}
+    ]},
+    {"date": "2026-10-20", "tunes": [
+      {"tune": "y-derwydd", "key": "D major"}, {"tune": "glandyfi", "key": "A"}, {"tune": "hela-r-ysgyfarnog", "key": "C major"},
+      {"tune": "calon-lan", "key": "G major"}, {"name": "Drowsy Maggie"}
+    ]},
+    {"date": "2026-10-13", "tunes": [
+      {"tune": "glandyfi", "key": "G major"}, {"tune": "dafydd-y-garreg-wen", "key": "A minor"}, {"name": "drowsy maggie"},
+      {"tune": "glandyfi", "key": "G major"}
+    ]}
   ]
 }

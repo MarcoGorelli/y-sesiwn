@@ -17,13 +17,13 @@ session's address: `sesiynau/chapter-cardiff-tuesday/` is `chapter-cardiff-tuesd
 ```
 
 - `date`: the night, which must be a day the session meets (from `sessions.json`).
-- `tunes`: in the order played. Each is a folder in `tunes/` with the key it was played
-  in, or `{"name": "…"}` for a tune that isn't on the site. A folder that's been renamed
-  since still works (through `moved.json`).
-- `key`: written like the key menu on the tune's page: `"A major"`, `"E minor"`,
-  `"D Dorian"` (or just `"A"`), in the tune's own mode. Leave it out (or write the folder
-  alone, `"glandyfi"`) for the tune's own key. A night's page starts each tune's Play in
-  this key.
+- `tunes`: in the order played. Each is `{"tune": …, "key": …}`, or `{"name": "…"}` for a
+  tune that isn't on the site.
+- `tune`: the folder in `tunes/` of the version played (`glandyfi-version-2`, say). A
+  folder that's been renamed since still works (through `moved.json`).
+- `key`: the key it was played in, written like the key menu on the tune's page:
+  `"A major"`, `"E minor"`, `"D Dorian"` (or just `"A"`), in that version's own mode.
+  Every tune needs one; a night's page starts each tune's Play in it.
 - Add each new night to the list. Their order doesn't matter: the site shows the newest first.
 
 Each night gets its own page (`sesiynau/<id>/<date>/`), and the session's page lists them

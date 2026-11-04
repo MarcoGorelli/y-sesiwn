@@ -1,0 +1,42 @@
+{
+  "setlists": [
+    {"date": "2026-08-26", "tunes": [
+      {"tune": "ty-a-gardd", "key": "G major"},
+      {"tune": "doed-a-ddel", "key": "D major"},
+      {"tune": "bwlch-llanberis", "key": "G major"},
+      {"tune": "bunsen", "key": "G major"},
+      {"tune": "morgawr", "key": "D Mixolydian"},
+      {"tune": "sling-swing", "key": "D major"},
+      {"tune": "y-crwtyn-llwyd", "key": "E minor"},
+      {"tune": "y-ceiliog-du", "key": "D major"},
+      {"tune": "hel-y-sgwarnog", "key": "D major"},
+      {"tune": "nyth-y-gog", "key": "E minor"},
+      {"tune": "difyrrwch-gwyr-dyfi", "key": "E minor"},
+      {"tune": "machynlleth", "key": "G major"},
+      {"tune": "dwr-glan", "key": "G minor"},
+      {"tune": "nos-fercher", "key": "D major"},
+      {"tune": "y-lili", "key": "D major"},
+      {"tune": "glan-meddwdod-mwyn", "key": "D major"},
+      {"tune": "ty-crwn", "key": "D major"},
+      {"tune": "chwi-fechgyn-glan-ffri", "key": "D major"},
+      {"tune": "ceffylyn-rhygyngog", "key": "A major"},
+      {"tune": "y-delyn-newydd", "key": "D major"},
+      {"tune": "morfa-r-frenhines", "key": "E minor"},
+      {"tune": "hoffedd-ap-hywel", "key": "G major"},
+      {"tune": "gyrru-r-byd-o-m-blaen", "key": "A minor"},
+      {"tune": "tri-a-chwech", "key": "D major"},
+      {"tune": "coleg-y-brifysgol-abertawe", "key": "D minor"},
+      {"tune": "llongau-caernarfon", "key": "E minor"},
+      {"tune": "gwyngalch-morgannwg", "key": "D major"},
+      {"tune": "tom-jones", "key": "D major"},
+      {"tune": "jig-y-goeden-dan", "key": "E Dorian"},
+      {"tune": "byth-adre", "key": "A major"},
+      {"tune": "rachel-dafydd-ifan", "key": "A major"},
+      {"tune": "diferiad-y-gerwyn", "key": "D major"},
+      {"tune": "walts-trefforest", "key": "G major"},
+      {"tune": "ymdeithdon-gwyr-hirwaun", "key": "G major"},
+      {"tune": "cawl-cennin", "key": "D major"},
+      {"tune": "y-derwydd", "key": "D major"}
+    ]}
+  ]
+}

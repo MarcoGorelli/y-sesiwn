@@ -205,7 +205,7 @@ def test_details(page):
     assert link.get_attribute("href") == "https://trillian.mit.edu/~jc/music/abc/mirror/BrianMartin/msg/welsh_tunes_1.abc"
     assert "Transcribed by Brian Martin" not in page.locator(".card dl").inner_text()
     # With nothing to say that isn't said elsewhere on the page, no empty Details card.
-    page.goto_site("alaw/ceffylyn-rhygyngog/")
+    page.goto_site("alaw/difyrrwch-y-capten/")
     page.wait_for_selector(".tune-side")
     assert page.locator(".tune-side .card h2:text-is('Details')").count() == 0
 

@@ -1363,9 +1363,9 @@ MOST_PLAYED, MOST_PLAYED_FROM = 10, 3
 def setlist_data(sessions: list[dict], tunes: list[dict], moved: list[dict], today: "date | None" = None) -> dict[str, dict]:
     """setlists/<session id>.json, checked: the tunes played at a session, on each night
     someone sent them in, by session id. Each night is {"date": "2026-10-20", "tunes": [...]},
-    each tune a folder in tunes/ (a renamed one's old name finds it, through moved.json),
-    or {"tune": "glandyfi", "key": "A major"} with the key it was played in (setlist_key),
-    or {"name": "Drowsy Maggie"} for one that isn't on the site. A session that's no longer
+    each tune {"tune": "glandyfi", "key": "A major"}: the version played (its folder in tunes/;
+    a renamed one's old name finds it, through moved.json) and the key it was played in
+    (setlist_key), or {"name": "Drowsy Maggie"} for one that isn't on the site. A session that's no longer
     in sessions.json (stopped, or moved to another day: a new id) keeps its setlists if the
     file says where it was: venue and town (and name, town_cy and kind, if it had them).
     Each session's come with its nights, newest first, each tune with its name, and the
@@ -1376,7 +1376,6 @@ def setlist_data(sessions: list[dict], tunes: list[dict], moved: list[dict], tod
     moved_to = {m["from"]: m["to"] for m in moved}
     by_slug = {t["slug"]: t for t in tunes}
     names = {t["group"]: t["base"] for t in tunes if t["shown"] == 1}
-    keys = {t["group"]: t["key"] for t in tunes if t["shown"] == 1}
     folder = ROOT / SETLISTS_DIR
     result = {}
     for path in sorted(folder.glob("*.json")) if folder.is_dir() else []:
@@ -1410,13 +1409,16 @@ def setlist_data(sessions: list[dict], tunes: list[dict], moved: list[dict], tod
                 if isinstance(tune, dict) and isinstance(tune.get("name"), str) and tune["name"].strip() and len(tune) == 1:
                     played.append({"name": tune["name"].strip()})
                     continue
-                slug, key = (tune, None) if isinstance(tune, str) else (tune.get("tune"), tune.get("key")) \
-                    if isinstance(tune, dict) and set(tune) <= {"tune", "key"} else (None, None)
+                slug, key = (tune.get("tune"), tune.get("key")) if isinstance(tune, dict) and set(tune) <= {"tune", "key"} else (None, None)
                 if isinstance(slug, str) and moved_to.get(slug, slug) in by_slug:
-                    group = by_slug[moved_to.get(slug, slug)]["group"]
-                    played.append({"tune": group, "name": names[group], **setlist_key(keys[group], key, f"{on}, {names[group]}")})
+                    version = by_slug[moved_to.get(slug, slug)]
+                    group = version["group"]
+                    if key is None and version["key"]:
+                        raise SystemExit(f'{on}, {names[group]}: no key (the key it was played in: "key": "{version["key"]["root"]} {version["key"]["modeName"]}", say)')
+                    played.append({"tune": group, **({"version": version["version"]} if version["shown"] != 1 else {}),
+                                   "name": names[group], **setlist_key(version["key"], key, f"{on}, {names[group]}")})
                 else:
-                    raise SystemExit(f'{on}: no tune {tune!r} (a folder in tunes/; for a tune that isn\'t on the site, write {{"name": "…"}})')
+                    raise SystemExit(f'{on}: no tune {tune!r} (write {{"tune": "<a folder in tunes/>", "key": "…"}}, or {{"name": "…"}} for a tune that isn\'t on the site)')
             kept.append({"date": day, "tunes": played})
         kept.sort(key=lambda k: k["date"], reverse=True)
         result[sid] = {
@@ -1432,9 +1434,9 @@ MODE_WORDS = {"": None, "m": "minor", "min": "minor", "minor": "minor", "maj": "
 
 
 def setlist_key(own: dict | None, key: str | None, where: str) -> dict:
-    """The key a tune was played in, as its page's key menu says it ("A major", "E Dorian"),
-    and how far that is from the tune's own (-5 … +6 semitones, as on its page): its own
-    key if none is given. Written "A", "Am", "A minor" or "A Dorian": in the tune's own mode."""
+    """The key a version was played in, as its page's key menu says it ("A major", "E Dorian"),
+    and how far that is from the version's own (-5 … +6 semitones, as on its page). Written
+    "A", "Am", "A minor" or "A Dorian": in the version's own mode."""
     if own is None:
         if key is not None:
             raise SystemExit(f"{where}: this tune has no key (no K: line to move from)")
@@ -1468,8 +1470,11 @@ def most_played(nights: list[dict]) -> list[dict]:
 
 
 def setlist_link(tune: dict) -> str:
-    """A tune in a setlist, for the static pages: its page, or its name if it isn't on the site."""
-    return f'<a href="{TUNE_DIR}/{tune["tune"]}/">{esc(tune["name"])}</a>' if "tune" in tune else esc(tune["name"])
+    """A tune in a setlist, for the static pages: its page (at the version played), or its name if it isn't on the site."""
+    if "tune" not in tune:
+        return esc(tune["name"])
+    return f'<a href="{TUNE_DIR}/{tune["tune"]}/' + (f'?v={tune["version"]}' if "version" in tune else "") + f'">{esc(tune["name"])}</a>'
+
 
 
 def setlists_html(sid: str, kept: dict, heading: str = "<h2>Tunes played here</h2>", most_played: int = MOST_PLAYED) -> str:

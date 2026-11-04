@@ -5652,9 +5652,9 @@ function loadSetlists(id) {
 const nightLabel = (day) => dateLabel(dateOf(day), { weekday: "long", day: "numeric", month: "long", year: "numeric" })
   .replace(",", "").replace(/^./, (c) => c.toUpperCase());
 
-// A tune in a setlist: its page, or its name alone if it isn't on the site.
+// A tune in a setlist: its page (at the version played), or its name alone if it isn't on the site.
 const setlistTune = (tune) => (tune.tune
-  ? el("a", { href: tuneUrl(tune.tune), "data-route": true }, tuneName(tune.tune, tune.name))
+  ? el("a", { href: tuneUrl(tune.tune, tune.version), "data-route": true }, tuneName(tune.tune, tune.name))
   : [tune.name, el("span", { class: "caption" }, tr(" (not on Y Sesiwn yet)", " (ddim ar Y Sesiwn eto)"))]);
 
 // A session's setlists: the tunes played there most (once it has a few), then each night's.
@@ -5745,7 +5745,8 @@ function sendSetlistForm(session) {
 // it), as many times through as the page says. No more of the music than that, so a night's
 // forty tunes don't crowd the page.
 function nightTune(item) {
-  const tune = state.groups.get(item.tune)?.versions[0];
+  const versions = state.groups.get(item.tune)?.versions;
+  const tune = versions?.find((v) => v.version === item.version) ?? versions?.[0];
   if (!tune) return setlistTune(item);
   const chosen = { key: item.shift ?? 0, bpm: keptSettings(tune).bpm };
   const paper = el("div", { class: "preview-score hide-chords" });

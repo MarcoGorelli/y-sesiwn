@@ -672,14 +672,15 @@ def test_setlists(site):
     page = (out / "sesiynau" / "chapter-cardiff-tuesday" / "index.html").read_text(encoding="utf-8")
     assert '<li><a href="alaw/glandyfi/">Glandyfi</a>: 3 of 3 nights</li>' in page
     assert '<a href="sesiynau/chapter-cardiff-tuesday/2026-10-20/">Tuesday 20 October 2026</a>: 5 tunes' in page
-    # Each tune with the key it was played in: its own, unless the setlist says.
-    assert kept["setlists"][0]["tunes"][:2] == [{"tune": "y-derwydd", "name": "Y Derwydd", "key": "D major", "shift": 0},
-                                                {"tune": "glandyfi", "name": "Glandyfi", "key": "A major", "shift": 2}]
+    # Each tune with the key it was played in,
+    # and the version played (glandyfi/ is the third version of Glandyfi shown on its page).
+    assert kept["setlists"][0]["tunes"][:2] == [{"tune": "y-derwydd", "version": 1, "name": "Y Derwydd", "key": "D major", "shift": 0},
+                                                {"tune": "glandyfi", "version": 1, "name": "Glandyfi", "key": "A major", "shift": 2}]
     night = (out / "sesiynau" / "chapter-cardiff-tuesday" / "2026-10-20" / "index.html").read_text(encoding="utf-8")
     assert '<base href="../../../">' in night
     assert "<title>Tunes played at Noson Lawen: Folk in the Bar, Chapter, Cardiff, Tuesday 20 October 2026 · Y Sesiwn</title>" in night
     assert "Yr alawon a chwaraewyd yng Nghaerdydd ar 20 Hydref 2026." in night and "<li>Drowsy Maggie</li>" in night
-    assert '<li><a href="alaw/glandyfi/">Glandyfi</a> (A major)</li>' in night
+    assert '<li><a href="alaw/glandyfi/?v=1">Glandyfi</a> (A major)</li>' in night
     # A session that's stopped keeps a page, with its setlists.
     past = (out / "sesiynau" / "hen-sesiwn-swansea-wednesday" / "index.html").read_text(encoding="utf-8")
     assert "<title>Session at Yr Hen Sesiwn, Swansea · Y Sesiwn</title>" in past and "no longer running" in past
@@ -709,12 +710,14 @@ def test_real_setlists(site, monkeypatch):
 
 @pytest.mark.parametrize("change, says", [
     ({"setlists": []}, "no setlists"),
-    ({"setlists": [{"date": "20/10/2026", "tunes": ["glandyfi"]}]}, "a date like"),
-    ({"setlists": [{"date": "2026-10-22", "tunes": ["glandyfi"]}]}, "that's a Thursday, and the session meets on Tuesdays"),
-    ({"setlists": [{"date": "2026-11-03", "tunes": ["glandyfi"]}]}, "still to come"),
-    ({"setlists": [{"date": "2026-10-20", "tunes": ["glandyfi"]}, {"date": "2026-10-20", "tunes": ["y-derwydd"]}]}, "two setlists"),
+    ({"setlists": [{"date": "20/10/2026", "tunes": [{"tune": "glandyfi", "key": "G"}]}]}, "a date like"),
+    ({"setlists": [{"date": "2026-10-22", "tunes": [{"tune": "glandyfi", "key": "G"}]}]}, "that's a Thursday, and the session meets on Tuesdays"),
+    ({"setlists": [{"date": "2026-11-03", "tunes": [{"tune": "glandyfi", "key": "G"}]}]}, "still to come"),
+    ({"setlists": [{"date": "2026-10-20", "tunes": [{"tune": "glandyfi", "key": "G"}]}, {"date": "2026-10-20", "tunes": [{"tune": "y-derwydd", "key": "G"}]}]}, "two setlists"),
     ({"setlists": [{"date": "2026-10-20", "tunes": []}]}, "no tunes"),
-    ({"setlists": [{"date": "2026-10-20", "tunes": ["glandyfy"]}]}, "no tune 'glandyfy'"),
+    ({"setlists": [{"date": "2026-10-20", "tunes": [{"tune": "glandyfy", "key": "G"}]}]}, "no tune"),
+    ({"setlists": [{"date": "2026-10-20", "tunes": ["glandyfi"]}]}, "no tune 'glandyfi'"),
+    ({"setlists": [{"date": "2026-10-20", "tunes": [{"tune": "glandyfi"}]}]}, "glandyfi: no key"),
     ({"setlists": [{"date": "2026-10-20", "tunes": [{"title": "Drowsy Maggie"}]}]}, "no tune"),
     ({"setlists": [{"date": "2026-10-20", "tunes": [{"tune": "glandyfi", "key": "Am"}]}]}, "'Am' is minor, and the tune is major"),
     ({"setlists": [{"date": "2026-10-20", "tunes": [{"tune": "glandyfi", "key": "H"}]}]}, 'key should be like "A major"'),
@@ -727,7 +730,7 @@ def test_setlist_mistakes(tmp_path, monkeypatch, change, says):
     monkeypatch.setattr(b, "ROOT", tmp_path)
     monkeypatch.setattr(b, "SETLISTS_DIR", "setlists")
     session = {"id": "y-llew-coch-llandeilo-tuesday", "venue": "Y Llew Coch", "town": "Llandeilo", "day": "Tuesday", "repeat": "weekly"}
-    tunes = [{"slug": slug, "group": slug, "base": slug, "shown": 1, "key": {"pitch": 7, "root": "G", "modeName": "major"}}
+    tunes = [{"slug": slug, "group": slug, "base": slug, "shown": 1, "version": 1, "key": {"pitch": 7, "root": "G", "modeName": "major"}}
              for slug in ("glandyfi", "y-derwydd")]
     with pytest.raises(SystemExit, match=says):
         b.setlist_data([session], tunes, [], date(2026, 11, 2))
@@ -739,17 +742,17 @@ def test_setlists_of_a_stopped_session(tmp_path, monkeypatch):
     from datetime import date
     (tmp_path / "setlists").mkdir()
     path = tmp_path / "setlists" / "y-llew-coch-llandeilo-tuesday.json"
-    path.write_text(json.dumps({"setlists": [{"date": "2026-10-20", "tunes": ["glandyfi"]}]}), encoding="utf-8")
+    path.write_text(json.dumps({"setlists": [{"date": "2026-10-20", "tunes": [{"tune": "glandyfi", "key": "G"}]}]}), encoding="utf-8")
     monkeypatch.setattr(b, "ROOT", tmp_path)
     monkeypatch.setattr(b, "SETLISTS_DIR", "setlists")
-    tunes = [{"slug": "glandyfi", "group": "glandyfi", "base": "Glandyfi", "shown": 1, "key": None}]
+    tunes = [{"slug": "glandyfi", "group": "glandyfi", "base": "Glandyfi", "shown": 1, "version": 1, "key": None}]
     with pytest.raises(SystemExit, match="no session y-llew-coch-llandeilo-tuesday in sessions.json"):
         b.setlist_data([], tunes, [], date(2026, 11, 2))
     path.write_text(json.dumps({"venue": "Y Llew Coch", "town": "Llandeilo",
-                                "setlists": [{"date": "2026-10-20", "tunes": ["glandyfi", "hen-glandyfi"]}]}), encoding="utf-8")
-    tunes.append({"slug": "glandyfi-version-2", "group": "glandyfi", "base": "Glandyfi", "shown": 2, "key": None})
+                                "setlists": [{"date": "2026-10-20", "tunes": [{"tune": "glandyfi"}, {"tune": "hen-glandyfi"}]}]}), encoding="utf-8")
+    tunes.append({"slug": "glandyfi-version-2", "group": "glandyfi", "base": "Glandyfi", "shown": 2, "version": 2, "key": None})
     kept = b.setlist_data([], tunes, [{"from": "hen-glandyfi", "to": "glandyfi-version-2"}], date(2026, 11, 2))["y-llew-coch-llandeilo-tuesday"]
-    assert kept["setlists"][0]["tunes"] == [{"tune": "glandyfi", "name": "Glandyfi"}] * 2
+    assert kept["setlists"][0]["tunes"] == [{"tune": "glandyfi", "name": "Glandyfi"}, {"tune": "glandyfi", "version": 2, "name": "Glandyfi"}]
     assert kept["session"] == {"venue": "Y Llew Coch", "town": "Llandeilo", "town_cy": "Llandeilo", "id": "y-llew-coch-llandeilo-tuesday"}
     assert kept["most"] == []  # not until there are a few nights'
 

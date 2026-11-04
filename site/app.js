@@ -5729,6 +5729,9 @@ function sendSetlistForm(session) {
   return el("details", { class: "send-setlist" },
     el("summary", {}, tr("Played here? Send us the tunes", "Wedi chwarae yma? Anfonwch yr alawon atom")),
     el("p", { class: "caption" }, tr("They'll go on this page, under the night's date.", "Byddan nhw'n mynd ar y dudalen hon, o dan ddyddiad y noson.")),
+    el("p", { class: "caption" }, tr("Or build the night as a set, picking each tune (its version and key) from the site, and send it from the set's page: ",
+      "Neu gwnewch set o'r noson, gan ddewis pob alaw (ei fersiwn a'i chywair) o'r wefan, a'i hanfon o dudalen y set: "),
+      el("a", { href: "?page=sets", "data-route": true }, tr("My sets", "Fy setiau")), "."),
     emailForm([
       field(tr("The night", "Y noson"), day),
       field(tr("The tunes, in the order they were played", "Yr alawon, yn y drefn y cawson nhw eu chwarae"), tunes,
@@ -5780,6 +5783,39 @@ function nightTune(item) {
     if (entries.some((e) => e.isIntersecting)) { seen.disconnect(); draw(); }
   }, { rootMargin: "600px" });
   seen.observe(paper);
+  return box;
+}
+
+// On a set's page: sending it as the tunes played on a night at a session, for a setlist. The
+// set's link says each tune's version and key exactly, so it goes in the email with the
+// session and the night.
+function sendSetAsNight(link, list) {
+  const session = el("select", { required: true }, el("option", { value: "" }, tr("Loading the sessions…", "Yn llwytho'r sesiynau…")));
+  const day = el("input", { type: "date", required: true });
+  const more = el("textarea", { rows: 3 });
+  const box = el("details", { class: "send-setlist" },
+    el("summary", {}, tr("Played these at a session? Send them as that night's tunes", "Wedi chwarae'r rhain mewn sesiwn? Anfonwch nhw fel alawon y noson")),
+    el("p", { class: "caption" }, tr("They'll go on the session's page, under the night's date, with each tune in its version and key here.",
+      "Byddan nhw'n mynd ar dudalen y sesiwn, o dan ddyddiad y noson, gyda phob alaw yn ei fersiwn a'i chywair yma.")),
+    emailForm([
+      field(tr("The session", "Y sesiwn"), session),
+      field(tr("The night", "Y noson"), day),
+      field(tr("Anything else (optional)", "Unrhyw beth arall (dewisol)"), more, tr("A session that isn't listed, say: where and when.", "Sesiwn sydd ddim ar y rhestr, er enghraifft: ble a phryd.")),
+    ], {
+      subject: () => `Y Sesiwn: ${tr("tunes played", "alawon a chwaraewyd")}, ${session.selectedOptions[0]?.textContent ?? ""}, ${day.value}`,
+      body: () => `${tr("Session", "Sesiwn")}: ${session.value}\n${tr("Night", "Noson")}: ${day.value}\n\n${link()}\n\n${list()}\n`
+        + (more.value.trim() ? `\n${more.value.trim()}\n` : ""),
+    }));
+  // The sessions, by town (only once it's opened: most sets are never sent).
+  box.addEventListener("toggle", () => {
+    if (!box.open || session.options.length > 1) return;
+    loadSessions().then(({ sessions }) => {
+      session.replaceChildren(el("option", { value: "" }, tr("Choose the session", "Dewiswch y sesiwn")),
+        ...[...sessions].sort((a, b) => sessionTitle(a).localeCompare(sessionTitle(b)))
+          .map((s) => el("option", { value: s.id }, sessionTitle(s))),
+        el("option", { value: "other" }, tr("Another session (say which below)", "Sesiwn arall (dywedwch pa un isod)")));
+    }, () => session.replaceChildren(el("option", { value: "other" }, tr("Couldn't load the sessions: say which below", "Methu llwytho'r sesiynau: dywedwch pa un isod"))));
+  });
   return box;
 }
 
@@ -6507,6 +6543,7 @@ function renderSet(main) {
     }));
     count.textContent = tuneCount(items.length);
     empty.hidden = items.length > 0;
+    sendNight.hidden = !items.length;
     showPlace();
   };
   // Playing through a set: jump to the next tune's music, or back, without scrolling.
@@ -6646,6 +6683,7 @@ function renderSet(main) {
   const share = shareMenu("set-share-menu", () => name, shareLink, shared, {
     copies: [[tr("Copy as a list", "Copïo fel rhestr"), tr("List copied", "Rhestr wedi'i chopïo"), tr("Copy this list:", "Copïwch y rhestr hon:"), asList]],
     qrNote: () => tr("Scan with a phone's camera to open this set.", "Sganiwch gyda chamera ffôn i agor y set hon.") });
+  const sendNight = sendSetAsNight(shareLink, asList);
   const printAll = () => { for (const paper of music.querySelectorAll(".set-paper")) paper.draw(); window.print(); };
   // Printing with the browser's own menu: draw every score first. (Gone with the page.)
   const beforePrint = () => {
@@ -6687,6 +6725,7 @@ function renderSet(main) {
       }))),
     shared,
     edit,
+    sendNight,
     music, nav,
   ].filter(Boolean));
   if (mine && state.naming === my) { state.naming = null; title.select(); }

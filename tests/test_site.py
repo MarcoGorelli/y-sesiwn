@@ -3229,6 +3229,29 @@ def test_a_nights_tunes_play(page):
     assert tune.locator("input[type=number]").input_value() == "240"
 
 
+
+def test_send_a_set_as_a_night(page):
+    # A set's page can send it as the tunes played on a night at a session: the session chosen,
+    # the night, and the set's link (each tune's version and key) in the email.
+    page.goto_site()
+    page.wait_for_function("state.complete")
+    code = page.evaluate("encodeSet([{ tune: state.groups.get('glandyfi').versions[0], key: 2 }, { tune: state.groups.get('y-derwydd').versions[0], key: 0 }])")
+    page.goto_site(f"?set={code}&n=Chapter")
+    page.wait_for_selector(".set-tune")
+    page.evaluate(CATCH_MAIL)
+    page.click(".send-setlist summary")
+    page.wait_for_selector(".send-setlist option[value='chapter-cardiff-tuesday']", state="attached")
+    page.select_option(".send-setlist select", "chapter-cardiff-tuesday")
+    page.fill(".send-setlist input[type=date]", "2026-10-27")
+    page.click(".send-setlist button[type=submit]")
+    _, subject, body = sent_mail(page)
+    assert subject == "Y Sesiwn: tunes played, Noson Lawen: Folk in the Bar, Chapter, Cardiff, 2026-10-27"
+    assert body.startswith(f"Session: chapter-cardiff-tuesday\nNight: 2026-10-27\n\nhttps://ysesiwn.cymru/?set={code}&n=Chapter\n\nChapter\n• Glandyfi")
+    # An empty set has nothing to send.
+    page.goto_site("?page=set&set=")
+    page.wait_for_selector(".set-empty")
+    assert not page.is_visible(".send-setlist")
+
 def test_archive(page, site):
     # Tunes played at sessions (archif/, in the sidebar): every session's setlists, latest first,
     # each with its tunes played most and its nights.
@@ -3247,6 +3270,8 @@ def test_send_a_setlist(page):
     page.goto_site("sesiynau/ty-tawe-swansea-friday/")
     page.wait_for_selector(".send-setlist")
     assert page.locator(".setlists h2").count() == 0  # none sent yet
+    # Or as a set, with each tune's version and key: the way there.
+    assert page.locator(".send-setlist a[href='?page=sets']").count() == 1
     page.evaluate(CATCH_MAIL)
     page.click(".send-setlist summary")
     page.fill(".send-setlist input[type=date]", "2026-10-09")

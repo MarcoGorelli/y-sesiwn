@@ -681,7 +681,7 @@ def test_tab_line(page, width):
     assert page.locator("#tab-select").bounding_box()["y"] == top
     assert page.locator(".practice-tools").evaluate("d => !d.open")
     page.wait_for_timeout(100)  # (a toggle event would come a moment after)
-    assert page.evaluate("state.practice") == {"tab": "whistle-D", "countIn": False, "click": False, "chordsOnScore": False, "open": None, "tabKnown": True, "heard": 0, "versionsSeen": False}
+    assert page.evaluate("state.practice") == {"tab": "whistle-D", "countIn": False, "click": False, "chordsOnScore": False, "open": None, "tabKnown": True, "heard": 0, "versionsSeen": False, "timesThrough": 1}
     page.reload()
     page.wait_for_selector(".score .abcjs-lyric")
     assert page.input_value("#tab-select") == "whistle-D"
@@ -1599,7 +1599,7 @@ def test_tablature_chosen_on_the_home_page(page):
     assert page.locator(".tab-choice [aria-checked=true]").inner_text() == "Just the music"
     page.click(".tab-choice button:has-text('Descant recorder')")
     assert page.inner_text(".tab-said") == "Descant recorder under the notes, on every tune. Kept on this device."
-    assert page.evaluate("state.practice") == {"tab": "recorder", "countIn": False, "click": False, "chordsOnScore": False, "open": None, "tabKnown": True, "heard": 0, "versionsSeen": False}
+    assert page.evaluate("state.practice") == {"tab": "recorder", "countIn": False, "click": False, "chordsOnScore": False, "open": None, "tabKnown": True, "heard": 0, "versionsSeen": False, "timesThrough": 1}
     page.goto_site("alaw/llancesau-trefaldwyn/")
     page.wait_for_selector(".score g.holes", state="attached")
     assert page.locator(".tab-invite").is_hidden() and page.input_value("#tab-select") == "recorder"
@@ -2848,7 +2848,7 @@ def test_practice_tools_remembered(page):
     assert page.input_value("#tab-select") == "mandolin"
     assert page.inner_text(".sound-on") == "Plays with count-in, click · Change"  # never a surprise
     assert page.evaluate("state.practice") == {"tab": "mandolin", "countIn": True, "click": True, "chordsOnScore": True, "open": True,
-                                               "tabKnown": True, "heard": 0, "versionsSeen": False}
+                                               "tabKnown": True, "heard": 0, "versionsSeen": False, "timesThrough": 1}
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.is_checked(".practice-row label:has-text('Count-in') input")
@@ -2877,7 +2877,7 @@ def test_practice_tools_remembered(page):
     page.goto_site("?tune=glandyfi")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.evaluate("state.practice") == {"tab": "none", "countIn": False, "click": False, "chordsOnScore": False, "open": None,
-                                               "tabKnown": False, "heard": 0, "versionsSeen": False}
+                                               "tabKnown": False, "heard": 0, "versionsSeen": False, "timesThrough": 1}
 
 
 def test_controls_not_refilled_going_back(page):
@@ -3152,6 +3152,109 @@ def test_session_report(page):
     _, subject, body = sent_mail(page)
     assert subject == "Y Sesiwn: session, Tŷ Tawe, Swansea (stopped)"
     assert "It has stopped." in body and "Not on in September." in body and "ty-tawe-swansea-friday" in body
+
+
+
+def test_setlists(page, site):
+    # A session's page (tests/setlists/) lists the tunes played most there and each night's,
+    # fetched only there; a night's page lists its tunes in order, linking to theirs.
+    from conftest import SERVED
+    SERVED.clear()
+    page.goto_site()
+    page.wait_for_selector(".coming-up a")
+    assert not [path for path, _ in SERVED if "setlists" in path]  # the home page doesn't fetch them
+    page.goto_site("sesiynau/chapter-cardiff-tuesday/")
+    page.wait_for_selector(".setlists .most-played")
+    most = page.locator(".most-played li")
+    assert most.nth(0).inner_text() == "Drowsy Maggie (not on Y Sesiwn yet) · 3 of 3 nights"
+    assert most.nth(1).inner_text() == "Glandyfi · 3 of 3 nights"
+    assert page.locator(".setlists .nights li").nth(0).inner_text() == "Tuesday 20 October 2026 · 5 tunes"
+    page.click(".setlists .nights a >> nth=0")
+    page.wait_for_selector("ol.setlist")
+    assert page.url == site + "sesiynau/chapter-cardiff-tuesday/2026-10-20/"
+    assert page.inner_text("main h1") == "Tunes played on Tuesday 20 October 2026"
+    assert page.title() == "Tuesday 20 October 2026 · Noson Lawen: Folk in the Bar, Chapter, Cardiff · Y Sesiwn"
+    assert [t.strip() for t in page.locator("ol.setlist > li").evaluate_all(
+        "items => items.map((li) => (li.querySelector('.night-tune-head') ?? li).textContent)")] == [
+        "Y Derwydd", "Glandyfi", "Hela'r Ysgyfarnog", "Calon Lân", "Drowsy Maggie (not on Y Sesiwn yet)"]
+    assert page.locator(".sidebar-links a[href='archif/'][aria-current]").count() == 1
+    page.click(".lang-switch [data-lang=cy]")
+    page.wait_for_function("document.querySelector('main h1').textContent === 'Alawon a chwaraewyd ar ddydd Mawrth 20 Hydref 2026'")
+    page.click(".lang-switch [data-lang=en]")
+    page.click("ol.setlist a:has-text('Glandyfi')")
+    page.wait_for_function("location.pathname.endsWith('/alaw/glandyfi/')")
+    # A night nobody sent, and a session that has stopped (its setlists stay).
+    page.evaluate("navigate('sesiynau/chapter-cardiff-tuesday/2026-10-27/')")
+    page.wait_for_function("document.querySelector('main h1').textContent === 'No tunes from that night'")
+    assert page.locator("main a[href='sesiynau/chapter-cardiff-tuesday/']").count() == 1
+    page.evaluate("navigate('sesiynau/hen-sesiwn-swansea-wednesday/')")
+    page.wait_for_selector(".setlists .nights a[href='sesiynau/hen-sesiwn-swansea-wednesday/2025-03-12/']")
+    assert page.inner_text("main h1") == "Session at Yr Hen Sesiwn, Swansea"
+    assert page.locator(".most-played").count() == 0 and page.locator(".send-setlist").count() == 0
+
+
+
+def test_a_nights_tunes_play(page):
+    # On a night's page each tune has its opening, and a Play for the whole tune in the key and at
+    # the tempo chosen, so many times through; no more of the music than that.
+    page.goto_site("sesiynau/chapter-cardiff-tuesday/2026-10-20/")
+    page.wait_for_selector(".night-tune .preview-score .abcjs-staff")
+    assert page.locator(".night-tune").count() == 4 and page.locator(".set-paper").count() == 0  # Drowsy Maggie has none
+    page.evaluate("""() => { window.__started = 0; window.__abc = null;
+      ABCJS.synth.CreateSynth = function () { return { init({ visualObj }) { window.__key = visualObj.lines[0].staff[0].key.root; return Promise.resolve(); },
+        prime: () => Promise.resolve({ duration: 0.3 }), start() { window.__started++; }, stop() {} }; }; }""")
+    tune = page.locator(".night-tune").nth(1)  # Glandyfi, played in A that night (it's in G)
+    play = tune.locator(".preview-play")
+    assert play.get_attribute("aria-label") == "Play Glandyfi in A major"
+    assert tune.locator("select").input_value() == "2"
+    # How many times through is for the whole page, and kept on this device.
+    page.select_option("#times-through", label="Twice")
+    play.click()
+    page.wait_for_function("window.__started === 2")
+    page.wait_for_function("document.querySelectorAll('.night-tune .preview-play')[1].dataset.playing === 'false'")
+    assert page.evaluate("window.__started") == 2 and page.evaluate("window.__key") == "A"
+    assert page.evaluate("JSON.parse(localStorage.getItem('practice')).timesThrough") == 2
+    tune.locator("select").select_option(label="Bb major")
+    assert play.get_attribute("aria-label") == "Play Glandyfi in Bb major"
+    # Until stopped: it goes on, until Stop.
+    page.select_option("#times-through", label="Until stopped")
+    play.click()
+    page.wait_for_function("window.__started >= 5")
+    play.click()
+    assert play.get_attribute("data-playing") == "false"
+    # A tempo out of range is brought back into it.
+    tune.locator("input[type=number]").fill("500")
+    tune.locator("input[type=number]").press("Enter")
+    tune.locator("input[type=number]").blur()
+    assert tune.locator("input[type=number]").input_value() == "240"
+
+
+def test_archive(page, site):
+    # Tunes played at sessions (archif/, in the sidebar): every session's setlists, latest first,
+    # each with its tunes played most and its nights.
+    page.goto_site()
+    page.click(".sidebar-links a[href='archif/']")
+    page.wait_for_selector(".setlists h2 a")
+    assert page.url == site + "archif/" and page.inner_text("main h1") == "Tunes played at sessions"
+    assert page.locator(".setlists h2 a").all_inner_texts() == ["Noson Lawen: Folk in the Bar, Chapter, Cardiff", "Session at Yr Hen Sesiwn, Swansea"]
+    assert page.locator(".setlists").first.locator(".nights li").nth(0).inner_text() == "Tuesday 20 October 2026 · 5 tunes"
+    page.click(".setlists .nights a >> nth=0")
+    page.wait_for_selector("ol.setlist")
+    assert page.url == site + "sesiynau/chapter-cardiff-tuesday/2026-10-20/"
+
+def test_send_a_setlist(page):
+    # Every session's page asks for a night's tunes; the email says which session.
+    page.goto_site("sesiynau/ty-tawe-swansea-friday/")
+    page.wait_for_selector(".send-setlist")
+    assert page.locator(".setlists h2").count() == 0  # none sent yet
+    page.evaluate(CATCH_MAIL)
+    page.click(".send-setlist summary")
+    page.fill(".send-setlist input[type=date]", "2026-10-09")
+    page.fill(".send-setlist textarea", "Glandyfi\nY Derwydd")
+    page.click(".send-setlist button[type=submit]")
+    _, subject, body = sent_mail(page)
+    assert subject == "Y Sesiwn: tunes played, Tŷ Tawe, Swansea, 2026-10-09"
+    assert body == "Session: ty-tawe-swansea-friday\nNight: 2026-10-09\n\nGlandyfi\nY Derwydd\n"
 
 
 def test_add_a_session(page, site):

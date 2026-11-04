@@ -24,6 +24,10 @@ sys.path.insert(0, str(ROOT))
 
 import build_site  # noqa: E402
 
+# The site is built with made-up setlists (tests/setlists/), for the tests to find the same ones
+# whatever's been sent in. (test_real_setlists checks setlists/.)
+build_site.SETLISTS_DIR = "tests/setlists"
+
 
 SERVED = []  # every answer the test server gives: (path, status), for tests that count them
 

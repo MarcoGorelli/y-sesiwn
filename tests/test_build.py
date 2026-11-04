@@ -656,6 +656,104 @@ def test_session_mistakes(tmp_path, monkeypatch, change, says):
         b.session_data()
 
 
+
+def test_setlists(site):
+    # tests/setlists/ (see conftest.py): each night's tunes, newest first, with names; the tunes
+    # played most; and none of it in what the rest of the site fetches.
+    out = b.OUT
+    sessions = json.loads((out / "sessions.json").read_text(encoding="utf-8"))["sessions"]
+    chapter = next(s for s in sessions if s["id"] == "chapter-cardiff-tuesday")
+    assert chapter["setlists"] == 3 and not any("setlists" in s for s in sessions if s is not chapter)
+    kept = json.loads((out / "sesiynau" / "chapter-cardiff-tuesday" / "setlists.json").read_text(encoding="utf-8"))
+    assert [n["date"] for n in kept["setlists"]] == ["2026-10-20", "2026-10-13", "2026-10-06"]
+    # Played on all three nights (twice on one, counted once; "drowsy maggie" the same tune), then A to Z.
+    assert kept["most"] == [{"name": "Drowsy Maggie", "nights": 3}, {"tune": "glandyfi", "name": "Glandyfi", "nights": 3},
+                            {"tune": "y-derwydd", "name": "Y Derwydd", "nights": 2}]
+    page = (out / "sesiynau" / "chapter-cardiff-tuesday" / "index.html").read_text(encoding="utf-8")
+    assert '<li><a href="alaw/glandyfi/">Glandyfi</a>: 3 of 3 nights</li>' in page
+    assert '<a href="sesiynau/chapter-cardiff-tuesday/2026-10-20/">Tuesday 20 October 2026</a>: 5 tunes' in page
+    # Each tune with the key it was played in: its own, unless the setlist says.
+    assert kept["setlists"][0]["tunes"][:2] == [{"tune": "y-derwydd", "name": "Y Derwydd", "key": "D major", "shift": 0},
+                                                {"tune": "glandyfi", "name": "Glandyfi", "key": "A major", "shift": 2}]
+    night = (out / "sesiynau" / "chapter-cardiff-tuesday" / "2026-10-20" / "index.html").read_text(encoding="utf-8")
+    assert '<base href="../../../">' in night
+    assert "<title>Tunes played at Noson Lawen: Folk in the Bar, Chapter, Cardiff, Tuesday 20 October 2026 · Y Sesiwn</title>" in night
+    assert "Yr alawon a chwaraewyd yng Nghaerdydd ar 20 Hydref 2026." in night and "<li>Drowsy Maggie</li>" in night
+    assert '<li><a href="alaw/glandyfi/">Glandyfi</a> (A major)</li>' in night
+    # A session that's stopped keeps a page, with its setlists.
+    past = (out / "sesiynau" / "hen-sesiwn-swansea-wednesday" / "index.html").read_text(encoding="utf-8")
+    assert "<title>Session at Yr Hen Sesiwn, Swansea · Y Sesiwn</title>" in past and "no longer running" in past
+    sitemap = (out / "sitemap.xml").read_text(encoding="utf-8")
+    assert "<loc>https://ysesiwn.cymru/sesiynau/chapter-cardiff-tuesday/2026-10-06/</loc>" in sitemap
+    assert "<loc>https://ysesiwn.cymru/sesiynau/hen-sesiwn-swansea-wednesday/</loc>" in sitemap
+    # All of them on one page, the latest first.
+    archive = json.loads((out / "archif" / "archif.json").read_text(encoding="utf-8"))["sessions"]
+    assert [s["id"] for s in archive] == ["chapter-cardiff-tuesday", "hen-sesiwn-swansea-wednesday"]
+    assert archive[0]["setlists"][0] == {"date": "2026-10-20", "count": 5} and len(archive[0]["most"]) == 3
+    page = (out / "archif" / "index.html").read_text(encoding="utf-8")
+    assert '<base href="../">' in page and '<h2><a href="sesiynau/chapter-cardiff-tuesday/">Noson Lawen: Folk in the Bar, Chapter, Cardiff</a></h2>' in page
+    assert "<loc>https://ysesiwn.cymru/archif/</loc>" in sitemap
+    # Not in the offline copy, nor anything everyone downloads.
+    sw = (out / "sw.js").read_text(encoding="utf-8")
+    files = json.loads(re.search(r"const SITE_FILES = (\[.*?\]);", sw).group(1))
+    assert not [f for f in files if f.startswith(("archif/", "sesiynau/"))]
+    assert "Drowsy Maggie" not in (out / "tunes.json").read_text(encoding="utf-8")
+
+
+def test_real_setlists(site, monkeypatch):
+    # The setlists sent in (setlists/), checked as the build checks them.
+    index = json.loads((b.OUT / "tunes.json").read_text(encoding="utf-8"))
+    monkeypatch.setattr(b, "SETLISTS_DIR", "setlists")
+    b.setlist_data(b.session_data(), index["tunes"], index["moved"])
+
+
+@pytest.mark.parametrize("change, says", [
+    ({"setlists": []}, "no setlists"),
+    ({"setlists": [{"date": "20/10/2026", "tunes": ["glandyfi"]}]}, "a date like"),
+    ({"setlists": [{"date": "2026-10-22", "tunes": ["glandyfi"]}]}, "that's a Thursday, and the session meets on Tuesdays"),
+    ({"setlists": [{"date": "2026-11-03", "tunes": ["glandyfi"]}]}, "still to come"),
+    ({"setlists": [{"date": "2026-10-20", "tunes": ["glandyfi"]}, {"date": "2026-10-20", "tunes": ["y-derwydd"]}]}, "two setlists"),
+    ({"setlists": [{"date": "2026-10-20", "tunes": []}]}, "no tunes"),
+    ({"setlists": [{"date": "2026-10-20", "tunes": ["glandyfy"]}]}, "no tune 'glandyfy'"),
+    ({"setlists": [{"date": "2026-10-20", "tunes": [{"title": "Drowsy Maggie"}]}]}, "no tune"),
+    ({"setlists": [{"date": "2026-10-20", "tunes": [{"tune": "glandyfi", "key": "Am"}]}]}, "'Am' is minor, and the tune is major"),
+    ({"setlists": [{"date": "2026-10-20", "tunes": [{"tune": "glandyfi", "key": "H"}]}]}, 'key should be like "A major"'),
+])
+def test_setlist_mistakes(tmp_path, monkeypatch, change, says):
+    # A mistake in a setlist stops the build, saying what's wrong.
+    from datetime import date
+    (tmp_path / "setlists").mkdir()
+    (tmp_path / "setlists" / "y-llew-coch-llandeilo-tuesday.json").write_text(json.dumps(change), encoding="utf-8")
+    monkeypatch.setattr(b, "ROOT", tmp_path)
+    monkeypatch.setattr(b, "SETLISTS_DIR", "setlists")
+    session = {"id": "y-llew-coch-llandeilo-tuesday", "venue": "Y Llew Coch", "town": "Llandeilo", "day": "Tuesday", "repeat": "weekly"}
+    tunes = [{"slug": slug, "group": slug, "base": slug, "shown": 1, "key": {"pitch": 7, "root": "G", "modeName": "major"}}
+             for slug in ("glandyfi", "y-derwydd")]
+    with pytest.raises(SystemExit, match=says):
+        b.setlist_data([session], tunes, [], date(2026, 11, 2))
+
+
+def test_setlists_of_a_stopped_session(tmp_path, monkeypatch):
+    # A session no longer in sessions.json keeps its setlists if the file says where it was.
+    # (And a tune renamed since is found by its old name, as a version of its tune.)
+    from datetime import date
+    (tmp_path / "setlists").mkdir()
+    path = tmp_path / "setlists" / "y-llew-coch-llandeilo-tuesday.json"
+    path.write_text(json.dumps({"setlists": [{"date": "2026-10-20", "tunes": ["glandyfi"]}]}), encoding="utf-8")
+    monkeypatch.setattr(b, "ROOT", tmp_path)
+    monkeypatch.setattr(b, "SETLISTS_DIR", "setlists")
+    tunes = [{"slug": "glandyfi", "group": "glandyfi", "base": "Glandyfi", "shown": 1, "key": None}]
+    with pytest.raises(SystemExit, match="no session y-llew-coch-llandeilo-tuesday in sessions.json"):
+        b.setlist_data([], tunes, [], date(2026, 11, 2))
+    path.write_text(json.dumps({"venue": "Y Llew Coch", "town": "Llandeilo",
+                                "setlists": [{"date": "2026-10-20", "tunes": ["glandyfi", "hen-glandyfi"]}]}), encoding="utf-8")
+    tunes.append({"slug": "glandyfi-version-2", "group": "glandyfi", "base": "Glandyfi", "shown": 2, "key": None})
+    kept = b.setlist_data([], tunes, [{"from": "hen-glandyfi", "to": "glandyfi-version-2"}], date(2026, 11, 2))["y-llew-coch-llandeilo-tuesday"]
+    assert kept["setlists"][0]["tunes"] == [{"tune": "glandyfi", "name": "Glandyfi"}] * 2
+    assert kept["session"] == {"venue": "Y Llew Coch", "town": "Llandeilo", "town_cy": "Llandeilo", "id": "y-llew-coch-llandeilo-tuesday"}
+    assert kept["most"] == []  # not until there are a few nights'
+
+
 # Repeats checked against the score images (the recordings, which the ABC was made from,
 # often play a part once that the score repeats, or play the whole tune twice). Where the
 # score's endings are longer than two bars, the part is written out (fewer repeat signs).

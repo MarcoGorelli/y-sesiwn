@@ -25,6 +25,8 @@ SITE_URL = "https://ysesiwn.cymru/"
 TUNE_DIR = "alaw"  # each tune's own page is alaw/<folder>/ (see tune_pages)
 TYPE_DIR = "math"  # and each type's, math/<type>/
 SESSIONS_DIR = "sesiynau"  # the sessions page (see session_data)
+SETLISTS_DIR = "setlists"  # the tunes played at a session, night by night (see setlist_data)
+ARCHIVE_DIR = "archif"  # every session's setlists, on one page (see archive_page)
 EMBED_DIR = "embed"  # each tune for other websites, embed/<folder>/ (see tune_pages)
 
 PITCH = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
@@ -1100,8 +1102,13 @@ def tune_pages(tunes: list[dict], index: dict) -> None:
         write_page(OUT / EMBED_DIR / move["from"], redirect.replace("</title>", '</title>\n  <meta name="robots" content="noindex">', 1))
 
     sessions = session_data()
-    sessions_page(template, sessions)
+    setlists = setlist_data(sessions, tunes, index["moved"])
+    sessions_page(template, sessions, setlists)
     urls += [f"{SITE_URL}{SESSIONS_DIR}/"] + [f"{SITE_URL}{SESSIONS_DIR}/{s['id']}/" for s in sessions]
+    urls += [f"{SITE_URL}{SESSIONS_DIR}/{sid}/" for sid, kept in setlists.items() if "session" in kept]
+    urls += [f"{SITE_URL}{SESSIONS_DIR}/{sid}/{night['date']}/" for sid, kept in setlists.items() for night in kept["setlists"]]
+    archive_page(template, {s["id"]: s for s in sessions}, setlists)
+    urls.append(f"{SITE_URL}{ARCHIVE_DIR}/")
 
     # The home page links to the type pages until the app takes over.
     home = OUT / "index.html"
@@ -1289,11 +1296,24 @@ def session_title(s: dict) -> str:
     return f"{'Tune club' if s.get('kind') == 'tune club' else 'Session'} at {s['venue']}, {s['town']}"
 
 
-def sessions_page(template: str, sessions: list[dict]) -> None:
+def long_date(day: str) -> str:
+    """'2026-10-20' -> 'Tuesday 20 October 2026'."""
+    from datetime import date
+    d = date.fromisoformat(day)
+    return f"{DAYS[d.weekday()]} {d.day} {d:%B %Y}"
+
+
+CY_MONTHS = ["Ionawr", "Chwefror", "Mawrth", "Ebrill", "Mai", "Mehefin", "Gorffennaf", "Awst", "Medi", "Hydref", "Tachwedd", "Rhagfyr"]
+
+
+def sessions_page(template: str, sessions: list[dict], setlists: dict[str, dict]) -> None:
     """sesiynau/: the sessions as plain HTML for search engines (the app draws its own),
     and sessions.json for the app. Each session also has a page of its own,
     sesiynau/<id>/, to send or link to: its link preview and search result are that
-    session's, not the whole list's."""
+    session's, not the whole list's. A session with setlists says how many in
+    sessions.json, and has them in sesiynau/<id>/setlists.json, fetched only on its own
+    page, with a page for each night (see setlist_pages)."""
+    sessions = [{**s, **({"setlists": len(setlists[s["id"]]["setlists"])} if s["id"] in setlists else {})} for s in sessions]
     (OUT / "sessions.json").write_text(json.dumps({"sessions": sessions}, ensure_ascii=False, separators=(",", ":")),
                                        encoding="utf-8")
     towns = sorted({s["town"] for s in sessions}, key=normalize)
@@ -1329,8 +1349,200 @@ def sessions_page(template: str, sessions: list[dict]) -> None:
                  + (f"<p>{esc(s['music'])}</p>" if s.get("music") else "")
                  + (f'<p><a href="{esc(s["link"])}">{esc(s["link"])}</a></p>' if s.get("link") else "")
                  + f"<p>Last confirmed {esc(s['confirmed'])}.</p>"
+                 + (setlists_html(s["id"], setlists[s["id"]]) if s["id"] in setlists else "")
                  + f'<p><a href="{SESSIONS_DIR}/">All sessions, on a map</a></p>',
             loading=("Loading the session…", "Yn llwytho'r sesiwn…")))
+    setlist_pages(template, {s["id"]: s for s in sessions}, setlists)
+
+
+# A session's page lists the tunes played most there, once it has MOST_PLAYED_FROM setlists:
+# up to MOST_PLAYED of them, each played on at least two nights.
+MOST_PLAYED, MOST_PLAYED_FROM = 10, 3
+
+
+def setlist_data(sessions: list[dict], tunes: list[dict], moved: list[dict], today: "date | None" = None) -> dict[str, dict]:
+    """setlists/<session id>.json, checked: the tunes played at a session, on each night
+    someone sent them in, by session id. Each night is {"date": "2026-10-20", "tunes": [...]},
+    each tune a folder in tunes/ (a renamed one's old name finds it, through moved.json),
+    or {"tune": "glandyfi", "key": "A major"} with the key it was played in (setlist_key),
+    or {"name": "Drowsy Maggie"} for one that isn't on the site. A session that's no longer
+    in sessions.json (stopped, or moved to another day: a new id) keeps its setlists if the
+    file says where it was: venue and town (and name, town_cy and kind, if it had them).
+    Each session's come with its nights, newest first, each tune with its name, and the
+    tunes played there most (most_played); one no longer in sessions.json, with "session"."""
+    from datetime import date
+    today = today or date.today()
+    active = {s["id"]: s for s in sessions}
+    moved_to = {m["from"]: m["to"] for m in moved}
+    by_slug = {t["slug"]: t for t in tunes}
+    names = {t["group"]: t["base"] for t in tunes if t["shown"] == 1}
+    keys = {t["group"]: t["key"] for t in tunes if t["shown"] == 1}
+    folder = ROOT / SETLISTS_DIR
+    result = {}
+    for path in sorted(folder.glob("*.json")) if folder.is_dir() else []:
+        sid, where = path.stem, f"{SETLISTS_DIR}/{path.name}"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        session = active.get(sid)
+        if session is None and not (data.get("venue") and data.get("town")):
+            raise SystemExit(f"{where}: there's no session {sid} in sessions.json. If it has stopped or moved to another day, "
+                             "add its venue and town to keep its setlists (a session that moved starts a new file, under its new id)")
+        nights = data.get("setlists")
+        if not isinstance(nights, list) or not nights:
+            raise SystemExit(f'{where}: no setlists (a list of {{"date": "2026-10-20", "tunes": [...]}})')
+        kept = []
+        for night in nights:
+            day = night.get("date")
+            if not (isinstance(day, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", day)):
+                raise SystemExit(f'{where}: date should be a date like "2026-10-20", not {day!r}')
+            on = f"{where}, {day}"
+            if date.fromisoformat(day) > today:
+                raise SystemExit(f"{on}: that's still to come")
+            if any(k["date"] == day for k in kept):
+                raise SystemExit(f"{on}: there are two setlists for this night (put them together)")
+            if session and session["repeat"] == "dates" and day not in session["dates"]:
+                raise SystemExit(f"{on}: that isn't one of the session's dates in sessions.json")
+            if session and session["repeat"] != "dates" and DAYS[date.fromisoformat(day).weekday()] != session["day"]:
+                raise SystemExit(f"{on}: that's a {DAYS[date.fromisoformat(day).weekday()]}, and the session meets on {session['day']}s")
+            if not isinstance(night.get("tunes"), list) or not night["tunes"]:
+                raise SystemExit(f"{on}: no tunes")
+            played = []
+            for tune in night["tunes"]:
+                if isinstance(tune, dict) and isinstance(tune.get("name"), str) and tune["name"].strip() and len(tune) == 1:
+                    played.append({"name": tune["name"].strip()})
+                    continue
+                slug, key = (tune, None) if isinstance(tune, str) else (tune.get("tune"), tune.get("key")) \
+                    if isinstance(tune, dict) and set(tune) <= {"tune", "key"} else (None, None)
+                if isinstance(slug, str) and moved_to.get(slug, slug) in by_slug:
+                    group = by_slug[moved_to.get(slug, slug)]["group"]
+                    played.append({"tune": group, "name": names[group], **setlist_key(keys[group], key, f"{on}, {names[group]}")})
+                else:
+                    raise SystemExit(f'{on}: no tune {tune!r} (a folder in tunes/; for a tune that isn\'t on the site, write {{"name": "…"}})')
+            kept.append({"date": day, "tunes": played})
+        kept.sort(key=lambda k: k["date"], reverse=True)
+        result[sid] = {
+            **({} if sid in active else {"session": {**{k: data[k] for k in ("name", "venue", "town", "town_cy", "kind") if data.get(k)},
+                                                     "town_cy": data.get("town_cy") or data["town"], "id": sid}}),
+            "setlists": kept, "most": most_played(kept)}
+    return result
+
+
+MODE_WORDS = {"": None, "m": "minor", "min": "minor", "minor": "minor", "maj": "major", "major": "major",
+              **{m[:3].lower(): m for m in ("Dorian", "Mixolydian", "Lydian", "Phrygian", "Locrian")},
+              **{m.lower(): m for m in ("Dorian", "Mixolydian", "Lydian", "Phrygian", "Locrian")}}
+
+
+def setlist_key(own: dict | None, key: str | None, where: str) -> dict:
+    """The key a tune was played in, as its page's key menu says it ("A major", "E Dorian"),
+    and how far that is from the tune's own (-5 … +6 semitones, as on its page): its own
+    key if none is given. Written "A", "Am", "A minor" or "A Dorian": in the tune's own mode."""
+    if own is None:
+        if key is not None:
+            raise SystemExit(f"{where}: this tune has no key (no K: line to move from)")
+        return {}
+    if key is None:
+        return {"key": f"{own['root']} {own['modeName']}", "shift": 0}
+    m = re.fullmatch(r"([A-G])([#b]?)\s*([A-Za-z]*)", key.strip()) if isinstance(key, str) else None
+    mode = MODE_WORDS.get(m.group(3).lower(), "?") if m else "?"
+    if mode == "?":
+        raise SystemExit(f'{where}: key should be like "A major", "E minor" or "D Dorian", not {key!r}')
+    if mode not in (None, own["modeName"]):
+        raise SystemExit(f"{where}: {key!r} is {mode}, and the tune is {own['modeName']} (give its key in its own mode)")
+    root = m.group(1) + m.group(2)
+    shift = ((PITCH[m.group(1)] + {"#": 1, "b": -1, "": 0}[m.group(2)] - own["pitch"]) % 12 + 5) % 12 - 5
+    return {"key": f"{root} {own['modeName']}", "shift": shift}
+
+
+def most_played(nights: list[dict]) -> list[dict]:
+    """The tunes played on the most nights (each night counted once), most first, then A to
+    Z, each with how many: up to MOST_PLAYED, once there are MOST_PLAYED_FROM nights, and
+    only those played on two nights or more."""
+    if len(nights) < MOST_PLAYED_FROM:
+        return []
+    counts, tunes = {}, {}
+    for night in nights:
+        for key, tune in {t.get("tune") or normalize(t["name"]): t for t in night["tunes"]}.items():
+            counts[key] = counts.get(key, 0) + 1
+            tunes.setdefault(key, {k: tune[k] for k in ("tune", "name") if k in tune})
+    ranked = sorted((k for k in counts if counts[k] > 1), key=lambda k: (-counts[k], normalize(tunes[k]["name"])))
+    return [{**tunes[k], "nights": counts[k]} for k in ranked[:MOST_PLAYED]]
+
+
+def setlist_link(tune: dict) -> str:
+    """A tune in a setlist, for the static pages: its page, or its name if it isn't on the site."""
+    return f'<a href="{TUNE_DIR}/{tune["tune"]}/">{esc(tune["name"])}</a>' if "tune" in tune else esc(tune["name"])
+
+
+def setlists_html(sid: str, kept: dict, heading: str = "<h2>Tunes played here</h2>", most_played: int = MOST_PLAYED) -> str:
+    """A session's setlists for its static page: the tunes played most, and each night's page."""
+    n = len(kept["setlists"])
+    most = ("<h3>Most played here</h3><ol>" + "".join(
+        f"<li>{setlist_link(t)}: {t['nights']} of {n} nights</li>" for t in kept["most"][:most_played]) + "</ol>") if kept["most"] else ""
+    return (heading + most + "<ul>" + "".join(
+        f'<li><a href="{SESSIONS_DIR}/{sid}/{night["date"]}/">{esc(long_date(night["date"]))}</a>: {len(night["tunes"])} tunes</li>'
+        for night in kept["setlists"]) + "</ul>")
+
+
+# The archive lists the tunes played most at each session: its first few.
+ARCHIVE_MOST = 5
+
+
+def archive_page(template: str, active: dict[str, dict], setlists: dict[str, dict]) -> None:
+    """archif/: every session's setlists, the latest first, each with the tunes played most
+    there and its nights (their tunes are on the nights' own pages). archif/archif.json is
+    the same for the app, fetched only on this page."""
+    def about(sid: str) -> dict:
+        s = active.get(sid) or setlists[sid]["session"]
+        return {k: s[k] for k in ("id", "name", "venue", "town", "town_cy", "kind") if s.get(k)}
+    order = sorted(setlists, key=lambda sid: setlists[sid]["setlists"][0]["date"], reverse=True)
+    sessions = [{**about(sid), "active": sid in active,
+                 "setlists": [{"date": n["date"], "count": len(n["tunes"])} for n in setlists[sid]["setlists"]],
+                 "most": setlists[sid]["most"][:ARCHIVE_MOST]} for sid in order]
+    (OUT / ARCHIVE_DIR).mkdir(parents=True, exist_ok=True)
+    (OUT / ARCHIVE_DIR / "archif.json").write_text(json.dumps({"sessions": sessions}, ensure_ascii=False, separators=(",", ":")),
+                                                   encoding="utf-8")
+    description = ("An archive of the tunes played at Welsh folk sessions, night by night, as players send them in. "
+                   "Archif o'r alawon a chwaraewyd mewn sesiynau gwerin, noson wrth noson.")
+    body = "".join(setlists_html(s["id"], setlists[s["id"]], f'<h2><a href="{SESSIONS_DIR}/{s["id"]}/">{esc(session_title(s))}</a></h2>',
+                                 ARCHIVE_MOST) for s in sessions)
+    write_page(OUT / ARCHIVE_DIR, app_page(
+        template, title="Tunes played at sessions", description=description, url=f"{SITE_URL}{ARCHIVE_DIR}/", head="", up="../",
+        main=f"<h1>Tunes played at sessions</h1><p>{esc(description)}</p>{body}",
+        loading=("Loading the tunes played…", "Yn llwytho'r alawon a chwaraewyd…")))
+
+
+def setlist_pages(template: str, active: dict[str, dict], setlists: dict[str, dict]) -> None:
+    """sesiynau/<id>/setlists.json, for the app, and a page for each night,
+    sesiynau/<id>/<date>/. A session that's no longer in sessions.json gets its own page
+    back (sesiynau/<id>/), with only its setlists."""
+    from datetime import date
+    for sid, kept in setlists.items():
+        (OUT / SESSIONS_DIR / sid).mkdir(parents=True, exist_ok=True)
+        (OUT / SESSIONS_DIR / sid / "setlists.json").write_text(
+            json.dumps(kept, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        s = active.get(sid) or kept["session"]
+        title = session_title(s)
+        if sid not in active:
+            description = (f"The tunes played at {title}, which is no longer running (or has moved to another day). "
+                           f"Yr alawon a chwaraewyd mewn sesiwn {yn_place(s['town_cy'])}.")
+            write_page(OUT / SESSIONS_DIR / sid, app_page(
+                template, title=title, description=description, url=f"{SITE_URL}{SESSIONS_DIR}/{sid}/", head="",
+                main=f"<h1>{esc(title)}</h1><p>{esc(description)}</p>" + setlists_html(sid, kept)
+                     + f'<p><a href="{SESSIONS_DIR}/">All sessions, on a map</a></p>',
+                loading=("Loading the session…", "Yn llwytho'r sesiwn…")))
+        for night in kept["setlists"]:
+            d = date.fromisoformat(night["date"])
+            names = [t["name"] for t in night["tunes"]]
+            some = ", ".join(names[:3]) + (f" and {len(names) - 3} more" if len(names) > 3 else "")
+            page_title = f"Tunes played at {title}, {long_date(night['date'])}"
+            description = (f"The tunes played at {title} on {long_date(night['date'])}: {some}. "
+                           f"Yr alawon a chwaraewyd {yn_place(s['town_cy'])} ar {d.day} {CY_MONTHS[d.month - 1]} {d.year}.")
+            write_page(OUT / SESSIONS_DIR / sid / night["date"], app_page(
+                template, title=page_title, description=description, url=f"{SITE_URL}{SESSIONS_DIR}/{sid}/{night['date']}/",
+                head="", up="../../../",
+                main=f"<h1>{esc(page_title)}</h1><ol>" + "".join(
+                f"<li>{setlist_link(t)}" + (f" ({esc(t['key'])})" if "key" in t else "") + "</li>" for t in night["tunes"]) + "</ol>"
+                     + f'<p><a href="{SESSIONS_DIR}/{sid}/">{esc(title)}</a></p>',
+                loading=("Loading the tunes…", "Yn llwytho'r alawon…")))
 
 
 def type_heading(kind: dict) -> str:
@@ -1347,10 +1559,10 @@ def write_service_worker() -> None:
             h.update(f.relative_to(OUT).as_posix().encode() + f.read_bytes())
         return h.hexdigest()[:12]
 
-    # The tunes', types' and sessions' own pages aren't kept: offline, sw.js answers them with the app itself.
+    # The tunes', types' and sessions' own pages, and the setlists' archive, aren't kept: offline, sw.js answers them with the app itself.
     # Nor are the tunes for other websites (embed/), which are only ever opened there.
     files = sorted(f for f in OUT.rglob("*") if f.is_file() and f.name not in NOT_OFFLINE
-                   and not any(f.is_relative_to(OUT / d) for d in (TUNE_DIR, TYPE_DIR, SESSIONS_DIR, EMBED_DIR)))
+                   and not any(f.is_relative_to(OUT / d) for d in (TUNE_DIR, TYPE_DIR, SESSIONS_DIR, EMBED_DIR, ARCHIVE_DIR)))
     sounds = [f for f in files if f.is_relative_to(OUT / "static" / "soundfont")]
     site = [f for f in files if f not in sounds]
     urls = lambda fs: json.dumps([f.relative_to(OUT).as_posix() for f in fs])

@@ -1051,6 +1051,27 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .session-page { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 1rem; align-items: start; max-width: 52rem; }
 .session-page .card.place { margin-top: 0; }
 @media (max-width: 700px) { .session-page { grid-template-columns: minmax(0, 1fr); } }
+/* The tunes played at a session (its page), and on one night (sesiynau/<id>/<date>/) */
+.setlists h3 { margin: 1.25rem 0 .4rem; font-size: 1rem; }
+.setlists ol, .setlists ul, .setlist { padding-left: 1.5rem; }
+.setlists li, .setlist li { padding: .15rem 0; }
+.send-setlist { margin-top: 1.25rem; }
+.send-setlist > summary { color: var(--link); text-decoration: underline; width: fit-content; }
+.send-setlist > summary::before { display: none; }
+.send-setlist .email-form { margin-top: .75rem; }
+main > .share-status:empty { display: none; }
+/* A night's tunes: each one's name and Play, its opening, and its key, tempo and times through */
+.setlist > li { padding: .7rem 0; border-bottom: 1px solid var(--border); max-width: 40rem; }
+.night-tune-head { display: flex; align-items: center; gap: .5rem; }
+.times-through { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.times-through label { display: inline; margin: 0; }
+.night-tune-head .preview-play { margin-left: auto; }
+.night-tune .preview-score { margin: .4rem 0; }
+.night-tune-controls { display: flex; flex-wrap: wrap; gap: .4rem 1rem; font-size: .9rem; }
+.night-tune-controls .control { display: flex; align-items: center; gap: .35rem; }
+.night-tune-controls .control label { display: inline; margin: 0; }
+.night-tune-controls input { width: 4.5rem; padding: .4rem .5rem; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--card-bg); font: inherit; color: inherit; }
 .area-filter { margin: 1.25rem 0 .5rem; }
 .area-filter .pills-label { margin: 0 0 .4rem; display: block; }
 #area-select { padding: .4rem .6rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); max-width: 100%; }
@@ -1276,7 +1297,7 @@ main { view-transition-name: page; }
 .email-form { display: grid; gap: 1rem; max-width: 40rem; }
 .email-form .field { display: grid; gap: .3rem; }
 .field-label { font-weight: 600; }
-.email-form input[type="text"], .email-form input[type="url"], .email-form select, .email-form textarea {
+.email-form input[type="text"], .email-form input[type="url"], .email-form input[type="date"], .email-form select, .email-form textarea {
   font: inherit; color: inherit; background: var(--card-bg);
   border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .65rem; width: 100%; box-sizing: border-box;
 }
@@ -1515,7 +1536,8 @@ body.practice .tune-sub { display: none; }
      under a card): padding on an inline link reaches a finger's height without making its
      line taller, so a wrapped line stays with it; the rows are spaced so they don't meet */
   .coming-up li { padding: .45rem 0; }
-  .coming-up li > a, .set-tune h2 a, .card.session h3 a, .session-page + section li > a { padding-block: .65rem; }
+  .coming-up li > a, .set-tune h2 a, .card.session h3 a, .session-page + section li > a,
+  .setlists li > a, .setlist li > a { padding-block: .65rem; }
   /* A tune in a set's running order: the row is the finger's height, the name its target */
   .set-list li { padding-block: 0; }
   .set-list li > a { display: inline-flex; align-items: center; min-height: 44px; }
@@ -1536,7 +1558,7 @@ body.practice .tune-sub { display: none; }
   .tune-kind a { min-width: 44px; }  /* the name, home; a tune's type, the rest of that type */
   .tune-kind { align-items: center; }
   .control input[type="range"] { height: 44px; }
-  .session-links .action, .session-report > summary, .email-form .check { min-height: 44px; }
+  .session-links .action, .session-report > summary, .send-setlist > summary, .email-form .check { min-height: 44px; }
   .session-report > summary { display: flex; flex-wrap: wrap; align-items: center; column-gap: .3em; }
   .email-form .check { display: flex; align-items: center; }
   .sessions-layout .wales-map circle.target { r: calc(11px / var(--z)); }  /* a town's dot (fewer, further apart than the tunes' places) */

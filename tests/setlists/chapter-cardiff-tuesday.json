@@ -1,0 +1,7 @@
+{
+  "setlists": [
+    {"date": "2026-10-06", "tunes": ["glandyfi", "y-derwydd", "llwyn-onn", {"name": "Drowsy Maggie"}]},
+    {"date": "2026-10-20", "tunes": ["y-derwydd", {"tune": "glandyfi", "key": "A"}, "hela-r-ysgyfarnog", "calon-lan", {"name": "Drowsy Maggie"}]},
+    {"date": "2026-10-13", "tunes": ["glandyfi", "dafydd-y-garreg-wen", {"name": "drowsy maggie"}, "glandyfi"]}
+  ]
+}

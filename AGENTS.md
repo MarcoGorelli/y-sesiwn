@@ -22,5 +22,5 @@ After adding, renaming or merging anything in `tunes/`, fill these in yourself i
 
 ## The site
 
-- Never suggest ready-made sets or "play this next" tunes, on tune pages or anywhere else. Sets are only what players build themselves.
+- Never suggest ready-made sets or "play this next" tunes, on tune pages or anywhere else. Sets are only what players build themselves. The one exception is a night's tunes at a session (`setlists/`), shown as they were played and playable from its page: a whole night's list doesn't say which tunes go together. Still never link from a tune to the nights it was played on, or to what was played after it.
 - Many players read the dots. Any chooser for learner aids (holes, tabs) offers "Just the music" as an equal choice, selected by default, and choosing it dismisses the prompt for good. Word such choices by what's shown ("Under the notes"), not by instrument ("What do you play?").

@@ -121,6 +121,8 @@ const PAGES = {
 // own visits (the key and tempo are the ones the website chose).
 const EMBED = document.body.dataset.page === "embed";
 
+const TIMES_THROUGH = [1, 2, 3, 0];  // how many times a night's tunes play (0: until stopped): see nightTune
+
 const state = {
   data: null,           // tunes.json (on a tune's own page, at first, only that tune: see start())
   loaded: null,         // tunes.json, on its way
@@ -141,7 +143,9 @@ const state = {
   // instrument), the count-in and click, chords on the music, and the practice tools folded or not; whether the holes or tabs have had
   // their answer (tabKnown), and how many tunes have been played with the music alone before
   // they had (heard), and whether another version has been opened from the tabs (versionsSeen). The rest is kept per tune (savedTunes).
-  practice: savedPractice("practice", { tab: "none", countIn: false, click: false, chordsOnScore: false, open: null, tabKnown: false, heard: 0, versionsSeen: false }),
+  // And how many times through a night's tunes play, on its page (0: until stopped).
+  practice: savedPractice("practice", { tab: "none", countIn: false, click: false, chordsOnScore: false, open: null, tabKnown: false, heard: 0, versionsSeen: false,
+    timesThrough: 1 }),
   browseOpen: { types: false, keys: false },  // Browse's More types / More keys, once opened
   lang: savedLang(),    // "cy" or "en", for the whole site (tune names and the tunes' own notes stay as written)
   musicSize: savedSize(),  // the music's size, an index into SIZES (1: as drawn)
@@ -156,6 +160,8 @@ const state = {
   updated: false,       // a new version is saved (a deploy): the next page opens it (openUpdated)
   setEditOpen: false,   // a set's Tunes and keys unfolded (once it has tunes), kept while the site is open
   naming: null,         // a set just made on My sets: its page opens with the name ready to type over
+  setlists: new Map(),  // a session's setlists (sesiynau/<id>/setlists.json), fetched on its own page
+  archive: null,        // every session's (archif/archif.json), fetched on the archive's page
 };
 
 // ---- Welsh or English --------------------------------------------------------------
@@ -185,7 +191,8 @@ function savedPractice(name, defaults) {
     const saved = JSON.parse(localStorage.getItem(name));
     const valid = { tab: (v) => typeof v === "string", open: (v) => v === null || typeof v === "boolean", tabKnown: (v) => typeof v === "boolean",
       heard: (v) => Number.isInteger(v) && v >= 0, versionsSeen: (v) => typeof v === "boolean",
-      countIn: (v) => typeof v === "boolean", click: (v) => typeof v === "boolean", chordsOnScore: (v) => typeof v === "boolean" };
+      countIn: (v) => typeof v === "boolean", click: (v) => typeof v === "boolean", chordsOnScore: (v) => typeof v === "boolean",
+      timesThrough: (v) => TIMES_THROUGH.includes(v) };
     return Object.fromEntries(Object.entries(defaults).map(([key, value]) =>
       [key, saved && key in saved && valid[key](saved[key]) ? saved[key] : value]));
   } catch { return { ...defaults }; }
@@ -915,7 +922,8 @@ const PREVIEWS = 5;  // results shown with their opening bars
 // leaving the page stops it, and so does another app's sound (audioFocus). label(playing)
 // names it for a screen reader; title, on the phone's lock screen. The tune alone, as its
 // page plays it unless asked otherwise (abcjs's own chords drown it), swung if it's kept so.
-function playButton(music, label, tune) {
+// times() says how many times through (Infinity: until it's stopped); once, unless given.
+function playButton(music, label, tune, times = () => 1) {
   const title = tune.base;
   const button = el("button", { type: "button", class: "preview-play", "aria-label": label(false), "data-playing": "false" }, playIcon());
   let playing = null;
@@ -947,15 +955,23 @@ function playButton(music, label, tune) {
       synth.start();
       // Another app's sound stops it, as it does a tune's; the lock screen's play starts it again.
       audioFocus.hold(true, title, sound, () => { if (button.isConnected && !playing) button.click(); });
-      timer = setTimeout(() => { if (playing === sound) done(); }, duration * 1000 + 200);
+      let round = 1;
+      const end = () => {
+        if (playing !== sound) return;
+        if (round >= times()) { done(); return; }
+        round += 1;
+        synth.start();
+        timer = setTimeout(end, duration * 1000);
+      };
+      timer = setTimeout(end, duration * 1000 + (times() > 1 ? 0 : 200));
     }).catch(() => { if (playing === sound) done(); });
   };
   return button;
 }
 
-// The opening of a tune, as a small score with a play button: its header and first
-// line of music (chords hidden). Enough to recognise it by eye or by ear.
-function tunePreview(tune) {
+// The opening of a tune: its header and first line of music (on a phone, its first four
+// bars), ready to draw. Enough to recognise it by eye or by ear.
+function openingAbc(tune) {
   const lines = tune.abc.split("\n");
   const k = lines.findIndex((l) => l.startsWith("K:"));
   const head = lines.slice(0, k + 1).filter((l) => /^[XMLK]:/.test(l));
@@ -964,21 +980,29 @@ function tunePreview(tune) {
   if (matchMedia("(max-width: 800px)").matches) {
     first = first.replace(/^\s*\|*:?/, "").match(/^(?:[^|]*?(?:\|+:?|:\|+\d?|\|\d)){1,4}/)?.[0] ?? first;
   }
-  const abc = setTempo([...head, first.replace(/\s*(:\||\|)?\s*$/, " |]")].join("\n"), tune.beat, tune.bpm);
+  return setTempo([...head, first.replace(/\s*(:\||\|)?\s*$/, " |]")].join("\n"), tune.beat, tune.bpm);
+}
+
+// The opening, as a small score with a play button (chords hidden).
+function tunePreview(tune) {
+  const abc = openingAbc(tune);
   const paper = el("div", { class: "preview-score hide-chords" });
   let visualObj = null;
   const button = playButton(() => visualObj, (playing) => playing
     ? tr(`Stop the opening of ${tune.base}`, `Stopio dechrau ${tune.base}`)
     : tr(`Play the opening of ${tune.base}`, `Chwarae dechrau ${tune.base}`), tune);
   const box = el("div", { class: "preview" }, button, paper);
-  requestAnimationFrame(() => {
-    // On a phone, drawn at the box's own width (not drawn wide and shrunk), so the notes are full size.
-    const narrow = matchMedia("(max-width: 800px)").matches && paper.clientWidth > 0;
-    visualObj = ABCJS.renderAbc(paper, abc, { responsive: "resize", paddingtop: 0, paddingbottom: 0, add_classes: true, format: SCORE_FORMAT,
-      ...(narrow ? { staffwidth: Math.max(180, paper.clientWidth - 24) } : {}) })[0];
-    nameScore(paper);
-  });
+  requestAnimationFrame(() => { visualObj = drawOpening(paper, abc); });
   return box;
+}
+
+function drawOpening(paper, abc) {
+  // On a phone, drawn at the box's own width (not drawn wide and shrunk), so the notes are full size.
+  const narrow = matchMedia("(max-width: 800px)").matches && paper.clientWidth > 0;
+  const visualObj = ABCJS.renderAbc(paper, abc, { responsive: "resize", paddingtop: 0, paddingbottom: 0, add_classes: true, format: SCORE_FORMAT,
+    ...(narrow ? { staffwidth: Math.max(180, paper.clientWidth - 24) } : {}) })[0];
+  nameScore(paper);
+  return visualObj;
 }
 
 function renderNotesPage(main) {
@@ -1191,6 +1215,11 @@ function addressTune() {
 
 // The session in the address: sesiynau/<id>/ (its own page), or null.
 const addressSession = () => sitePath().match(/^sesiynau\/([^/]+)\/?$/)?.[1] ?? null;
+// The night in the address: sesiynau/<id>/<date>/ (the tunes played then), as { id, day }, or null.
+function addressSetlist() {
+  const match = sitePath().match(/^sesiynau\/([^/]+)\/(\d{4}-\d{2}-\d{2})\/?$/);
+  return match ? { id: match[1], day: match[2] } : null;
+}
 
 // The tunes didn't come (no signal on a first visit, most often): say so plainly, as when
 // the sheet music doesn't, and offer to try again (the whole page, since nothing loaded).
@@ -1414,10 +1443,12 @@ function render() {
   const setsPage = page === "sets";
   const sessions = /^sesiynau\/?$/.test(sitePath());
   const oneSession = addressSession();
+  const setlist = addressSetlist();
+  const archive = /^archif\/?$/.test(sitePath());
   const main = document.getElementById("main");
   // abcjs (the sheet music and playback, 140 KB) isn't needed for the home page, so it
   // isn't loaded before it: a page with music waits for it (see loadAbcjs).
-  if ((tune || notes || setPage || page === "add") && !window.ABCJS) {
+  if ((tune || notes || setPage || setlist || page === "add") && !window.ABCJS) {
     loadAbcjs().then(render, () => main.replaceChildren(emptyArt(),
       el("p", {}, tr("Couldn't load the sheet music. Check your connection, then try again.",
         "Methu llwytho'r gerddoriaeth. Gwiriwch eich cysylltiad, yna rhowch gynnig arall arni.")),
@@ -1426,11 +1457,11 @@ function render() {
   }
   if (!tune) setPractice(false);
   main.style.animation = "none"; void main.offsetWidth; main.style.animation = "";  // replay fade-in
-  const home = !tune && !lost && !guide && !map && !offline && !notes && !browse && !contact && !found && !setPage && !setsPage && !sessions && !oneSession;
+  const home = !tune && !lost && !guide && !map && !offline && !notes && !browse && !contact && !found && !setPage && !setsPage && !sessions && !oneSession && !setlist && !archive;
   // The home page has its own search box (as search results do); a tune's page gives the music more of the width.
   document.body.dataset.page = home ? "home" : tune ? "tune" : found ? "search" : "other";
   setMenu(false);
-  markCurrentLink(sessions || oneSession ? "sesiynau/" : browse ? "?page=browse" : page && !setPage ? `?page=${page}` : null);
+  markCurrentLink(setlist || archive ? "archif/" : sessions || oneSession ? "sesiynau/" : browse ? "?page=browse" : page && !setPage ? `?page=${page}` : null);
   main.lang = state.lang;
   keepAwake(Boolean(tune || setPage));
   if (tune) renderTune(main, group, tune);
@@ -1446,6 +1477,8 @@ function render() {
   else if (setsPage) renderSets(main);
   else if (sessions) renderSessions(main);
   else if (oneSession) renderSession(main, oneSession);
+  else if (setlist) renderSetlist(main, setlist.id, setlist.day);
+  else if (archive) renderArchive(main);
   else renderHome(main);
   countView();
 }
@@ -5554,6 +5587,17 @@ async function renderSession(main, id) {
   const all = el("p", {}, el("a", { href: "sesiynau/", "data-route": true }, tr("All sessions, on a map", "Pob sesiwn, ar fap")));
   const session = sessions.find((s) => s.id === id);
   if (!session) {
+    // One that has stopped (or moved to another day) may still have its setlists.
+    const past = await loadSetlists(id).catch(() => null);
+    if (addressSession() !== id) return;
+    if (past?.session) {
+      document.title = `${sessionTitle(past.session)} · Y Sesiwn`;
+      main.replaceChildren(el("h1", {}, sessionTitle(past.session)),
+        el("p", { class: "lead" }, tr("This session isn't on our list of active sessions any more: it may have stopped, or moved to another day. These are the tunes played there.",
+          "Dydy'r sesiwn hon ddim ar ein rhestr o sesiynau cyfredol bellach: efallai ei bod wedi dod i ben, neu wedi symud i ddiwrnod arall. Dyma'r alawon a chwaraewyd yno.")),
+        el("section", { class: "setlists" }, setlistsParts(id, past)), all);
+      return;
+    }
     document.title = tr("Session not found · Y Sesiwn", "Sesiwn heb ei chanfod · Y Sesiwn");
     main.replaceChildren(el("h1", {}, tr("Session not found", "Sesiwn heb ei chanfod")), emptyArt("pibgorn"),
       el("p", { class: "lead" }, tr("There's no session at this address. It may have stopped, or moved to another day.",
@@ -5569,6 +5613,7 @@ async function renderSession(main, id) {
   }
   const here = towns.find((t) => t.name === tr(session.town, session.town_cy));
   const others = sessions.filter((s) => s !== session && s.town === session.town);
+  const played = el("section", { class: "setlists" });
   main.replaceChildren(...[
     el("h1", {}, title, session.kind === "tune club" ? el("span", { class: "badge" }, tr("Tune club", "Clwb alawon")) : null),
     el("div", { class: "session-page" },
@@ -5577,8 +5622,206 @@ async function renderSession(main, id) {
     others.length ? el("section", {}, el("h2", { class: "section-heading" }, tr(`Also in ${session.town}`, `Hefyd ${ynPlace(session.town_cy)}`)),
       el("ul", {}, others.map((s) => el("li", {}, el("a", { href: sessionUrl(s), "data-route": true }, s.name ?? s.venue),
         ` · ${sessionDays(s)}, ${sessionTime(s)}`)))) : null,
+    played,
     all,
   ].filter(Boolean));
+  fillSetlists(played, session);
+}
+
+// ---- Setlists -------------------------------------------------------------------------
+// The tunes played at a session, night by night, as people send them in (build_site.py:
+// setlist_data). They're fetched only on the session's own page and its nights' pages,
+// so however many there are, the rest of the site is no heavier. A record of what was
+// played, not sets to play: they're never offered as a set, nor shown on a tune's page.
+
+const setlistUrl = (id, day) => `sesiynau/${encodeURIComponent(id)}/${day}/`;
+
+// sesiynau/<id>/setlists.json: { setlists: [{ date, tunes }], most, session? }, or null if it has none.
+function loadSetlists(id) {
+  if (!state.setlists.has(id)) {
+    state.setlists.set(id, fetch(`sesiynau/${encodeURIComponent(id)}/setlists.json`).then((answer) => {
+      if (answer.status === 404) return null;
+      if (!answer.ok) throw new Error(`setlists.json: ${answer.status}`);
+      return answer.json();
+    }).catch((error) => { state.setlists.delete(id); throw error; }));
+  }
+  return state.setlists.get(id);
+}
+
+// "Tuesday 20 October 2026" (not the browser's "Tuesday, 20 October 2026"), "Dydd Mawrth 20 Hydref 2026".
+const nightLabel = (day) => dateLabel(dateOf(day), { weekday: "long", day: "numeric", month: "long", year: "numeric" })
+  .replace(",", "").replace(/^./, (c) => c.toUpperCase());
+
+// A tune in a setlist: its page, or its name alone if it isn't on the site.
+const setlistTune = (tune) => (tune.tune
+  ? el("a", { href: tuneUrl(tune.tune), "data-route": true }, tuneName(tune.tune, tune.name))
+  : [tune.name, el("span", { class: "caption" }, tr(" (not on Y Sesiwn yet)", " (ddim ar Y Sesiwn eto)"))]);
+
+// A session's setlists: the tunes played there most (once it has a few), then each night's.
+// A night is { date, tunes } (or, in the archive, { date, count }).
+function setlistsParts(id, { setlists, most }, heading = el("h2", { class: "section-heading" }, tr("Tunes played here", "Alawon a chwaraewyd yma"))) {
+  const count = (night) => night.count ?? night.tunes.length;
+  return [
+    heading,
+    most.length ? [el("h3", {}, tr("Most played", "Yr alawon a chwaraeir amlaf")),
+      el("ol", { class: "most-played" }, most.map((tune) => el("li", {}, setlistTune(tune),
+        el("span", { class: "caption" }, tr(` · ${tune.nights} of ${setlists.length} nights`, ` · ${tune.nights} o'r ${setlists.length} noson`)))))] : null,
+    el("h3", {}, tr("Night by night", "Noson wrth noson")),
+    el("ul", { class: "nights" }, setlists.map((night) => el("li", {},
+      el("a", { href: setlistUrl(id, night.date), "data-route": true }, nightLabel(night.date)),
+      el("span", { class: "caption" }, tr(` · ${count(night)} tune${count(night) === 1 ? "" : "s"}`, ` · ${count(night)} alaw`))))),
+  ];
+}
+
+// archif/: every session's setlists, the latest first (build_site.py: archive_page).
+function loadArchive() {
+  state.archive ??= fetch("archif/archif.json").then((answer) => {
+    if (!answer.ok) throw new Error(`archif.json: ${answer.status}`);
+    return answer.json();
+  }).catch((error) => { state.archive = null; throw error; });
+  return state.archive;
+}
+
+async function renderArchive(main) {
+  document.title = tr("Tunes played at sessions · Y Sesiwn", "Alawon a chwaraewyd mewn sesiynau · Y Sesiwn");
+  const left = () => !/^archif\/?$/.test(sitePath());
+  const heading = el("h1", {}, tr("Tunes played at sessions", "Alawon a chwaraewyd mewn sesiynau"));
+  let sessions;
+  try { ({ sessions } = await loadArchive()); } catch {
+    if (left()) return;
+    main.replaceChildren(heading,
+      el("p", {}, tr("Couldn't load the tunes played. Check your connection and try again.", "Methu llwytho'r alawon a chwaraewyd. Gwiriwch eich cysylltiad a rhoi cynnig arall arni.")),
+      el("button", { type: "button", class: "primary", onclick: () => renderArchive(main) }, tr("Try again", "Rhoi cynnig arall arni")));
+    return;
+  }
+  if (left()) return;
+  main.replaceChildren(...[heading,
+    el("p", { class: "lead" }, tr("An archive of what's been played at sessions, night by night, as players send it in.",
+      "Archif o'r hyn a chwaraewyd mewn sesiynau, noson wrth noson, fel mae chwaraewyr yn ei anfon atom.")),
+    sessions.map((s) => el("section", { class: "setlists" }, setlistsParts(s.id, s,
+      el("h2", { class: "section-heading" }, el("a", { href: sessionUrl(s), "data-route": true }, sessionTitle(s)))))),
+    el("p", {}, tr("Played at a session? Send the tunes from its page, under ", "Wedi chwarae mewn sesiwn? Anfonwch yr alawon o'i thudalen, o dan "),
+      el("a", { href: "sesiynau/", "data-route": true }, tr("Active sessions", "Sesiynau cyfredol")), ".")].flat(Infinity));
+}
+
+// On a session's own page: its setlists, if it has any, and the way to send a night's.
+async function fillSetlists(box, session) {
+  let kept = null;
+  if (session.setlists) {
+    try { kept = await loadSetlists(session.id); } catch {
+      kept = false;
+    }
+  }
+  if (!box.isConnected) return;
+  box.replaceChildren(...[
+    kept ? setlistsParts(session.id, kept) : null,
+    kept === false ? el("p", { class: "caption" }, tr("Couldn't load the tunes played here. Check your connection and try again.",
+      "Methu llwytho'r alawon a chwaraewyd yma. Gwiriwch eich cysylltiad a rhoi cynnig arall arni.")) : null,
+    sendSetlistForm(session),
+  ].flat(Infinity).filter(Boolean));
+}
+
+// Sending the tunes played on a night here: the session goes with them, so they're put with it.
+function sendSetlistForm(session) {
+  const day = el("input", { type: "date", required: true });
+  const tunes = el("textarea", { rows: 6, required: true });
+  const place = `${session.venue}, ${tr(session.town, session.town_cy)}`;
+  return el("details", { class: "send-setlist" },
+    el("summary", {}, tr("Played here? Send us the tunes", "Wedi chwarae yma? Anfonwch yr alawon atom")),
+    el("p", { class: "caption" }, tr("They'll go on this page, under the night's date.", "Byddan nhw'n mynd ar y dudalen hon, o dan ddyddiad y noson.")),
+    emailForm([
+      field(tr("The night", "Y noson"), day),
+      field(tr("The tunes, in the order they were played", "Yr alawon, yn y drefn y cawson nhw eu chwarae"), tunes,
+        tr("One a line, with its key if you know it. Tunes that aren't on Y Sesiwn too.",
+          "Un ar bob llinell, gyda'i chywair os ydych chi'n ei wybod. Alawon sydd ddim ar Y Sesiwn hefyd.")),
+    ], {
+      subject: () => `Y Sesiwn: ${tr("tunes played", "alawon a chwaraewyd")}, ${place}, ${day.value}`,
+      body: () => `${tr("Session", "Sesiwn")}: ${session.id}\n${tr("Night", "Noson")}: ${day.value}\n\n${tunes.value.trim()}\n`,
+    }));
+}
+
+// A tune on a night's page: its name, its opening, and a Play for the whole tune, in the key
+// chosen (the one it was played in, at first) and at the tempo chosen (the reader's own for
+// it), as many times through as the page says. No more of the music than that, so a night's
+// forty tunes don't crowd the page.
+function nightTune(item) {
+  const tune = state.groups.get(item.tune)?.versions[0];
+  if (!tune) return setlistTune(item);
+  const chosen = { key: item.shift ?? 0, bpm: keptSettings(tune).bpm };
+  const paper = el("div", { class: "preview-score hide-chords" });
+  // (No tempo mark: hidden, it would still leave its space above the notes.)
+  const draw = () => drawOpening(paper, transposeAbc(tune, openingAbc(tune).replace(/^Q:.*\n/m, ""), chosen.key));
+  const whole = () => ABCJS.renderAbc("*", transposeAbc(tune, setTempo(stripFields(tune.abc, "SZBNAHTR"), tune.beat, chosen.bpm), chosen.key))[0];
+  const key = () => (tune.key ? keyName(tune.key.pitch + chosen.key, tune.key.modeName) : null);
+  const label = (playing) => playing ? tr(`Stop ${tune.base}`, `Stopio ${tune.base}`)
+    : tr(`Play ${tune.base}${key() ? ` in ${key()}` : ""}`, `Chwarae ${tune.base}${key() ? ` yn ${key()}` : ""}`);
+  const play = playButton(whole, label, tune, () => state.practice.timesThrough || Infinity);
+  // A change stops it (it would carry on as it was): Play again plays it as it is now.
+  const change = (what) => (e) => {
+    chosen[what] = +e.target.value;
+    if (play.dataset.playing === "true") state.keyNote?.stop();
+    if (what === "key") { draw(); play.setAttribute("aria-label", label(false)); }
+  };
+  const id = `night-${tune.slug}-${Math.random().toString(36).slice(2, 7)}`;
+  const control = (name, label, input) => el("span", { class: "control" }, el("label", { for: `${id}-${name}` }, label), input);
+  const box = el("div", { class: "night-tune" },
+    el("div", { class: "night-tune-head" }, setlistTune(item), play),
+    paper,
+    el("div", { class: "night-tune-controls" },
+      control("key", tr("Key", "Cywair"), el("select", { id: `${id}-key`, onchange: change("key") }, keyOptions(tune, chosen.key))),
+      control("bpm", tr("Tempo", "Tempo"), el("input", { id: `${id}-bpm`, type: "number", min: MIN_BPM, max: MAX_BPM, step: 1, value: chosen.bpm,
+        inputmode: "numeric", onchange: (e) => {
+          e.target.value = Math.min(MAX_BPM, Math.max(MIN_BPM, Math.round(+e.target.value || tune.bpm)));
+          change("bpm")(e);
+        } }))));
+  // Drawn when it's about to be seen: a night can have forty or more.
+  const seen = new IntersectionObserver((entries) => {
+    if (entries.some((e) => e.isIntersecting)) { seen.disconnect(); draw(); }
+  }, { rootMargin: "600px" });
+  seen.observe(paper);
+  return box;
+}
+
+// A night's own page (sesiynau/<id>/<date>/): the tunes played, in order, and the way back
+// to the session (with its other nights).
+async function renderSetlist(main, id, day) {
+  const left = () => addressSetlist()?.id !== id || addressSetlist()?.day !== day;
+  let sessions, kept;
+  try { [{ sessions }, kept] = await Promise.all([loadSessions(), loadSetlists(id)]); } catch {
+    if (left()) return;
+    main.replaceChildren(el("h1", {}, tr("Tunes played", "Alawon a chwaraewyd")),
+      el("p", {}, tr("Couldn't load the tunes played. Check your connection and try again.", "Methu llwytho'r alawon a chwaraewyd. Gwiriwch eich cysylltiad a rhoi cynnig arall arni.")),
+      el("button", { type: "button", class: "primary", onclick: () => renderSetlist(main, id, day) }, tr("Try again", "Rhoi cynnig arall arni")));
+    return;
+  }
+  if (left()) return;
+  const session = sessions.find((s) => s.id === id) ?? kept?.session;
+  const night = kept?.setlists.find((n) => n.date === day);
+  if (!session || !night) {
+    document.title = tr("Not found · Y Sesiwn", "Heb ei chanfod · Y Sesiwn");
+    main.replaceChildren(el("h1", {}, tr("No tunes from that night", "Dim alawon o'r noson honno")), emptyArt("crwth"),
+      el("p", { class: "lead" }, tr("Nobody has sent the tunes played that night.", "Does neb wedi anfon yr alawon a chwaraewyd y noson honno.")),
+      el("p", {}, session ? el("a", { href: sessionUrl(session), "data-route": true }, sessionTitle(session))
+        : el("a", { href: "sesiynau/", "data-route": true }, tr("All sessions, on a map", "Pob sesiwn, ar fap"))));
+    return;
+  }
+  const title = sessionTitle(session);
+  const when = nightLabel(day);
+  document.title = `${when} · ${title} · Y Sesiwn`;
+  const shareStatus = el("p", { class: "caption share-status", "aria-live": "polite" });
+  const share = shareMenu(`share-setlist-${id}-${day}`, () => `${title}, ${nightLabel(day)}`, () => `https://ysesiwn.cymru/${setlistUrl(id, day)}`,
+    shareStatus, { qrNote: () => tr("Scan with a phone's camera to open these tunes.", "Sganiwch gyda chamera ffôn i agor yr alawon hyn.") });
+  main.replaceChildren(
+    el("h1", {}, tr(`Tunes played on ${when}`, `Alawon a chwaraewyd ar ${when.replace(/^Dydd/, "ddydd")}`)),
+    el("p", { class: "lead" }, tr("At ", "Yn "), el("a", { href: sessionUrl(session), "data-route": true }, title)),
+    // How many times each tune plays, for them all (and kept on this device): a tune playing takes it up at its end.
+    el("p", { class: "times-through control" }, el("label", { for: "times-through" }, tr("Play each tune", "Chwarae pob alaw")),
+      el("select", { id: "times-through", onchange: (e) => { state.practice.timesThrough = +e.target.value; savePractice(); } },
+        TIMES_THROUGH.map((n) => el("option", { value: n, selected: n === state.practice.timesThrough },
+          { 1: tr("Once", "Unwaith"), 2: tr("Twice", "Ddwywaith"), 3: tr("3 times", "Deirgwaith"), 0: tr("Until stopped", "Nes ei stopio") }[n])))),
+    el("ol", { class: "setlist" }, night.tunes.map((tune) => el("li", {}, nightTune(tune)))),
+    el("div", { class: "session-links" }, share), shareStatus,
+    el("p", {}, el("a", { href: sessionUrl(session), "data-route": true }, tr("Other nights here, and the tunes played most", "Nosweithiau eraill yma, a'r alawon a chwaraeir amlaf"))));
 }
 
 // ---- Installing the app ---------------------------------------------------------------

@@ -2058,9 +2058,9 @@ function features() {
 function tabWelcome() {
   const said = el("p", { class: "caption tab-said", "aria-live": "polite" });
   return el("section", { class: "tab-welcome", "aria-labelledby": "tab-welcome-title" },
-    el("h2", { id: "tab-welcome-title" }, tr("Tabs or holes, if you want them", "Tablatur neu dyllau, os hoffech chi")),
-    el("p", {}, tr("Don't read music yet? Most whistles are in D. Have the tabs or holes for your instrument under every note.",
-      "Ddim yn darllen cerddoriaeth eto? Mae'r rhan fwyaf o chwislau yn D. Cewch y tablatur neu'r tyllau ar gyfer eich offeryn o dan bob nodyn.")),
+    el("h2", { id: "tab-welcome-title" }, tr("Tablature, if you want it", "Tablatur, os hoffech chi")),
+    el("p", {}, tr("Don't read music yet? Most whistles are in D. Have the tablature for your instrument under every note.",
+      "Ddim yn darllen cerddoriaeth eto? Mae'r rhan fwyaf o chwislau yn D. Cewch y tablatur ar gyfer eich offeryn o dan bob nodyn.")),
     el("p", { class: "pills-label", id: "tab-choice-label" }, tr("On every tune", "Ar bob alaw")),
     tabChooser("tab-choice-label", (value, name) => said.replaceChildren(...doneText(value === "none"
       ? tr("Just the music, on every tune. Kept on this device.", "Y gerddoriaeth yn unig, ar bob alaw. Wedi'i gadw ar y ddyfais hon.")
@@ -4275,15 +4275,12 @@ function renderTune(main, group, tune) {
   // The holes or tabs, just above the music and never folded away: at a session, picked as
   // the tune starts. The music is drawn again under it, so the menu itself doesn't move.
   const tabSelect = el("select", { id: "tab-select", onchange: (e) => chooseTab(e.target.value) },
-    // In the pills' order, by how they're read: the music, the holes, or a string's frets.
-    // Eight choices read as three.
+    // In the pills' order: the music, then the instruments. One list: players call the holes
+    // and the frets alike tablature, and each instrument's name says which it is.
     (() => {
       const option = ([value, label]) => el("option", { value, selected: state.practice.tab === value }, label);
       return [option(["none", tr("Just the music", "Y gerddoriaeth yn unig")]),
-        el("optgroup", { label: tr("Whistle and recorder: holes", "Chwisl a recorder: tyllau") },
-          Object.entries(FINGERED).map(([value, f]) => option([value, f.label()]))),
-        el("optgroup", { label: tr("Strings: tabs", "Llinynnau: tablatur") },
-          Object.entries(TABS).map(([value, t]) => option([value, t.label()])))];
+        ...[...Object.entries(FINGERED), ...Object.entries(TABS)].map(([value, t]) => option([value, t.label()]))];
     })());
   // Choosing the holes or tabs: kept for every tune, drawn, and said.
   const chooseTab = (value) => {
@@ -4296,7 +4293,7 @@ function renderTune(main, group, tune) {
     tabSelect.value = value;
     const label = value === "none" ? tr("Just the music", "Y gerddoriaeth yn unig") : (FINGERED[value] ?? TABS[value]).label();
     tabSaid.textContent = value === "none" ? label : FINGERED[value]
-      ? tr(`${label}: the holes under each note, and how to read them just above the music`, `${label}: y tyllau o dan bob nodyn, a sut i'w darllen ychydig uwchben y gerddoriaeth`)
+      ? tr(`${label}: tablature under each note, and how to read it just above the music`, `${label}: tablatur o dan bob nodyn, a sut i'w ddarllen ychydig uwchben y gerddoriaeth`)
       : tr(`${label}, under each note`, `${label}, o dan bob nodyn`);
     redraw();
   };
@@ -4340,7 +4337,7 @@ function renderTune(main, group, tune) {
   }
   // "Just the music" first among them, as much a choice as the rest.
   const tabLine = el("div", { class: "tab-line control" },
-    el("label", { for: "tab-select" }, tr("Tabs or holes", "Tablatur neu dyllau")), tabSelect);
+    el("label", { for: "tab-select" }, tr("Tablature", "Tablatur")), tabSelect);
   const toolGroup = (label, ...lines) => el("div", { class: "practice-group", role: "group", "aria-label": label },
     el("span", { class: "label", "aria-hidden": "true" }, label), ...lines);
   // Everything in the tools is kept, on this device: some for every tune, the rest for this one.
@@ -4452,9 +4449,8 @@ function linkCarries(tune, settings, tab = "none") {
   const key = settings.transpose && tune.key
     ? keyName(tune.key.pitch + settings.transpose, tune.key.modeName) : null;
   const bpm = settings.bpm !== tune.bpm ? settings.bpm : null;
-  const holes = FINGERED[tab], tabs = TABS[tab];
-  const shown = holes ? tr(`with the holes (${holes.label()})`, `gyda'r tyllau (${holes.label()})`)
-    : tabs ? tr(`with tabs (${tabs.label()})`, `gyda thablatur (${tabs.label()})`) : null;
+  const tabs = FINGERED[tab] ?? TABS[tab];
+  const shown = tabs ? tr(`with tablature (${tabs.label()})`, `gyda thablatur (${tabs.label()})`) : null;
   return (state.lang === "cy"
     ? [key && `yn ${key}`, bpm && `ar ${bpm} bpm`, shown]
     : [key && `in ${key}`, bpm && `at ${bpm} bpm`, shown]).filter(Boolean).join(", ");

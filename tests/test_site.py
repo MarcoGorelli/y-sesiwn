@@ -1167,7 +1167,7 @@ def test_embed_code(page, site):
     assert 'title="Glandyfi: sheet music and playback (Y Sesiwn)"' in code and 'max-width: 720px;' in code
     height = int(code.split('height="')[1].split('"')[0])
     assert abs(height - page.evaluate("document.querySelector('.embed-preview').contentDocument.body.offsetHeight") - 8) <= 1
-    assert "in A major, with the holes" in page.inner_text(".embed-dialog p")
+    assert "in A major, with tablature" in page.inner_text(".embed-dialog p")
     # The step-by-step guide, from the dialog.
     page.click(".embed-dialog a[href='?page=embed']")
     page.wait_for_selector("article.guide h1")

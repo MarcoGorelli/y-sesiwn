@@ -3,6 +3,7 @@
   "places": [
     {"name": "Aberdâr", "lat": 51.713, "lon": -3.446, "tunes": ["the-aberdare-railway-polka", "the-trecynon-polka", "the-cwmbach-quickstep", "walts-abernant"]},
     {"name": "Aberdaugleddau", "lat": 51.714, "lon": -5.042, "tunes": ["aberdaugleddau"]},
+    {"name": "Aberdulais", "lat": 51.680, "lon": -3.772, "tunes": ["aberdulais"]},
     {"name": "Aberhonddu", "lat": 51.947, "lon": -3.391, "tunes": ["pibddawns-aberhonddu"]},
     {"name": "Abergenni", "lat": 51.824, "lon": -3.017, "tunes": ["abergenni", "lady-abergavenny-s-fancy"]},
     {"name": "Abergwaun", "lat": 51.994, "lon": -4.976, "tunes": ["ril-abergwaun"]},
@@ -75,7 +76,7 @@
     {"name": "Malltraeth", "lat": 53.192, "lon": -4.39, "tunes": ["malltraeth"]},
     {"name": "Margam", "lat": 51.561, "lon": -3.721, "tunes": ["difyrrwch-gwyr-margam"]},
     {"name": "Mawddwy", "lat": 52.72, "lon": -3.686, "tunes": ["the-men-of-mawddwy-s-delight"]},
-    {"name": "Meirionnydd", "lat": 52.85, "lon": -3.8, "tunes": ["meillionen-meirionnydd", "pibddawns-meirionnydd", "conset-meirionnydd", "mwynen-meirionnydd", "ymdaith-meirionnydd", "yr-encil"]},
+    {"name": "Meirionnydd", "lat": 52.85, "lon": -3.8, "tunes": ["meillionen-meirionnydd", "pibddawns-meirionnydd", "conset-meirionnydd", "mwynen-meirionnydd", "ymdaith-meirionnydd", "ymdaith-meirionnydd-yr-encil"]},
     {"name": "Merthyr Tudful", "lat": 51.746, "lon": -3.378, "tunes": ["mwynen-merthyr", "polca-rhyd-y-car", "pibddawns-merthyr-tydfil", "walts-penydarren", "quadrille-barwn-merthyr"]},
     {"name": "Môn", "lat": 53.27, "lon": -4.35, "tunes": ["mon", "mwynen-mon", "fair-maids-of-mona"]},
     {"name": "Morfa Rhuddlan", "lat": 53.3, "lon": -3.48, "tunes": ["morfa-rhuddlan", "morfa-rhuddlan-mary-richards", "morfa-rhuddlan-robin-huw-bowen"]},

@@ -49,7 +49,7 @@ def test_titles_and_versions():
 SEPARATE_TUNES = {
     ("llety-r-bugail", "llety-r-bugail-counterpoint"),
     ("ffarwel-i-aberystwyth", "gadael-aberystwyth"),
-    ("ymdaith-meirionnydd", "yr-encil"),  # a march and its retreat, recast in 6/8
+    ("ymdaith-meirionnydd", "ymdaith-meirionnydd-yr-encil"),  # a march and its retreat, recast in 6/8
 }
 
 

@@ -70,6 +70,25 @@
       "confirmed": "2026-10-02"
     },
     {
+      "kind": "tune club",
+      "name": "Clwb Gwerin",
+      "venue": "Tŷ Tawe",
+      "address": "9 Christina Street, Swansea SA1 4EW",
+      "town": "Swansea",
+      "town_cy": "Abertawe",
+      "county": "Swansea",
+      "lat": 51.6205,
+      "lon": -3.945,
+      "day": "Sunday",
+      "repeat": "monthly",
+      "nth": 2,
+      "start": "14:00",
+      "end": "15:30",
+      "music": "A folk club for children and their families, of all ages. No experience needed. Run by Menter Iaith Abertawe.",
+      "music_cy": "Clwb gwerin i blant a theuluoedd o bob oedran, gyda phrofiad neu beidio. Dan ofal Menter Iaith Abertawe.",
+      "confirmed": "2026-11-05"
+    },
+    {
       "venue": "Hoogah",
       "address": "68 Brynymor Road, Swansea SA1 4JJ",
       "town": "Swansea",

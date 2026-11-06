@@ -12,14 +12,20 @@ from pathlib import Path
 
 pytestmark = pytest.mark.browser
 
+# The checks of every tune go in this many pieces, each a test of its own: run in parallel,
+# no one of them holds up the rest (the tests run alone wait for the longest running).
+PIECES = 16
+in_pieces = pytest.mark.parametrize("piece", range(PIECES))
 
-def test_every_tune_draws(page):
+
+@in_pieces
+def test_every_tune_draws(page, piece):
     # Every tune and version, with each playback setting, through the same steps as
     # drawScore(): a tune that comes out with no notes shows a blank score.
     page.goto_site()
-    empty = page.evaluate("""() => {
+    empty = page.evaluate("""([piece, pieces]) => {
       const empty = [];
-      for (const tune of state.data.tunes) {
+      for (const tune of state.data.tunes.filter((_, i) => i % pieces === piece)) {
         for (const play of ["tune", "both", "chords"]) {
           const abc = accompaniment(setTempo(stripFields(tune.abc, "SZBNAH"), tune.beat, tune.bpm), play);
           const lines = ABCJS.renderAbc("*", abc)[0].lines;
@@ -28,7 +34,7 @@ def test_every_tune_draws(page):
         }
       }
       return empty;
-    }""")
+    }""", [piece, PIECES])
     assert empty == []
 
 
@@ -606,12 +612,13 @@ def test_whistle_fingerings(page):
 # Every note's signs and holes are its own, in every tune, as written and in other keys: a
 # note with nothing in a row has a blank there that a rest can't take (abcjs's "*" was taken
 # by a rest before it, and the notes after it each got the next note's "+" or holes).
-def test_fingerings_under_their_own_notes(page):
+@in_pieces
+def test_fingerings_under_their_own_notes(page, piece):
     page.goto_site()
-    wrong = page.evaluate("""() => {
+    wrong = page.evaluate("""([piece, pieces]) => {
       const wrong = [];
       const said = (f) => f === null ? "?" : f === "tied" ? "" : (OCTAVES_UP[f.up] ?? "") + (f.high ? "+" : "") + f.holes;
-      for (const tune of state.data.tunes) {
+      for (const tune of state.data.tunes.filter((_, i) => i % pieces === piece)) {
         for (const [tab, key] of [["whistle-D", 0], ["whistle-D", 2], ["whistle-G", -3], ["recorder", 0], ["recorder", 5]]) {
           const voice = melodyVoice(tune.abc);
           const abc = withFingerings(transposeAbc(tune, tune.abc, key), FINGERED[tab], 11, voice);
@@ -626,9 +633,13 @@ def test_fingerings_under_their_own_notes(page):
         }
       }
       return wrong;
-    }""")
+    }""", [piece, PIECES])
     assert wrong == []
-    # The case found: a "+" with a rest before the note without one, and after it.
+
+
+# The case found: a "+" with a rest before the note without one, and after it.
+def test_fingerings_around_a_rest(page):
+    page.goto_site()
     rows = page.evaluate("""() => ABCJS.renderAbc('*', withFingerings('X:1\\nL:1/8\\nK:D\\nD2 z2 E2 d2|]', FINGERED['whistle-D']))[0]
       .lines[0].staff[0].voices[0].filter((e) => e.el_type === 'note' && !e.rest).map((n) => n.lyric[0].syllable)""")
     assert rows == [".", ".", "+"]
@@ -2488,17 +2499,21 @@ def test_parts_start_at_their_bar_line(page, abc, parts):
     assert found == [p.strip() for p in parts]
 
 
-def test_no_part_is_shorter_than_a_bar(page):
+@in_pieces
+def test_no_part_is_shorter_than_a_bar(page, piece):
     # A part repeated on its own is at least a bar of music: Angharad Siân's lead-in "a"
     # was its part A, played over and over.
     page.goto_site()
-    short = page.evaluate("""() => state.data.tunes.filter((t) => {
+    short = page.evaluate("""([piece, pieces]) => state.data.tunes.filter((t, i) => i % pieces === piece && (() => {
       const v = ABCJS.renderAbc('*', t.abc)[0];
       const notes = v.lines.flatMap((l) => l.staff?.[0]?.voices?.[0] ?? []).filter((e) => e.el_type === 'note');
       return tuneParts(v).some((p) => notes.filter((n) => n.startChar >= p.from && n.startChar < p.to)
         .reduce((sum, n) => sum + n.duration, 0) < v.getBarLength() - 1e-6);
-    }).map((t) => t.slug)""")
+    })()).map((t) => t.slug)""", [piece, PIECES])
     assert short == []
+
+
+def test_angharad_sian_loops_its_two_parts(page):
     page.goto_site("alaw/angharad-sian/")
     page.wait_for_selector(".score .abcjs-staff")
     options = page.eval_on_selector_all("#loop-select option", "os => os.map((o) => o.textContent)")

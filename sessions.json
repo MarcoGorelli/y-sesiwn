@@ -64,10 +64,10 @@
       "day": "Friday",
       "repeat": "monthly",
       "nth": 2,
-      "start": "21:00",
+      "start": "20:00",
       "music": "Welsh tunes and songs, with the odd exception. At Swansea's Welsh-language centre, run by Menter Iaith Abertawe.",
       "music_cy": "Alawon a chaneuon Cymreig, gydag ambell eithriad. Yng nghanolfan Gymraeg Abertawe, dan ofal Menter Iaith Abertawe.",
-      "confirmed": "2026-10-02"
+      "confirmed": "2026-11-06"
     },
     {
       "kind": "tune club",

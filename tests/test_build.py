@@ -531,7 +531,7 @@ def test_sessions(site):
     assert all(s["county"] == "Outside Wales" or ("x" in s and "y" in s) for s in built)
     page = (out / "sesiynau" / "index.html").read_text(encoding="utf-8")
     assert '<base href="../">' in page and "<title>Active sessions · Y Sesiwn</title>" in page
-    assert "2nd Friday of the month, from 21:00" in page and "Last confirmed" in page
+    assert "2nd Friday of the month, from 20:00" in page and "Last confirmed" in page
     assert "<strong>Llantrisant Tune Club</strong></a> (tune club): Last Tuesday of the month, from 19:00" in page
     assert '<a href="sesiynau/ty-tawe-swansea-friday/"><strong>Sesiwn Werin Tŷ Tawe</strong></a>' in page
     sitemap = (out / "sitemap.xml").read_text(encoding="utf-8")
@@ -542,7 +542,7 @@ def test_sessions(site):
         assert (out / "sesiynau" / s["id"] / "index.html").exists()
     page = (out / "sesiynau" / "ty-tawe-swansea-friday" / "index.html").read_text(encoding="utf-8")
     assert '<base href="../../">' in page and "<title>Sesiwn Werin Tŷ Tawe, Swansea · Y Sesiwn</title>" in page
-    assert '<meta property="og:description" content="Folk session with Welsh tunes: 2nd Friday of the month, from 21:00.' in page
+    assert '<meta property="og:description" content="Folk session with Welsh tunes: 2nd Friday of the month, from 20:00.' in page
     assert '<link rel="canonical" href="https://ysesiwn.cymru/sesiynau/ty-tawe-swansea-friday/">' in page
     assert page.count('"@type": "Event"') == 1
     assert b.session_title({"name": "Sesiwn Werin", "venue": "Cwrw", "town": "Carmarthen"}) == "Sesiwn Werin, Cwrw, Carmarthen"

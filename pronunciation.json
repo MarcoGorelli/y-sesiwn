@@ -1,6 +1,7 @@
 {
   "_comment": "A rough guide to saying each Welsh tune name, for English speakers (shown on the tune's page in English): folder name of the tune -> respelling. kh = ch in loch, dh = th in this, hl = Welsh ll, ai = eye, ay = day, ow = cow, oo = food, uh = the a in about, ee = see; capitals: the stressed syllable. A draft made by rules and checked by hand: corrections from Welsh speakers are welcome. Tunes with English names (or names in another language) are listed under \"english\" instead, so each new tune needs one or the other: a test checks.",
   "say": {
+    "2-gardi-2": "dai GAR-dee dai",
     "a-ei-di-r-deryn-du": "a ay deer DEH-rin dee",
     "a-mi-yn-dod-adre": "a mee uhn dod A-dreh",
     "abaty-llanthony": "a-BA-tee hlan-TO-nee",

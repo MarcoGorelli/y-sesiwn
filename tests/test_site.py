@@ -3104,7 +3104,7 @@ def test_session_calendar(page):
     ics = Path(info.value.path()).read_bytes().decode("utf-8")  # as it is: CRLF line ends
     assert info.value.suggested_filename == "ty-tawe-swansea-friday.ics"
     unfolded = ics.replace("\r\n ", "")
-    assert "RRULE:FREQ=MONTHLY;BYDAY=2FR" in unfolded and "DTSTART;TZID=Europe/London:" in unfolded and "T210000" in unfolded
+    assert "RRULE:FREQ=MONTHLY;BYDAY=2FR" in unfolded and "DTSTART;TZID=Europe/London:" in unfolded and "T200000" in unfolded
     assert "TZID:Europe/London" in unfolded and "LOCATION:Tŷ Tawe\\, 9 Christina Street\\, Swansea SA1 4EW" in unfolded
     assert all(len(line.encode()) <= 75 for line in ics.split("\r\n"))  # long lines folded
     with page.expect_download() as info:

@@ -563,11 +563,11 @@ def test_session_events(site):
     assert b.next_session(fortnightly, date(2026, 10, 2)) == date(2026, 10, 16)  # not before it starts
     assert b.next_session(fortnightly, date(2026, 10, 17)) == date(2026, 10, 30)  # every other Friday
     assert b.next_session(fortnightly, date(2026, 10, 31)) == date(2026, 11, 13)  # across the clocks' change
-    assert b.describe_session(fortnightly) == "Every other Friday, from 21:00"
+    assert b.describe_session(fortnightly) == "Every other Friday, from 20:00"
     assert b.session_events([fortnightly], date(2026, 10, 2))[0]["eventSchedule"]["repeatFrequency"] == "P2W"
     events = b.session_events(sessions, date(2026, 10, 2))
     e = next(e for e in events if e["location"]["name"] == "Tŷ Tawe")
-    assert e["startDate"] == "2026-10-09T21:00" and e["eventSchedule"]["byMonthWeek"] == 2
+    assert e["startDate"] == "2026-10-09T20:00" and e["eventSchedule"]["byMonthWeek"] == 2
     assert e["eventSchedule"]["repeatFrequency"] == "P1M" and e["location"]["address"]["addressLocality"] == "Swansea"
     page = (b.OUT / "sesiynau" / "index.html").read_text(encoding="utf-8")
     assert '<script type="application/ld+json">' in page and '"@type": "Event"' in page

@@ -1,0 +1,26 @@
+{
+  "setlists": [
+    {"date": "2026-10-15", "tunes": [
+      {"tune": "cambro-brython-1", "key": "D major"},
+      {"tune": "dic-y-cymro", "key": "D major"},
+      {"tune": "ffaniglen-version-2", "key": "D major"},
+      {"tune": "machynlleth-version-2", "key": "G major"},
+      {"tune": "y-pibydd-du", "key": "D major"},
+      {"tune": "y-lili", "key": "D major"},
+      {"tune": "y-car-gwyllt", "key": "D major"},
+      {"tune": "mwynen-mon-version-2", "key": "A minor"},
+      {"tune": "morgawr", "key": "D Mixolydian"},
+      {"tune": "glandyfi-version-2", "key": "G major"},
+      {"tune": "ty-a-gardd-version-2", "key": "G major"},
+      {"tune": "pwt-ar-y-bys-version-2", "key": "D major"},
+      {"tune": "hel-y-sgwarnog-version-2", "key": "D major"},
+      {"tune": "ffidl-ffadl-version-2", "key": "G major"},
+      {"tune": "ymgyrchdon-y-waunlwyd-version-2", "key": "G major"},
+      {"tune": "bwlch-llanberis-version-2", "key": "D major"},
+      {"tune": "bunsen", "key": "D major"},
+      {"tune": "ffoles-llantrisant", "key": "A major"},
+      {"tune": "byth-adre", "key": "A major"},
+      {"tune": "y-derwydd-version-2", "key": "D major"}
+    ]}
+  ]
+}

@@ -2138,6 +2138,22 @@ def test_pickups_on_the_line_of_their_bar_on_a_phone(browser, site):
     context.close()
 
 
+def test_no_line_of_just_a_bar_line_on_a_phone(browser, site):
+    # A tune of long bars (9/8), laid out a bar a line on a phone: the |: each part starts
+    # with starts the line of its first bar, not a line of its own (just the clef, the key
+    # and the 9/8), or the end of the line before.
+    context = browser.new_context(service_workers="block", **PHONE)
+    page = context.new_page()
+    page.goto(site + "alaw/y-tebot/")
+    page.wait_for_selector(".score .abcjs-staff")
+    lines = page.evaluate("""() => {
+      const line = (e) => Number(e.getAttribute('class').match(/abcjs-l(\\d+)/)[1]);
+      return [new Set([...document.querySelectorAll('.score svg .abcjs-staff')].map(line)).size,
+        new Set([...document.querySelectorAll('.score svg .abcjs-note')].map(line)).size]; }""")
+    assert lines == [8, 8], lines  # eight bars, each on its own line, every line with notes
+    context.close()
+
+
 def test_a_slow_air_fits_a_phone_in_full_screen(browser, site):
     # In full screen a phone shows the whole of a slow air under its name: the lines closer
     # together, and the hidden chords not keeping room above every line.

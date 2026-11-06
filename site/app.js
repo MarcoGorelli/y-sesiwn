@@ -3000,13 +3000,17 @@ function noLoneBar(visualObj, layout, draw, abc, format, sung = false) {
   if (!layout.wrap || !visualObj) return visualObj;
   if (sung) return sungLines(layout, draw) ?? visualObj;
   const faults = (music) => {
-    const lines = music.lines.filter((line) => line.staff).map((line) => line.staff[0].voices[0].filter((x) => x.el_type === "bar"));
+    const voices = music.lines.filter((line) => line.staff).map((line) => line.staff[0].voices[0]);
+    const lines = voices.map((voice) => voice.filter((x) => x.el_type === "bar"));
     const most = Math.max(...lines.map((bars) => bars.length));
     const pickups = pickupBars(music);
+    // A line of just a bar line (the |: a part starts with, put on a line of its own when
+    // abcjs lays out a bar a line) is wrong however few bars the lines have.
+    const empty = voices.filter((voice) => !voice.some((x) => x.el_type === "note")).length;
     return {
       most,
-      count: lines.length < 2 || most < 2 ? 0
-        : lines.filter((bars) => bars.length === 1 || bars.at(-1)?.startEnding).length,
+      count: empty + (lines.length < 2 || most < 2 || layout.wrap.preferredMeasuresPerLine < 2 ? 0
+        : lines.filter((bars) => bars.length === 1 || bars.at(-1)?.startEnding).length),
       pickups: lines.filter((bars, i) => i < lines.length - 1 && pickups.has(bars.at(-1))).length,
     };
   };
@@ -3014,7 +3018,7 @@ function noLoneBar(visualObj, layout, draw, abc, format, sung = false) {
   const better = (a, b) => a.pickups < b.pickups || (a.pickups === b.pickups && a.count < b.count);
   const was = faults(visualObj), { most } = was;
   if (!was.count && !was.pickups) return visualObj;
-  const breaks = evenLines(visualObj, naturalWidths(abc, format));
+  const breaks = evenLines(visualObj, naturalWidths(abc, format), layout.wrap.preferredMeasuresPerLine);
   const even = breaks && draw({ staffwidth: layout.staffwidth, lineBreaks: [breaks] });
   if (even && better(faults(even), was)) return even;
   // Measured, the lines can't be better without crowding them: as abcjs had them. (Its own
@@ -3084,9 +3088,10 @@ function pickupBars(music) {
 // on a line, and no line ending where a first or second ending begins. (abcjs measured the
 // bars too, but on the tune's own lines, each stretched or squeezed to the width, so a
 // short line's bars, the last of a part, say, came out twice as wide as they are.) Null
-// for music in more than one block.
+// for music in more than one block. perLine: the bars a line the layout asked for; at one
+// (long bars, a 9/8's), a bar alone on a line is just what's wanted.
 const ROOM = 1.3;
-function evenLines(music, natural) {
+function evenLines(music, natural, perLine = 2) {
   const [measured, ...more] = music.explanation ?? [];
   if (!measured || more.length || !natural) return null;
   const widths = natural, n = widths.length;
@@ -3102,7 +3107,7 @@ function evenLines(music, natural) {
   const best = [{ cost: 0, from: -1 }];
   for (let j = 1; j <= n; j++) {
     best[j] = { cost: Infinity, from: 0 };
-    if (j < n && pickups.has(bars[j - 1])) continue;  // a pickup goes with the bar after it
+    if (j < n && (pickups.has(bars[j - 1]) || !widths[j - 1])) continue;  // a pickup (or a part's |:) goes with the bar after it
     let width = 0, full = 0;  // full: the line's bars that aren't pickups (or a bar line it starts with)
     for (let i = j - 1; i >= 0; i--) {
       width += widths[i];
@@ -3111,7 +3116,7 @@ function evenLines(music, natural) {
       const filled = Math.min(width / room, 1);
       let cost = j === n ? Math.max(0, 0.5 - filled) ** 2 : (1 - filled) ** 2;
       if (width > room && i < j - 1) cost += 3 + (10 * (width - room)) / room;  // closer together
-      if (i === j - 1 && filled < 0.55 && n > 1) cost += 4;  // a short bar alone
+      if (i === j - 1 && filled < 0.55 && n > 1 && perLine > 1) cost += 4;  // a short bar alone
       if (j < n && bars[j - 1]?.startEnding) cost += 16;  // an ending's bracket left at the end
       if (best[i].cost + cost < best[j].cost) best[j] = { cost: best[i].cost + cost, from: i };
     }
@@ -3137,11 +3142,14 @@ function naturalWidths(abc, format) {
   try {
     const line = ABCJS.renderAbc(out, one, { staffwidth: 20000, paddingtop: 0, format })[0]?.lines.find((l) => l.staffGroup);
     if (!line) return null;
+    // A bar line with no notes before it (the |: a part starts with, after the :| or the
+    // time signature) is no bar: 0 wide.
     const widths = [];
-    let start = null;
+    let start = null, notes = false;
     for (const x of line.staffGroup.voices[0].children) {
       if (start === null && !x.isClef && !x.isKeySig) start = x.x;
-      if (x.type === "bar" && start !== null) { widths.push(x.x - start); start = x.x; }
+      if (x.type === "note") notes = true;
+      if (x.type === "bar" && start !== null) { widths.push(notes ? x.x - start : 0); start = x.x; notes = false; }
     }
     return widths;
   } finally {

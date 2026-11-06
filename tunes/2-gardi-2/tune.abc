@@ -1,14 +1,22 @@
-X: 1
-T: 2 Gardi 2
-M: 2/4
-L: 1/8
-R: polca
-C: Stephen Rees
-S: Transcribed from a recording of Jordan Price Williams
-K: Edor
-|:E2 E2| G2 A2 | B2 A2 | A2 B2 | c2 dc| B2 A2 | B2 G2 | F2 B2|
-E2 E2| G2 A2 | B2 A2 | A2 B2 | G2 AG | F2 B2 | E4|1 -E4 :|2 z2 B2 ||
-c2 dc | B2 A2 | d2 ed | c2 B2 | c2 dc| B2 A2 | B2 E2| E2 B2|
-c2 dc |B2 A2 | d2 ed |c2 B2 | e2 a2 | g2 f2 | g2 e2 | e2 B2 |
-c2 dc | B2 A2 | d2 ed | c2 B2 | c2 dc| B2 A2 | B2 E2| E2 F2 |
-G2 FG | A2 GA | B2 e2 | B2 G2 | FG A2 | G2 F2 | G2 E2| E4|]
+X:1
+T:2 Gardi 2
+T:Dau Gardi Dau
+M:2/4
+L:1/8
+R:polca
+%%beat 1/2
+C:Stephen Rees
+S:Transcribed from a recording of Jordan Price Williams
+K:Edor
+|: E2 E2 | G2 A2 | B2 A2 | A2 B2 |
+c2 dc | B2 A2 | B2 G2 | F2 B2 |
+E2 E2 | G2 A2 | B2 A2 | A2 B2 |
+G2 AG | F2 B2 | E4- |1 E4 :|2 z2 B2 ||
+c2 dc | B2 A2 | d2 ed | c2 B2 |
+c2 dc | B2 A2 | B2 E2 | E2 B2 |
+c2 dc | B2 A2 | d2 ed | c2 B2 |
+e2 a2 | g2 f2 | g2 e2 | e2 B2 |
+c2 dc | B2 A2 | d2 ed | c2 B2 |
+c2 dc | B2 A2 | B2 E2 | E2 F2 |
+G2 FG | A2 GA | B2 e2 | B2 G2 |
+FG A2 | G2 F2 | G2 E2 | E4 |]

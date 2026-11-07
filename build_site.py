@@ -1540,8 +1540,9 @@ def setlist_pages(template: str, active: dict[str, dict], setlists: dict[str, di
             d = date.fromisoformat(night["date"])
             names = [t["name"] for t in night["tunes"]]
             some = ", ".join(names[:3]) + (f" and {len(names) - 3} more" if len(names) > 3 else "")
-            page_title = f"Tunes played at {title}, {long_date(night['date'])}"
-            description = (f"The tunes played at {title} on {long_date(night['date'])}: {some}. "
+            # The date first, as on the page: link previews cut a long session's name short.
+            page_title = f"Tunes played on {long_date(night['date'])} at {title}"
+            description = (f"The tunes played on {long_date(night['date'])} at {title}: {some}. "
                            f"Yr alawon a chwaraewyd {yn_place(s['town_cy'])} ar {d.day} {CY_MONTHS[d.month - 1]} {d.year}.")
             write_page(OUT / SESSIONS_DIR / sid / night["date"], app_page(
                 template, title=page_title, description=description, url=f"{SITE_URL}{SESSIONS_DIR}/{sid}/{night['date']}/",

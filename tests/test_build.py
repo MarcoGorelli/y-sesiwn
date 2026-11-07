@@ -678,7 +678,7 @@ def test_setlists(site):
                                                 {"tune": "glandyfi", "version": 1, "name": "Glandyfi", "key": "A major", "shift": 2}]
     night = (out / "sesiynau" / "chapter-cardiff-tuesday" / "2026-10-20" / "index.html").read_text(encoding="utf-8")
     assert '<base href="../../../">' in night
-    assert "<title>Tunes played at Noson Lawen: Folk in the Bar, Chapter, Cardiff, Tuesday 20 October 2026 · Y Sesiwn</title>" in night
+    assert "<title>Tunes played on Tuesday 20 October 2026 at Noson Lawen: Folk in the Bar, Chapter, Cardiff · Y Sesiwn</title>" in night
     assert "Yr alawon a chwaraewyd yng Nghaerdydd ar 20 Hydref 2026." in night and "<li>Drowsy Maggie</li>" in night
     assert '<li><a href="alaw/glandyfi/?v=1">Glandyfi</a> (A major)</li>' in night
     # A session that's stopped keeps a page, with its setlists.

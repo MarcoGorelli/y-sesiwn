@@ -588,6 +588,11 @@ details.all-tunes[open] > .tune-list { margin: .25rem 0 1.25rem; }
 .key-control .usual-key { position: static; white-space: normal; }
 .key-strip { display: flex; flex-wrap: wrap; gap: .35rem; }
 .key-strip button { position: relative; min-width: 2.75rem; min-height: 2.5rem; padding: .3rem .55rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+/* A mode's name under the note ("dor"), small, so the button stays as narrow as a note's */
+.key-strip button:has(.key-mode) { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.05;
+  min-height: 2.9rem; padding-bottom: .55rem; }  /* room for the original's dot under the name */
+.key-strip button.written:has(.key-mode)::after { bottom: .18rem; }
+.key-mode { font-size: .68rem; font-weight: 500; opacity: .8; }
 .key-strip button.written::after { content: ""; position: absolute; left: 50%; bottom: .2rem; width: 4px; height: 4px; margin-left: -2px;
   border-radius: 50%; background: currentColor; opacity: .55; }
 .key-strip button[aria-checked="true"], .key-strip button[aria-checked="true"]:hover:not(:disabled) {

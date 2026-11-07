@@ -4031,11 +4031,17 @@ function renderTune(main, group, tune) {
       if (byArrows) arrowingKey = setTimeout(() => { arrowingKey = null; redraw(); }, 400);
       else redraw();
     };
+    // Each says its mode, so a minor tune's don't look like major keys: "Am", as on chord
+    // sheets; a mode's name small under the note ("dor"), too long beside it on a phone.
+    const modeTag = SHORT_MODES[tune.key.modeName]?.trim();
     for (let shift = -5; shift <= 6; shift++) {  // semitones, nearest direction
       const name = keyName(pitch + shift, tune.key.modeName);
+      const note = keyNote(pitch + shift, tune.key.modeName);
       strip.append(el("button", { type: "button", role: "radio", "data-shift": shift, class: shift === 0 ? "written" : null,
         "aria-label": shift === 0 ? `${name} ${tr("(original)", "(gwreiddiol)")}` : name,
-        onclick: () => chooseKey(shift) }, keyNote(pitch + shift, tune.key.modeName)));
+        onclick: () => chooseKey(shift) },
+        tune.key.modeName === "minor" ? `${note}m` : note,
+        modeTag && tune.key.modeName !== "minor" ? el("span", { class: "key-mode" }, modeTag) : null));
     }
     strip.dataset.value = settings.transpose;
     checkRadios(strip, (radio) => +radio.dataset.shift === settings.transpose);

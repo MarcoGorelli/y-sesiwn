@@ -1,0 +1,14 @@
+X:1
+T:Difyrrwch Corbet Ynysmaengwyn (version 3)
+R:jig
+%%version A minor
+N:Difyrrwch Corbet Ynysmaengwyn put into A minor. The home note D becomes A
+N:and every note moves the same number of steps along the scale, so the tune
+N:keeps its shape.
+M:6/8
+L:1/8
+K:Ador
+|: E | A2 A AGA | FGA E3 | EFG ABc | d2 B G2 E |
+A2 A AGA | FGA E3 | EFG ABc | dBG A2 ::
+z | A2 B c3 | cdc B2 A | B2 A B2 A | B2 c BGE |
+A2 B c3 | cdc B2 A | B2 A B2 c | BGE A2 :|

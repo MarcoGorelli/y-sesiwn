@@ -56,6 +56,7 @@
     {"name": "Gwynedd", "lat": 52.98, "lon": -4.15, "tunes": ["blodeu-gwynedd", "mwynen-gwynedd"]},
     {"name": "Gŵyr", "lat": 51.59, "lon": -4.15, "tunes": ["ril-gwyr", "gower-reel"]},
     {"name": "Harlech", "lat": 52.859, "lon": -4.107, "tunes": ["gorhoffedd-gwyr-harlech", "rhyfelgyrch-gwyr-harlech"]},
+    {"name": "Helygain", "lat": 53.233, "lon": -3.183, "tunes": ["burgyn-o-lygian"]},
     {"name": "Hirwaun", "lat": 51.74, "lon": -3.51, "tunes": ["ymdeithdon-gwyr-hirwaun"]},
     {"name": "Llanallgo", "lat": 53.344, "lon": -4.26, "tunes": ["hen-wraig-llanallgo"]},
     {"name": "Llanbedr-ar-fynydd", "lat": 51.546, "lon": -3.49, "tunes": ["llanbedr-ar-fynydd"]},

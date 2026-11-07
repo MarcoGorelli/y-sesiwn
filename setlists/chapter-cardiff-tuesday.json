@@ -496,7 +496,7 @@
       {"tune": "calon-lan", "key": "G major"},
       {"tune": "bwlch-llanberis-version-2", "key": "D major"},
       {"tune": "pibddawns-y-mwnci", "key": "D major"},
-      {"name": "The Fairy Dance"},
+      {"tune": "dawns-y-tylwyth-teg", "key": "G major"},
       {"tune": "ril-abergwaun", "key": "D major"},
       {"tune": "hen-ferchetan-version-2", "key": "D Dorian"},
       {"tune": "coleg-y-brifysgol-abertawe", "key": "D minor"},
@@ -543,7 +543,7 @@
       {"tune": "ty-coch-caerdydd-version-2", "key": "G major"},
       {"tune": "jo-s-highland-cake", "key": "G major"},
       {"tune": "byth-adre", "key": "A major"},
-      {"name": "The Fairy Dance"},
+      {"tune": "dawns-y-tylwyth-teg", "key": "G major"},
       {"tune": "difyrrwch-y-capten", "key": "A major"},
       {"tune": "nyth-y-gog-version-2", "key": "E minor"},
       {"tune": "ffarwel-i-r-marian-version-2", "key": "D minor"},
@@ -597,7 +597,7 @@
       {"tune": "jo-s-highland-cake", "key": "G major"},
       {"tune": "difyrrwch-gwyr-dyfi-version-2", "key": "G major"},
       {"tune": "nyth-y-gog-version-2", "key": "E minor"},
-      {"name": "Shepherd's Hey"},
+      {"tune": "llawenydd-pob-llu", "key": "D major"},
       {"tune": "sling-swing", "key": "D major"}
     ]},
     {"date": "2026-01-13", "tunes": [
@@ -661,7 +661,7 @@
       {"tune": "chwi-fechgyn-glan-ffri-version-2", "key": "D major"},
       {"tune": "mynydd-yr-heliwr", "key": "A Dorian"},
       {"tune": "morgawr", "key": "D Mixolydian"},
-      {"name": "Shepherd's Hey"},
+      {"tune": "llawenydd-pob-llu", "key": "D major"},
       {"tune": "sling-swing", "key": "D major"},
       {"tune": "y-lili", "key": "D major"}
     ]},
@@ -695,7 +695,7 @@
       {"tune": "coleg-y-brifysgol-abertawe", "key": "D minor"},
       {"tune": "morgawr", "key": "D Mixolydian"},
       {"tune": "sling-swing", "key": "D major"},
-      {"name": "Shepherd's Hey"}
+      {"tune": "llawenydd-pob-llu", "key": "D major"}
     ]},
     {"date": "2025-12-09", "tunes": [
       {"tune": "llancesau-trefaldwyn-version-2", "key": "D major"},
@@ -717,12 +717,12 @@
       {"tune": "pibddawns-gwyr-gwrecsam-version-2", "key": "G major"},
       {"tune": "diferiad-y-gerwyn-version-2", "key": "D major"},
       {"tune": "polca-redowa-version-2", "key": "G major"},
-      {"name": "The Fairy Dance"},
+      {"tune": "dawns-y-tylwyth-teg", "key": "G major"},
       {"tune": "mympwy-llwyd-version-2", "key": "G major"},
       {"tune": "ffaniglen-version-2", "key": "D major"},
       {"tune": "morgawr", "key": "D Mixolydian"},
       {"tune": "sling-swing", "key": "D major"},
-      {"name": "Shepherd's Hey"}
+      {"tune": "llawenydd-pob-llu", "key": "D major"}
     ]},
     {"date": "2025-12-02", "tunes": [
       {"tune": "y-delyn-newydd-version-2", "key": "G major"},
@@ -780,9 +780,9 @@
       {"tune": "difyrrwch-y-capten", "key": "A major"},
       {"tune": "suo-gan", "key": "G major"},
       {"tune": "pibddawns-heol-y-felin-version-2", "key": "D major"},
-      {"name": "Shepherd's Hey"},
+      {"tune": "llawenydd-pob-llu", "key": "D major"},
       {"tune": "y-drochfa", "key": "A major"},
-      {"name": "The Fairy Dance"},
+      {"tune": "dawns-y-tylwyth-teg", "key": "G major"},
       {"tune": "dwr-glan-version-2", "key": "A minor"},
       {"tune": "hen-ferchetan-version-2", "key": "D Dorian"},
       {"tune": "machynlleth-version-2", "key": "G major"},
@@ -818,7 +818,7 @@
       {"name": "Calum's Road"},
       {"tune": "cainc-ieuan-y-telynor-dall-version-2", "key": "D major"},
       {"tune": "morgawr", "key": "D Mixolydian"},
-      {"name": "Shepherd's Hey"},
+      {"tune": "llawenydd-pob-llu", "key": "D major"},
       {"tune": "glan-meddwdod-mwyn-version-2", "key": "D major"}
     ]},
     {"date": "2025-11-04", "tunes": [

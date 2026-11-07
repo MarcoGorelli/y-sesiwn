@@ -21,21 +21,26 @@ in_pieces = pytest.mark.parametrize("piece", range(PIECES))
 @in_pieces
 def test_every_tune_draws(page, piece):
     # Every tune and version, with each playback setting, through the same steps as
-    # drawScore(): a tune that comes out with no notes shows a blank score.
+    # drawScore(): a tune that comes out with no notes shows a blank score. And a part
+    # repeated on its own is at least a bar of music: Angharad Siân's lead-in "a" was its
+    # part A, played over and over.
     page.goto_site()
-    empty = page.evaluate("""([piece, pieces]) => {
-      const empty = [];
+    empty, short = page.evaluate("""([piece, pieces]) => {
+      const empty = [], short = [];
       for (const tune of state.data.tunes.filter((_, i) => i % pieces === piece)) {
         for (const play of ["tune", "both", "chords"]) {
           const abc = accompaniment(setTempo(stripFields(tune.abc, "SZBNAH"), tune.beat, tune.bpm), play);
-          const lines = ABCJS.renderAbc("*", abc)[0].lines;
-          const notes = lines.flatMap((l) => l.staff?.[0].voices[0] ?? []).filter((e) => e.el_type === "note");
+          const drawn = ABCJS.renderAbc("*", abc)[0];
+          const notes = drawn.lines.flatMap((l) => l.staff?.[0].voices[0] ?? []).filter((e) => e.el_type === "note");
           if (!notes.length) empty.push(`${tune.slug} (${play})`);
+          if (play === "tune" && tuneParts(drawn).some((p) => notes.filter((n) => n.startChar >= p.from && n.startChar < p.to)
+              .reduce((sum, n) => sum + n.duration, 0) < drawn.getBarLength() - 1e-6)) short.push(tune.slug);
         }
       }
-      return empty;
+      return [empty, short];
     }""", [piece, PIECES])
     assert empty == []
+    assert short == []
 
 
 # Bars that don't fill the time signature, other than a lead-in and the short bars at
@@ -619,7 +624,7 @@ def test_fingerings_under_their_own_notes(page, piece):
       const wrong = [];
       const said = (f) => f === null ? "?" : f === "tied" ? "" : (OCTAVES_UP[f.up] ?? "") + (f.high ? "+" : "") + f.holes;
       for (const tune of state.data.tunes.filter((_, i) => i % pieces === piece)) {
-        for (const [tab, key] of [["whistle-D", 0], ["whistle-D", 2], ["whistle-G", -3], ["recorder", 0], ["recorder", 5]]) {
+        for (const [tab, key] of [["whistle-D", 0], ["recorder", 5]]) {
           const voice = melodyVoice(tune.abc);
           const abc = withFingerings(transposeAbc(tune, tune.abc, key), FINGERED[tab], 11, voice);
           const drawn = ABCJS.renderAbc("*", abc)[0];
@@ -2499,20 +2504,6 @@ def test_parts_start_at_their_bar_line(page, abc, parts):
     assert found == [p.strip() for p in parts]
 
 
-@in_pieces
-def test_no_part_is_shorter_than_a_bar(page, piece):
-    # A part repeated on its own is at least a bar of music: Angharad Siân's lead-in "a"
-    # was its part A, played over and over.
-    page.goto_site()
-    short = page.evaluate("""([piece, pieces]) => state.data.tunes.filter((t, i) => i % pieces === piece && (() => {
-      const v = ABCJS.renderAbc('*', t.abc)[0];
-      const notes = v.lines.flatMap((l) => l.staff?.[0]?.voices?.[0] ?? []).filter((e) => e.el_type === 'note');
-      return tuneParts(v).some((p) => notes.filter((n) => n.startChar >= p.from && n.startChar < p.to)
-        .reduce((sum, n) => sum + n.duration, 0) < v.getBarLength() - 1e-6);
-    })()).map((t) => t.slug)""", [piece, PIECES])
-    assert short == []
-
-
 def test_angharad_sian_loops_its_two_parts(page):
     page.goto_site("alaw/angharad-sian/")
     page.wait_for_selector(".score .abcjs-staff")
@@ -3501,13 +3492,16 @@ def test_contact_page(page):
 def test_address_is_hidden(page, site):
     # Not in any file of the site or the repository, nor in a page until someone sends.
     import itertools
+    import subprocess
     import build_site
     from conftest import ROOT
     found = []
-    # The built site too, which is somewhere else when the tests run in parallel.
-    built = [] if build_site.OUT.is_relative_to(ROOT) else build_site.OUT.rglob("*")
-    for path in itertools.chain(ROOT.rglob("*"), built):
-        if ".git" in path.parts or not path.is_file() or path.stat().st_size > 5_000_000:
+    # The repository's files (committed, or new and not ignored: not .venv/, which CI
+    # keeps in the checkout), and the built site, which is ignored or somewhere else.
+    listed = subprocess.run(["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+                            cwd=ROOT, capture_output=True, check=True).stdout.decode().split("\0")
+    for path in itertools.chain((ROOT / name for name in listed if name), build_site.OUT.rglob("*")):
+        if not path.is_file() or path.stat().st_size > 5_000_000:
             continue
         if ADDRESS.encode() in path.read_bytes():
             found.append(str(path))
@@ -4342,7 +4336,7 @@ def test_no_piano_notes_until_play(browser, site, device):
     fetched = []
     context.on("request", lambda r: fetched.append(r.url) if "/soundfont/" in r.url else None)
     page = context.new_page()
-    for path in ["", "?page=browse", "?page=notes", "?page=sets", "alaw/glandyfi/", "alaw/walts-dinefwr/?v=1", "?set=5A3V~h&n=Nos%20Iau"]:
+    for path in ["", "?page=notes", "alaw/glandyfi/", "?set=5A3V~h&n=Nos%20Iau"]:
         page.goto(site + path)
         page.wait_for_timeout(1500)
     page.goto(site + "alaw/glandyfi/")

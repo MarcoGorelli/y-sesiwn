@@ -22,6 +22,17 @@ concurrency:
 
 jobs:
   test:
+    # In two at once: the tests that time sound in real time run one at a time (each
+    # waits for the others to finish), so they get a machine of their own, and the rest
+    # run in parallel without stopping for them.
+    name: test (${{ matrix.tests }})
+    strategy:
+      matrix:
+        include:
+          - tests: most
+            args: -m "not alone"
+          - tests: timed sound
+            args: -m alone -n0
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -49,7 +60,7 @@ jobs:
         run: python -m playwright install --with-deps chromium
       - if: steps.browser-cache.outputs.cache-hit == 'true'
         run: python -m playwright install-deps chromium
-      - run: python -m pytest
+      - run: python -m pytest ${{ matrix.args }}
         env:
           # tune_numbers.json must only add to what main had before this push (or, for a
           # pull request, to its base), however many commits it brings.
@@ -59,7 +70,7 @@ jobs:
       - if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: playwright-traces
+          name: playwright-traces-${{ strategy.job-index }}
           path: test-results/
           if-no-files-found: ignore
 

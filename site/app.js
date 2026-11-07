@@ -5381,6 +5381,7 @@ async function renderSessions(main) {
   document.title = tr("Active sessions · Y Sesiwn", "Sesiynau cyfredol · Y Sesiwn");
   let sessions;
   const left = () => !/^sesiynau\/?$/.test(sitePath());  // left while loading
+  main.replaceChildren(el("p", { class: "loading" }, tr("Loading…", "Yn llwytho…")));
   try { ({ sessions } = await loadSessions()); } catch {
     if (left()) return;
     main.replaceChildren(el("h1", {}, tr("Active sessions", "Sesiynau cyfredol")),
@@ -5588,6 +5589,7 @@ async function renderSessions(main) {
 // has stopped, or moved to another day) says so, with the way to the rest.
 async function renderSession(main, id) {
   let sessions;
+  main.replaceChildren(el("p", { class: "loading" }, tr("Loading…", "Yn llwytho…")));
   try { ({ sessions } = await loadSessions()); } catch {
     if (addressSession() !== id) return;  // left while loading
     main.replaceChildren(el("h1", {}, tr("Active sessions", "Sesiynau cyfredol")),
@@ -5762,6 +5764,7 @@ async function renderArchive(main) {
   const left = () => !/^archif\/?$/.test(sitePath());
   const heading = el("h1", {}, tr("Tunes played at sessions", "Alawon a chwaraewyd mewn sesiynau"));
   let sessions;
+  main.replaceChildren(el("p", { class: "loading" }, tr("Loading…", "Yn llwytho…")));
   try { ({ sessions } = await loadArchive()); } catch {
     if (left()) return;
     main.replaceChildren(heading,
@@ -5893,6 +5896,7 @@ function sendSetAsNight(link, list) {
 async function renderSetlist(main, id, day) {
   const left = () => addressSetlist()?.id !== id || addressSetlist()?.day !== day;
   let sessions, kept;
+  main.replaceChildren(el("p", { class: "loading" }, tr("Loading…", "Yn llwytho…")));
   try { [{ sessions }, kept] = await Promise.all([loadSessions(), loadSetlists(id)]); } catch {
     if (left()) return;
     main.replaceChildren(el("h1", {}, tr("Tunes played", "Alawon a chwaraewyd")),

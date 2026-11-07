@@ -3068,7 +3068,7 @@ def test_session_dates_in_welsh(page):
     page.goto_site("sesiynau/")
     page.wait_for_selector(".card.session")
     page.click(".lang-switch [data-lang=cy]")
-    page.wait_for_function("document.querySelector('main h1').textContent === 'Sesiynau cyfredol'")
+    page.wait_for_function("document.querySelector('main h1')?.textContent === 'Sesiynau cyfredol'")
     import re
     text = page.inner_text("main")
     english = re.findall(r"\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|January|February|March|April|June|July|"
@@ -3107,13 +3107,13 @@ def test_session_page(page, site):
     assert page.inner_text(".qr-dialog .qr-link") == "https://ysesiwn.cymru/sesiynau/chapter-cardiff-tuesday/"
     page.keyboard.press("Escape")
     page.click(".lang-switch [data-lang=cy]")
-    page.wait_for_function("document.querySelector('main h1').textContent.endsWith('Caerdydd')")
+    page.wait_for_function("document.querySelector('main h1')?.textContent.endsWith('Caerdydd')")
     # A name that says neither town nor venue; and none at all.
     assert page.evaluate("""() => [sessionTitle({ name: "Sesiwn Werin", venue: "Cwrw", town: "Carmarthen", town_cy: "Caerfyrddin" }),
       sessionTitle({ venue: "Hoogah", town: "Swansea", town_cy: "Abertawe" })]""") == ["Sesiwn Werin, Cwrw, Caerfyrddin", "Sesiwn yn Hoogah, Abertawe"]
     # An address that isn't a session (offline, the app opens at any address) says so.
     page.evaluate("navigate('sesiynau/no-such-session/')")
-    page.wait_for_function("document.querySelector('main h1').textContent === 'Sesiwn heb ei chanfod'")
+    page.wait_for_function("document.querySelector('main h1')?.textContent === 'Sesiwn heb ei chanfod'")
     assert page.locator("main a[href='sesiynau/']").count() == 1
 
 
@@ -3206,13 +3206,13 @@ def test_setlists(page, site):
         "Y Derwydd", "Glandyfi", "Hela'r Ysgyfarnog", "Calon Lân", "Drowsy Maggie (not on Y Sesiwn yet)"]
     assert page.locator(".sidebar-links a[href='archif/'][aria-current]").count() == 1
     page.click(".lang-switch [data-lang=cy]")
-    page.wait_for_function("document.querySelector('main h1').textContent === 'Alawon a chwaraewyd ar ddydd Mawrth 20 Hydref 2026'")
+    page.wait_for_function("document.querySelector('main h1')?.textContent === 'Alawon a chwaraewyd ar ddydd Mawrth 20 Hydref 2026'")
     page.click(".lang-switch [data-lang=en]")
     page.click("ol.setlist a:has-text('Glandyfi')")
     page.wait_for_function("location.pathname.endsWith('/alaw/glandyfi/')")
     # A night nobody sent, and a session that has stopped (its setlists stay).
     page.evaluate("navigate('sesiynau/chapter-cardiff-tuesday/2026-10-27/')")
-    page.wait_for_function("document.querySelector('main h1').textContent === 'No tunes from that night'")
+    page.wait_for_function("document.querySelector('main h1')?.textContent === 'No tunes from that night'")
     assert page.locator("main a[href='sesiynau/chapter-cardiff-tuesday/']").count() == 1
     page.evaluate("navigate('sesiynau/hen-sesiwn-swansea-wednesday/')")
     page.wait_for_selector(".setlists .nights a[href='sesiynau/hen-sesiwn-swansea-wednesday/2025-03-12/']")
@@ -3365,6 +3365,22 @@ def test_archive(page, site):
     page.click(".setlists .nights a >> nth=0")
     page.wait_for_selector("ol.setlist")
     assert page.url == site + "sesiynau/chapter-cardiff-tuesday/2026-10-20/"
+
+def test_archive_says_it_is_loading(page):
+    # On a slow connection the archive's button doesn't seem to do nothing: the page it was
+    # on goes, and (after a moment) "Loading…" shows, with its carthen on the loom.
+    page.goto_site()
+    page.wait_for_selector("#hero-search")
+    held = []  # archif.json, kept back until the check is done
+    page.route("**/archif/archif.json", lambda route: held.append(route))
+    page.click(".sidebar-links a[href='archif/']")
+    page.wait_for_selector("#main .loading", state="visible")
+    assert page.locator("#hero-search").count() == 0 and page.inner_text("#main .loading") == "Loading…"
+    while not held:
+        page.wait_for_timeout(50)
+    held[0].continue_()
+    page.wait_for_selector(".setlists h2 a")
+    assert page.locator("#main .loading").count() == 0
 
 def test_archive_most_played_a_few_at_a_time(page):
     # In the archive too, each session's tunes played most start with five, and show more as asked.

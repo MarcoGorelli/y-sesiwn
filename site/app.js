@@ -1482,8 +1482,17 @@ function render() {
   else if (setlist) renderSetlist(main, setlist.id, setlist.day);
   else if (archive) renderArchive(main);
   else renderHome(main);
+  mainShows = sitePath();
   countView();
 }
+
+// The address whose page <main> holds: at first the page as it came, then each one drawn.
+// A page that loads its data says "Loading…" on the way from another, but drawn again at
+// its own address (the page as it came, or in the other language) it stays till they come.
+let mainShows = sitePath();
+const showLoading = (main) => {
+  if (mainShows !== sitePath()) main.replaceChildren(el("p", { class: "loading" }, tr("Loading…", "Yn llwytho…")));
+};
 
 // abcjs: in a tune's own page from the start (build_site.py), otherwise fetched when a
 // page needs it, or once the first page is shown, so the next is quick.
@@ -5381,7 +5390,7 @@ async function renderSessions(main) {
   document.title = tr("Active sessions · Y Sesiwn", "Sesiynau cyfredol · Y Sesiwn");
   let sessions;
   const left = () => !/^sesiynau\/?$/.test(sitePath());  // left while loading
-  main.replaceChildren(el("p", { class: "loading" }, tr("Loading…", "Yn llwytho…")));
+  showLoading(main);
   try { ({ sessions } = await loadSessions()); } catch {
     if (left()) return;
     main.replaceChildren(el("h1", {}, tr("Active sessions", "Sesiynau cyfredol")),
@@ -5589,7 +5598,7 @@ async function renderSessions(main) {
 // has stopped, or moved to another day) says so, with the way to the rest.
 async function renderSession(main, id) {
   let sessions;
-  main.replaceChildren(el("p", { class: "loading" }, tr("Loading…", "Yn llwytho…")));
+  showLoading(main);
   try { ({ sessions } = await loadSessions()); } catch {
     if (addressSession() !== id) return;  // left while loading
     main.replaceChildren(el("h1", {}, tr("Active sessions", "Sesiynau cyfredol")),
@@ -5764,7 +5773,7 @@ async function renderArchive(main) {
   const left = () => !/^archif\/?$/.test(sitePath());
   const heading = el("h1", {}, tr("Tunes played at sessions", "Alawon a chwaraewyd mewn sesiynau"));
   let sessions;
-  main.replaceChildren(el("p", { class: "loading" }, tr("Loading…", "Yn llwytho…")));
+  showLoading(main);
   try { ({ sessions } = await loadArchive()); } catch {
     if (left()) return;
     main.replaceChildren(heading,
@@ -5896,7 +5905,7 @@ function sendSetAsNight(link, list) {
 async function renderSetlist(main, id, day) {
   const left = () => addressSetlist()?.id !== id || addressSetlist()?.day !== day;
   let sessions, kept;
-  main.replaceChildren(el("p", { class: "loading" }, tr("Loading…", "Yn llwytho…")));
+  showLoading(main);
   try { [{ sessions }, kept] = await Promise.all([loadSessions(), loadSetlists(id)]); } catch {
     if (left()) return;
     main.replaceChildren(el("h1", {}, tr("Tunes played", "Alawon a chwaraewyd")),

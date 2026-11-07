@@ -5616,6 +5616,10 @@ async function renderSession(main, id) {
         "Does dim sesiwn yn y cyfeiriad hwn. Efallai ei bod wedi dod i ben, neu wedi symud i ddiwrnod arall.")), all);
     return;
   }
+  // Its setlists before the page is drawn again: until then, the page as it came (setlists
+  // and all) stays, rather than going without them while they load.
+  const kept = session.setlists ? await loadSetlists(id).catch(() => false) : null;
+  if (addressSession() !== id) return;
   const title = sessionTitle(session);
   document.title = `${title} · Y Sesiwn`;
   // The map: every town with a session, this one marked (none for a session outside Wales).
@@ -5637,7 +5641,7 @@ async function renderSession(main, id) {
     played,
     all,
   ].filter(Boolean));
-  fillSetlists(played, session);
+  fillSetlists(played, session, kept);
 }
 
 // ---- Setlists -------------------------------------------------------------------------
@@ -5775,15 +5779,9 @@ async function renderArchive(main) {
       el("a", { href: "sesiynau/", "data-route": true }, tr("Active sessions", "Sesiynau cyfredol")), ".")].flat(Infinity));
 }
 
-// On a session's own page: its setlists, if it has any, and the way to send a night's.
-async function fillSetlists(box, session) {
-  let kept = null;
-  if (session.setlists) {
-    try { kept = await loadSetlists(session.id); } catch {
-      kept = false;
-    }
-  }
-  if (!box.isConnected) return;
+// On a session's own page: its setlists (kept: null if it has none, false if they couldn't
+// be loaded), and the way to send a night's.
+function fillSetlists(box, session, kept) {
   box.replaceChildren(...[
     kept ? setlistsParts(session.id, kept) : null,
     kept === false ? el("p", { class: "caption" }, tr("Couldn't load the tunes played here. Check your connection and try again.",

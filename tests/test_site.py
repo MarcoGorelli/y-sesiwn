@@ -3221,6 +3221,23 @@ def test_setlists(page, site):
 
 
 
+def test_setlists_stay_while_they_load(page, site):
+    # The session's page as it comes lists the tunes played there: they stay while the app
+    # fetches its own, rather than the page being drawn again without them until they come.
+    held = []
+    page.route("**/sesiynau/chapter-cardiff-tuesday/setlists.json", lambda route: held.append(route))
+    page.goto(site + "sesiynau/chapter-cardiff-tuesday/")
+    page.wait_for_function("typeof state !== 'undefined' && state.data")
+    while not held:
+        page.wait_for_timeout(50)
+    page.wait_for_timeout(500)
+    assert page.locator("main h2:text-is('Tunes played here')").count() == 1
+    assert page.locator(".send-setlist").count() == 0  # not drawn again yet
+    held[0].continue_()
+    page.wait_for_selector(".setlists .nights")
+    assert page.locator(".send-setlist").count() == 1
+
+
 def test_earlier_nights_folded(page):
     # A session with many nights shows the latest five; the rest wait behind "Earlier nights",
     # which opens them in place, moves on to the first of them, and stays open; "Fewer nights"

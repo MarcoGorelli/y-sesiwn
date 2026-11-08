@@ -15,6 +15,7 @@ tunes/**/*.mp3
 *.pdf
 *.m4a
 *.png
+*.jpeg
 
 # macOS
 .DS_Store

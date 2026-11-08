@@ -1,5 +1,6 @@
 X:1
 T:Beth yw'r Haf i Mi?
+T:Llef Harlech
 R:alaw/polca
 S:http://alawoncymru.com/alawon/Tunes/Crwtwyst/CrwtwySt.htm
 Z:MIDI transcribed with alawon-abc
@@ -8,10 +9,33 @@ Z:MIDI transcribed with alawon-abc
 %%chords From the Alawon Cymru score
 C:Trefniant Meurig Williams
 N:The score plays part A twice, part B, then part A again (D.C. al Fine).
+N:Words by T. H. Parry-Williams and Amy Parry-Williams, sent by Steve Jeans.
 M:4/4
 L:1/8
 Q:1/4=100
 K:Em
-|: "Em"E2 B2 B2 A2 | "Em"B4 A2 G2 | "Bm"F2 G2 A2 B2 | "Em"G2 F2 E4 :|
-"Em"G2 F2 E2 G2 | "Em"F2 E2 F4 | "Em"G2 F2 E2 G2 | "Bm"F2 E2 F4 |
-"Em"E2 B2 B2 A2 | "Em"B4 A2 G2 | "Bm"F2 G2 A2 B2 | "Em"G2 F2 E4 |]
+|: "Em"E2 B2 B2 A2 | "Em"B4 A2 G2 |
+w: Beth yw'r haf i | mi? Dim ond
+w: Er pan go-llais | di, nid yw'r
+"Bm"F2 G2 A2 B2 | "Em"G2 F2 E4 :|
+w: gae-af llwm a | dag-rau'n lli',
+w: hir-dydd haf yn | ddim i mi.
+"Em"G2 F2 E2 G2 | "Em"F2 E2 F4 |
+w: Gar-iad bach, er | cil-io'n ffôl,
+"Em"G2 F2 E2 G2 | "Bm"F2 E2 F4 |
+w: dwed y doi di | e-to'n ôl;
+"Em"E2 B2 B2 A2 | "Em"B4 A2 G2 |
+w: Beth yw'r haf i | mi? Dim ond
+"Bm"F2 G2 A2 B2 | "Em"G2 F2 E4 |]
+w: hir-lwm er pan | go-llais di.
+W:Trist yw'r galon fach pan fo cwyn y gwynt ym mrigau'r coed;
+W:Wedi'r canu'n iach, rwyf yn disgwyl clywed sŵn dy droed.
+W:Gariad bach, er crwydro 'mhell,
+W:Tyrd yn ôl i gyfarch gwell;
+W:Trist yw'r galon fach, ni bu hiraeth mwy ar neb erioed.
+W:
+W:Beth yw'r haf i mi, os yw'r fron yn glaf o dan ei chlwy?
+W:Beth yw'r haf i mi, os yw'r galon fach ar dorri'n ddwy?
+W:Gariad bach, er cilio'n ffôl,
+W:Dwed y doi di eto'n ôl:
+W:Yna bydd i mi hyfryd haf a dyddiau dedwydd mwy.

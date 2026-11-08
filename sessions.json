@@ -374,6 +374,25 @@
       "music": "Mostly Welsh tunes and songs.",
       "music_cy": "Alawon a chaneuon Cymreig yn bennaf.",
       "confirmed": "2026-10-23"
+    },
+    {
+      "kind": "tune club",
+      "venue": "Llanfoist Village Hall",
+      "address": "Church Lane, Llanfoist, Abergavenny NP7 9LP",
+      "town": "Llanfoist",
+      "town_cy": "Llan-ffwyst",
+      "county": "Monmouthshire",
+      "lat": 51.8104,
+      "lon": -3.0366,
+      "repeat": "dates",
+      "dates": [
+        "2026-11-21"
+      ],
+      "start": "13:00",
+      "end": "16:30",
+      "music": "A tune club, about every three months, playing sets from the Alawon Sesiwn books.",
+      "music_cy": "Clwb alawon, tua bob tri mis, yn chwarae setiau o lyfrau Alawon Sesiwn.",
+      "confirmed": "2026-11-08"
     }
   ]
 }

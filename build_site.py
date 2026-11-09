@@ -967,12 +967,12 @@ LOADING = '<p class="loading" data-cy="Yn llwytho\'r alawon…">Loading tunes…
 
 def app_page(template: str, *, title: str, description: str, url: str, head: str, main: str,
              scripts: str = "", up: str = "../../", loading: tuple[str, str] = ("Loading…", "Yn llwytho…"),
-             kind: str = "other") -> str:
+             kind: str = "other", tab: str | None = None) -> str:
     """The app (index.html) in a folder (two down, unless up says otherwise), with its
     own title, description and address in the head, for link previews and search
     engines (which don't run the app), and what they should read in <main> (hidden from
     readers whose browser runs the app, which shows loading, in English and Welsh, until
-    it takes over)."""
+    it takes over). tab is a longer <title> than the title, for search results."""
     def swap(page: str, old: str, new: str) -> str:
         if page.count(old) != 1:
             raise SystemExit(f"site/index.html: expected one {old!r} (for the tune and type pages)")
@@ -983,7 +983,7 @@ def app_page(template: str, *, title: str, description: str, url: str, head: str
     # What the app will mark it (body[data-page]), so its layout is right from the start.
     page = swap(page, "<body>", f'<body data-page="{kind}">')
     page = swap(page, '<script src="app.js" defer></script>', scripts + '<script src="app.js" defer></script>')
-    page = swap(page, "<title>Y Sesiwn</title>", f"<title>{esc(title)} · Y Sesiwn</title>")
+    page = swap(page, "<title>Y Sesiwn</title>", f"<title>{esc(tab or title)} · Y Sesiwn</title>")
     page = re.sub(r'(<meta (?:name|property)="(?:og:)?description" content=")[^"]*"',
                   lambda m: m.group(1) + esc(description) + '"', page)
     page = swap(page, '<meta property="og:title" content="Y Sesiwn: Welsh folk tunes">',
@@ -1050,7 +1050,9 @@ def tune_pages(tunes: list[dict], index: dict) -> None:
                              else esc(value))
                           + "</dd>" for label, value in first["details"])
         write_page(OUT / TUNE_DIR / group, app_page(
-            template, title=name, description=description, url=url,
+            # "Welsh polka" in the title too: it's what search results show, and what
+            # people add to a tune's name when they search (app.js: renderTune).
+            template, title=name, description=description, url=url, tab=f"{name} · Welsh {kind}",
             head=f'\n  <script type="application/ld+json">{ld}</script>\n'
                  f'  <script type="application/json" id="tune-data">{own}</script>',
             scripts='<script src="static/abcjs/abcjs-basic-min.js" defer></script>\n  ',

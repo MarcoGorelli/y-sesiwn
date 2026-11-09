@@ -2339,6 +2339,7 @@ def test_tune_page_address(page, site):
     page.goto(site + "alaw/glandyfi/?v=1")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.inner_text("main h1") == "Glandyfi"
+    assert page.title() == "Glandyfi · Welsh jig · Y Sesiwn"  # as its page is written, for search results
     assert page.locator(".versions a.active span").inner_text() == "Version 3"  # Alawon Cymru's, shown last
     assert failed == []  # every file found from two folders down
     # Links from it lead back to the site's root, and to the other tunes' own pages.

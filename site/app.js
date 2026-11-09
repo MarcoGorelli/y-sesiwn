@@ -3872,7 +3872,8 @@ function keptSettings(tune, kept = savedTunes()[tune.slug]) {
 // The practice tools as the reader left them (under the music, on a phone as on a wider screen).
 const practiceToolsOpen = () => state.practice.open ?? false;
 function renderTune(main, group, tune) {
-  document.title = `${group.title} · Y Sesiwn`;
+  // As its page is written (build_site.py): "Glandyfi · Welsh polka", for search results.
+  document.title = `${group.title} · ${tr(`Welsh ${EN_TYPE[tune.type] ?? "tune"}`, `${CY_TYPE[tune.type] ?? "alaw"} o Gymru`)} · Y Sesiwn`;
   rememberTune(group, tune);
   if (!state.settings.has(tune.slug)) state.settings.set(tune.slug, keptSettings(tune));
   const settings = state.settings.get(tune.slug);

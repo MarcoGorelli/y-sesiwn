@@ -483,7 +483,7 @@ def test_tune_pages(site):
     page = (out / "alaw" / "llancesau-trefaldwyn" / "index.html").read_text(encoding="utf-8")
     url = "https://ysesiwn.cymru/alaw/llancesau-trefaldwyn/"
     assert '<base href="../../">' in page
-    assert "<title>Llancesau Trefaldwyn · Y Sesiwn</title>" in page
+    assert "<title>Llancesau Trefaldwyn · Welsh jig · Y Sesiwn</title>" in page
     assert f'<meta property="og:url" content="{url}">' in page and f'<link rel="canonical" href="{url}">' in page
     assert '<meta property="og:title" content="Llancesau Trefaldwyn · Y Sesiwn">' in page
     description = ("Llancesau Trefaldwyn: a Welsh jig in D major. Sheet music, example chords and playback in any key, at any tempo (2 versions). "
@@ -497,7 +497,7 @@ def test_tune_pages(site):
     assert f'<dt>Source</dt><dd><a href="{source}' in page
     # A title with an apostrophe, safely written into the page.
     page = (out / "alaw" / "codi-r-hwyl" / "index.html").read_text(encoding="utf-8")
-    assert "<title>Codi&#x27;r Hwyl · Y Sesiwn</title>" in page and "<h1>Codi&#x27;r Hwyl</h1>" in page
+    assert "<title>Codi&#x27;r Hwyl · Welsh polka · Y Sesiwn</title>" in page and "<h1>Codi&#x27;r Hwyl</h1>" in page
     sitemap = (out / "sitemap.xml").read_text(encoding="utf-8")
     assert sitemap.count("<loc>https://ysesiwn.cymru/alaw/") == len(groups)
     assert "Sitemap: https://ysesiwn.cymru/sitemap.xml" in (out / "robots.txt").read_text(encoding="utf-8")

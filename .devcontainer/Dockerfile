@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright/python:v1.63.0-noble
+FROM mcr.microsoft.com/playwright/python:v1.64.1-noble
 
 # git, curl and the GitHub CLI
 RUN apt-get update \

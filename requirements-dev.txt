@@ -5,7 +5,7 @@
 # whose browsers are made for it (tests/test_build.py checks).
 pytest==9.2.0
 pytest-xdist==3.8.0  # runs the tests in parallel
-playwright==1.63.0
+playwright==1.64.1
 axe-playwright-python==0.1.8  # the axe accessibility checker, bundled
 zxing-cpp==3.1.1  # reads the QR codes back
 pillow==13.0.0

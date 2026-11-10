@@ -24,6 +24,8 @@ FILES = {
     # Markdown renderer for the static site's guide pages (CONTRIBUTING.md). Since
     # marked 16 its browser build (minified, sets the global marked) is lib/marked.umd.js.
     "marked/marked.min.js": "https://cdn.jsdelivr.net/npm/marked@18.1.2/lib/marked.umd.js",
+    # The QR code of a tune's link, loaded only when first used.
+    "qrcode/qrcode.js": "https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js",
     **{
         f"soundfont/{INSTRUMENT}-mp3/{note}.mp3": f"{SOUNDFONT}/{INSTRUMENT}-mp3/{note}.mp3"
         for note in NOTES

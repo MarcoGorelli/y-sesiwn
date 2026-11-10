@@ -2066,7 +2066,7 @@ def test_focus_on_new_page(page):
 def test_search_count_said(page):
     # How many tunes the search finds, for screen readers.
     page.goto_site("?page=browse")
-    page.fill("#search-input", "glandyfi")
+    page.fill("#search-input", "tirgwegrydd")
     page.wait_for_function("document.querySelector('.search [role=status]').textContent.startsWith('1 tune')")
     page.fill("#search-input", "zzzqqq")
     page.wait_for_function("document.querySelector('.search [role=status]').textContent === 'No tune, book or arranger by that name.'")

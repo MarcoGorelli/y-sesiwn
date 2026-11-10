@@ -50,6 +50,12 @@ jobs:
                "https://github.com/markedjs/marked/releases",
                "Change the version in `download_assets.py`, delete `static/marked/` and run "
                "`python download_assets.py`."),
+              ("qrcode-generator", re.search(r"qrcode-generator@([\d.]+)", assets)[1],
+               latest("https://registry.npmjs.org/qrcode-generator/latest", "version"),
+               "https://github.com/kazuhikoarase/qrcode-generator/releases",
+               "Change the version in `download_assets.py`, delete `static/qrcode/`, run "
+               "`python download_assets.py`, and update the version in README.md. Check that "
+               "the QR code still shows and scans (the tests read it back)."),
               ("Playwright", re.search(r"^playwright==([\d.]+)", requirements, re.M)[1],
                latest("https://pypi.org/pypi/playwright/json", "info", "version"),
                "https://github.com/microsoft/playwright-python/releases",

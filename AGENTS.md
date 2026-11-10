@@ -14,6 +14,10 @@ After adding, renaming or merging anything in `tunes/`, fill these in yourself i
 
 `tests/test_build.py` fails until the first two are done (`test_every_tune_has_a_pronunciation_or_is_english`, `test_place_names_decided`). The place test only flags names that look likely, so read new titles yourself too.
 
+## Adding a session's setlist
+
+When a setlist is sent in for a session (a night in `setlists/<id>.json`), also update that session's `confirmed` date in `sessions.json` to the night's date: the session was running then. Leave it alone if it's already later.
+
 ## Writing ABC
 
 - Keep the notes, rhythms, bars and repeats. Layout doesn't have to follow the score: break lines wherever reads most easily on a phone. This applies to every tune, including the Alawon Cymru ones and all submissions. Tunes with sung words (`w:`) read better with fewer bars a line, around 2, so the syllables don't crowd.

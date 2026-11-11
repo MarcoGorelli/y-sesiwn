@@ -2185,6 +2185,62 @@ def test_a_slow_air_fits_a_phone_in_full_screen(browser, site):
     context.close()
 
 
+LAPTOP = {"viewport": {"width": 1366, "height": 768}}
+STAND_MUSIC = """() => { const svg = document.querySelector('.score .abcjs-container svg');
+  return [svg.getBoundingClientRect().bottom, innerHeight, document.querySelectorAll('.score .abcjs-staff').length,
+    svg.getBoundingClientRect().width / svg.viewBox.baseVal.width]; }"""
+
+
+def full_screen_on_a_laptop(browser, site, slug):
+    context = browser.new_context(service_workers="block", **LAPTOP)
+    page = context.new_page()
+    page.goto(site + f"alaw/{slug}/")
+    page.wait_for_selector(".score .abcjs-staff")
+    lines = page.locator(".score .abcjs-staff").count()
+    page.click(".practice-toggle")
+    page.wait_for_function("document.body.classList.contains('practice')")
+    page.wait_for_selector(".score .abcjs-staff")
+    return context, page, lines
+
+
+def test_a_tune_fits_a_laptop_in_full_screen(browser, site):
+    # Drawn to fill a laptop's width, Blodeu Gwynedd came out a little taller than the screen:
+    # in full screen it's drawn a little smaller to fit it, in its own lines, still bigger
+    # than on its page.
+    context, page, lines = full_screen_on_a_laptop(browser, site, "blodeu-cwynedd")
+    bottom, screen, staves, scale = page.evaluate(STAND_MUSIC)
+    assert bottom <= screen and staves == lines and scale > 1.3, (bottom, screen, staves, lines, scale)
+    page.click(".music-size button[aria-label='Bigger music']")  # bigger than fits: the reader's choice
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.evaluate(STAND_MUSIC)[0] > screen
+    context.close()
+
+
+def test_a_long_tune_is_left_big_in_full_screen(browser, site):
+    # A tune that would have to be drawn small to fit the screen is left as big as it was,
+    # to be read scrolling.
+    context, page, _ = full_screen_on_a_laptop(browser, site, "o-uchel-dras-oedd-siencyn")
+    bottom, screen, _, scale = page.evaluate(STAND_MUSIC)
+    assert bottom > screen and scale > 1.6, (bottom, screen, scale)
+    context.close()
+
+
+def test_a_sets_tunes_fit_a_laptop_in_full_screen(browser, site):
+    # A set in full screen: each tune fits the screen under its own strip and name.
+    context = browser.new_context(service_workers="block", **LAPTOP)
+    page = context.new_page()
+    page.goto(site + "?set=5A3V~h&n=Nos%20Iau")
+    page.wait_for_selector(".set-tune .abcjs-staff")
+    page.click(".practice-toggle")
+    page.wait_for_function("document.body.classList.contains('practice')")
+    for tune in page.locator(".set-tune").all():
+        tune.scroll_into_view_if_needed()
+        page.wait_for_function("t => t.querySelector('.set-paper svg')", arg=tune.element_handle())
+        tall = tune.evaluate("t => [...t.querySelectorAll('.set-paper svg')].at(-1).getBoundingClientRect().bottom - t.getBoundingClientRect().top")
+        assert tall <= 768, tall
+    context.close()
+
+
 def test_a_32_bar_reel_fits_a_phone(browser, site):
     # At a session a phone shows the whole of Rhiwfelen (32 bars, no repeats) under the
     # pinned top bar: its lines closer together, as on the music stand.
@@ -4886,9 +4942,9 @@ def test_the_page_follows_the_music_on_a_phone(browser, site):
 
 @pytest.mark.parametrize("phone", [True, False])
 def test_full_screen_is_just_the_music(browser, site, phone):
-    # Full screen is for reading at a session: the tune's name with Exit beside it, then the
-    # music. No keys, tempo, player, tabs-or-holes menu or practice tools; leaving it brings
-    # them all back as they were.
+    # Full screen is for reading at a session: the tune's name with Size and Exit beside it,
+    # then the music. No keys, tempo, player, tabs-or-holes menu or practice tools; leaving it
+    # brings them all back as they were.
     size = PHONE if phone else {"viewport": {"width": 1366, "height": 900}}
     context = browser.new_context(service_workers="block", **size)
     page = context.new_page()
@@ -4899,11 +4955,16 @@ def test_full_screen_is_just_the_music(browser, site, phone):
     page.click(".practice-toggle")
     assert page.inner_text(".practice-toggle") == "Exit full screen"
     assert not any(page.is_visible(c) for c in controls)
-    assert not page.is_visible(".controls-summary") and not page.is_visible(".music-size")
-    name, exit, music = (page.locator(s).bounding_box() for s in ["main h1", ".practice-toggle", ".score"])
-    assert abs((name["y"] + name["height"] / 2) - (exit["y"] + exit["height"] / 2)) < 6  # one line
+    assert not page.is_visible(".controls-summary") and page.is_visible(".music-size")
+    name, size, exit, music = (page.locator(s).bounding_box() for s in ["main h1", ".music-size", ".practice-toggle", ".score"])
+    middle = lambda box: box["y"] + box["height"] / 2
+    assert abs(middle(name) - middle(exit)) < 6 and abs(middle(size) - middle(exit)) < 6  # one line
     text = page.evaluate("(() => { const r = document.createRange(); r.selectNodeContents(document.querySelector('main h1')); return r.getBoundingClientRect().right; })()")
-    assert exit["x"] > text and music["y"] < name["y"] + name["height"] + 20  # the music right under them
+    assert text < size["x"] < exit["x"] and music["y"] < name["y"] + name["height"] + 20  # the music right under them
+    assert page.is_visible(".music-size .size-now") != phone  # the size between − and +, where there's room
+    page.click(".music-size button[aria-label='Bigger music']")
+    assert page.evaluate("localStorage.getItem('musicSize')") == "2"
+    assert page.evaluate("document.body.classList.contains('practice')")  # still in full screen
     page.click(".practice-toggle")
     assert all(page.is_visible(c) for c in controls)
     assert page.locator(".practice-tools").get_attribute("open") is None  # as they were
@@ -4947,14 +5008,18 @@ def test_full_screen_stops_the_music(browser, site):
 
 
 def test_full_screen_set_is_just_the_music(browser, site):
-    # A set in full screen: its name and Exit, then each tune's name and music, without its Play.
+    # A set in full screen: its name, Size and Exit, then each tune's name and music, without its Play.
     context = browser.new_context(service_workers="block", **PHONE)
     page = context.new_page()
     page.goto(site + "?set=5A3V~h&n=Nos%20Iau")
     page.wait_for_selector(".set-tune .abcjs-staff")
     assert page.is_visible(".set-tune-head .preview-play >> nth=0") and page.is_visible(".set-actions .music-size")
     page.click(".practice-toggle")
-    assert not page.is_visible(".set-tune-head .preview-play >> nth=0") and not page.is_visible(".set-actions .music-size")
+    assert not page.is_visible(".set-tune-head .preview-play >> nth=0") and page.is_visible(".set-actions .music-size")
+    assert not page.is_visible(".send-setlist")
+    name, size = page.locator("main h1").bounding_box(), page.locator(".set-actions .music-size").bounding_box()
+    text = page.evaluate("(() => { const r = document.createRange(); r.selectNodeContents(document.querySelector('main h1')); return r.getBoundingClientRect().right; })()")
+    assert text < size["x"] and abs((name["y"] + name["height"] / 2) - (size["y"] + size["height"] / 2)) < 6
     assert page.is_visible(".set-tune-head h2 >> nth=0") and page.is_visible(".practice-toggle")
     context.close()
 

@@ -2997,6 +2997,46 @@ function scoreLayout(paper) {
   return { staffwidth, wrap: { minSpacing: 1.8, maxSpacing: 2.7, preferredMeasuresPerLine: bars } };
 }
 
+// Full screen on a screen wider than it's tall (a laptop, a tablet on its side): the music
+// drawn to fill the width came out a little taller than the screen, for a quarter of the
+// tunes, and was read scrolling. Where it can, it's drawn to fit the screen under its name,
+// as big as fits, and never smaller than STAND_LEAST (times the reader's size): its own lines
+// drawn a little smaller (longer lines, then scaled to the width), or fewer of them with more
+// bars to each, whichever is bigger. Where it can't (a long tune), it's left as big as it was,
+// to be read scrolling. A set's tunes the same, each under its own strip and name. Returns
+// the music drawn, or null where it was left as it was.
+const STAND_LEAST = 1.1;  // px to abcjs's unit: a little bigger than a tune's own page on a computer
+function standFit(paper, layout, drawAt) {
+  if (!document.body.classList.contains("practice") || state.printing) return null;
+  const over = () => {  // how many times too tall for the screen, read from the page's top (a set's tune: from its strip)
+    const box = paper.getBoundingClientRect();
+    const top = paper.closest(".set-tune")?.getBoundingClientRect().top ?? -window.scrollY;
+    const room = window.innerHeight - (box.top - top) - 12;
+    return room < 200 ? 0 : box.height / room;
+  };
+  const first = over();
+  if (first <= 1) return null;
+  const width = paper.clientWidth, drawnAt = layout.staffwidth ?? 740, own = Number(paper.dataset.bars) || 4;
+  const scale = (staffwidth) => width / (staffwidth + 30);  // abcjs draws 30 units more than the line
+  const least = STAND_LEAST * SIZES[state.musicSize];
+  // Its own lines, smaller: the height goes with the size
+  const smaller = Math.ceil(((drawnAt + 30) * first * 1.01 - 30) / 10) * 10;
+  const same = scale(smaller) >= least ? { ...layout, staffwidth: smaller } : null;
+  // A bar more to each line, then another, while that's clearly bigger than its own lines
+  // smaller: its own lines keep its phrases (a part's 4 bars a line, its repeat at the end of one)
+  for (let bars = (layout.wrap?.preferredMeasuresPerLine ?? Math.round(own * drawnAt / 740)) + 1; ; bars++) {
+    const staffwidth = Math.max(drawnAt + 20, Math.round(740 * bars / own / 20) * 20);
+    if (scale(staffwidth) < Math.max(least, same ? scale(same.staffwidth) * 1.1 : 0)) break;
+    const drawn = drawAt({ staffwidth, wrap: { minSpacing: 1.8, maxSpacing: 2.7, preferredMeasuresPerLine: Math.max(paper.dataset.sung ? 2 : 1, bars) } });
+    const now = over();
+    if (now > .75 && now <= 1) return drawn;
+    // abcjs takes the bars to a line as a wish: a slow air's few long bars could come out
+    // twice as many to a line, and the music far smaller than fits. Further on, only smaller.
+    if (now <= .75) break;
+  }
+  return drawAt(same ?? layout);
+}
+
 // Not one bar left alone on a line (a whole line of the screen for a few notes), no
 // first or second ending starting at the very end of a line (its bracket left hanging
 // there), and no pickup at the end of a line or alone on one: it starts the line of the bar
@@ -3289,33 +3329,43 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   paper.dataset.bars = ownBarsPerLine(tune.abc);
   paper.dataset.sung = settings.words && /^w:/m.test(tune.abc) ? "yes" : "";
   const layout = scoreLayout(paper);
-  paper.dataset.layout = JSON.stringify(layout);
-  abc = wrapVerses(endingsOnTheirBars(shortCredits(abc, layout), layout), layout);
-  // Full screen on a wide screen draws the music bigger, to fill it, and the credit and the
-  // tempo with it, until they outgrew the tune's name above: the credit is kept at its usual
-  // size. The tempo's "= 112" grows with its note (♩.), read from the stand, but no bigger
-  // than the name (1.35rem): at its usual size beside a big note it looked cut short.
-  const grow = paper.clientWidth / ((layout.staffwidth ?? 740) + 30);
-  if (document.body.classList.contains("practice") && !state.printing && grow > 1.1) {
-    abc = `%%composerfont * ${Math.round(13 / grow)}\n%%tempofont * ${Math.round((12 * Math.min(grow, 1.75)) / grow)}\n${abc}`;
-  }
-  // On the music stand, and on a phone (its lines laid out again, shorter), the lines of
-  // music sit closer together, so more of the tune is in sight at once (a slow air on the
-  // stand, or a 32-bar reel on a phone, the whole of it).
-  if ((layout.wrap || document.body.classList.contains("practice")) && !state.printing) abc = `%%staffsep ${STAND_STAFFSEP}\n${abc}`;
+  paper.dataset.layout = JSON.stringify(layout);  // what a resize compares with (not standFit's)
+  const written = abc;
+  const abcFor = (layout) => {
+    let abc = wrapVerses(endingsOnTheirBars(shortCredits(written, layout), layout), layout);
+    // Full screen on a wide screen draws the music bigger, to fill it, and the credit and the
+    // tempo with it, until they outgrew the tune's name above: the credit is kept at its usual
+    // size. The tempo's "= 112" grows with its note (♩.), read from the stand, but no bigger
+    // than the name (1.35rem): at its usual size beside a big note it looked cut short.
+    const grow = paper.clientWidth / ((layout.staffwidth ?? 740) + 30);
+    if (document.body.classList.contains("practice") && !state.printing && grow > 1.1) {
+      abc = `%%composerfont * ${Math.round(13 / grow)}\n%%tempofont * ${Math.round((12 * Math.min(grow, 1.75)) / grow)}\n${abc}`;
+    }
+    // On the music stand, and on a phone (its lines laid out again, shorter), the lines of
+    // music sit closer together, so more of the tune is in sight at once (a slow air on the
+    // stand, or a 32-bar reel on a phone, the whole of it).
+    if ((layout.wrap || document.body.classList.contains("practice")) && !state.printing) abc = `%%staffsep ${STAND_STAFFSEP}\n${abc}`;
+    return abc;
+  };
   // Printed from the Print menu, the chords are on the music for "Print with chords" only;
   // printed from the browser's own menu, as they are on screen.
   const chordsShown = state.printing && document.body.dataset.print ? document.body.dataset.print === "with-chords" : state.practice.chordsOnScore;
   const format = chordsShown ? SCORE_FORMAT : HIDDEN_CHORDS_FORMAT;
   // The tablature's name is said once, above the music (fingeringKey), not on every line.
   const tablature = tab ? [{ instrument: tab.instrument, label: "" }] : null;
-  const render = (layout) => ABCJS.renderAbc(paper, accompaniment(abc, settings.chords.play),
-    { responsive: "resize", add_classes: true, paddingtop: 0, format, ...layout, ...(tablature ? { tablature } : {}),
-      // Laying the music out again in shorter lines (wrap), abcjs reads the tune again and
-      // leaves its tablature behind: given back here, before it's drawn.
-      afterParsing: (parsed) => { if (tablature && !parsed.tablatures) parsed.tablatures = ABCJS.parseOnly(abc, { tablature })[0].tablatures; },
-      selectTypes: ["note"], clickListener: playFrom })[0];
-  const visualObj = noLoneBar(render(layout), layout, render, abc, format, !fingered && !!paper.dataset.sung);
+  const drawAt = (layout) => {
+    const abc = abcFor(layout);
+    const render = (layout) => ABCJS.renderAbc(paper, accompaniment(abc, settings.chords.play),
+      { responsive: "resize", add_classes: true, paddingtop: 0, format, ...layout, ...(tablature ? { tablature } : {}),
+        // Laying the music out again in shorter lines (wrap), abcjs reads the tune again and
+        // leaves its tablature behind: given back here, before it's drawn.
+        afterParsing: (parsed) => { if (tablature && !parsed.tablatures) parsed.tablatures = ABCJS.parseOnly(abc, { tablature })[0].tablatures; },
+        selectTypes: ["note"], clickListener: playFrom })[0];
+    return noLoneBar(render(layout), layout, render, abc, format, !fingered && !!paper.dataset.sung);
+  };
+  let visualObj = drawAt(layout);
+  // Full screen: the whole tune on the screen where it can be (standFit).
+  visualObj = standFit(paper, layout, drawAt) ?? visualObj;
   // The sound as the music says: the click's beats and the strum change with the time
   // signature (the tune's own %%MIDI gchord kept), and D.C. and D.S. are followed.
   const strum = settings.chords.play !== "tune" && !/^%%MIDI\s+gchord/m.test(tune.abc);
@@ -3677,7 +3727,7 @@ function chordCard(tune) {
     el("p", { class: "caption" },
       tune.chords ? `${tr(tune.chords, CY_CHORD_SOURCES[tune.chords] ?? tune.chords)}. ` : "",
       tr("One way of accompanying it: use your ear, and your own.", "Un ffordd o gyfeilio iddi: defnyddiwch eich clust, a'ch syniadau eich hun."),
-      " ", el("span", { class: "held-key" }, tr("A chord in grey carries on from the bar before.", "Mae cord mewn llwyd yn parhau o'r bar blaenorol."))));
+      " ", el("span", { class: "held-key" }, tr("Chords in grey carry on from the bar before.", "Mae cordiau mewn llwyd yn parhau o'r bar blaenorol."))));
 }
 
 // A tune's chords (the paper is the player and the music): what the player plays (under How
@@ -4756,19 +4806,36 @@ function sayIt(group) {
 // Full screen: the music and nothing else (the name, and Exit), full screen if possible. For
 // reading at a session: no keys, no Play, no practice tools (style.css hides them), and
 // anything playing stops, as there's no Play left to stop it with.
+// The name's room beside Size and Exit (style.css's --stand-tools): measured, as they're
+// wider in Welsh, and the size between − and + shows only where there's room for it.
+const standTools = new ResizeObserver(([entry]) =>
+  document.querySelector("main")?.style.setProperty("--stand-tools", `${Math.ceil(entry.borderBoxSize[0].inlineSize)}px`));
+// The music drawn again for full screen or back: for the width (and bigger, on a wide
+// screen), and to fit the screen (standFit). A set's tunes not drawn yet are, as they come.
+function redrawForStand() {
+  state.redrawScore?.();
+  document.querySelectorAll(".set-paper").forEach((paper) => { if (paper.drawn) { paper.drawn = false; paper.draw(); } });
+}
 function setPractice(on) {
   if (document.body.classList.contains("practice") === on) return;
   document.body.classList.toggle("practice", on);
+  standTools.disconnect();
+  const tools = document.querySelector("main :is(.controls, .set-actions)");
+  if (on && tools) standTools.observe(tools);
   const button = document.querySelector(".practice-toggle");
   if (button) button.textContent = practiceLabel(on);
   if (on) audioFocus.stop();
-  state.redrawScore?.();  // drawn again for the width (and bigger, on a wide screen)
+  redrawForStand();
   if (on) window.scrollTo(0, 0);
   if (on && document.fullscreenEnabled) document.documentElement.requestFullscreen().catch(() => {});
   if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {});
 }
-// Leaving full screen (e.g. with Esc) also leaves practice mode.
-document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement) setPractice(false); });
+// Leaving full screen (e.g. with Esc) also leaves practice mode. Going into it, the screen
+// is taller than when the music was drawn (no address bar): drawn again, to fit (standFit).
+document.addEventListener("fullscreenchange", () => {
+  if (!document.fullscreenElement) setPractice(false);
+  else if (document.body.classList.contains("practice")) redrawForStand();
+});
 
 // ---- Map: the places named in tune titles (places.json) --------------------------------
 
@@ -6499,9 +6566,15 @@ function setScore(tune, key) {
     paper.dataset.sung = /^w:/m.test(tune.abc) ? "yes" : "";
     const layout = scoreLayout(paper);
     paper.dataset.layout = JSON.stringify(layout);
-    abc = wrapVerses(endingsOnTheirBars(shortCredits(abc, layout), layout), layout);
-    const render = (layout) => ABCJS.renderAbc(paper, abc, { responsive: "resize", add_classes: true, paddingtop: 0, format: HIDDEN_CHORDS_FORMAT, ...layout })[0];
-    paper.visualObj = noLoneBar(render(layout), layout, render, abc, HIDDEN_CHORDS_FORMAT, !!paper.dataset.sung);
+    const drawAt = (layout) => {
+      let laid = wrapVerses(endingsOnTheirBars(shortCredits(abc, layout), layout), layout);
+      // Full screen: the lines closer together, as on a tune's page there
+      if (document.body.classList.contains("practice") && !state.printing) laid = `%%staffsep ${STAND_STAFFSEP}\n${laid}`;
+      const render = (layout) => ABCJS.renderAbc(paper, laid, { responsive: "resize", add_classes: true, paddingtop: 0, format: HIDDEN_CHORDS_FORMAT, ...layout })[0];
+      return noLoneBar(render(layout), layout, render, laid, HIDDEN_CHORDS_FORMAT, !!paper.dataset.sung);
+    };
+    paper.visualObj = drawAt(layout);
+    paper.visualObj = standFit(paper, layout, drawAt) ?? paper.visualObj;  // full screen: each tune a screen, where it can be
     hideMeasuring();
     nameScore(paper);
   };

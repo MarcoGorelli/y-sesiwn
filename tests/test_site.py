@@ -1080,13 +1080,14 @@ def test_focus_not_under_the_phone_top_bar(browser, site):
     page.wait_for_selector(".score .abcjs-staff")
     # Through the page to Take it with you (on a phone, Share is tabbed to from the chords,
     # below it on the screen, so the page is scrolled up to it)
-    bar = page.evaluate("document.querySelector('.topbar').getBoundingClientRect().bottom")
+    # The bar where it is at each step: at the page's top it's lower, under the carthen strip.
     seen = []
     while "Add to set" not in seen and len(seen) < 60:
         page.keyboard.press("Tab")
         if page.evaluate("document.activeElement.closest('main') !== null"):
             seen.append(page.evaluate("document.activeElement.textContent.trim()"))
-            assert page.evaluate("document.activeElement.getBoundingClientRect().top") >= bar, seen[-1]
+            top, bar = page.evaluate("[document.activeElement.getBoundingClientRect().top, document.querySelector('.topbar').getBoundingClientRect().bottom]")
+            assert top >= bar, (seen[-1], top, bar)
     assert "Share" in seen and "Print / save" in seen
     context.close()
 
@@ -1709,8 +1710,11 @@ def test_welsh_home_page(page):
     welsh = page.evaluate(VISIBLE_TEXT)
     # Sessions' own names stay as they are, as do the Welsh words in the English (a season's verse, tune names).
     names = set(page.locator(".coming-up li a").all_inner_texts()) | set(page.locator("main [lang=cy]").all_inner_texts())
+    # Nor a place's name and a time, as in "Coming up" (", Llanfyllin, 7", of 7:30): some towns
+    # are called the same in both, and the list changes with the date.
+    just_names = lambda f: all(word[0].isupper() for word in re.findall(r"[^\W\d_]+", f))
     fragments = {f.strip() for f in re.split(r"[.:;?!()\n]", english) if len(f.strip()) >= 12 and not any(f.strip() in n for n in names)}
-    assert fragments and not [f for f in fragments if f in welsh]
+    assert fragments and not [f for f in fragments if f in welsh and not just_names(f)]
     # The choice is remembered.
     page.reload()
     page.wait_for_function("typeof state !== 'undefined' && state.data")

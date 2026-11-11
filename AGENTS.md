@@ -24,7 +24,7 @@ When a setlist is sent in for a session (a night in `setlists/<id>.json`), also 
 - Folding a written-out passage into `|: :|` or first/second endings is fine, even when the score writes it out, as long as it's clearer.
 - Every bar adds up to the time signature. Only a pickup, and a bar split across a part boundary (the end of a part plus the pickup into the next), may be short. Mark that split with `||`, `:|` or `|:`, never a plain `|`: `G3- G2 | D |` shows as two short bars, so write `G3- G2 || D |`. If the source itself has a bar too long or short, keep it and say so in an `N:` line ("Bar 4 (c2d2zd2) is a quaver short, as in the source."), so it isn't "fixed" later.
 - One bar line between two bars. When a line ends with a bar line, don't start the next with `|` (only `|:`, `|1`/`|2` or `[2`), or the bar line is doubled.
-- Bar-line spellings: `|:` (not `||:`), `|]` to end the tune (not `]|`), `::` between two repeated parts. No trailing spaces.
+- Bar-line spellings: `|:` (not `||:`), `:|` (not `:||`), `|]` to end the tune (not `]|` or `||`), `::` between two repeated parts (not `:| |:`, and never `:|:`: the ABC standard makes it the same as `::`, but abcjs reads it as `:|` and loses the repeat). No trailing spaces. Some of these are only house style (the standard allows any mix of `|`, `[`, `]` and `:`); `test_bar_lines` checks them all.
 - First and second endings span one bar, two at most. If the copies differ over more bars, write the part out. Close the second ending with `||` (or `|]`, `|:`) straight after its bar(s): abcjs keeps an ending's bracket open until the next one of those, so `:|2 x |` followed by more bars shows as one long ending.
 
 ## The site

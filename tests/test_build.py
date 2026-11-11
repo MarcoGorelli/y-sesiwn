@@ -31,6 +31,66 @@ def test_tune_file(path: Path):
         assert re.match(r"[\^_<>@]|[A-G]", text), f'"{text}": text above the stave is written "^{text}"'
 
 
+MUSIC_LINE = re.compile(r"\s*(?!%|[A-Za-z+]:)\S")  # not a header, words or a comment
+BAR_LINE_END = re.compile(r"(\||::|\|\]|:\|)$")
+
+
+def music_lines(abc: str) -> list[tuple[str, str]]:
+    """The music lines after K:, each with its voice (None when there's one), without
+    comments, chord names and text (which may hold a |)."""
+    voice, lines = None, []
+    for line in abc.split("\nK:", 1)[1].splitlines()[1:]:
+        if m := re.match(r"\[?V:\s*(\w+)", line):
+            voice = m.group(1)
+        if MUSIC_LINE.match(line):
+            line = re.sub(r'"[^"]*"|%.*', "", line)
+            lines.append((voice, re.sub(r"^\[V:[^\]]*\]", "", line).strip()))
+    return lines
+
+
+@pytest.mark.parametrize("path", TUNES, ids=lambda p: p.parent.name)
+def test_bar_lines(path: Path):
+    # The bar-line rules in AGENTS.md ("Writing ABC").
+    abc = path.read_text(encoding="utf-8")
+    lines = music_lines(abc)
+    body = "\n".join(line for _, line in lines)
+    for wrong, right in [(r"\|\|:", "|:"), (r":\|\|(?![:\]])", ":|"), (r":\|\|?:|:\|[ \t]+\|:", "::")]:
+        assert not re.search(wrong, body), f"{re.search(wrong, body).group()!r}: write {right!r}"
+    no_chords = re.sub(r"\[[^\]|]*\]", "", body)  # [ceg] and [K:D] end in ], so aren't ]|
+    assert "]|" not in no_chords, "end the tune with |], not ]|"
+    assert not re.search(r"\|[ \t]+\|", body), "two bar lines between two bars: one is enough"
+    for (_, line), (_, after) in zip(lines, lines[1:]):
+        assert not (BAR_LINE_END.search(line) and re.match(r"\|(?![:\d])", after)), \
+            f"{after[:30]!r}: the line before ends with a bar line, so don't start this one with |"
+    for voice in dict.fromkeys(v for v, _ in lines):
+        last = [line for v, line in lines if v == voice][-1]
+        assert re.search(r"(\|\]|:\|)$", last), f"{last[-20:]!r}: end the tune with |] (or :|)"
+    # First and second endings span a bar, two at most; the second is closed straight after.
+    for m in re.finditer(r"(?:\||\[)1(.*?)(:\||::)", body):
+        assert m.group(1).count("|") <= 1, f"{m.group()[:50]!r}: a first ending of more than two bars"
+    assert not re.search(r"\|\s+\d", body), "an ending is |1, :|2 or [2, never | 1 (the ABC standard, 4.9)"
+    for m in re.finditer(r"(?:\||\[)2(.*?)(\|\||\|\]|\[\||\|:|::|:\||$)", body):
+        assert m.group(1).count("|") <= 1 and m.group(2), \
+            f"{m.group()[:50]!r}: close the second ending with || (or |], |:) after its bar or two"
+    # A tie joins two of the same note (an accidental may differ, from the key).
+    notes = re.sub(r"\{[^}]*\}|![^!\s]*!|\[[^\]]*\]", " ", body)
+    for m in re.finditer(r"([A-Ga-g][,']*)[\d/]*\)?-[\s|:\]\[12]*\(?[\^_=]*([A-Ga-g][,']*)", notes):
+        assert m.group(1) == m.group(2), f"{m.group()!r}: a tie between two different notes"
+    for line in abc.splitlines():
+        assert line == line.rstrip(), f"{line!r}: a space at the end of the line"
+        assert not re.fullmatch(r"[A-Za-z]:", line) or line[0] in "Ww", f"{line!r}: an empty header"
+        if line.startswith("T:"):
+            assert line[2:] == " ".join(line[2:].split()), f"{line!r}: a stray space in the title"
+
+
+def test_odd_bars_noted():
+    # A bar too long or short in the source is kept, and an N: line says so (AGENTS.md).
+    from test_site import EXPECTED_ODD_BARS
+    for slug in EXPECTED_ODD_BARS:
+        notes = b.parse_headers((b.ROOT / "tunes" / slug / "tune.abc").read_text(encoding="utf-8")).get("N", [])
+        assert any("as in the source" in n for n in notes), f"{slug}: no N: line on its odd bars"
+
+
 def test_titles_and_versions():
     records = [b.tune_record(p) for p in TUNES]
     by_group = {}

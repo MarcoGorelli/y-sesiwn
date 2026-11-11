@@ -366,7 +366,7 @@ def details(headers: dict[str, list[str]]) -> tuple[list[list[str]], list[list[s
             values = [key_name(v) for v in values]
         if field == "M":  # as numbers, so "C" isn't read as a key
             values = [METER_SYMBOLS.get(v.strip(), v.strip()) for v in values]
-        if field == "A":  # every tune here is Welsh: only a place within Wales is said
+        if field in ("A", "O"):  # every tune here is Welsh: only a place within Wales is said
             values = [a for v in values if (a := re.sub(r",?\s*\bWales$", "", v.strip()))]
             if not values:
                 continue

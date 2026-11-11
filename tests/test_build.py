@@ -225,6 +225,8 @@ def test_area_leaves_out_wales():
     # Every tune here is Welsh: "Wales" alone says nothing, a place in Wales still does.
     area = lambda a: dict(b.details({"A": [a]})[0]).get("Area")
     assert (area("Wales"), area("Gower Peninsula, Wales"), area("Llanfyllin")) == (None, "Gower Peninsula", "Llanfyllin")
+    origin = lambda o: dict(b.details({"O": [o]})[0]).get("Origin")
+    assert (origin("Wales"), origin("Llŷn, Wales")) == (None, "Llŷn")
 
 
 def test_places():

@@ -22,6 +22,9 @@ When a setlist is sent in for a session (a night in `setlists/<id>.json`), also 
 
 - Keep the notes, rhythms, bars and repeats. Layout doesn't have to follow the score: break lines wherever reads most easily on a phone. This applies to every tune, including the Alawon Cymru ones and all submissions. Tunes with sung words (`w:`) read better with fewer bars a line, around 2, so the syllables don't crowd.
 - Folding a written-out passage into `|: :|` or first/second endings is fine, even when the score writes it out, as long as it's clearer.
+- Every bar adds up to the time signature. Only a pickup, and a bar split across a part boundary (the end of a part plus the pickup into the next), may be short. Mark that split with `||`, `:|` or `|:`, never a plain `|`: `G3- G2 | D |` shows as two short bars, so write `G3- G2 || D |`. If the source itself has a bar too long or short, keep it and say so in an `N:` line ("Bar 4 (c2d2zd2) is a quaver short, as in the source."), so it isn't "fixed" later.
+- One bar line between two bars. When a line ends with a bar line, don't start the next with `|` (only `|:`, `|1`/`|2` or `[2`), or the bar line is doubled.
+- Bar-line spellings: `|:` (not `||:`), `|]` to end the tune (not `]|`), `::` between two repeated parts. No trailing spaces.
 - First and second endings span one bar, two at most. If the copies differ over more bars, write the part out. Close the second ending with `||` (or `|]`, `|:`) straight after its bar(s): abcjs keeps an ending's bracket open until the next one of those, so `:|2 x |` followed by more bars shows as one long ending.
 
 ## The site

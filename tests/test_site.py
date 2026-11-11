@@ -46,8 +46,6 @@ def test_every_tune_draws(page, piece):
 # Bars that don't fill the time signature, other than a lead-in and the short bars at
 # the end of a part, are usually a slip (a bar line missing or one too many).
 EXPECTED_ODD_BARS = {
-    "bonheddwr-mawr-o-r-bala": "its second part starts with a lead-in, without a double bar",
-    "merch-megan-version-2": "its third part starts with a lead-in, without a double bar",
     "ar-gyfer-heddiw-r-bore": "the score bars each pause, and the lead-in after it, as half bars",
     # A note short in Brian Martin's file, and in the tune's N: line; the right note isn't known.
     "castell-aberystwyth": "bar 4 of part B is a quaver short",

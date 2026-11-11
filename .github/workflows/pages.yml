@@ -22,15 +22,24 @@ concurrency:
 
 jobs:
   test:
-    # In two at once: the tests that time sound in real time run one at a time (each
-    # waits for the others to finish), so they get a machine of their own, and the rest
-    # run in parallel without stopping for them.
+    # On four machines at once: the tests that time sound in real time run one at a time
+    # (each waits for the others to finish), so they get a machine of their own, and the
+    # rest, which keep a machine's four processors busy for about four minutes, are shared
+    # among three (TEST_SHARD, in conftest.py).
     name: test (${{ matrix.tests }})
     strategy:
+      fail-fast: false  # one share failing doesn't stop the others, so all failures show
       matrix:
         include:
-          - tests: most
+          - tests: most 1/3
             args: -m "not alone"
+            shard: 1/3
+          - tests: most 2/3
+            args: -m "not alone"
+            shard: 2/3
+          - tests: most 3/3
+            args: -m "not alone"
+            shard: 3/3
           - tests: timed sound
             args: -m alone -n0
     runs-on: ubuntu-latest
@@ -60,6 +69,7 @@ jobs:
       - run: uv pip install -r requirements-dev.txt
       - run: python -m pytest ${{ matrix.args }}
         env:
+          TEST_SHARD: ${{ matrix.shard }}
           # tune_numbers.json must only add to what main had before this push (or, for a
           # pull request, to its base), however many commits it brings.
           NUMBERS_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}

@@ -7,9 +7,11 @@
 """
 import functools
 import http.server
+import os
 import re
 import sys
 import threading
+import zlib
 
 try:
     import fcntl
@@ -100,6 +102,23 @@ def alone(request, tmp_path_factory, worker_id):
         finally:
             fcntl.flock(tests, fcntl.LOCK_UN)
             fcntl.flock(gate, fcntl.LOCK_UN)
+
+
+def pytest_collection_modifyitems(config, items):
+    """TEST_SHARD=2/3 runs only the second of three shares of the tests, so CI can run
+    them on three machines at once. Each test's share is fixed by its name, the same in
+    every xdist worker; a share isn't timed, so the three take roughly but not exactly
+    as long."""
+    shard = os.environ.get("TEST_SHARD")
+    if not shard:
+        return
+    which, count = map(int, shard.split("/"))
+    keep, drop = [], []
+    for item in items:
+        (keep if zlib.crc32(item.nodeid.encode()) % count == which - 1 else drop).append(item)
+    if drop:
+        config.hook.pytest_deselected(items=drop)
+        items[:] = keep
 
 
 TRACES = ROOT / "test-results"

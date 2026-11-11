@@ -1,5 +1,5 @@
 # Once a month, see whether the libraries copied into static/ (download_assets.py) or
-# Playwright (requirements-dev.txt and .devcontainer/Dockerfile, bumped together) have
+# Playwright (requirements-dev.txt, .devcontainer/Dockerfile and pages.yml, bumped together) have
 # newer versions, which Dependabot can't see. If so, open an issue saying which (or
 # bring the open one up to date); nothing is changed until someone upgrades on purpose.
 name: Check for updates
@@ -59,7 +59,7 @@ jobs:
               ("Playwright", re.search(r"^playwright==([\d.]+)", requirements, re.M)[1],
                latest("https://pypi.org/pypi/playwright/json", "info", "version"),
                "https://github.com/microsoft/playwright-python/releases",
-               "Bump `requirements-dev.txt` and the image in `.devcontainer/Dockerfile` together "
+               "Bump `requirements-dev.txt` and the image in `.devcontainer/Dockerfile` and `pages.yml` together "
                "(once the image for that version is out: mcr.microsoft.com/playwright/python)."),
           ]
           behind = [f for f in found if f[1] != f[2]]

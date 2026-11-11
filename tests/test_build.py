@@ -447,10 +447,12 @@ def test_tied_notes_are_one_note():
 
 
 def test_playwright_matches_the_dev_container():
-    # The dev container's image comes with browsers for one Playwright version only.
-    image = re.search(r"playwright/python:v([\d.]+)", (b.ROOT / ".devcontainer" / "Dockerfile").read_text(encoding="utf-8"))
+    # The dev container's image, and CI's (pages.yml), come with browsers for one Playwright
+    # version only.
     pinned = re.search(r"^playwright==([\d.]+)", (b.ROOT / "requirements-dev.txt").read_text(encoding="utf-8"), re.M)
-    assert image and pinned and image.group(1) == pinned.group(1)
+    for path in [b.ROOT / ".devcontainer" / "Dockerfile", b.ROOT / ".github" / "workflows" / "pages.yml"]:
+        images = re.findall(r"playwright/python:v([\d.]+)", path.read_text(encoding="utf-8"))
+        assert pinned and images and set(images) == {pinned.group(1)}, (path.name, images)
 
 
 def test_pull_request_template():

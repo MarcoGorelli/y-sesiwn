@@ -1,7 +1,7 @@
 # For the tests (tests/); the site itself needs nothing but Python.
 #   pip install -r requirements-dev.txt && python -m playwright install chromium
 # Pinned, so a new release can't break the tests unannounced: upgrade on purpose. Keep
-# playwright the same version as the dev container's image (.devcontainer/Dockerfile),
+# playwright the same version as the dev container's image (.devcontainer/Dockerfile) and CI's (pages.yml),
 # whose browsers are made for it (tests/test_build.py checks).
 pytest==9.2.0
 pytest-xdist==3.8.0  # runs the tests in parallel

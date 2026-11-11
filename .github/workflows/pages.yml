@@ -34,11 +34,22 @@ jobs:
           - tests: timed sound
             args: -m alone -n0
     runs-on: ubuntu-latest
+    # In Playwright's own image, the dev container's (.devcontainer/Dockerfile): the browser
+    # and its system libraries come ready, so nothing is fetched from Ubuntu's servers,
+    # whose names GitHub's machines sometimes couldn't look up (the tests never ran). The
+    # same version as requirements-dev.txt's playwright (tests/test_build.py checks).
+    # --ipc=host: Chromium's shared memory, which a container otherwise keeps too small.
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.64.1-noble
+      options: --ipc=host
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false  # the token isn't left in .git for the test tools to find
           fetch-depth: 0  # the history too: tune_numbers.json is checked against NUMBERS_BASE
+      # The checkout belongs to the machine's user, not the container's (root): without
+      # this, git won't read it for the tests (git show, git ls-files).
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       # uv installs the test dependencies in seconds, from a cache kept between runs.
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
@@ -47,19 +58,6 @@ jobs:
           enable-cache: true
           cache-dependency-glob: requirements-dev.txt
       - run: uv pip install -r requirements-dev.txt
-      # The browser for the tests (about 150 MB), kept between runs until Playwright is
-      # upgraded. Its system libraries come from Ubuntu's package manager each time.
-      - id: playwright
-        run: echo "version=$(python -c "import importlib.metadata as m; print(m.version('playwright'))")" >> "$GITHUB_OUTPUT"
-      - id: browser-cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
-      - if: steps.browser-cache.outputs.cache-hit != 'true'
-        run: python -m playwright install --with-deps chromium
-      - if: steps.browser-cache.outputs.cache-hit == 'true'
-        run: python -m playwright install-deps chromium
       - run: python -m pytest ${{ matrix.args }}
         env:
           # tune_numbers.json must only add to what main had before this push (or, for a

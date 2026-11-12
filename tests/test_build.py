@@ -22,6 +22,8 @@ def test_tune_file(path: Path):
     assert b.parse_key(headers["K"][0]), "K: should be a key the site understands"
     assert len(b.melody(abc)) >= 8, "the note search needs the melody"
     body = b.music(abc)
+    for line in abc.split("\nK:", 1)[0].splitlines() + ["K:" + abc.split("\nK:", 1)[1].split("\n", 1)[0]]:
+        assert not re.match(r"[A-Za-z]:[ \t]", line), f"{line!r}: no space after the colon"
     assert "\n\n" not in abc.split("\nK:", 1)[1].strip(), "a blank line ends an ABC tune"
     for line in abc.split("\nK:", 1)[1].splitlines():  # the header ends at K:
         field = line[:1]

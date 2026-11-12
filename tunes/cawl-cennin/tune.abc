@@ -1,9 +1,9 @@
-X: 1
+X:1
 T:Cawl Cennin
 R:jig
-M: 6/8
-L: 1/8
-K: Dmaj
+M:6/8
+L:1/8
+K:D
 |: dcB A2G | FGA E3 | FGA Bcd | Bed cBA |
 dcB A2G | FGA E3 | FGA Bcd | edc d3 :|
 |: ecA ecA | def ecA | def ecA | dcB A3|

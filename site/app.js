@@ -3316,7 +3316,7 @@ function drawScore(tune, paper, audio, chart, onSpeed = () => {}) {
   // the Details box, so leave them off the score; the version tabs say which version it is.
   // Played swung, the score says so in its tempo mark, printed too.
   const swung = settings.swing && canSwing(tune);
-  let abc = setTempo(stripFields(tune.abc, "SZBNAHR"), tune.beat, bpm, swung ? "Swing" : "", tune.bpm).replace(/^(T:.*) \(version \d+\)$/m, "$1");
+  let abc = setTempo(stripFields(tune.abc, "SZBNAHDR"), tune.beat, bpm, swung ? "Swing" : "", tune.bpm).replace(/^(T:.*) \(version \d+\)$/m, "$1");
   abc = transposeAbc(tune, abc, transpose);
   if (!settings.words) abc = abc.replace(/^[wW]:.*\n?/gm, "");
   const tab = TABS[state.practice.tab];
@@ -3781,7 +3781,7 @@ function printButton(tune, paper, settings) {
   const titled = (abc) => abc.replace(/^T:(.*?)(?: \(version \d+\))?$/m, (_, title) => `T:${title}${tune.shown > 1 ? ` (version ${tune.shown})` : ""}`);
   const saveAbc = () => download(fileName("abc"), "text/vnd.abc", transposed(titled(tune.abc)));
   const saveMidi = () => {
-    const abc = transposed(setTempo(stripFields(tune.abc, "SZBNAH"), tune.beat, settings.bpm, "", tune.bpm));
+    const abc = transposed(setTempo(stripFields(tune.abc, "SZBNAHD"), tune.beat, settings.bpm, "", tune.bpm));
     const [bytes] = ABCJS.synth.getMidiFile(accompaniment(abc, settings.chords.play), {
       midiOutputType: "binary", ...AUDIO_PARAMS,
       chordsOff: tune.chords == null || settings.chords.play === "tune", voicesOff: tune.chords != null && settings.chords.play === "chords" });
@@ -5904,7 +5904,7 @@ function nightTune(item) {
   const paper = el("div", { class: "preview-score hide-chords" });
   // (No tempo mark: hidden, it would still leave its space above the notes.)
   const draw = () => drawOpening(paper, transposeAbc(tune, openingAbc(tune).replace(/^Q:.*\n/m, ""), chosen.key));
-  const whole = () => ABCJS.renderAbc("*", transposeAbc(tune, setTempo(stripFields(tune.abc, "SZBNAHTR"), tune.beat, chosen.bpm), chosen.key))[0];
+  const whole = () => ABCJS.renderAbc("*", transposeAbc(tune, setTempo(stripFields(tune.abc, "SZBNAHDTR"), tune.beat, chosen.bpm), chosen.key))[0];
   const key = () => (tune.key ? keyName(tune.key.pitch + chosen.key, tune.key.modeName) : null);
   const label = (playing) => playing ? tr(`Stop ${tune.base}`, `Stopio ${tune.base}`)
     : tr(`Play ${tune.base}${key() ? ` in ${key()}` : ""}`, `Chwarae ${tune.base}${key() ? ` yn ${key()}` : ""}`);
@@ -6560,7 +6560,7 @@ function setScore(tune, key) {
     if (paper.drawn) return;
     paper.drawn = true;
     // The numbered heading above says which tune it is, so no title (T:) on the music.
-    let abc = setTempo(stripFields(tune.abc, "SZBNAHTR"), tune.beat, tune.bpm);
+    let abc = setTempo(stripFields(tune.abc, "SZBNAHDTR"), tune.beat, tune.bpm);
     abc = transposeAbc(tune, abc, key);
     paper.dataset.bars = ownBarsPerLine(tune.abc);
     paper.dataset.sung = /^w:/m.test(tune.abc) ? "yes" : "";

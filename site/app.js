@@ -3056,9 +3056,12 @@ function noLoneBar(visualObj, layout, draw, abc, format, sung = false) {
     // A line of just a bar line (the |: a part starts with, put on a line of its own when
     // abcjs lays out a bar a line) is wrong however few bars the lines have.
     const empty = voices.filter((voice) => !voice.some((x) => x.el_type === "note")).length;
+    // A part's |: left at the end of the line before (after the :| the part before ends
+    // with), the line the part starts on then starting with no repeat sign.
+    const hanging = lines.filter((bars, i) => i < lines.length - 1 && bars.at(-1)?.type === "bar_left_repeat").length;
     return {
       most,
-      count: empty + (lines.length < 2 || most < 2 || layout.wrap.preferredMeasuresPerLine < 2 ? 0
+      count: empty + hanging + (lines.length < 2 || most < 2 || layout.wrap.preferredMeasuresPerLine < 2 ? 0
         : lines.filter((bars) => bars.length === 1 || bars.at(-1)?.startEnding).length),
       pickups: lines.filter((bars, i) => i < lines.length - 1 && pickups.has(bars.at(-1))).length,
     };

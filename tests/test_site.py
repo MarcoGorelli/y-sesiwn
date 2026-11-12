@@ -2172,6 +2172,25 @@ def test_no_line_of_just_a_bar_line_on_a_phone(browser, site):
     context.close()
 
 
+@pytest.mark.parametrize("width", [390, 1280])
+def test_a_parts_repeat_starts_its_line(browser, site, width):
+    # Made bigger (125%) the music is laid out again in shorter lines: the |: the second part
+    # starts with begins the line of its first bar, not left at the end of the line before,
+    # after the :|. (There a bar line is drawn before the first note of the line.)
+    context = browser.new_context(service_workers="block", viewport={"width": width, "height": 900})
+    context.add_init_script("localStorage.setItem('musicSize', '2')")
+    page = context.new_page()
+    page.goto(site + "alaw/mynydd-yr-heliwr/")
+    page.wait_for_selector(".score .abcjs-staff")
+    before = page.evaluate("""() => {
+      const line = (e) => e.getAttribute('class').match(/abcjs-l\\d+/)[0];
+      const note = document.querySelectorAll('.score svg .abcjs-note')[35];  // the B part's first note (~A3)
+      const x = note.getBBox().x;
+      return [...document.querySelectorAll('.score svg .abcjs-bar.' + line(note))].some((b) => b.getBBox().x < x); }""")
+    assert before
+    context.close()
+
+
 def test_a_slow_air_fits_a_phone_in_full_screen(browser, site):
     # In full screen a phone shows the whole of a slow air under its name: the lines closer
     # together, and the hidden chords not keeping room above every line.

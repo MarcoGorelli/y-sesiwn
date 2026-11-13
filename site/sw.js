@@ -81,8 +81,9 @@ const SAVED_NEXT_WAIT = 5000;
 const FRESH = new Set(["", "index.html", "app.js", "style.css", "tunes.json", "sessions.json",
   "about.md", "about.cy.md", "guides.cy.md", "CONTRIBUTING.md"]);
 // The app's own addresses: the home page (?set=…, ?page=…), a tune's, a type's, the sessions',
-// a night's tunes at a session (sesiynau/<id>/<date>/), and all of them (archif/).
-const APP_PAGE = /^(index\.html|((alaw|math|sesiynau)\/[^/]+|sesiynau|archif|sesiynau\/[^/]+\/\d{4}-\d{2}-\d{2})\/?)?$/;
+// a night's tunes at a session (sesiynau/<id>/<date>/), and all of them (archif/), the
+// other pages' own (am/, pori/, …: build_site.py's PAGE_PATHS), and each in Welsh (cy/…).
+const APP_PAGE = /^(cy\/|cy$)?(index\.html|((alaw|math|sesiynau)\/[^/]+|sesiynau|archif|pori|nodau|map|am|ychwanegu|cywiro|mewnosod|all-lein|cysylltu|sesiynau\/[^/]+\/\d{4}-\d{2}-\d{2})\/?)?$/;
 const pageFrom = new Map();  // client id -> "network" or "saved"
 let savedNext = 0;  // until when the next page comes from the saved copy
 

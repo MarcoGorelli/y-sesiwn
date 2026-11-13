@@ -250,7 +250,7 @@ def test_markdown_reader_only_for_its_pages(page):
     page.goto_site("alaw/glandyfi/")
     page.wait_for_selector(".score .abcjs-staff")
     assert not [u for u in requests if "marked" in u]
-    page.click(".sidebar-links a[href='?page=about']")
+    page.click(".sidebar-links a[href='am/']")
     page.wait_for_selector("main h1:text-is('About Y Sesiwn')")
     assert [u for u in requests if "marked" in u]
 
@@ -1057,13 +1057,13 @@ def test_phone_menu(browser, site):
     page.click("#menu-button")
     assert page.locator(".sidebar-links").is_visible()
     assert page.get_attribute("#menu-button", "aria-expanded") == "true"
-    page.focus(".sidebar-links a[href='?page=map']")
+    page.focus(".sidebar-links a[href='map/']")
     page.keyboard.press("Escape")  # as every menu closes, back to its button
     assert not page.locator(".sidebar-links").is_visible()
     assert page.get_attribute("#menu-button", "aria-expanded") == "false"
     assert page.evaluate("document.activeElement.id") == "menu-button"
     page.click("#menu-button")
-    page.click(".sidebar-links a[href='?page=map']")  # opening a page closes the menu
+    page.click(".sidebar-links a[href='map/']")  # opening a page closes the menu
     page.wait_for_selector(".wales-map .merged circle")
     assert not page.locator(".sidebar-links").is_visible()
     context.close()
@@ -1184,7 +1184,7 @@ def test_embed_code(page, site):
     assert abs(height - page.evaluate("document.querySelector('.embed-preview').contentDocument.body.offsetHeight") - 8) <= 1
     assert "in A major, with tablature" in page.inner_text(".embed-dialog p")
     # The step-by-step guide, from the dialog.
-    page.click(".embed-dialog a[href='?page=embed']")
+    page.click(".embed-dialog a[href='mewnosod/']")
     page.wait_for_selector("article.guide h1")
     assert page.inner_text("article.guide h1") == "Put a tune on your website" and not page.locator(".embed-dialog").count()
 
@@ -1556,7 +1556,7 @@ def test_home_page(page):
     # No red button competes with the search: Surprise me is a plain one, and finding a
     # tune by its notes is a line of text.
     assert page.locator("main button.primary:visible").count() == 0
-    assert page.locator(".notes-invite a[href='?page=notes']").is_visible()  # and, with a microphone, Play it to me
+    assert page.locator(".notes-invite a[href='nodau/']").is_visible()  # and, with a microphone, Play it to me
     assert page.locator(".offline-card").is_visible()
     # One Surprise me, where it is on every other page: the sidebar's, not the home page's line too.
     assert page.locator("#surprise-sidebar").is_visible() and not page.locator(".home-more button:has-text('surprise me')").is_visible()
@@ -1717,12 +1717,15 @@ def test_welsh_home_page(page):
     page.reload()
     page.wait_for_function("typeof state !== 'undefined' && state.data")
     assert page.inner_text("h1") == "Croeso i'r Sesiwn!"
-    page.click(".sidebar-links a[href='?page=browse']")
+    assert page.evaluate("location.pathname") == "/cy/"  # the address says it's Welsh: the one to send
+    page.click(".sidebar-links a[href='cy/pori/']")
     page.wait_for_selector(".tune-list li", state="attached")
+    assert page.evaluate("location.pathname") == "/cy/pori/"
     assert page.get_attribute("#main", "lang") == "cy"
     assert page.inner_text("main h1") == "Pori yn ôl math a chywair"
     page.click(".brand")
     page.click(".lang-switch [data-lang=en]")
+    assert page.evaluate("location.pathname") == "/"
     assert page.inner_text("h1").replace("\u00a0", " ") == "Croeso! Welcome to Y Sesiwn"
     assert page.inner_text("#surprise-sidebar") == "Surprise me"
     assert page.evaluate(VISIBLE_TEXT) == english
@@ -1818,9 +1821,9 @@ def test_works_offline(browser, site):
     page.goto(site + "alaw/llancesau-trefaldwyn/?v=1")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.inner_text("main h1") == "Llancesau Trefaldwyn"
-    page.click(".sidebar-links a[href='?page=map']")
+    page.click(".sidebar-links a[href='map/']")
     page.wait_for_selector(".wales-map .merged circle")
-    assert page.url == site + "?page=map"
+    assert page.url == site + "map/"
     context.close()
 
 
@@ -1979,7 +1982,7 @@ def test_a_page_left_open_gets_a_deploy(browser, site):
         page.wait_for_function("state.updated", polling=100, timeout=30000)
         assert page.evaluate("window.oldPage") is True  # still the same page
         context.set_offline(True)
-        page.click(".sidebar-links a[href='?page=browse']")
+        page.click(".sidebar-links a[href='pori/']")
         page.wait_for_selector(".tune-list li", state="attached", timeout=10000)
         assert page.evaluate("window.oldPage") is None
         assert page.evaluate("window.deployed") == 2
@@ -2058,7 +2061,7 @@ def test_keyboard_shortcuts(page):
 def test_focus_on_new_page(page):
     # Moving to another page puts the focus on its heading, so screen readers say where you are.
     page.goto_site()
-    page.click(".sidebar-links a[href='?page=browse']")
+    page.click(".sidebar-links a[href='pori/']")
     page.wait_for_function("document.activeElement?.matches('main h1')")
     assert page.evaluate("document.activeElement.textContent") == "Browse by type and key"
     page.go_back()
@@ -2424,7 +2427,7 @@ def test_tune_page_address(page, site):
     assert page.url == site + "alaw/glandyfi/"
     page.click(".card.place a")
     page.wait_for_selector(".place-list a")
-    assert page.url == site + "?page=map"
+    assert page.url == site + "map/"
     page.click(".place-list a span:text-is('Machynlleth')")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.url == site + "alaw/machynlleth/"
@@ -2493,7 +2496,7 @@ def test_microphone(playwright_instance, site, tmp_path, slow):
     # (Beside it, "type the notes" just opens the page.)
     page.goto(site)
     assert page.inner_text(".notes-invite") == "Know the tune but not its name? Play it to me, or type the notes"
-    assert page.get_attribute(".notes-invite a", "href") == "?page=notes"
+    assert page.get_attribute(".notes-invite a", "href") == "nodau/"
     page.click("button.listen-start")
     page.wait_for_selector("button.listen.on")
     started = page.evaluate("performance.now()")
@@ -2541,10 +2544,10 @@ def test_leaving_while_the_microphone_is_asked_for(playwright_instance, site):
     page.goto(site)
     page.click("button.listen-start")
     page.wait_for_selector("button.listen.on")
-    page.click(".sidebar-links a[href='?page=browse']")
+    page.click(".sidebar-links a[href='pori/']")
     page.wait_for_timeout(2000)  # the microphone allowed meanwhile
     assert page.evaluate("state.listening") is None
-    assert page.evaluate("location.search") == "?page=browse"
+    assert page.evaluate("location.pathname + location.search") == "/pori/"
     browser.close()
 
 
@@ -3192,7 +3195,7 @@ def test_session_page(page, site):
     # An address that isn't a session (offline, the app opens at any address) says so.
     page.evaluate("navigate('sesiynau/no-such-session/')")
     page.wait_for_function("document.querySelector('main h1')?.textContent === 'Sesiwn heb ei chanfod'")
-    assert page.locator("main a[href='sesiynau/']").count() == 1
+    assert page.locator("main a[href='cy/sesiynau/']").count() == 1  # in Welsh, the Welsh page
 
 
 def test_session_calendar(page):
@@ -3592,7 +3595,7 @@ def test_contact_page(page):
     assert to == ADDRESS and subject == "Y Sesiwn: About Glandyfi (version 3)"
     assert body.startswith("Bar 3 of the B part") and "https://ysesiwn.cymru/alaw/glandyfi/?v=1" in body
     # From the sidebar: no tune, no subject needed.
-    page.click(".sidebar-links a[href='?page=contact']")
+    page.click(".sidebar-links a[href='cysylltu/']")
     page.wait_for_selector(".email-form")
     page.evaluate(CATCH_MAIL)
     page.fill("[name=message]", "Diolch!")
@@ -3792,7 +3795,7 @@ def test_current_page_marked(page):
     page.goto_site("?page=browse")
     page.wait_for_selector(".pills")
     assert page.locator(".sidebar-links [aria-current='page']").all_inner_texts() == ["Browse by type and key"]
-    page.click(".sidebar-links a[href='?page=notes']")
+    page.click(".sidebar-links a[href='nodau/']")
     page.wait_for_selector("#notes-search")
     assert page.locator(".sidebar-links [aria-current='page']").all_inner_texts() == ["Find a tune by its notes"]
     page.click(".brand")
@@ -3945,11 +3948,11 @@ def test_visit_counts(page):
     page.wait_for_selector(".email-form")
     page.click(".lang-switch [data-lang=cy]")
     counted = page.evaluate("window.counted")
-    assert counted == [{"path": "/?page=contact", "title": "Contact · Y Sesiwn"},
+    assert counted == [{"path": "/cysylltu/", "title": "Contact · Y Sesiwn"},
                        {"path": "language-cy", "title": "Switched to Welsh", "event": True},
-                       {"path": "/?page=contact", "title": "Cysylltu · Y Sesiwn"}]
+                       {"path": "/cy/cysylltu/", "title": "Cysylltu · Y Sesiwn"}]
     page.goto_site("?page=notes&q=D%20G%20B%20D%20C%20B%20G%20A")
-    assert page.evaluate("window.counted") == [{"path": "/?page=notes", "title": "Canfod alaw o'i nodau · Y Sesiwn"}]
+    assert page.evaluate("window.counted") == [{"path": "/cy/nodau/", "title": "Canfod alaw o'i nodau · Y Sesiwn"}]
 
 
 def test_search_misses_counted(page):
@@ -3985,12 +3988,12 @@ def test_visit_counts_in_order(page):
     page.add_init_script("window.goatcounter = { count: (view) => (window.counted ||= []).push(view.path) }")
     page.goto_site()
     page.wait_for_selector(".features")
-    page.click(".sidebar-links a[href='?page=browse']")
+    page.click(".sidebar-links a[href='pori/']")
     page.click(".pills button[data-type='Jig']")  # a filter isn't a new page
     page.click(".tune-list a >> nth=0")
     page.wait_for_selector(".score .abcjs-staff")
     slug = page.evaluate("addressTune()")
-    assert page.evaluate("window.counted") == ["/", "/?page=browse", f"/alaw/{slug}/"]
+    assert page.evaluate("window.counted") == ["/", "/pori/", f"/alaw/{slug}/"]
 
 
 def test_no_counting_away_from_the_live_site(page):
@@ -4162,7 +4165,7 @@ def test_browse_several_types_and_keys(page, site):
     page.click(".pills.keys [data-key='G major']")
     assert shown() == count({"Jig", "Polca"}, {"D major", "G major"})
     assert page.locator("p.caption", has_text="jigs and polkas in G major or D major").count() == 1
-    assert page.url == site + "?page=browse&type=Jig&type=Polca&key=G+major&key=D+major"
+    assert page.url == site + "pori/?type=Jig&type=Polca&key=G+major&key=D+major"
     page.click(".pills [data-type='Jig']")  # takes off just the jigs
     assert page.get_attribute(".pills [data-type='Polca']", "aria-pressed") == "true"
     assert shown() == count({"Polca"}, {"D major", "G major"})
@@ -4179,7 +4182,7 @@ def test_type_page(page, site):
     assert page.get_attribute(".pills [data-type='Pibddawns']", "aria-pressed") == "true"
     assert page.url == site + "math/pibddawns/"
     page.click(".pills [data-type='Jig']")
-    assert page.url == site + "?page=browse&type=Jig&type=Pibddawns"
+    assert page.url == site + "pori/?type=Jig&type=Pibddawns"
     page.click(".tune-list a >> nth=0")
     page.wait_for_selector(".score .abcjs-staff")
 
@@ -4816,7 +4819,7 @@ def test_screen_stays_on_with_music(page, site):
     page.add_init_script(WAKE_LOCK)
     page.goto_site("alaw/tros-y-garreg/")
     page.wait_for_function("wakeLog.length === 1")
-    page.click("a[href='?page=map']")
+    page.click("a[href='map/']")
     page.wait_for_function("wakeLog.join() === 'request,release'")
     page.goto_site("?set=3V~h5A&n=Nos%20Iau")
     page.wait_for_function("wakeLog.join() === 'request'")
@@ -4937,7 +4940,7 @@ def test_tune_page_before_the_other_tunes(page, site):
     page.goto(site + "alaw/tros-y-garreg/")
     page.wait_for_selector(".score .abcjs-staff")
     assert page.evaluate("state.complete") is False
-    page.click("a[href='?page=browse']")
+    page.click("a[href='pori/']")
     page.wait_for_timeout(200)
     assert page.locator(".score .abcjs-staff").count() > 0  # still the tune, for now
     held[0].continue_()
@@ -5609,3 +5612,28 @@ def test_search_for_symbols_finds_nothing(page, query):
     page.wait_for_timeout(200)
     assert page.locator("#hero-suggestions li > span[lang]").count() == 0
     assert page.evaluate("(q) => searchAll(q).named.length", query) == 0
+
+
+def test_welsh_addresses(page):
+    # A page's Welsh address (cy/…, which search engines find) opens it in Welsh, and its
+    # links stay in Welsh; an older ?page= link moves to the page's own address.
+    page.goto_site("cy/alaw/glandyfi/")
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.evaluate("document.documentElement.lang") == "cy"
+    assert page.title().startswith("Glandyfi · ") and page.title().endswith(" o Gymru · Y Sesiwn")
+    assert page.get_attribute(".brand", "href") == "cy/"
+    page.click(".sidebar-links a[href='cy/am/']")
+    page.wait_for_selector("article.guide h1")
+    assert page.evaluate("location.pathname") == "/cy/am/" and page.inner_text("main h1") == "Am Y Sesiwn"
+    page.go_back()
+    page.wait_for_selector(".score .abcjs-staff")
+    assert page.evaluate("location.pathname") == "/cy/alaw/glandyfi/"
+    page.click(".lang-switch [data-lang=en]")
+    assert page.evaluate("location.pathname") == "/alaw/glandyfi/"
+    page.goto_site("?page=about")
+    page.wait_for_selector("article.guide h1")
+    assert page.evaluate("location.pathname + location.search") == "/am/"
+    assert page.get_attribute(".sidebar-links a[href='am/']", "aria-current") == "page"
+    page.goto_site("?page=browse&type=Jig")
+    page.wait_for_selector(".tune-list li", state="attached")
+    assert page.evaluate("location.pathname + location.search") == "/pori/?type=Jig"

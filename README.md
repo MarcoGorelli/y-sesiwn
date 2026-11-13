@@ -441,7 +441,18 @@ scheduled runs after 60 days without a commit).
   English and Welsh. **Each type of tune has one too**, `math/pibddawns/`,
   listing its tunes (the app opens it as *Browse* with that type chosen), and
   the home page links to them, so search engines reach every tune by
-  following links. There's also a `sitemap.xml` and `robots.txt`. abcjs is
+  following links. **The other pages have their own addresses** too (`am/`,
+  `pori/`, `nodau/`, `map/`, …: `PAGE_PATHS` in both `build_site.py` and
+  `app.js`); an older `?page=about` link still opens, and the app moves it to
+  `am/`. **Every page is in Welsh as well**, at `cy/` and its English address
+  after it (`cy/alaw/sawdl-y-fuwch/`), with its own Welsh title, description
+  and copy, and `hreflang` links between the two. The address decides the
+  language a page opens in; after that the reader's choice does, and the
+  address follows it. Pages carry JSON-LD for search results: the home page is
+  the `WebSite`, tunes are `MusicComposition`s (with their composer when `C:`
+  names one plainly), and pages below the home page have breadcrumbs. There's
+  also a `sitemap.xml` (both languages, with each tune's last commit date as
+  `lastmod`) and `robots.txt`. abcjs is
   only loaded first on a tune's own page; elsewhere the app loads it when a
   page needs music, or once the first page is shown. Visitors get the app as usual, and the back button works.
   That copy for search engines is in `<main>`'s `.static` part, which isn't
@@ -458,7 +469,7 @@ scheduled runs after 60 days without a commit).
 | Path | What it is |
 |---|---|
 | `build_site.py` | Builds `_site/` (git-ignored): copies `site/`, `static/`, `CONTRIBUTING.md`, and writes `tunes.json`: every `tune.abc` plus what the page needs about it (type, key, default tempo and beat, Details rows, credit glosses, where the melody starts after a lead-in, version grouping), worked out once in Python; and the tune, type, session and embed pages (`alaw/`, `math/`, `sesiynau/`, `embed/`). Tune types, colourways and default tempos are set at the top. |
-| `site/index.html`, `site/style.css`, `site/app.js` | The page. `app.js` does searching (a port of the original Python matching, including `difflib`'s similarity ratio), browsing, routing (`alaw/<folder>/?v=…`, `?page=add\|fix\|about`, all relative to `<base href>`), sheet music and playback with abcjs, and renders the Markdown pages with marked. |
+| `site/index.html`, `site/style.css`, `site/app.js` | The page. `app.js` does searching (a port of the original Python matching, including `difflib`'s similarity ratio), browsing, routing (`alaw/<folder>/?v=…`, `am/`, `pori/` and the other `PAGE_PATHS`, each also under `cy/`, all relative to `<base href>`), sheet music and playback with abcjs, and renders the Markdown pages with marked. |
 | `site/about.md`, `site/carthen.svg` | The About page; the tapestry band. |
 | `site/embed.html`, `site/embed.md`, `site/embed.cy.md` | A tune on another website (the template for `embed/<folder>/`), and how to put one there, in English and Welsh. |
 | `site/about.cy.md`, `site/guides.cy.md` | The Welsh About page, and the Welsh *How to add a tune* and *How to submit corrections* (keep in step with `about.md` and `CONTRIBUTING.md`). |

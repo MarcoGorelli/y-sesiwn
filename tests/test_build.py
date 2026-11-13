@@ -556,8 +556,11 @@ def test_tune_pages(site):
                    "Alaw werin o Gymru (jig yn D fwyaf): y sgôr, cordiau a chwarae mewn unrhyw gywair.")
     assert f'<meta name="description" content="{description}">' in page
     assert f'<meta property="og:description" content="{description}">' in page
-    data = json.loads(re.search(r'<script type="application/ld\+json">(.*?)</script>', page).group(1))
-    assert data["name"] == "Llancesau Trefaldwyn" and data["musicalKey"] == "D major"
+    data = {d["@type"]: d for d in map(json.loads, re.findall(r'<script type="application/ld\+json">(.*?)</script>', page))}
+    assert data["MusicComposition"]["name"] == "Llancesau Trefaldwyn" and data["MusicComposition"]["musicalKey"] == "D major"
+    # Where it is on the site, for search results: Y Sesiwn › Welsh jigs (Jig) › Llancesau Trefaldwyn.
+    assert [(i["name"], i["item"]) for i in data["BreadcrumbList"]["itemListElement"]] == [
+        ("Y Sesiwn", "https://ysesiwn.cymru/"), ("Welsh jigs (Jig)", "https://ysesiwn.cymru/math/jig/"), ("Llancesau Trefaldwyn", url)]
     assert "<h1>Llancesau Trefaldwyn</h1>" in page and "K:D" in page  # readable without the app
     source = "https://trillian.mit.edu/"  # the version it opens on, Cat's Claw's (Alawon Cymru's is last)
     assert f'<dt>Source</dt><dd><a href="{source}' in page
@@ -654,7 +657,7 @@ def test_embed_pages(site):
     assert '<body data-page="embed">' in page and not (out / "embed.html").exists()
     sw = (out / "sw.js").read_text(encoding="utf-8")
     assert '"embed/glandyfi/' not in sw and '"embed.md"' in sw  # the guide is kept for offline, the tunes for other websites aren't
-    assert "<loc>https://ysesiwn.cymru/?page=embed</loc>" in (out / "sitemap.xml").read_text(encoding="utf-8")
+    assert "<loc>https://ysesiwn.cymru/mewnosod/</loc>" in (out / "sitemap.xml").read_text(encoding="utf-8")
 
 
 def test_static_copy_is_marked(site):
@@ -849,3 +852,96 @@ def test_tunes_from_the_session(site):
     page = (b.OUT / "alaw" / "y-drochfa" / "index.html").read_text(encoding="utf-8")
     assert ('<a href="https://thesession.org/tunes/17046#setting32566">https://thesession.org/tunes/17046#setting32566</a>'
             " (added by Rowan Folk)") in page
+
+
+def test_welsh_pages(site):
+    # Every page is in Welsh too, at cy/<its address>: its own title, description and
+    # <main>, and the page around it in Welsh (with the English kept for app.js). Each
+    # language's page says where the other is (hreflang), and the sitemap has both.
+    out = b.OUT
+    en = (out / "alaw" / "llancesau-trefaldwyn" / "index.html").read_text(encoding="utf-8")
+    cy = (out / "cy" / "alaw" / "llancesau-trefaldwyn" / "index.html").read_text(encoding="utf-8")
+    url, cy_url = "https://ysesiwn.cymru/alaw/llancesau-trefaldwyn/", "https://ysesiwn.cymru/cy/alaw/llancesau-trefaldwyn/"
+    for page in (en, cy):
+        assert f'<link rel="alternate" hreflang="en" href="{url}">' in page
+        assert f'<link rel="alternate" hreflang="cy" href="{cy_url}">' in page
+        assert f'<link rel="alternate" hreflang="x-default" href="{url}">' in page
+    assert '<html lang="cy">' in cy and '<base href="../../../">' in cy and f'<link rel="canonical" href="{cy_url}">' in cy
+    assert "<title>Llancesau Trefaldwyn · jig o Gymru · Y Sesiwn</title>" in cy  # as app.js titles it
+    assert '<meta name="description" content="Llancesau Trefaldwyn: jig o Gymru yn D fwyaf.' in cy
+    assert '<dt>Cywair</dt><dd>D fwyaf</dd>' in cy and '<a href="cy/math/jig/">Alawon jig o Gymru</a>' in cy
+    assert 'data-cy="Neidio i\'r prif gynnwys" data-en="Skip to main content">Neidio i\'r prif gynnwys</a>' in cy
+    assert 'placeholder="Chwilio am alaw…" data-en-placeholder="Find a tune…"' in cy
+    assert '<p class="loading" data-cy="Yn llwytho&#x27;r gerddoriaeth…" data-en="Loading the sheet music…">' in cy
+    assert '<html lang="en">' in en and "data-en=" not in en
+    for path in ["", "math/jig/", "sesiynau/", "archif/", "am/", "pori/"]:
+        assert (out / "cy" / path / "index.html").exists(), path
+    sitemap = (out / "sitemap.xml").read_text(encoding="utf-8")
+    assert sitemap.count("<loc>https://ysesiwn.cymru/cy/") == sitemap.count("<loc>") // 2
+    assert re.search(rf"<loc>{re.escape(cy_url)}</loc>(<lastmod>\d{{4}}-\d\d-\d\d</lastmod>)?</url>", sitemap)
+    sw = (out / "sw.js").read_text(encoding="utf-8")
+    assert '"cy/' not in sw and '"am/' not in sw  # sw.js answers them with the app
+
+
+def test_home_page(site):
+    # The home page says what the site is, in its title too, and is the WebSite for search engines.
+    home = (b.OUT / "index.html").read_text(encoding="utf-8")
+    assert "<title>Y Sesiwn · Welsh folk tunes, with sheet music and playback</title>" in home
+    assert '<link rel="canonical" href="https://ysesiwn.cymru/">' in home
+    assert '<meta property="og:title" content="Y Sesiwn: Welsh folk tunes">' in home
+    data = json.loads(re.search(r'<script type="application/ld\+json">(.*?)</script>', home).group(1))
+    assert data["@type"] == "WebSite" and data["name"] == "Y Sesiwn" and data["url"] == "https://ysesiwn.cymru/"
+    cy = (b.OUT / "cy" / "index.html").read_text(encoding="utf-8")
+    assert "<title>Y Sesiwn · Alawon gwerin Cymru, gyda&#x27;r sgôr a chwarae</title>" in cy and '<base href="../">' in cy
+    app = (b.ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    assert all(title.replace("'", "\\'") in app or title in app for title in b.SITE_NAME.values())
+
+
+def test_own_pages(site):
+    # The app's other pages each have an address of their own, as written for search
+    # engines (the guides from their Markdown); app.js and sw.js know the same addresses,
+    # and the site's own links use them.
+    out = b.OUT
+    app = (b.ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    paths = dict(re.findall(r'(\w+): "([\w-]+)"', re.search(r"const PAGE_PATHS = \{(.*?)\};", app, re.S).group(1)))
+    assert paths == b.PAGE_PATHS
+    sw = (b.ROOT / "site" / "sw.js").read_text(encoding="utf-8")
+    assert all(f"|{path}|" in sw for path in b.PAGE_PATHS.values() if path != "cysylltu") and "|cysylltu|" in sw
+    about = (out / "am" / "index.html").read_text(encoding="utf-8")
+    assert "<title>About Y Sesiwn · Y Sesiwn</title>" in about and '<base href="../">' in about
+    assert '<link rel="canonical" href="https://ysesiwn.cymru/am/">' in about
+    assert "<h2>The sesiwn</h2>" in about and '<a href="http://www.clera.org">CLERA</a>' in about
+    assert '<meta name="description" content="Y Sesiwn is a free, open-source collection of Welsh folk tunes.' in about
+    assert "<h1>Am Y Sesiwn</h1>" in (out / "cy" / "am" / "index.html").read_text(encoding="utf-8")
+    add = (out / "ychwanegu" / "index.html").read_text(encoding="utf-8")
+    assert "<h1>How to add a tune</h1>" in add and "<pre><code>" in add
+    assert '<a href="math/jig/">' in (out / "pori" / "index.html").read_text(encoding="utf-8")
+    assert '<a href="cy/alaw/aberdaugleddau/">Aberdaugleddau</a>' in (out / "cy" / "map" / "index.html").read_text(encoding="utf-8")
+    index = (b.ROOT / "site" / "index.html").read_text(encoding="utf-8")
+    assert "?page=" not in index.replace('href="?page=sets"', "")
+    assert not re.search(r'href: "\?page=(?!sets|set\b|search)', app)
+    sitemap = (out / "sitemap.xml").read_text(encoding="utf-8")
+    assert "?page=" not in sitemap and all(f"<loc>https://ysesiwn.cymru/{p}/</loc>" in sitemap for p in b.PAGE_PATHS.values())
+
+
+def test_composer_for_search_engines():
+    # A tune's composer, when its C: names one plainly: not "Trad", nor an arrangement.
+    tune = lambda credit: [{"details": [["Composer / arranger", credit]]}]
+    assert b.composer(tune("Stephen Rees")) == "Stephen Rees"
+    assert b.composer(tune("Alaw Huw Roberts")) == "Huw Roberts"
+    assert b.composer(tune("John Parry (Parry Ddall), 1710–1782")) == "John Parry (Parry Ddall), 1710–1782"
+    for credit in ["Trad", "Trefniant Meurig Williams", "Addasiad Meurig Williams o'r alaw yn llyfr Nicholas Bennett",
+                   "Alaw draddodiadol", "Llewelyn Alaw - trefniant Meurig Williams"]:
+        assert b.composer(tune(credit)) is None, credit
+    assert b.composer([{"details": []}]) is None
+
+
+def test_markdown_for_the_pages_as_written():
+    # build_site.py's small Markdown reader, for the guides' pages as written.
+    text = ("# Title\n\nA [link](https://ysesiwn.cymru/?page=add) and *it* **bold** `code`.\n"
+            "Same paragraph.\n\n- one\n  more\n- two\n\n1. first\n\n```\n# not a heading\n<x>\n```\n")
+    assert b.markdown_html(text, "en") == (
+        "<h1>Title</h1><p>A <a href=\"ychwanegu/\">link</a> and <em>it</em> <strong>bold</strong> <code>code</code>. Same paragraph.</p>"
+        "<ul><li>one more</li><li>two</li></ul><ol><li>first</li></ol><pre><code># not a heading\n&lt;x&gt;</code></pre>")
+    assert '<a href="cy/ychwanegu/">' in b.markdown_html("[x](?page=add)", "cy")
+    assert b.first_paragraph(text) == "A link and it bold code. Same paragraph."

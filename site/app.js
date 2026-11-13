@@ -106,6 +106,23 @@ const audioFocus = {
 const baseElement = document.querySelector("base");
 if (baseElement) baseElement.href = document.baseURI;
 
+// The app's other pages, each at an address of its own (build_site.py writes them, for
+// search engines): ?page=about, from an older link, moves to am/ (see render).
+const PAGE_PATHS = { browse: "pori", notes: "nodau", map: "map", about: "am", add: "ychwanegu",
+  fix: "cywiro", embed: "mewnosod", offline: "all-lein", contact: "cysylltu" };
+const PATH_PAGES = Object.fromEntries(Object.entries(PAGE_PATHS).map(([page, path]) => [path, page]));
+const pageUrl = (page) => `${PAGE_PATHS[page]}/`;
+
+// Every page is in Welsh too at cy/ and its English address after it (cy/alaw/glandyfi/:
+// build_site.py's CY_DIR), so search engines find both. The address says the language it
+// opens in; after that the reader's choice does, and the address follows it (see render).
+const WELSH_PREFIX = "cy/";
+// An address within the site ("alaw/glandyfi/", "?page=sets", "./") in the language chosen.
+function here(url) {
+  const english = url === "./" ? "" : url.replace(/^cy(\/|$)/, "");
+  return state.lang === "cy" && !EMBED ? WELSH_PREFIX + english : english || "./";
+}
+
 // Markdown pages: ?page=<key> shows the "# heading" section of file (or all of it).
 // The Welsh versions (cy) are separate files, kept in step with the English ones.
 const PAGES = {
@@ -149,7 +166,7 @@ const state = {
   browseOpen: { types: false, keys: false },  // Browse's More types / More keys, once opened
   nightsOpen: new Set(),  // the sessions whose earlier nights have been opened (setlistsParts)
   mostShown: new Map(),  // session id -> how many of its most played tunes are shown, once more are (setlistsParts)
-  lang: savedLang(),    // "cy" or "en", for the whole site (tune names and the tunes' own notes stay as written)
+  lang: !EMBED && /^cy(\/|$)/.test(rawPath()) ? "cy" : savedLang(),  // "cy" or "en", for the whole site (tune names and the tunes' own notes stay as written)
   musicSize: savedSize(),  // the music's size, an index into SIZES (1: as drawn)
   redrawScore: null,    // draws the open tune's score again (for printing, see "beforeprint")
   printing: false,      // between "beforeprint" and "afterprint": the score keeps the tune's name
@@ -246,6 +263,12 @@ function applyLang() {
     }
   }
   checkRadios(document.querySelector(".lang-switch"), (button) => button.dataset.lang === state.lang);
+  // The sidebar's and footer's links to the site's pages, in the language chosen (cy/…).
+  for (const a of document.querySelectorAll("a[data-route]")) {
+    if (a.closest("#main")) continue;
+    a.dataset.href ??= a.getAttribute("href");
+    a.setAttribute("href", here(a.dataset.href));
+  }
 }
 
 // A choice of one from a few (the language, the holes or tabs) is radio buttons, so a screen
@@ -348,6 +371,8 @@ function el(tag, attrs = {}, ...children) {
     else node.setAttribute(name, value === true ? "" : value);
   }
   node.append(...children.flat(Infinity).filter((c) => c != null));
+  // A link to another of the site's pages stays in the language chosen (cy/…).
+  if (tag === "a" && node.hasAttribute("data-route") && node.hasAttribute("href")) node.setAttribute("href", here(node.getAttribute("href")));
   return node;
 }
 
@@ -1056,7 +1081,7 @@ function notesSearch({ autoListen = false } = {}) {
   const update = () => {
     // The notes are kept in the address, so a search can be bookmarked or shared.
     const q = input.value.trim();
-    history.replaceState(null, "", q ? `?page=notes&q=${encodeURIComponent(q)}` : "?page=notes");
+    history.replaceState(null, "", here(pageUrl("notes") + (q ? `?q=${encodeURIComponent(q)}` : "")));
     const found = searchByNotes(input.value);
     if (!found) {
       const n = collapse(parseNotes(input.value).map((x) => x.midi ?? x.pc)).length;
@@ -1207,7 +1232,14 @@ function rawPath() {
   const path = location.pathname.slice(new URL(document.baseURI).pathname.length);
   try { return decodeURIComponent(path); } catch { return path; }
 }
-const sitePath = () => rawPath().replace(ADDRESS_JUNK, "");
+const cleanPath = () => rawPath().replace(ADDRESS_JUNK, "");
+// The page's address in either language: what's after cy/ in Welsh.
+const sitePath = () => cleanPath().replace(/^cy(\/|$)/, "");
+function welshAddress() {
+  return !EMBED && /^cy(\/|$)/.test(cleanPath());
+}
+// The page in the address: ?page=<key>, or its own address (am/, pori/, …: PAGE_PATHS).
+const currentPage = () => new URLSearchParams(location.search).get("page") ?? PATH_PAGES[sitePath().replace(/\/$/, "")] ?? null;
 
 // The tune in the address: alaw/<folder>/, or an older link's ?tune=<folder>.
 function addressTune() {
@@ -1246,6 +1278,7 @@ function addressType() {
 // Moving to another page cross-fades the old one into the new (View Transitions, where
 // the browser has them), unless the reader's device asks for less motion.
 function navigate(url) {
+  url = here(url);
   if (state.updated) { openUpdated(url); return; }
   history.pushState(null, "", url);
   const change = () => { render(); window.scrollTo(0, 0); focusHeading(); };
@@ -1394,14 +1427,22 @@ document.addEventListener("keydown", (event) => {
 // eye and for screen readers.
 function markCurrentLink(href) {
   for (const a of document.querySelectorAll(".sidebar-links a")) {
-    if (a.getAttribute("href") === href) a.setAttribute("aria-current", "page");
+    if ((a.dataset.href ?? a.getAttribute("href")) === href) a.setAttribute("aria-current", "page");
     else a.removeAttribute("aria-current");
   }
 }
 
 function render() {
-  // Something stuck to the end of the address (see sitePath): take it off.
-  if (rawPath() !== sitePath()) history.replaceState(null, "", (encodeURI(sitePath()) || "./") + location.search);
+  // Something stuck to the end of the address (see sitePath): take it off. And the
+  // address in the language chosen (cy/…, or not), and a page at its own address (am/,
+  // not ?page=about), so it's the one to send.
+  const asked = new URLSearchParams(location.search);
+  const ownPage = PAGE_PATHS[asked.get("page")];
+  if (ownPage && !sitePath()) asked.delete("page");
+  if (rawPath() !== cleanPath() || (!EMBED && welshAddress() !== (state.lang === "cy")) || (ownPage && !sitePath())) {
+    const right = here(ownPage && !sitePath() ? `${ownPage}/` : encodeURI(sitePath()) || "./");
+    history.replaceState(null, "", right + (asked.size ? `?${asked}` : "") + location.hash);
+  }
   stopPlayback();
   stopListening();
   state.keyNote?.stop();
@@ -1428,12 +1469,12 @@ function render() {
   // unknown tune (removed, renamed, mistyped) gets a page saying so.
   if (group && (params.has("tune") || !location.pathname.endsWith(`/alaw/${group.slug}/`))) {
     const keep = new URLSearchParams([...params].filter(([name]) => ["key", "tempo", "tab"].includes(name)));
-    const url = tuneUrl(group.slug, version);
+    const url = here(tuneUrl(group.slug, version));
     history.replaceState(null, "", url + (keep.size ? `${url.includes("?") ? "&" : "?"}${keep}` : ""));
   }
   const lost = slug && !group;
   const tune = group ? group.versions.find((v) => v.version === version) ?? group.versions[0] : null;
-  const page = params.get("page");
+  const page = currentPage();
   const guide = PAGES[page] ? page : null;
   const map = page === "map";
   const offline = page === "offline";
@@ -1463,7 +1504,8 @@ function render() {
   // The home page has its own search box (as search results do); a tune's page gives the music more of the width.
   document.body.dataset.page = home ? "home" : tune ? "tune" : found ? "search" : "other";
   setMenu(false);
-  markCurrentLink(setlist || archive ? "archif/" : sessions || oneSession ? "sesiynau/" : browse ? "?page=browse" : page && !setPage ? `?page=${page}` : null);
+  markCurrentLink(setlist || archive ? "archif/" : sessions || oneSession ? "sesiynau/" : browse ? pageUrl("browse")
+    : PAGE_PATHS[page] ? pageUrl(page) : page && !setPage ? `?page=${page}` : null);
   main.lang = state.lang;
   keepAwake(Boolean(tune || setPage));
   if (tune) renderTune(main, group, tune);
@@ -1519,7 +1561,7 @@ function renderSearchPage(main, query) {
   document.title = tr(`“${query}” · Y Sesiwn`, `“${query}” · Y Sesiwn`);
   if (!state.complete) {  // a link straight here, before every tune has come
     main.replaceChildren(el("p", { class: "loading" }, tr("Loading tunes…", "Yn llwytho'r alawon…")));
-    state.loaded?.then(() => { if (new URLSearchParams(location.search).get("page") === "search") render(); }, () => {});
+    state.loaded?.then(() => { if (currentPage() === "search") render(); }, () => {});
     return;
   }
   const { types } = state.data;
@@ -1570,8 +1612,8 @@ function renderSearchPage(main, query) {
           ? tr(`“${common}”, every one.`, `“${common}”, bob un.`)
           : tr(`“${common}”, unless another is shown.`, `“${common}”, oni ddangosir un arall.`))),
     part(tr("Close spellings", "Sillafiadau tebyg"), close.map((group) => ({ group }))),
-    found ? null : el("p", {}, el("a", { href: "?page=notes", "data-route": true }, tr("Find it by its notes", "Ei chanfod o'i nodau")), " · ",
-      el("a", { href: "?page=browse", "data-route": true }, tr("Browse by type and key", "Pori yn ôl math a chywair"))),
+    found ? null : el("p", {}, el("a", { href: pageUrl("notes"), "data-route": true }, tr("Find it by its notes", "Ei chanfod o'i nodau")), " · ",
+      el("a", { href: pageUrl("browse"), "data-route": true }, tr("Browse by type and key", "Pori yn ôl math a chywair"))),
   ].filter(Boolean));
 }
 
@@ -1652,7 +1694,8 @@ const instruments = (where = "") => el("div", { class: `instruments${where}`, ro
   ...["harp", "crwth", "pibgorn"].map((name) => el("img", { src: `static/${name}.svg`, alt: "", width: 72, height: 72 })));
 
 function renderHome(main) {
-  document.title = "Y Sesiwn";
+  // What the site is, after its name, for search results (build_site.py: SITE_NAME).
+  document.title = tr("Y Sesiwn · Welsh folk tunes, with sheet music and playback", "Y Sesiwn · Alawon gwerin Cymru, gyda'r sgôr a chwarae");
   const count = state.groupList.length;  // one entry per tune, whatever its number of versions
   const yours = recentTunes();  // nothing yet on a first visit
   // The welcome and the ways in (the search, then by its notes, then, quieter, browsing
@@ -1668,7 +1711,7 @@ function renderHome(main) {
       heroSearch(),
       notesInvite(),
       el("p", { class: "home-more" }, tr("Or ", "Neu "),
-        el("a", { href: "?page=browse&all=1", "data-route": true }, tr(`browse all ${count} tunes`, `pori'r ${count} alaw`)),
+        el("a", { href: `${pageUrl("browse")}?all=1`, "data-route": true }, tr(`browse all ${count} tunes`, `pori'r ${count} alaw`)),
         el("span", { class: "surprise" }, tr(", or ", ", neu "),  // phones only: on a wide screen it's in the sidebar
           el("button", { type: "button", class: "link-button", onclick: openRandomTune }, tr("surprise me", "alaw ar hap")))),
       yours,
@@ -1872,10 +1915,10 @@ function renderBrowse(main) {
   const keyOrder = [...keyCounts].sort((a, b) => b[1] - a[1]).map(([k]) => k);
   const andList = (items, word) => (items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} ${word} ${items.at(-1)}`);
   const show = (first = false) => {
-    const url = new URLSearchParams({ page: "browse" });
+    const url = new URLSearchParams();
     for (const t of inOrder(chosenTypes, typeNames)) url.append("type", t);
     for (const k of inOrder(chosenKeys, keyOrder)) url.append("key", k);
-    if (!first) history.replaceState(null, "", `?${url}`);  // a type's own page keeps its address at first
+    if (!first) history.replaceState(null, "", here(pageUrl("browse") + (url.size ? `?${url}` : "")));  // a type's own page keeps its address at first
     const typeOk = (t) => !chosenTypes.size || chosenTypes.has(t.type);
     const keyOk = (t) => !chosenKeys.size || chosenKeys.has(keyOf(t));
     for (const pill of pills.querySelectorAll("[data-type]")) {
@@ -2033,13 +2076,13 @@ function renderBrowse(main) {
 // listening at once (the tap is still the go-ahead for the microphone and sound).
 // One line under the search: finding a tune by its notes, played to the microphone or typed.
 function notesInvite() {
-  const notes = (text) => el("a", { href: "?page=notes", "data-route": true }, text);
+  const notes = (text) => el("a", { href: pageUrl("notes"), "data-route": true }, text);
   return el("p", { class: "notes-invite" }, el("strong", {}, tr("Know the tune but not its name?", "Gwybod yr alaw ond nid ei henw?")), " ",
     // (Tapping them is on the notes page too, beside the microphone. The comma is kept with
     // the button, so a line doesn't start with it.)
     canListen()
       ? [el("span", { class: "nowrap" }, el("button", { type: "button", class: "link-button listen-start",
-          onclick: () => { state.autoListen = true; navigate("?page=notes"); } }, micIcon(), tr("Play it to me", "Chwaraewch hi i mi")), ","),
+          onclick: () => { state.autoListen = true; navigate(pageUrl("notes")); } }, micIcon(), tr("Play it to me", "Chwaraewch hi i mi")), ","),
         tr(" or ", " neu "), notes(tr("type the notes", "deipiwch y nodau"))]
       : notes(tr("Tap or type the notes", "Tapio neu deipio'r nodau")));
 }
@@ -3938,7 +3981,7 @@ function renderTune(main, group, tune) {
   if (tempo >= MIN_BPM && tempo <= MAX_BPM) settings.bpm = tempo;
   showLinkTab(new URLSearchParams(location.search).get("tab"));  // …and its holes or tabs (?tab=whistle-D)
   // …and the address follows the page's key, so it can be copied as it is.
-  const showInAddress = () => history.replaceState(null, "", tuneLink(group, tune, settings, state.practice.tab));
+  const showInAddress = () => history.replaceState(null, "", here(tuneLink(group, tune, settings, state.practice.tab)));
   showInAddress();  // a key chosen earlier (this visit) shows in the address too
 
   const paper = el("div");
@@ -4489,7 +4532,7 @@ function renderTune(main, group, tune) {
   };
   loopSelect.addEventListener("change", fillLoops);
 
-  const report = el("a", { class: "report", href: `?page=contact&about=${tune.slug}`, "data-route": true },
+  const report = el("a", { class: "report", href: `${pageUrl("contact")}?about=${tune.slug}`, "data-route": true },
     tr("Report a problem with this tune", "Rhoi gwybod am broblem gyda'r alaw hon"));
 
   main.replaceChildren(...[
@@ -4682,7 +4725,7 @@ function showEmbed(group, tune, settings) {
     el("h2", { id: "embed-title" }, tr("Put this tune on a website", "Rhoi'r alaw hon ar wefan")),
     el("p", {}, tr(`Copy this code and paste it into your website, in an Embed or HTML block. It shows the music${what ? `, ${what}` : ""}, with its player.`,
       `Copïwch y cod hwn a'i ludo yn eich gwefan, mewn bloc Mewnosod neu HTML. Mae'n dangos y gerddoriaeth${what ? `, ${what}` : ""}, gyda'i chwaraewr.`), " ",
-      el("a", { href: "?page=embed", "data-route": true, onclick: () => dialog.close() }, tr("How to, step by step", "Sut, gam wrth gam"))),
+      el("a", { href: pageUrl("embed"), "data-route": true, onclick: () => dialog.close() }, tr("How to, step by step", "Sut, gam wrth gam"))),
     el("label", { for: "embed-code", class: "pills-label" }, tr("The code", "Y cod")),
     box,
     el("p", { class: "embed-buttons" }, el("button", { type: "button", class: "primary", onclick: copy }, tr("Copy the code", "Copïo'r cod")), status),
@@ -5029,7 +5072,7 @@ function placeCard(group) {
   return el("section", { class: "card place" },
     el("h2", {}, sameName ? tr("On the map", "Ar y map") : place.name),
     walesMap(place),
-    el("p", { class: "caption" }, el("a", { href: "?page=map", "data-route": true }, tr("All tunes on the map", "Pob alaw ar y map"))));
+    el("p", { class: "caption" }, el("a", { href: pageUrl("map"), "data-route": true }, tr("All tunes on the map", "Pob alaw ar y map"))));
 }
 
 // Dots that would overlap at this zoom (scale), merged: the closest two at a time, into one
@@ -6190,7 +6233,7 @@ function fillOfflineCard(card) {
         "Gosodwch hi ac mae pob alaw'n gweithio heb y rhyngrwyd, fel ap. Ar ffôn, ychwanegwch hi at eich sgrin gartref.")),
     // The home page's card keeps to the browser's own install button; the steps are on the offline page.
     (full || installPrompt) && how ? how : null, status,
-    full ? null : el("p", { class: "more" }, el("a", { href: "?page=offline", "data-route": true },
+    full ? null : el("p", { class: "more" }, el("a", { href: pageUrl("offline"), "data-route": true },
       tr("How to install it and use it offline", "Sut i'w gosod a'i defnyddio all-lein"))),
   ].filter(Boolean));
 }
@@ -6620,12 +6663,12 @@ function renderSet(main) {
   // its shortest form, unless that would drop tunes the site doesn't have (any more), or
   // part of the link it couldn't read.
   if (!params.has("set") || (!missing && !unread && params.get("set") !== encodeSet(items))) {
-    history.replaceState(null, "", setUrl(items, name, mine ? my : null));
+    history.replaceState(null, "", here(setUrl(items, name, mine ? my : null)));
   }
   document.title = `${name} · Y Sesiwn`;
   const shareLink = () => `https://ysesiwn.cymru/${setUrl(items, name)}`;
   const save = () => {
-    history.replaceState(null, "", setUrl(items, name, mine ? my : null));
+    history.replaceState(null, "", here(setUrl(items, name, mine ? my : null)));
     document.title = `${name} · Y Sesiwn`;
     if (!mine) return;
     const sets = loadSets();
@@ -7063,7 +7106,7 @@ function renderContact(main) {
         body: () => [message.value.trim(), page ? `\n\n${tr("Tune", "Alaw")}: ${page}` : "", "\n"].join(""),
       }),
       el("p", { class: "caption" }, tr("Want to send a tune? ", "Eisiau anfon alaw? "),
-        el("a", { href: "?page=add", "data-route": true }, tr("Use the tune form", "Defnyddiwch y ffurflen alawon")),
+        el("a", { href: pageUrl("add"), "data-route": true }, tr("Use the tune form", "Defnyddiwch y ffurflen alawon")),
         tr(", which shows the sheet music as you type.", ", sy'n dangos y sgôr wrth i chi deipio."))));
 }
 
@@ -7133,9 +7176,9 @@ async function renderGuide(main, key) {
     }
     const section = markdownSections(state.docs.get(file)).find((s) => s.startsWith(`# ${heading}\n`)) ?? "";
     await loadMarked();
-    html = marked.parse(section.replaceAll("(#how-to-add-a-tune)", "(?page=add)"));
+    html = marked.parse(section.replaceAll("(#how-to-add-a-tune)", `(${pageUrl("add")})`));
   } catch {
-    if (new URLSearchParams(location.search).get("page") === key) {
+    if (currentPage() === key) {
       main.replaceChildren(el("h1", {}, heading), el("p", {}, tr("Couldn't load this page. Check your connection and try again.",
         "Methu llwytho'r dudalen hon. Gwiriwch eich cysylltiad a rhoi cynnig arall arni.")));
     }
@@ -7145,9 +7188,14 @@ async function renderGuide(main, key) {
   guide.append(cleanHtml(html));  // our own markdown, from this repo: still, nothing in it runs
   // CONTRIBUTING.md points GitHub readers to this form; here, it's right above.
   if (key === "add") guide.querySelector('a[href="https://ysesiwn.cymru/?page=add"]')?.closest("p").remove();
-  // Links to the site itself (written in full for GitHub readers) stay on this copy of it.
+  // Links to the site itself (written in full for GitHub readers) stay on this copy of it,
+  // at the page's own address (am/, not ?page=about), in the language chosen.
   guide.querySelectorAll('a[href^="https://ysesiwn.cymru/?"]').forEach((a) => a.setAttribute("href", a.getAttribute("href").slice("https://ysesiwn.cymru/".length)));
-  guide.querySelectorAll('a[href^="?"]').forEach((a) => a.setAttribute("data-route", ""));
+  for (const a of guide.querySelectorAll(`a[href^="?"], ${Object.values(PAGE_PATHS).map((path) => `a[href^="${path}/"]`).join(", ")}`)) {
+    const own = a.getAttribute("href").match(/^\?page=(\w+)$/)?.[1];
+    a.setAttribute("href", here(PAGE_PATHS[own] ? pageUrl(own) : a.getAttribute("href")));
+    a.setAttribute("data-route", "");
+  }
   // Code examples scroll sideways on a phone; focusable, so the keyboard can scroll them too.
   guide.querySelectorAll("pre").forEach((pre) => pre.setAttribute("tabindex", "0"));
   if (key === "add") {  // the easy way first; the GitHub steps follow, folded away
@@ -7157,7 +7205,7 @@ async function renderGuide(main, key) {
         el("summary", {}, el("h2", {}, tr("Or add it yourself on GitHub", "Neu ei hychwanegu eich hun ar GitHub"))), steps));
   }
   // Only show it if we're still on this page (the fetch may finish after leaving).
-  if (new URLSearchParams(location.search).get("page") === key) main.replaceChildren(guide);
+  if (currentPage() === key) main.replaceChildren(guide);
 }
 
 // ---- Sidebar search box ---------------------------------------------------------------
@@ -7277,8 +7325,8 @@ function attachSearch(input, list, { showAllOnFocus = true, onPick = null } = {}
           : suggestion(entry.group, entry.credit, entry.credit === undefined ? foundAs(entry.group, query) : null)))
       : [el("li", { class: "empty" }, ...(state.complete
         ? [tr("No tune, book or arranger by that name.", "Dim alaw, llyfr na threfnydd o'r enw hwnnw."), el("span", { class: "try" },
-            elsewhere("?page=notes", tr("Find it by its notes", "Ei chanfod o'i nodau")), " · ",
-            elsewhere("?page=browse", tr("Browse by type and key", "Pori yn ôl math a chywair")))]
+            elsewhere(pageUrl("notes"), tr("Find it by its notes", "Ei chanfod o'i nodau")), " · ",
+            elsewhere(pageUrl("browse"), tr("Browse by type and key", "Pori yn ôl math a chywair")))]
         : [tr("Loading tunes…", "Yn llwytho'r alawon…")]))]));
     list.hidden = false;
     input.setAttribute("aria-expanded", "true");

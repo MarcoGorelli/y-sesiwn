@@ -964,35 +964,87 @@ def type_slug(name: str) -> str:
 # index.html's loading line, which the pages made from it replace with their own.
 LOADING = '<p class="loading" data-cy="Yn llwytho\'r alawon…">Loading tunes…</p>'
 
+# Every page is also in Welsh, at cy/ and the English page's address after it (cy/alaw/glandyfi/),
+# so search engines find the site in either language (app.js: WELSH_PREFIX).
+CY_DIR = "cy"
+# The app's other pages, each at an address of its own (app.js: PAGE_PATHS), for search
+# engines: ?page=about still opens, and the app moves it to am/.
+PAGE_PATHS = {"browse": "pori", "notes": "nodau", "map": "map", "about": "am", "add": "ychwanegu",
+              "fix": "cywiro", "embed": "mewnosod", "offline": "all-lein", "contact": "cysylltu"}
+# Welsh for the details under a tune (app.js: CY_DETAILS).
+CY_DETAILS = {"Tune type": "Math o alaw", "Key": "Cywair", "Time signature": "Amseriad",
+              "Composer / arranger": "Cyfansoddwr / trefnydd", "Area": "Ardal", "Origin": "Tarddiad", "Book": "Llyfr",
+              "Discography": "Disgograffi", "History": "Hanes", "Source": "Ffynhonnell"}
+SITE_NAME = {"en": "Y Sesiwn · Welsh folk tunes, with sheet music and playback",
+             "cy": "Y Sesiwn · Alawon gwerin Cymru, gyda'r sgôr a chwarae"}  # app.js: renderHome
+SITE_ABOUT = {"en": "Welsh folk tunes to learn and share, free and open source: sheet music, playback and any key.",
+              "cy": "Alawon gwerin Cymru i'w dysgu a'u rhannu, am ddim a chod agored: y sgôr, chwarae, ac unrhyw gywair."}
 
-def app_page(template: str, *, title: str, description: str, url: str, head: str, main: str,
-             scripts: str = "", up: str = "../../", loading: tuple[str, str] = ("Loading…", "Yn llwytho…"),
-             kind: str = "other", tab: str | None = None) -> str:
-    """The app (index.html) in a folder (two down, unless up says otherwise), with its
-    own title, description and address in the head, for link previews and search
-    engines (which don't run the app), and what they should read in <main> (hidden from
-    readers whose browser runs the app, which shows loading, in English and Welsh, until
-    it takes over). tab is a longer <title> than the title, for search results."""
+
+def site_link(path: str, lang: str) -> str:
+    """A link in a page as written, relative to its <base> (the site's root): the page at path, in lang."""
+    return (f"{CY_DIR}/" if lang == "cy" else "") + path or "./"
+
+
+def page_url(path: str, lang: str) -> str:
+    return SITE_URL + (f"{CY_DIR}/" if lang == "cy" else "") + path
+
+
+def in_welsh(page: str) -> str:
+    """index.html's page around <main> (the sidebar, the footer, the loading line) in
+    Welsh, as app.js's applyLang makes it, keeping the English in data-en for it."""
+    page = re.sub(r'<(\w+)([^>]*?) data-cy="([^"]*)"([^>]*)>([^<]*)</\1>',
+                  lambda m: f'<{m[1]}{m[2]} data-cy="{m[3]}" data-en="{esc(html.unescape(m[5]))}"{m[4]}>{m[3]}</{m[1]}>', page)
+    for attr in ("placeholder", "title", "aria-label"):
+        page = re.sub(rf'(?<=\s){attr}="([^"]*)"([^>]*?) data-cy-{attr}="([^"]*)"',
+                      lambda m: f'{attr}="{m[3]}" data-en-{attr}="{m[1]}"{m[2]} data-cy-{attr}="{m[3]}"', page)
+    return page.replace('<html lang="en">', '<html lang="cy">', 1)
+
+
+def app_page(template: str, *, path: str, title: str, description: str, main: str, lang: str = "en", head: str = "",
+             scripts: str = "", loading: tuple[str, str] = ("Loading…", "Yn llwytho…"), kind: str = "other",
+             tab: str | None = None, full_title: str | None = None, crumbs: list[tuple[str, str]] = ()) -> str:
+    """The app (index.html) at path (alaw/glandyfi/; "" for the home page), in English or
+    Welsh (cy/<path>), with its own title, description and address in the head, for link
+    previews and search engines, and what they should read in <main> (hidden from readers
+    whose browser runs the app, which shows loading until it takes over). tab is a longer
+    <title> than the title, for search results (full_title, the whole of it). The head
+    also says where the page is in the other language (hreflang), and crumbs (name, path)
+    are the pages above it, for search results."""
     def swap(page: str, old: str, new: str) -> str:
         if page.count(old) != 1:
-            raise SystemExit(f"site/index.html: expected one {old!r} (for the tune and type pages)")
+            raise SystemExit(f"site/index.html: expected one {old!r} (for the pages build_site.py makes of it)")
         return page.replace(old, new)
 
+    url = page_url(path, lang)
+    up = "../" * (site_link(path, lang).count("/") if path or lang == "cy" else 0) or "./"
+    alternates = "".join(f'\n  <link rel="alternate" hreflang="{code}" href="{page_url(path, other)}">'
+                         for code, other in (("en", "en"), ("cy", "cy"), ("x-default", "en")))
+    if crumbs:
+        trail = [*crumbs, (title, path)]
+        ld = json.dumps({"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
+            {"@type": "ListItem", "position": n, "name": name, "item": page_url(p, lang)}
+            for n, (name, p) in enumerate(trail, 1)]}, ensure_ascii=False).replace("</", "<\\/")
+        head = f'\n  <script type="application/ld+json">{ld}</script>' + head
     page = template
     page = swap(page, '<base href="./">', f'<base href="{up}">')
     # What the app will mark it (body[data-page]), so its layout is right from the start.
     page = swap(page, "<body>", f'<body data-page="{kind}">')
     page = swap(page, '<script src="app.js" defer></script>', scripts + '<script src="app.js" defer></script>')
-    page = swap(page, "<title>Y Sesiwn</title>", f"<title>{esc(tab or title)} · Y Sesiwn</title>")
+    page = swap(page, "<title>Y Sesiwn</title>", f"<title>{esc(full_title or f'{tab or title} · Y Sesiwn')}</title>")
     page = re.sub(r'(<meta (?:name|property)="(?:og:)?description" content=")[^"]*"',
                   lambda m: m.group(1) + esc(description) + '"', page)
-    page = swap(page, '<meta property="og:title" content="Y Sesiwn: Welsh folk tunes">',
-                f'<meta property="og:title" content="{esc(title)} · Y Sesiwn">')
+    if path or lang == "cy":  # the home page's, in Welsh: "Y Sesiwn: alawon gwerin Cymru"
+        page = swap(page, '<meta property="og:title" content="Y Sesiwn: Welsh folk tunes">',
+                    f'<meta property="og:title" content="{esc(f"{title} · Y Sesiwn" if path else "Y Sesiwn: alawon gwerin Cymru")}">')
+    page = swap(page, '<meta property="og:site_name" content="Y Sesiwn">',
+                f'<meta property="og:site_name" content="Y Sesiwn">\n  <meta property="og:locale" content="{"cy_GB" if lang == "cy" else "en_GB"}">')
     page = swap(page, f'<meta property="og:url" content="{SITE_URL}">',
-                f'<meta property="og:url" content="{url}">\n  <link rel="canonical" href="{url}">' + head)
-    return swap(page, f'<main id="main" tabindex="-1">{LOADING}</main>',
+                f'<meta property="og:url" content="{url}">\n  <link rel="canonical" href="{url}">' + alternates + head)
+    page = swap(page, f'<main id="main" tabindex="-1">{LOADING}</main>',
                 f'<main id="main" tabindex="-1"><div class="static">{main}</div>'
                 f'<p class="loading" data-cy="{esc(loading[1])}">{esc(loading[0])}</p></main>')
+    return in_welsh(page) if lang == "cy" else page
 
 
 def write_page(folder: Path, page: str) -> None:
@@ -1000,93 +1052,256 @@ def write_page(folder: Path, page: str) -> None:
     (folder / "index.html").write_text(page, encoding="utf-8")
 
 
+def write_pages(template: str, path: str, en: dict, cy: dict, **both) -> None:
+    """A page at path in English, and at cy/<path> in Welsh (app_page's arguments: each language's own, and both's)."""
+    write_page(OUT / path, app_page(template, path=path, lang="en", **both, **en))
+    write_page(OUT / CY_DIR / path, app_page(template, path=path, lang="cy", **both, **cy))
+
+
+def last_changed() -> dict[str, str]:
+    """When each tune's folder last changed (its last commit, YYYY-MM-DD), for the
+    sitemap, so search engines look again at the tunes that have; {} without git."""
+    import subprocess
+    try:
+        log = subprocess.run(["git", "log", "--format=%x00%cs", "--name-only", "--", "tunes"], cwd=ROOT,
+                             capture_output=True, text=True, check=True, encoding="utf-8").stdout
+    except (OSError, subprocess.CalledProcessError):
+        return {}
+    dates: dict[str, str] = {}
+    day = None
+    for line in log.splitlines():
+        if line.startswith("\0"):
+            day = line[1:]
+        elif line.startswith("tunes/") and line.count("/") >= 2:
+            dates.setdefault(line.split("/")[1], day)
+    return dates
+
+
+def composer(versions: list[dict]) -> str | None:
+    """Who wrote the tune, when its C: says so plainly (C:Stephen Rees, or C:Alaw Huw Roberts),
+    for search engines: not "Trad", nor an arrangement or adaptation (Trefniant …)."""
+    credit = next((value for v in versions for label, value in v["details"] if label == "Composer / arranger"), "")
+    credit = re.sub(r"^Alaw (?!draddodiadol)", "", credit)
+    if not credit or re.search(r"\b(trad|traditional|anon|trefniant|trefniannau|trefnwyd|addasiad|addaswyd|alaw|arr|o)\b", credit, re.I):
+        return None
+    return credit
+
+
+def cy_key(key: str) -> str:
+    """'E Dorian' -> 'E Doriaidd' (app.js: keyLabel)."""
+    return re.sub(r"\b(" + "|".join(CY_MODES) + r")\b", lambda m: CY_MODES[m[1]], key)
+
+
+def details_html(rows: list[list[str]], lang: str) -> str:
+    def value(label: str, text: str) -> str:
+        if label == "Source":
+            return re.sub(r"^(https?://\S+)", lambda m: f'<a href="{m[1]}">{m[1]}</a>', esc(text))
+        return esc(cy_key(text) if lang == "cy" and label == "Key" else text)
+    return "".join(f"<dt>{esc(CY_DETAILS.get(label, label) if lang == 'cy' else label)}</dt><dd>{value(label, text)}</dd>"
+                   for label, text in rows)
+
+
+def markdown_html(text: str, lang: str) -> str:
+    """Our own Markdown pages (about.md, CONTRIBUTING.md, …) as HTML, for the pages as
+    written: headings, paragraphs, lists, code, links, bold and italics. (The app has
+    the real reader, static/marked.)"""
+    def inline(line: str) -> str:
+        parts = re.split(r"(`[^`]*`)", line)
+        out = []
+        for part in parts:
+            if part.startswith("`") and part.endswith("`") and len(part) > 1:
+                out.append(f"<code>{esc(part[1:-1])}</code>")
+                continue
+            part = esc(part)
+            part = re.sub(r"\[([^\]]+)\]\(([^)\s]+)\)", lambda m: f'<a href="{own_link(html.unescape(m[2]))}">{m[1]}</a>', part)
+            part = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", part)
+            part = re.sub(r"(?<![\w*])\*([^*]+)\*(?![\w*])", r"<em>\1</em>", part)
+            out.append(part)
+        return "".join(out)
+
+    def own_link(href: str) -> str:
+        # The site's own pages, at their own addresses, in this language.
+        href = href.removeprefix(SITE_URL) if href.startswith(SITE_URL + "?") else href
+        if href == "#how-to-add-a-tune":
+            href = "?page=add"
+        m = re.fullmatch(r"\?page=(\w+)", href)
+        return esc(site_link(PAGE_PATHS[m[1]] + "/", lang) if m and m[1] in PAGE_PATHS else href)
+
+    blocks, lines, code = [], [], None
+    kind = None  # "p", "ul" or "ol": what lines holds
+
+    def flush() -> None:
+        nonlocal lines, kind
+        if kind == "p":
+            blocks.append(f"<p>{inline(' '.join(lines))}</p>")
+        elif kind:
+            blocks.append(f"<{kind}>" + "".join(f"<li>{inline(item)}</li>" for item in lines) + f"</{kind}>")
+        lines, kind = [], None
+
+    for raw in text.split("\n"):
+        line = raw.rstrip()
+        if code is not None:
+            if line.startswith("```"):
+                blocks.append(f"<pre><code>{esc(chr(10).join(code))}</code></pre>")
+                code = None
+            else:
+                code.append(raw)
+            continue
+        if line.startswith("```"):
+            flush()
+            code = []
+        elif not line.strip():
+            flush()
+        elif m := re.match(r"(#{1,6}) (.*)", line):
+            flush()
+            blocks.append(f"<h{len(m[1])}>{inline(m[2])}</h{len(m[1])}>")
+        elif m := re.match(r"\s*(?:([-*])|\d+\.) (.*)", line):
+            list_kind = "ul" if m[1] else "ol"
+            if kind != list_kind:
+                flush()
+                kind = list_kind
+            lines.append(m[2])
+        elif kind in ("ul", "ol") and raw.startswith((" ", "\t")):
+            lines[-1] += " " + line.strip()
+        else:
+            if kind != "p":
+                flush()
+                kind = "p"
+            lines.append(line.strip())
+    flush()
+    return "".join(blocks)
+
+
+def markdown_section(text: str, heading: str) -> str:
+    """The "# heading" part of a Markdown file (app.js: markdownSections)."""
+    sections, in_code = [], False
+    for line in text.split("\n"):
+        if line.startswith("```"):
+            in_code = not in_code
+        if not in_code and line.startswith("# "):
+            sections.append([])
+        (sections[-1] if sections else sections.append([]) or sections[-1]).append(line)
+    return next(("\n".join(s) for s in sections if s and s[0] == f"# {heading}"), "")
+
+
+def first_paragraph(section: str) -> str:
+    """The first paragraph under a Markdown section's heading, as plain text, for its description."""
+    para = next((p for p in section.split("\n\n")[1:] if p.strip() and not p.lstrip().startswith(("#", "-", "```", "<"))), "")
+    para = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", " ".join(para.split()))
+    return re.sub(r"[*`]", "", para)
+
+
 def tune_pages(tunes: list[dict], index: dict) -> None:
     """A real page for each tune, at alaw/<folder>/, and for each type of tune, at
-    math/<type>/ (see app_page). A tune's page also carries tunes.json cut down to this
-    tune, so the app can draw it without waiting for every other tune (a shared link on
-    a phone, say); a type's lists its tunes, so search engines find every tune by
-    following links. Also sitemap.xml and robots.txt, and links to the type pages on
-    the home page, for search engines too. And each tune for other websites to show, at
-    embed/<folder>/ (site/embed.html, with the tune's data as its page has)."""
+    math/<type>/ (see app_page), each in English and Welsh (cy/alaw/<folder>/). A tune's
+    page also carries tunes.json cut down to this tune, so the app can draw it without
+    waiting for every other tune (a shared link on a phone, say); a type's lists its
+    tunes, so search engines find every tune by following links. Also the home page and
+    the app's other pages (PAGE_PATHS) as written, sitemap.xml and robots.txt. And each
+    tune for other websites to show, at embed/<folder>/ (site/embed.html, with the
+    tune's data as its page has)."""
     template = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
     embed_template = (ROOT / "site" / "embed.html").read_text(encoding="utf-8")
     (OUT / "embed.html").unlink()  # only the template
+    changed = last_changed()
     groups: dict[str, list[dict]] = {}
     for tune in tunes:
         groups.setdefault(tune["group"], []).append(tune)
     for versions in groups.values():
         versions.sort(key=lambda t: t["shown"])
     types = {t["name"]: t for t in index["types"]}
-    type_link = lambda name: f'<a href="{TYPE_DIR}/{type_slug(name)}/">{esc(type_heading(types[name]))}</a>'
+    type_path = lambda name: f"{TYPE_DIR}/{type_slug(name)}/"
+    type_link = lambda name, lang: (f'<a href="{site_link(type_path(name), lang)}">'
+                                    f'{esc(type_heading(types[name], lang))}</a>')
+    home_crumb = {"en": ("Y Sesiwn", ""), "cy": ("Y Sesiwn", "")}
 
-    urls = []
+    pages: list[tuple[str, str | None]] = []  # (path, when it last changed), for the sitemap
     for group, versions in groups.items():
         first = versions[0]
         name = first["base"]
-        url = f"{SITE_URL}{TUNE_DIR}/{group}/"
-        urls.append(url)
+        path = f"{TUNE_DIR}/{group}/"
+        when = max((changed[v["slug"]] for v in versions if v["slug"] in changed), default=None)
+        pages.append((path, when))
         titles = list(dict.fromkeys(VERSION.sub(r"\1", t) for v in versions for t in v["titles"]))
         kind = TYPE_SINGULAR[first["type"]]
         key = f"{first['key']['root']} {first['key']['modeName']}" if first["key"] else None
         about = f"a{'n' if kind[0] in 'aeiou' else ''} Welsh {kind}" + (f" in {key}" if key else "")
         chords = any(v["chords"] is not None for v in versions)
-        cy_key = f" yn {first['key']['root']} {CY_MODES.get(first['key']['modeName'], first['key']['modeName'])}" if key else ""
+        in_key = f" yn {cy_key(key)}" if key else ""
         description = (f"{name}: {about}. Sheet music{', example chords' if chords else ''} "
                        f"and playback in any key, at any tempo"
                        + (f" ({len(versions)} versions)" if len(versions) > 1 else "") + ". "
-                       + f"Alaw werin o Gymru ({CY_TYPE[first['type']]}{cy_key}): y sgôr"
+                       + f"Alaw werin o Gymru ({CY_TYPE[first['type']]}{in_key}): y sgôr"
                        + (", cordiau" if chords else "") + " a chwarae mewn unrhyw gywair.")
-        data = {"@context": "https://schema.org", "@type": "MusicComposition", "name": name, "url": url,
-                "genre": "Welsh folk music"}
-        if len(titles) > 1:
-            data["alternateName"] = titles[1:]
-        if key:
-            data["musicalKey"] = key
-        ld = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
+        cy_description = (f"{name}: {CY_TYPE[first['type']]} o Gymru{in_key}. Y sgôr{', cordiau enghreifftiol' if chords else ''}"
+                          f" a chwarae mewn unrhyw gywair, ar unrhyw dempo"
+                          + (f" ({len(versions)} fersiwn)" if len(versions) > 1 else "") + ".")
         own = {**index, "tunes": versions, "say": {group: index["say"][group]} if group in index["say"] else {}}
         own = json.dumps(own, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
-        details = "".join(f"<dt>{esc(label)}</dt><dd>"
-                          + (re.sub(r"^(https?://\S+)", lambda m: f'<a href="{m[1]}">{m[1]}</a>', esc(value)) if label == "Source"
-                             else esc(value))
-                          + "</dd>" for label, value in first["details"])
-        write_page(OUT / TUNE_DIR / group, app_page(
+
+        def tune_ld(lang: str) -> str:
+            data = {"@context": "https://schema.org", "@type": "MusicComposition", "name": name, "url": page_url(path, lang),
+                    "genre": "Welsh folk music", "isPartOf": {"@type": "WebSite", "name": "Y Sesiwn", "url": SITE_URL}}
+            if len(titles) > 1:
+                data["alternateName"] = titles[1:]
+            if key:
+                data["musicalKey"] = key
+            if who := composer(versions):
+                data["composer"] = {"@type": "Person", "name": who}
+            return json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
+
+        def tune_main(lang: str) -> str:
+            also = "Enwau eraill" if lang == "cy" else "Also known as"
+            return (f"<h1>{esc(name)}</h1>"
+                    + (f'<p class="caption">{also}: {esc(", ".join(titles[1:]))}</p>' if len(titles) > 1 else "")
+                    + f"<p>{esc(cy_description if lang == 'cy' else description)}</p><dl>{details_html(first['details'], lang)}</dl>"
+                    + f'<pre>{esc(first["abc"])}</pre><p>{type_link(first["type"], lang)}</p>')
+
+        tune_data = f'\n  <script type="application/json" id="tune-data">{own}</script>'
+        write_pages(
             # "Welsh polka" in the title too: it's what search results show, and what
             # people add to a tune's name when they search (app.js: renderTune).
-            template, title=name, description=description, url=url, tab=f"{name} · Welsh {kind}",
-            head=f'\n  <script type="application/ld+json">{ld}</script>\n'
-                 f'  <script type="application/json" id="tune-data">{own}</script>',
-            scripts='<script src="static/abcjs/abcjs-basic-min.js" defer></script>\n  ',
-            main=f"<h1>{esc(name)}</h1>"
-                 + (f'<p class="caption">Also known as: {esc(", ".join(titles[1:]))}</p>' if len(titles) > 1 else "")
-                 + f"<p>{esc(description)}</p><dl>{details}</dl>"
-                 + f'<pre>{esc(first["abc"])}</pre><p>{type_link(first["type"])}</p>',
-            loading=("Loading the sheet music…", "Yn llwytho'r gerddoriaeth…"), kind="tune"))
+            template, path,
+            en=dict(description=description, tab=f"{name} · Welsh {kind}", main=tune_main("en"),
+                    head=f'\n  <script type="application/ld+json">{tune_ld("en")}</script>' + tune_data,
+                    crumbs=[home_crumb["en"], (type_heading(types[first["type"]], "en"), type_path(first["type"]))]),
+            cy=dict(description=cy_description, tab=f"{name} · {CY_TYPE[first['type']]} o Gymru", main=tune_main("cy"),
+                    head=f'\n  <script type="application/ld+json">{tune_ld("cy")}</script>' + tune_data,
+                    crumbs=[home_crumb["cy"], (type_heading(types[first["type"]], "cy"), type_path(first["type"]))]),
+            title=name, scripts='<script src="static/abcjs/abcjs-basic-min.js" defer></script>\n  ',
+            loading=("Loading the sheet music…", "Yn llwytho'r gerddoriaeth…"), kind="tune")
         page = embed_template.replace("<title>Y Sesiwn</title>", f"<title>{esc(name)} · Y Sesiwn</title>\n"
-                                      f'  <link rel="canonical" href="{url}">\n'
+                                      f'  <link rel="canonical" href="{page_url(path, "en")}">\n'
                                       f'  <script type="application/json" id="tune-data">{own}</script>', 1)
         write_page(OUT / EMBED_DIR / group, page)
 
     # A page for each type: its tunes, A to Z.
     for name, kind in types.items():
         listed = sorted((v[0] for v in groups.values() if v[0]["type"] == name), key=lambda t: normalize(t["base"]))
-        url = f"{SITE_URL}{TYPE_DIR}/{type_slug(name)}/"
-        urls.append(url)
-        heading = type_heading(kind)
+        path = type_path(name)
+        pages.append((path, max((when for p, when in pages if when and p[len(TUNE_DIR) + 1:-1] in {t["group"] for t in listed}),
+                                default=None)))
         cy_kind = "alaw arall" if name == "Other" else CY_TYPE[name]
         some = ", ".join(t["base"] for t in listed[:4])
         plural = "other Welsh tunes" if name == "Other" else f"Welsh {kind['english']}"
         description = (f"{len(listed)} {plural}, each with its sheet music and playback in "
                        f"any key: {some} and more. {len(listed)} {cy_kind} o Gymru, gyda'r sgôr a chwarae mewn unrhyw gywair.")
-        write_page(OUT / TYPE_DIR / type_slug(name), app_page(
-            template, title=heading, description=description, url=url, head="",
-            main=f"<h1>{esc(heading)}</h1><p>{esc(description)}</p><ul>"
-                 + "".join(f'<li><a href="{TUNE_DIR}/{t["group"]}/">{esc(t["base"])}</a></li>' for t in listed)
-                 + "</ul>", loading=("Loading tunes…", "Yn llwytho'r alawon…")))
+        cy_description = f"{len(listed)} {cy_kind} o Gymru, gyda'r sgôr a chwarae mewn unrhyw gywair: {some} a mwy."
+
+        def type_main(lang: str) -> str:
+            return (f"<h1>{esc(type_heading(kind, lang))}</h1><p>{esc(cy_description if lang == 'cy' else description)}</p><ul>"
+                    + "".join(f'<li><a href="{site_link(f"{TUNE_DIR}/{t["group"]}/", lang)}">{esc(t["base"])}</a></li>' for t in listed)
+                    + "</ul>")
+        write_pages(template, path,
+                    en=dict(title=type_heading(kind, "en"), description=description, main=type_main("en"), crumbs=[home_crumb["en"]]),
+                    cy=dict(title=type_heading(kind, "cy"), description=cy_description, main=type_main("cy"), crumbs=[home_crumb["cy"]]),
+                    loading=("Loading tunes…", "Yn llwytho'r alawon…"))
 
     # A moved tune's old address sends people (and search engines) on to the new one, and
     # its old embed/ address (in someone else's website) to its new one; the app does the
     # same offline, from tunes.json's "moved". The link's key, tempo, tabs and language
-    # go too (a version the move gives takes the place of the link's).
+    # go too (a version the move gives takes the place of the link's). (Its Welsh address,
+    # cy/alaw/<old>/, has no page: 404.html sends it to the app, which knows the move.)
     by_slug = {t["slug"]: t for t in tunes}
     for move in index["moved"]:
         new = by_slug[move["to"]]
@@ -1106,25 +1321,88 @@ def tune_pages(tunes: list[dict], index: dict) -> None:
     sessions = session_data()
     setlists = setlist_data(sessions, tunes, index["moved"])
     sessions_page(template, sessions, setlists)
-    urls += [f"{SITE_URL}{SESSIONS_DIR}/"] + [f"{SITE_URL}{SESSIONS_DIR}/{s['id']}/" for s in sessions]
-    urls += [f"{SITE_URL}{SESSIONS_DIR}/{sid}/" for sid, kept in setlists.items() if "session" in kept]
-    urls += [f"{SITE_URL}{SESSIONS_DIR}/{sid}/{night['date']}/" for sid, kept in setlists.items() for night in kept["setlists"]]
+    pages += [(f"{SESSIONS_DIR}/", None)] + [(f"{SESSIONS_DIR}/{s['id']}/", None) for s in sessions]
+    pages += [(f"{SESSIONS_DIR}/{sid}/", None) for sid, kept in setlists.items() if "session" in kept]
+    pages += [(f"{SESSIONS_DIR}/{sid}/{night['date']}/", None) for sid, kept in setlists.items() for night in kept["setlists"]]
     archive_page(template, {s["id"]: s for s in sessions}, setlists)
-    urls.append(f"{SITE_URL}{ARCHIVE_DIR}/")
+    pages.append((f"{ARCHIVE_DIR}/", None))
 
-    # The home page links to the type pages until the app takes over.
-    home = OUT / "index.html"
-    nav = "".join(f"<li>{type_link(name)}</li>" for name in types)
-    page = home.read_text(encoding="utf-8")
-    if page.count(LOADING) != 1:
-        raise SystemExit(f"site/index.html: expected one {LOADING!r}")
-    home.write_text(page.replace(LOADING, f'<div class="static"><ul class="type-links">{nav}</ul></div>' + LOADING), encoding="utf-8")
+    # The home page: what the site is, and links to the type pages and the others, until the app takes over.
+    def home_main(lang: str) -> str:
+        cy = lang == "cy"
+        others = [(f"{PAGE_PATHS['browse']}/", "Pori yn ôl math a chywair" if cy else "Browse by type and key"),
+                  (f"{PAGE_PATHS['notes']}/", "Canfod alaw o'i nodau" if cy else "Find a tune by its notes"),
+                  (f"{PAGE_PATHS['map']}/", "Alawon ar y map" if cy else "Tunes on the map"),
+                  (f"{SESSIONS_DIR}/", "Sesiynau cyfredol" if cy else "Active sessions"),
+                  (f"{ARCHIVE_DIR}/", "Alawon a chwaraewyd mewn sesiynau" if cy else "Tunes played at sessions"),
+                  (f"{PAGE_PATHS['about']}/", "Am Y Sesiwn" if cy else "About Y Sesiwn")]
+        return (f"<h1>Y Sesiwn</h1><p>{esc(SITE_ABOUT[lang])}</p>"
+                + '<ul class="type-links">' + "".join(f"<li>{type_link(name, lang)}</li>" for name in types) + "</ul>"
+                + "<ul>" + "".join(f'<li><a href="{site_link(p, lang)}">{esc(text)}</a></li>' for p, text in others) + "</ul>")
+    website = lambda lang: json.dumps({"@context": "https://schema.org", "@type": "WebSite", "name": "Y Sesiwn",
+                                       "alternateName": "ysesiwn.cymru", "url": page_url("", lang),
+                                       "description": SITE_ABOUT[lang], "inLanguage": lang}, ensure_ascii=False)
+    write_pages(template, "",
+                en=dict(full_title=SITE_NAME["en"], description=SITE_ABOUT["en"], main=home_main("en"),
+                        head=f'\n  <script type="application/ld+json">{website("en")}</script>'),
+                cy=dict(full_title=SITE_NAME["cy"], description=SITE_ABOUT["cy"], main=home_main("cy"),
+                        head=f'\n  <script type="application/ld+json">{website("cy")}</script>'),
+                title="Y Sesiwn", loading=("Loading tunes…", "Yn llwytho'r alawon…"), kind="home")
+    app_pages(template, index, type_link)
+    pages = [("", None)] + [(f"{p}/", None) for p in PAGE_PATHS.values()] + pages
 
-    pages = [SITE_URL] + [f"{SITE_URL}?page={p}" for p in ("browse", "notes", "map", "about", "add", "fix", "embed", "offline", "contact")]
     (OUT / "sitemap.xml").write_text(
         '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-        + "".join(f"  <url><loc>{esc(u)}</loc></url>\n" for u in pages + urls) + "</urlset>\n", encoding="utf-8")
+        + "".join(f"  <url><loc>{esc(page_url(p, lang))}</loc>" + (f"<lastmod>{when}</lastmod>" if when else "") + "</url>\n"
+                  for p, when in pages for lang in ("en", "cy"))
+        + "</urlset>\n", encoding="utf-8")
     (OUT / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {SITE_URL}sitemap.xml\n", encoding="utf-8")
+
+
+# The Markdown pages (app.js: PAGES): the file and its heading, in English and Welsh.
+GUIDES = {"about": (("about.md", "About Y Sesiwn"), ("about.cy.md", "Am Y Sesiwn")),
+          "add": (("../CONTRIBUTING.md", "How to add a tune"), ("guides.cy.md", "Sut i ychwanegu alaw")),
+          "fix": (("../CONTRIBUTING.md", "How to submit corrections"), ("guides.cy.md", "Sut i gyflwyno cywiriadau")),
+          "embed": (("embed.md", "Put a tune on your website"), ("embed.cy.md", "Rhoi alaw ar eich gwefan"))}
+# The app's other pages (app.js's titles for them), with a line on each for search results.
+OTHER_PAGES = {
+    "browse": (("Browse by type and key", "Every Welsh folk tune here, by type (jigs, reels, polkas, waltzes, hornpipes…) and key."),
+               ("Pori yn ôl math a chywair", "Pob alaw werin o Gymru sydd yma, yn ôl ei math (jig, rîl, polca, walts, pibddawns…) a'i chywair.")),
+    "notes": (("Find a tune by its notes", "Play or type the first few notes of a Welsh folk tune to find which tune it is."),
+              ("Canfod alaw o'i nodau", "Chwaraewch neu teipiwch nodau cyntaf alaw werin i ganfod pa alaw yw hi.")),
+    "map": (("Tunes on the map", "Welsh folk tunes named after places in Wales, on a map."),
+            ("Alawon ar y map", "Alawon gwerin a enwir ar ôl lleoedd yng Nghymru, ar fap.")),
+    "offline": (("Use it offline", "Keep every tune on your phone or computer, to play them with no signal."),
+                ("Defnyddio all-lein", "Cadw pob alaw ar eich ffôn neu'ch cyfrifiadur, i'w chwarae heb signal.")),
+    "contact": (("Contact", "Send a message to Y Sesiwn: a question, a tune that's wrong, or one that's missing."),
+                ("Cysylltu", "Anfon neges at Y Sesiwn: cwestiwn, alaw sy'n anghywir, neu un sydd ar goll.")),
+}
+
+
+def app_pages(template: str, index: dict, type_link) -> None:
+    """The app's other pages at their own addresses (PAGE_PATHS: am/, pori/, …), as
+    written for search engines: the guides from their Markdown, Browse with the types,
+    the map with its places and their tunes."""
+    names = {t["group"]: t["base"] for t in index["tunes"] if t["shown"] == 1}
+    for key, path in PAGE_PATHS.items():
+        own = {}
+        for lang, n in (("en", 0), ("cy", 1)):
+            if key in GUIDES:
+                file, heading = GUIDES[key][n]
+                section = markdown_section((ROOT / "site" / file).read_text(encoding="utf-8"), heading)
+                title, description, body = heading, first_paragraph(section), markdown_html(section, lang)
+            else:
+                title, description = OTHER_PAGES[key][n]
+                body = f"<h1>{esc(title)}</h1><p>{esc(description)}</p>"
+                if key == "browse":
+                    body += "<ul>" + "".join(f"<li>{type_link(t['name'], lang)}</li>" for t in index["types"]) + "</ul>"
+                if key == "map":
+                    body += "<ul>" + "".join(
+                        f"<li>{esc(place['name'])}: " + ", ".join(
+                            f'<a href="{site_link(f"{TUNE_DIR}/{g}/", lang)}">{esc(names[g])}</a>' for g in place["tunes"] if g in names)
+                        + "</li>" for place in index["places"]) + "</ul>"
+            own[lang] = dict(title=title, description=description, main=body, crumbs=[("Y Sesiwn", "")])
+        write_pages(template, f"{path}/", **own)
 
 
 # Wales's principal areas, for a session's county: English and Welsh.
@@ -1308,32 +1586,64 @@ def long_date(day: str) -> str:
 CY_MONTHS = ["Ionawr", "Chwefror", "Mawrth", "Ebrill", "Mai", "Mehefin", "Gorffennaf", "Awst", "Medi", "Hydref", "Tachwedd", "Rhagfyr"]
 
 
+def session_title_cy(s: dict) -> str:
+    """session_title in Welsh (app.js: sessionTitle): 'Sesiwn yn Hoogah, Abertawe'."""
+    town = s["town_cy"]
+    if not s.get("name"):
+        return f"{'Clwb alawon' if s.get('kind') == 'tune club' else 'Sesiwn'} yn {s['venue']}, {town}"
+    has = lambda part: normalize(part) in normalize(s["name"])
+    named = has(s["town"]) or has(town)
+    return ", ".join([s["name"]] + ([] if named or has(s["venue"]) else [s["venue"]]) + ([] if named else [town]))
+
+
+def cy_date(day: str) -> str:
+    """'2026-10-20' -> '20 Hydref 2026'."""
+    from datetime import date
+    d = date.fromisoformat(day)
+    return f"{d.day} {CY_MONTHS[d.month - 1]} {d.year}"
+
+
+ALL_SESSIONS = {"en": "All sessions, on a map", "cy": "Pob sesiwn, ar fap"}
+
+
 def sessions_page(template: str, sessions: list[dict], setlists: dict[str, dict]) -> None:
     """sesiynau/: the sessions as plain HTML for search engines (the app draws its own),
     and sessions.json for the app. Each session also has a page of its own,
     sesiynau/<id>/, to send or link to: its link preview and search result are that
     session's, not the whole list's. A session with setlists says how many in
     sessions.json, and has them in sesiynau/<id>/setlists.json, fetched only on its own
-    page, with a page for each night (see setlist_pages)."""
+    page, with a page for each night (see setlist_pages). Each page is in Welsh too."""
     sessions = [{**s, **({"setlists": len(setlists[s["id"]]["setlists"])} if s["id"] in setlists else {})} for s in sessions]
     (OUT / "sessions.json").write_text(json.dumps({"sessions": sessions}, ensure_ascii=False, separators=(",", ":")),
                                        encoding="utf-8")
     towns = sorted({s["town"] for s in sessions}, key=normalize)
+    towns_cy = sorted({s["town_cy"] for s in sessions}, key=normalize)
     description = ("Active folk sessions with a heavy focus on Welsh music, in " + ", ".join(towns)
                    + ": their days and times, on a map. Sesiynau cyfredol sy'n canolbwyntio'n drwm ar gerddoriaeth Gymreig.")
+    cy_description = ("Sesiynau gwerin cyfredol sy'n canolbwyntio'n drwm ar gerddoriaeth Gymreig: eu dyddiau a'u hamseroedd, "
+                      "ar fap. " + ", ".join(towns_cy) + ".")
     body = "".join(
         f"<h2>{esc(town)}</h2><ul>" + "".join(
             f"<li><a href=\"{SESSIONS_DIR}/{s['id']}/\"><strong>{esc(s.get('name') or s['venue'])}</strong></a>{' (tune club)' if s.get('kind') == 'tune club' else ''}: {esc(describe_session(s))}. "
             f"{esc(s['venue'])}, {esc(s['address'])}. Last confirmed {esc(s['confirmed'])}.</li>"
             for s in sessions if s["town"] == town) + "</ul>"
         for town in towns)
+    cy_body = "".join(
+        f"<h2>{esc(town)}</h2><ul>" + "".join(
+            f"<li><a href=\"{site_link(f'{SESSIONS_DIR}/{s['id']}/', 'cy')}\"><strong>{esc(s.get('name') or s['venue'])}</strong></a>"
+            f"{' (clwb alawon)' if s.get('kind') == 'tune club' else ''}: {esc(s['venue'])}, {esc(s['address'])}.</li>"
+            for s in sessions if s["town_cy"] == town) + "</ul>"
+        for town in towns_cy)
     from datetime import date
     ld = json.dumps({"@context": "https://schema.org", "@graph": session_events(sessions, date.today())},
                     ensure_ascii=False).replace("</", "<\\/")
-    write_page(OUT / SESSIONS_DIR, app_page(
-        template, title="Active sessions", description=description, url=f"{SITE_URL}{SESSIONS_DIR}/",
-        head=f'\n  <script type="application/ld+json">{ld}</script>', up="../", main=f"<h1>Active sessions</h1><p>{esc(description)}</p>{body}",
-        loading=("Loading the sessions…", "Yn llwytho'r sesiynau…")))
+    write_pages(
+        template, f"{SESSIONS_DIR}/",
+        en=dict(title="Active sessions", description=description, main=f"<h1>Active sessions</h1><p>{esc(description)}</p>{body}"),
+        cy=dict(title="Sesiynau cyfredol", description=cy_description,
+                main=f"<h1>Sesiynau cyfredol</h1><p>{esc(cy_description)}</p>{cy_body}"),
+        head=f'\n  <script type="application/ld+json">{ld}</script>', crumbs=[("Y Sesiwn", "")],
+        loading=("Loading the sessions…", "Yn llwytho'r sesiynau…"))
 
     for s in sessions:
         title = session_title(s)
@@ -1341,19 +1651,27 @@ def sessions_page(template: str, sessions: list[dict], setlists: dict[str, dict]
         cy_kind = "Clwb alawon" if s.get("kind") == "tune club" else "Sesiwn werin"
         description = (f"{kind} with Welsh tunes: {describe_session(s)}. {s['venue']}, {s['address']}. "
                        f"{cy_kind} gydag alawon Cymreig {yn_place(s['town_cy'])}.")
+        cy_description = f"{cy_kind} gydag alawon Cymreig {yn_place(s['town_cy'])}: {s['venue']}, {s['address']}."
         ld = json.dumps({"@context": "https://schema.org", "@graph": session_events([s], date.today())},
                         ensure_ascii=False).replace("</", "<\\/")
-        url = f"{SITE_URL}{SESSIONS_DIR}/{s['id']}/"
-        write_page(OUT / SESSIONS_DIR / s["id"], app_page(
-            template, title=title, description=description, url=url,
+        has = s["id"] in setlists
+        write_pages(
+            template, f"{SESSIONS_DIR}/{s['id']}/",
+            en=dict(title=title, description=description, crumbs=[("Y Sesiwn", ""), ("Active sessions", f"{SESSIONS_DIR}/")],
+                    main=f"<h1>{esc(title)}</h1><p>{esc(description)}</p>"
+                         + (f"<p>{esc(s['music'])}</p>" if s.get("music") else "")
+                         + (f'<p><a href="{esc(s["link"])}">{esc(s["link"])}</a></p>' if s.get("link") else "")
+                         + f"<p>Last confirmed {esc(s['confirmed'])}.</p>"
+                         + (setlists_html(s["id"], setlists[s["id"]]) if has else "")
+                         + f'<p><a href="{SESSIONS_DIR}/">{ALL_SESSIONS["en"]}</a></p>'),
+            cy=dict(title=session_title_cy(s), description=cy_description,
+                    crumbs=[("Y Sesiwn", ""), ("Sesiynau cyfredol", f"{SESSIONS_DIR}/")],
+                    main=f"<h1>{esc(session_title_cy(s))}</h1><p>{esc(cy_description)}</p>"
+                         + (f'<p><a href="{esc(s["link"])}">{esc(s["link"])}</a></p>' if s.get("link") else "")
+                         + (setlists_html(s["id"], setlists[s["id"]], lang="cy") if has else "")
+                         + f'<p><a href="{site_link(f"{SESSIONS_DIR}/", "cy")}">{ALL_SESSIONS["cy"]}</a></p>'),
             head=f'\n  <script type="application/ld+json">{ld}</script>',
-            main=f"<h1>{esc(title)}</h1><p>{esc(description)}</p>"
-                 + (f"<p>{esc(s['music'])}</p>" if s.get("music") else "")
-                 + (f'<p><a href="{esc(s["link"])}">{esc(s["link"])}</a></p>' if s.get("link") else "")
-                 + f"<p>Last confirmed {esc(s['confirmed'])}.</p>"
-                 + (setlists_html(s["id"], setlists[s["id"]]) if s["id"] in setlists else "")
-                 + f'<p><a href="{SESSIONS_DIR}/">All sessions, on a map</a></p>',
-            loading=("Loading the session…", "Yn llwytho'r sesiwn…")))
+            loading=("Loading the session…", "Yn llwytho'r sesiwn…"))
     setlist_pages(template, {s["id"]: s for s in sessions}, setlists)
 
 
@@ -1472,21 +1790,26 @@ def most_played(nights: list[dict]) -> list[dict]:
     return [{**tunes[k], "nights": counts[k]} for k in ranked]
 
 
-def setlist_link(tune: dict) -> str:
+def setlist_link(tune: dict, lang: str = "en") -> str:
     """A tune in a setlist, for the static pages: its page (at the version played), or its name if it isn't on the site."""
     if "tune" not in tune:
         return esc(tune["name"])
-    return f'<a href="{TUNE_DIR}/{tune["tune"]}/' + (f'?v={tune["version"]}' if "version" in tune else "") + f'">{esc(tune["name"])}</a>'
+    return (f'<a href="{site_link(f"{TUNE_DIR}/{tune["tune"]}/", lang)}' + (f'?v={tune["version"]}' if "version" in tune else "")
+            + f'">{esc(tune["name"])}</a>')
 
 
-
-def setlists_html(sid: str, kept: dict, heading: str = "<h2>Tunes played here</h2>", most_played: int = MOST_PLAYED) -> str:
+def setlists_html(sid: str, kept: dict, heading: str | None = None, most_played: int = MOST_PLAYED, lang: str = "en") -> str:
     """A session's setlists for its static page: the tunes played most, and each night's page."""
+    cy = lang == "cy"
+    heading = heading or f"<h2>{'Alawon a chwaraewyd yma' if cy else 'Tunes played here'}</h2>"
     n = len(kept["setlists"])
-    most = ("<h3>Most played here</h3><ol>" + "".join(
-        f"<li>{setlist_link(t)}: {t['nights']} of {n} nights</li>" for t in kept["most"][:most_played]) + "</ol>") if kept["most"] else ""
+    most = (f"<h3>{'Yr alawon a chwaraeir amlaf' if cy else 'Most played here'}</h3><ol>" + "".join(
+        f"<li>{setlist_link(t, lang)}: {t['nights']} {'o' if cy else 'of'} {n} {'noson' if cy else 'nights'}</li>"
+        for t in kept["most"][:most_played]) + "</ol>") if kept["most"] else ""
     return (heading + most + "<ul>" + "".join(
-        f'<li><a href="{SESSIONS_DIR}/{sid}/{night["date"]}/">{esc(long_date(night["date"]))}</a>: {len(night["tunes"])} tunes</li>'
+        f'<li><a href="{site_link(f"{SESSIONS_DIR}/{sid}/{night["date"]}/", lang)}">'
+        f'{esc(cy_date(night["date"]) if cy else long_date(night["date"]))}</a>: '
+        f'{len(night["tunes"])} {"alaw" if cy else "tunes"}</li>'
         for night in kept["setlists"]) + "</ul>")
 
 
@@ -1511,12 +1834,20 @@ def archive_page(template: str, active: dict[str, dict], setlists: dict[str, dic
                                                    encoding="utf-8")
     description = ("An archive of the tunes played at Welsh folk sessions, night by night, as players send them in. "
                    "Archif o'r alawon a chwaraewyd mewn sesiynau gwerin, noson wrth noson.")
-    body = "".join(setlists_html(s["id"], setlists[s["id"]], f'<h2><a href="{SESSIONS_DIR}/{s["id"]}/">{esc(session_title(s))}</a></h2>',
-                                 ARCHIVE_MOST) for s in sessions)
-    write_page(OUT / ARCHIVE_DIR, app_page(
-        template, title="Tunes played at sessions", description=description, url=f"{SITE_URL}{ARCHIVE_DIR}/", head="", up="../",
-        main=f"<h1>Tunes played at sessions</h1><p>{esc(description)}</p>{body}",
-        loading=("Loading the tunes played…", "Yn llwytho'r alawon a chwaraewyd…")))
+    cy_description = "Archif o'r alawon a chwaraewyd mewn sesiynau gwerin, noson wrth noson, wrth i chwaraewyr eu hanfon."
+
+    def body(lang: str) -> str:
+        title = session_title_cy if lang == "cy" else session_title
+        return "".join(setlists_html(s["id"], setlists[s["id"]],
+                                     f'<h2><a href="{site_link(f"{SESSIONS_DIR}/{s["id"]}/", lang)}">{esc(title(s))}</a></h2>',
+                                     ARCHIVE_MOST, lang) for s in sessions)
+    write_pages(
+        template, f"{ARCHIVE_DIR}/",
+        en=dict(title="Tunes played at sessions", description=description,
+                main=f"<h1>Tunes played at sessions</h1><p>{esc(description)}</p>{body('en')}"),
+        cy=dict(title="Alawon a chwaraewyd mewn sesiynau", description=cy_description,
+                main=f"<h1>Alawon a chwaraewyd mewn sesiynau</h1><p>{esc(cy_description)}</p>{body('cy')}"),
+        crumbs=[("Y Sesiwn", "")], loading=("Loading the tunes played…", "Yn llwytho'r alawon a chwaraewyd…"))
 
 
 def setlist_pages(template: str, active: dict[str, dict], setlists: dict[str, dict]) -> None:
@@ -1529,34 +1860,58 @@ def setlist_pages(template: str, active: dict[str, dict], setlists: dict[str, di
         (OUT / SESSIONS_DIR / sid / "setlists.json").write_text(
             json.dumps(kept, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
         s = active.get(sid) or kept["session"]
-        title = session_title(s)
+        title, cy_title = session_title(s), session_title_cy(s)
+        session_path = f"{SESSIONS_DIR}/{sid}/"
         if sid not in active:
             description = (f"The tunes played at {title}, which is no longer running (or has moved to another day). "
                            f"Yr alawon a chwaraewyd mewn sesiwn {yn_place(s['town_cy'])}.")
-            write_page(OUT / SESSIONS_DIR / sid, app_page(
-                template, title=title, description=description, url=f"{SITE_URL}{SESSIONS_DIR}/{sid}/", head="",
-                main=f"<h1>{esc(title)}</h1><p>{esc(description)}</p>" + setlists_html(sid, kept)
-                     + f'<p><a href="{SESSIONS_DIR}/">All sessions, on a map</a></p>',
-                loading=("Loading the session…", "Yn llwytho'r sesiwn…")))
+            cy_description = (f"Yr alawon a chwaraewyd mewn sesiwn {yn_place(s['town_cy'])}, nad yw'n cael ei chynnal bellach "
+                              "(neu sydd wedi symud i ddiwrnod arall).")
+            write_pages(
+                template, session_path,
+                en=dict(title=title, description=description,
+                        main=f"<h1>{esc(title)}</h1><p>{esc(description)}</p>" + setlists_html(sid, kept)
+                             + f'<p><a href="{SESSIONS_DIR}/">{ALL_SESSIONS["en"]}</a></p>'),
+                cy=dict(title=cy_title, description=cy_description,
+                        main=f"<h1>{esc(cy_title)}</h1><p>{esc(cy_description)}</p>" + setlists_html(sid, kept, lang="cy")
+                             + f'<p><a href="{site_link(f"{SESSIONS_DIR}/", "cy")}">{ALL_SESSIONS["cy"]}</a></p>'),
+                loading=("Loading the session…", "Yn llwytho'r sesiwn…"))
         for night in kept["setlists"]:
-            d = date.fromisoformat(night["date"])
             names = [t["name"] for t in night["tunes"]]
             some = ", ".join(names[:3]) + (f" and {len(names) - 3} more" if len(names) > 3 else "")
+            cy_some = ", ".join(names[:3]) + (f" a {len(names) - 3} arall" if len(names) > 3 else "")
             # The date first, as on the page: link previews cut a long session's name short.
             page_title = f"Tunes played on {long_date(night['date'])} at {title}"
+            cy_page_title = f"Yr alawon a chwaraewyd ar {cy_date(night['date'])}: {cy_title}"
             description = (f"The tunes played on {long_date(night['date'])} at {title}: {some}. "
-                           f"Yr alawon a chwaraewyd {yn_place(s['town_cy'])} ar {d.day} {CY_MONTHS[d.month - 1]} {d.year}.")
-            write_page(OUT / SESSIONS_DIR / sid / night["date"], app_page(
-                template, title=page_title, description=description, url=f"{SITE_URL}{SESSIONS_DIR}/{sid}/{night['date']}/",
-                head="", up="../../../",
-                main=f"<h1>{esc(page_title)}</h1><ol>" + "".join(
-                f"<li>{setlist_link(t)}" + (f" ({esc(t['key'])})" if "key" in t else "") + "</li>" for t in night["tunes"]) + "</ol>"
-                     + f'<p><a href="{SESSIONS_DIR}/{sid}/">{esc(title)}</a></p>',
-                loading=("Loading the tunes…", "Yn llwytho'r alawon…")))
+                           f"Yr alawon a chwaraewyd {yn_place(s['town_cy'])} ar {cy_date(night['date'])}.")
+            cy_description = f"Yr alawon a chwaraewyd {yn_place(s['town_cy'])} ar {cy_date(night['date'])}: {cy_some}."
+
+            def night_main(lang: str, heading: str, back: str) -> str:
+                return (f"<h1>{esc(heading)}</h1><ol>" + "".join(
+                    f"<li>{setlist_link(t, lang)}" + (f" ({esc(cy_key(t['key']) if lang == 'cy' else t['key'])})" if "key" in t else "")
+                    + "</li>" for t in night["tunes"]) + "</ol>"
+                    + f'<p><a href="{site_link(session_path, lang)}">{esc(back)}</a></p>')
+            write_pages(
+                template, f"{session_path}{night['date']}/",
+                en=dict(title=page_title, description=description, main=night_main("en", page_title, title),
+                        crumbs=[("Y Sesiwn", ""), (title, session_path)]),
+                cy=dict(title=cy_page_title, description=cy_description, main=night_main("cy", cy_page_title, cy_title),
+                        crumbs=[("Y Sesiwn", ""), (cy_title, session_path)]),
+                loading=("Loading the tunes…", "Yn llwytho'r alawon…"))
 
 
-def type_heading(kind: dict) -> str:
-    """'Welsh jigs (Jig)': the English for search engines, and the site's own name for it."""
+# A type's page's heading, in Welsh: the kind of tune, said in a way that needs no plural
+# of the type's own name (which some, polca or walts, have more than one of).
+CY_TYPE_HEADINGS = {"Alaw": "Alawon o Gymru (Alaw)", "Cân": "Caneuon o Gymru (Cân)", "Carol": "Carolau o Gymru (Carol)",
+                    "Other": "Alawon eraill o Gymru"}
+
+
+def type_heading(kind: dict, lang: str = "en") -> str:
+    """'Welsh jigs (Jig)': the English for search engines, and the site's own name for it.
+    In Welsh, 'Alawon jig o Gymru'."""
+    if lang == "cy":
+        return CY_TYPE_HEADINGS.get(kind["name"]) or f"Alawon {CY_TYPE[kind['name']]} o Gymru"
     return "Other Welsh tunes" if kind["name"] == "Other" else f"Welsh {kind['english']} ({kind['name']})"
 
 
@@ -1569,10 +1924,12 @@ def write_service_worker() -> None:
             h.update(f.relative_to(OUT).as_posix().encode() + f.read_bytes())
         return h.hexdigest()[:12]
 
-    # The tunes', types' and sessions' own pages, and the setlists' archive, aren't kept: offline, sw.js answers them with the app itself.
-    # Nor are the tunes for other websites (embed/), which are only ever opened there.
+    # The tunes', types' and sessions' own pages, the setlists' archive, the app's other pages
+    # (PAGE_PATHS) and every page in Welsh (cy/) aren't kept: offline, sw.js answers them with
+    # the app itself. Nor are the tunes for other websites (embed/), which are only ever opened there.
+    skip = (TUNE_DIR, TYPE_DIR, SESSIONS_DIR, EMBED_DIR, ARCHIVE_DIR, CY_DIR, *PAGE_PATHS.values())
     files = sorted(f for f in OUT.rglob("*") if f.is_file() and f.name not in NOT_OFFLINE
-                   and not any(f.is_relative_to(OUT / d) for d in (TUNE_DIR, TYPE_DIR, SESSIONS_DIR, EMBED_DIR, ARCHIVE_DIR)))
+                   and not any(f.is_relative_to(OUT / d) for d in skip))
     sounds = [f for f in files if f.is_relative_to(OUT / "static" / "soundfont")]
     site = [f for f in files if f not in sounds]
     urls = lambda fs: json.dumps([f.relative_to(OUT).as_posix() for f in fs])

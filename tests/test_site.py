@@ -4780,6 +4780,23 @@ def test_no_flash_of_the_static_page(browser, site):
     page.clock.run_for(9000)
     page.wait_for_selector("#main .static .type-links", state="visible")
     context.close()
+    # But once the app is drawing the page, it stays hidden however long the page's own data
+    # takes: offline, or on a slow connection, the page as it came is the saved home page
+    # (sw.js), whose jigs and slip jigs would show on the archive's address.
+    context = browser.new_context(service_workers="block")
+    page = context.new_page()
+    page.clock.install()
+    held = []
+    page.route("**/archif.json", lambda route: held.append(route))
+    page.goto(site + "archif/")
+    while not held:
+        page.wait_for_timeout(50)
+    page.clock.run_for(9000)
+    assert page.locator("#main .static").is_hidden()
+    held[0].continue_()
+    page.wait_for_selector("#main .setlists")
+    assert page.locator("#main .static").count() == 0
+    context.close()
 
 
 def test_touch_targets(browser, site):

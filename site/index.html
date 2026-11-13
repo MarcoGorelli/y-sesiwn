@@ -35,7 +35,10 @@
   <!-- The page as written (the .static parts build_site.py puts in <main>) is for search
        engines and link previews, which don't run JavaScript: where it runs, the app shows
        the page instead, so that copy is hidden (style.css), not flashed. Should the app not
-       have taken over after 8 s (app.js failed to load, say), it shows after all. -->
+       have taken over after 8 s (app.js failed to load, say), it shows after all. Once the
+       app is drawing the page (window.appDrawing, app.js: render), it stays hidden however
+       long the page's own data takes: the copy may be the saved home page's (sw.js), on
+       another page's address. -->
   <script>
     // The tunes, for app.js: start now, alongside the scripts, not after them. (Not a
     // <link rel="preload">: once sw.js answers for the site, Chrome fetches those twice.)
@@ -45,7 +48,7 @@
     // the other one never flashes; with no choice, the device's own setting.
     try { var theme = localStorage.getItem("theme"); if (theme) document.documentElement.dataset.theme = theme; } catch (e) {}
     document.documentElement.classList.add("js");
-    setTimeout(function () { if (document.querySelector("#main .static")) document.documentElement.classList.remove("js"); }, 8000);
+    setTimeout(function () { if (!window.appDrawing && document.querySelector("#main .static")) document.documentElement.classList.remove("js"); }, 8000);
   </script>
 </head>
 <body>

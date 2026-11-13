@@ -1455,6 +1455,9 @@ function render() {
     state.loaded.then(render, loadFailed);
     return;
   }
+  // The page is the app's now: the copy for search engines stays hidden while its data
+  // comes (index.html), as it may not be this page's (sw.js serves the saved home page).
+  window.appDrawing = true;
   // An address written with capitals, accents or punctuation (alaw/Glandyfi/,
   // alaw/codi'r-hwyl/): the folder build_site.py makes of it, if that's a tune.
   if (address && !known(movedTo(address)) && known(movedTo(typeSlug(address)))) address = typeSlug(address);

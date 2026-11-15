@@ -1,0 +1,49 @@
+X:1
+T:Deffrwch! Benteulu
+T:Awake! Head of the Family
+R:cân
+S:https://amgueddfa.cymru/casgliadau/caneuongwerin/?id=13 (collected by D. Roy Saer)
+N:Sung by Selina Griffiths (born 1880), a housewife of Garn, Dinas Cross, near Fishguard, Pembrokeshire; recorded 9.8.63 (St Fagans tape 610). A New Year quête (begging) rhyme: she learnt it as a girl around 1885-90 in the Caersalem area near Newport, Pembrokeshire, where children sang it from door to door on New Year's morning, asking for calennig (a New Year's gift). Young men sang such rhymes at the doors after midnight on New Year's Eve, and children later that morning until midday; the gift might be bread and cheese, cakes and a drink, or money.
+N:"Bore" in the first line (Tyma bore'r Flwyddyn Newy') seems to have crept into the text.
+%%version Selina Griffiths
+M:2/4
+L:1/8
+K:C
+A2 G>A | G2 B,2
+w: Deff-rwch! ben-teu-lu,
+|[M:3/4] AA GA GA
+w: Tym-a bor-e'r Flwydd-yn
+|[M:2/4] G2 B,2 | A2 G>A |
+w: New-y' Wed-i dod
+G2 C2 | A2 G>A |
+w: ad-re O fewn y
+G2 C2 | A2 GA |
+w: drws-e. Drws-e yng
+G2 C2 | A2 GA |
+w: nghloi-on, Wed-i eu
+G2 C2 | A2 (GA) |
+w: par-o Drost y_
+G3 E | A2 GA |
+w: nos: O mis-tres fach
+G3 F | A2 GA |
+w: fwyn, Gwran-dewch ar ein
+G3 F | A2 GA |
+w: cwyn; Plant if-enc ŷn
+G3 F | A2 GA |
+w: ni, Gyll-yng-wch ni~i'r
+G3 F | A2 GA |
+w: tŷ; Gyll-yng-wch ni'n
+G2 EE | A2 GA |
+w: glou Yn-te tym-a ni'n
+G3 z | z2 AA |
+w: ffoi. Rhowch gal-
+GG AA | GG AA |
+w: en-nig yn gal-on-nog i blant
+G>A GA | G2 B,2 |
+w: bach sy heb un cein-og;
+A2 G>A | G2 D2 |
+w: Cein-og neu ddim-e,
+AA GA | G2 D2 |
+w: P'un a fyn-noch chwith-e:
+A2 G>A | G2 C2 |]
+w: Cein-og sy or-e.

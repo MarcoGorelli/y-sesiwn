@@ -34,6 +34,12 @@ python build_site.py                    # builds _site/
 python -m http.server -d _site 8000     # then open http://localhost:8000
 ```
 
+`python build_site.py --previews` also draws each tune's link-preview picture
+(the opening of its music, for WhatsApp, Slack and the like; `previews.py`).
+That needs Playwright's browser, as the tests do. The pictures are kept in
+`.previews/`, so later builds draw only new and changed tunes. Without the
+flag, every page uses the site's own `og-image.png`.
+
 Opening `_site/index.html` directly won't work: browsers block `file://`
 fetches of `tunes.json`. Rebuild after editing a tune or anything in `site/`.
 
@@ -90,7 +96,8 @@ turn on the hook once per clone: `git config core.hooksPath .githooks`
 
 ## Deploying
 
-`.github/workflows/pages.yml` runs the tests, then `build_site.py`, and
+`.github/workflows/pages.yml` runs the tests, then `build_site.py --previews`
+(keeping the pictures in its cache between runs), and
 publishes `_site/` to GitHub Pages on every push to `main` (repo **Settings → Pages → Source: GitHub
 Actions**), served at the custom domain `ysesiwn.cymru`. Everything uses
 relative URLs, so the site also works under a sub-path such as

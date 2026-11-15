@@ -935,7 +935,7 @@ def main() -> None:
     (OUT / "tunes.json").write_text(
         json.dumps(index, ensure_ascii=False, separators=(",", ":")), encoding="utf-8"
     )
-    tune_pages(tunes, index)
+    tune_pages(tunes, index, previews(tunes) if PREVIEWS else {})
     write_service_worker()
     print(f"built {OUT.name}/ with {len(tunes)} tunes")
 
@@ -954,6 +954,7 @@ CY_MODES = {"major": "fwyaf", "minor": "leiaf", "Dorian": "Doriaidd", "Phrygian"
             "Mixolydian": "Mixolydaidd", "Locrian": "Locriaidd"}
 
 esc = lambda text: html.escape(text, quote=True)
+PREVIEWS = False  # --previews
 
 
 def type_slug(name: str) -> str:
@@ -1003,14 +1004,16 @@ def in_welsh(page: str) -> str:
 
 def app_page(template: str, *, path: str, title: str, description: str, main: str, lang: str = "en", head: str = "",
              scripts: str = "", loading: tuple[str, str] = ("Loading…", "Yn llwytho…"), kind: str = "other",
-             tab: str | None = None, full_title: str | None = None, crumbs: list[tuple[str, str]] = ()) -> str:
+             tab: str | None = None, full_title: str | None = None, crumbs: list[tuple[str, str]] = (),
+             image: tuple[str, str] | None = None) -> str:
     """The app (index.html) at path (alaw/glandyfi/; "" for the home page), in English or
     Welsh (cy/<path>), with its own title, description and address in the head, for link
     previews and search engines, and what they should read in <main> (hidden from readers
     whose browser runs the app, which shows loading until it takes over). tab is a longer
     <title> than the title, for search results (full_title, the whole of it). The head
     also says where the page is in the other language (hreflang), and crumbs (name, path)
-    are the pages above it, for search results."""
+    are the pages above it, for search results. image (its path, and what it shows) is the
+    picture link previews show, in place of the site's own."""
     def swap(page: str, old: str, new: str) -> str:
         if page.count(old) != 1:
             raise SystemExit(f"site/index.html: expected one {old!r} (for the pages build_site.py makes of it)")
@@ -1039,6 +1042,9 @@ def app_page(template: str, *, path: str, title: str, description: str, main: st
                     f'<meta property="og:title" content="{esc(f"{title} · Y Sesiwn" if path else "Y Sesiwn: alawon gwerin Cymru")}">')
     page = swap(page, '<meta property="og:site_name" content="Y Sesiwn">',
                 f'<meta property="og:site_name" content="Y Sesiwn">\n  <meta property="og:locale" content="{"cy_GB" if lang == "cy" else "en_GB"}">')
+    if image:
+        page = re.sub(r'<meta property="og:image" content="[^"]*">', f'<meta property="og:image" content="{SITE_URL}{image[0]}">', page, count=1)
+        page = re.sub(r'<meta property="og:image:alt" content="[^"]*">', f'<meta property="og:image:alt" content="{esc(image[1])}">', page, count=1)
     page = swap(page, f'<meta property="og:url" content="{SITE_URL}">',
                 f'<meta property="og:url" content="{url}">\n  <link rel="canonical" href="{url}">' + alternates + head)
     page = swap(page, f'<main id="main" tabindex="-1">{LOADING}</main>',
@@ -1191,7 +1197,16 @@ def first_paragraph(section: str) -> str:
     return re.sub(r"[*`]", "", para)
 
 
-def tune_pages(tunes: list[dict], index: dict) -> None:
+def previews(tunes: list[dict]) -> dict[str, Path]:
+    """Each tune's link-preview picture (previews.py), of the version its page opens on."""
+    from previews import draw_previews
+    colours = {name: colour for name, (_, colour) in TYPE_ORDER.items()}
+    return draw_previews({t["group"]: {"name": t["base"], "type": t["type"], "colour": colours[t["type"]],
+                                       "key": t["key"], "abc": t["abc"]}
+                          for t in tunes if t["shown"] == 1})
+
+
+def tune_pages(tunes: list[dict], index: dict, pictures: dict[str, Path] = {}) -> None:
     """A real page for each tune, at alaw/<folder>/, and for each type of tune, at
     math/<type>/ (see app_page), each in English and Welsh (cy/alaw/<folder>/). A tune's
     page also carries tunes.json cut down to this tune, so the app can draw it without
@@ -1199,7 +1214,8 @@ def tune_pages(tunes: list[dict], index: dict) -> None:
     tunes, so search engines find every tune by following links. Also the home page and
     the app's other pages (PAGE_PATHS) as written, sitemap.xml and robots.txt. And each
     tune for other websites to show, at embed/<folder>/ (site/embed.html, with the
-    tune's data as its page has)."""
+    tune's data as its page has). pictures are the tunes' link-preview pictures, put by
+    their pages (alaw/<folder>/preview-<hash>.png)."""
     template = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
     embed_template = (ROOT / "site" / "embed.html").read_text(encoding="utf-8")
     (OUT / "embed.html").unlink()  # only the template
@@ -1258,14 +1274,21 @@ def tune_pages(tunes: list[dict], index: dict) -> None:
                     + f'<pre>{esc(first["abc"])}</pre><p>{type_link(first["type"], lang)}</p>')
 
         tune_data = f'\n  <script type="application/json" id="tune-data">{own}</script>'
+        image = None
+        if group in pictures:
+            (OUT / path).mkdir(parents=True, exist_ok=True)
+            shutil.copy2(pictures[group], OUT / path / f"preview-{pictures[group].name}")
+            image = f"{path}preview-{pictures[group].name}"
         write_pages(
             # "Welsh polka" in the title too: it's what search results show, and what
             # people add to a tune's name when they search (app.js: renderTune).
             template, path,
             en=dict(description=description, tab=f"{name} · Welsh {kind}", main=tune_main("en"),
+                    image=image and (image, f"The opening of the sheet music for {name}"),
                     head=f'\n  <script type="application/ld+json">{tune_ld("en")}</script>' + tune_data,
                     crumbs=[home_crumb["en"], (type_heading(types[first["type"]], "en"), type_path(first["type"]))]),
             cy=dict(description=cy_description, tab=f"{name} · {CY_TYPE[first['type']]} o Gymru", main=tune_main("cy"),
+                    image=image and (image, f"Dechrau sgôr {name}"),
                     head=f'\n  <script type="application/ld+json">{tune_ld("cy")}</script>' + tune_data,
                     crumbs=[home_crumb["cy"], (type_heading(types[first["type"]], "cy"), type_path(first["type"]))]),
             title=name, scripts='<script src="static/abcjs/abcjs-basic-min.js" defer></script>\n  ',
@@ -1946,6 +1969,9 @@ def write_service_worker() -> None:
 
 if __name__ == "__main__":
     import sys
+    # Each tune's link-preview picture (previews.py): needs Playwright's browser, so it's
+    # left out unless asked for (pages.yml's build does); without it, every page has the site's own.
+    PREVIEWS = "--previews" in sys.argv
     if "--number-tunes" in sys.argv:
         number_tunes()
     main()

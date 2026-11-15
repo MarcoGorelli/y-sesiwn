@@ -1,0 +1,37 @@
+X:1
+T:Os Daw fy Nghariad i Yma Heno
+T:If My Love Comes Here Tonight
+R:cân
+S:https://amgueddfa.cymru/casgliadau/caneuongwerin/?id=24 (collected by D. Roy Saer)
+N:Sung by Mrs Ellen Ellis (born 1907), a housewife, and her daughter Rhian (born 1945), of Gwynfryn, Mynytho, near Pwllheli, Caernarfonshire; recorded 11.9.64 (St Fagans tape 829). Ellen Ellis learnt it at about four from her mother, a woman from Nefyn.
+N:A love song that tells of a lovers' triangle in a few lines. Without the repeated phrases, the words were often printed on ballad sheets as the first of five verses, and have been sung to several tunes; stage singers now use one like the hymn tune "Hen Ddarbi" or "Cyfamod". This tune is printed in the Journal of the Welsh Folk Song Society (iii, 200) with the words of "Y Ferch o Geredigion".
+N:The second part is sung three times, for verses 2, 3 and 4 (D.S. twice on the score). In its second and third bars the score has a small quaver rest and semiquaver rest after "ddo", outside the beat: a breath, kept out of the music here.
+%%version Ellen and Rhian Ellis
+M:9/8
+L:1/8
+K:C
+F F2F | A3 F2F A2A |
+w: Os daw fy nghar-iad i ym-a
+G3 E3 G2G | F3 D3 F2F |
+w: hen-o, ym-a hen-o, ym-a
+E3 !fermata!C2C C2C
+w: hen-o, Os daw fy
+|[M:12/8] F3 A2A A3- A2G | A3 !fermata!d6 d3
+w: nghar-iad i ym-_ a hen-o i
+|[M:9/8] c3 A3 G2A | F6
+w: gur-o'r gwyd-yr glas,
+|: F3 | A3 F3 A2A |
+w: Rhowch at-eb gwedd-us
+G3 E3 G2G | F3 D3 F2F |
+w: i-ddo, gwedd-us i-ddo, gwedd-us
+E3 !fermata!C3 C3
+w: i-ddo, Rhowch
+|[M:12/8] F3 A3 A3- A2G | A3 !fermata!d6 d3
+w: at-eb gwedd-_ us i-ddo, Na
+|[M:9/8] c3 A3 G2A | F6 :|
+w: 'theb-wch mon-o'n gas
+W:3. Nad ydyw'r ferch ddim gartref, y ferch ddim gartref, y ferch ddim gartref,
+W:Nad ydyw'r ferch ddim gartref, na'i hwyllys yn y tŷ;
+W:
+W:4. Llanc ifanc o blwy arall, o blwy arall, o blwy arall,
+W:Llanc ifanc o blwy arall sydd wedi mynd â hi.

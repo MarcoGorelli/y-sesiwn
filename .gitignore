@@ -42,3 +42,6 @@ sian-philip/
 
 # Tunes waiting to be reviewed before they go in tunes/
 incoming/
+
+# Link-preview pictures kept between builds (previews.py)
+.previews/

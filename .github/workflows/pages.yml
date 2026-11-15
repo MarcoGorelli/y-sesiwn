@@ -86,14 +86,30 @@ jobs:
     needs: test
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    # In Playwright's image, as the tests are: the build draws each tune's link-preview
+    # picture (previews.py) in its headless browser.
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.64.1-noble
+      options: --ipc=host
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           python-version: "3.12"
-      - run: python build_site.py
+          activate-environment: true
+          enable-cache: true
+          cache-dependency-glob: requirements-dev.txt
+      - run: uv pip install -r requirements-dev.txt
+      # The pictures from the last build: only new and changed tunes are drawn again (a
+      # minute or two for all of them). Saved under a new name each run, and the newest restored.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .previews
+          key: previews-${{ github.run_id }}
+          restore-keys: previews-
+      - run: python build_site.py --previews
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: _site

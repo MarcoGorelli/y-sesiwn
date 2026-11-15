@@ -5193,7 +5193,8 @@ def test_search_results_a_to_z_whatever_the_capitals(page):
     page.goto_site("?page=search&q=ffarwel")
     page.wait_for_selector(".search-part")
     names = page.locator(".search-part").first.locator("ul a").all_inner_texts()
-    assert names.index("Ffarwel i Aberystwyth") < names.index("Ffarwel Ned Puw")
+    # Both walts (more than eight results are grouped by type, each group A to Z).
+    assert names.index("Ffarwel i Gymru") < names.index("Ffarwel Ned Puw")
     # The page's own box, with the words searched for; not the sidebar's as well.
     assert page.is_visible("#hero-search") and not page.is_visible("#search-input")
 

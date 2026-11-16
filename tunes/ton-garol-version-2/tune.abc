@@ -1,0 +1,69 @@
+X:1
+T:Tôn Garol (version 2)
+T:Mwynder Mai
+R:carol
+B:The Welsh Harper (1848)
+S:Sent by Steve Jeans, from the Plygain books and Canu Haf
+N:In three parts, with the tune in the middle part. The words under the notes are a Plygain carol for Christmas by Rhys Prichard (c.1575–1644). After them is a spring carol on the same tune, Mwynder Mai, by T. Gwynn Jones (1871–1949), which Steve learnt from Arfon Gwilym.
+N:In Mwynder Mai, the c/d/ in bar 15 of the tune is one c.
+M:3/4
+L:1/4
+%%score 1 2 3
+V:1 treble nm="T"
+V:2 treble nm="A"
+V:3 bass nm="B"
+K:F
+[V:1] (F/G/) | A c B | A B c | B A c | c2 c |
+[V:2] (A/B/) | c A d | c B A | G F G | A2 (A/B/) |
+w: 1.~Clywch _ ad-rodd mawr gar-iad, Mab Duw at y byd, Pan _
+w: 2.~Mab _ Duw pan y gwel-odd ein cyf-lwr mor dost, Fe _
+w: 3.~A _ Mair a feich-iog-odd ar un-ig Fab Duw, O _
+w: 4.~Pan _ ddaeth am-ser es-gor, fe an-ed Mab Mair, Mewn _
+w: 5.~Pan _ an-ed ein pryn-wr, fe hel-iwyd o'r nef Ang-*
+w: 6.~Cor-* on-au gor-eur-aidd ar ben-nau pob un, A _
+[V:3] F, | F, F, B, | A, G, F, | B,, C, C, | F,2 F, |
+%
+[V:1] A c B | c d c | B A G | A2 || (A/B/) |
+[V:2] c A d | c B A | G F E | F2 || (F/G/) |
+w: ddaeth ef o'r nef-oedd i'n pry-nu mor ddrud, Er _
+w: ddaeth yn ei un-swydd o'r nef-oedd yn bost, O _
+w: rad y Glân Ys-bryd ond tra rhy-fedd yw, Pan _
+w: sta-bal ym Meth-lem ar bo-tel o wair, Lle _
+w: yl-ion rhi-al-wych tra llaw-en eu llef, I _
+w: gy-nau gwych gwyn-ion tra llun-iaidd eu llun, A _
+[V:3] F, F, B,, | A,, G,, A,, | B,, C, C, | F,2 || F, |
+%
+[V:1] c c c | c c c | d d c | c2 (A/G/) |
+[V:2] A A A | G G (G/A/) | B B G | A2 (A/G/) |
+w: per-i~i chwi gof-io am _ gar-iad Mab Duw, A'i _
+w: blith yr ang-yl-ion i _ groth y wen Fair, I _
+w: oedd hi'n bur for-wyn tra _ ieu-anc mewn oed, Heb _
+w: trowd ef mewn cad-ach a'i _ os-od i lawr, I _
+w: fyn-eg dan gan-u yr _ am-ser a'r pryd Y _
+w: bryn-odd e i ni a _ theyrn-as gwlad nef, Mol-*
+[V:3] F, A, F, | C, C, C, | C, C, E, | F,2 (A,/G,/) |
+%
+[V:1] F c c | d d c | (c/B/) A G | A2 |]
+[V:2] F A (c/d/) | c B A | (A/G/) F E | F2 |]
+w: fol-i'n was-* tad-ol tra fydd-* och chwi byw.
+w: gym-ryd ein _ nat-ur a'n gwar-* ed o'r pair.
+w: fod i-ddi _ an-ffawd ag un _ gŵr er-ioed.
+w: or-wedd mewn _ pres-eb, on'd hap-* us yr awr.
+w: gan-ed Crist _ Ie-su, Iach-aw-* dwr y byd.
+w: ian-nwn yr _ Ie-su yn llaw-* en ein llef.
+[V:3] F, F, A,, | B,, B,, A,, | B,, C, C, | F,2 |]
+W:Mwynder Mai (T. Gwynn Jones):
+W:Daw dewin mis Mai heb ei weled min nos,
+W:Gan wasgar ei liwiau ar weirglodd a rhos;
+W:Bydd heulwen y bore yn dawnsio ar dwyn,
+W:A daw ar adenydd llawenydd i lwyn.
+W:
+W:Bu Ionawr yn greulon, a garw fu'r hin,
+W:A Chwefror yn chwipio ei fflangell yn flin;
+W:Daw cywion yr helyg fis Mawrth i'r hen goed,
+W:A briallu yn Ebrill daeth Gwanwyn i'w oed.
+W:
+W:Er oered fo'r eira, er garwed fo'r gwynt,
+W:Er byrred ei rwysg, bydd yr haf ar ei hynt;
+W:Mewn byd sy mor gymysg o fethiant neu fai,
+W:Rhyw awr o Baradwys yw mwynder mis Mai.

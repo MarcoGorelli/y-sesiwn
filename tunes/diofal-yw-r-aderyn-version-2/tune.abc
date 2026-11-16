@@ -1,0 +1,48 @@
+X:1
+T:Diofal yw'r Aderyn (version 2)
+T:Rew di Ranno
+R:cân
+S:Sent by Steve Jeans, from Ar Log's recording
+%%version Ar Log
+%%chords Supplied by Steve Jeans
+N:The words are in Edward Jones's Musical and Poetical Relicks of the Welsh Bards (1784). After each verse comes the chorus, then the verse's last two lines again, and the instrumental bars before the next verse.
+M:6/8
+L:1/8
+K:Am
+E | "Am"A2 A A2 A | "Em"G3 E2 G |
+w: Di-of-al yw'r ad-er-yn, Ni
+w: Fe eis-tedd ar y gang-en, Gan
+w: Fe fwy-ta'i swp-er hen-o, Ni
+"C"c2 c c2 c | "G"B3 !breath!B3 |
+w: hau ni fed un gron-yn,
+w: ed-rych ar ei ad-en,
+w: ŵyr ym mh'le mae'i gin-io,
+"Am"c2 B c2 B | c2 B c2 e |
+w: Heb un gof-al yn y byd, Mae'n
+w: Heb un gein-iog yn ei god, Yn
+w: Dyn-a'r modd y mae yn byw, A
+"G"d2 B A2 ^G | "Am"A3 !breath!A3 ||
+w: can-u hyd y flwydd-yn.
+w: llyw-io~a bod yn llaw-en.
+w: gad-o~i Dduw ar-lwy-o.
+"A"^cde cde | ^cde cBA |
+w: Dym-il-i dym-il-i dym-il-i dym-il-i
+"G"Bcd Bcd | Bcd BAG |
+w: dym-il-i dym-il-i dym-il-i dym-il-i
+"A"^cde cde | ^cde cB!breath!A ||
+w: dym-il-i dym-il-i dym-il-i dym-il-i
+"Am"A2 A A2 A | "Em"G3 E3 |
+w: Rew-di rew-di ran-no,
+"C"c2 c c2 c | "G"B3 !breath!B3 |
+w: rew-di rew-di ran-no,
+"Am"c2 B c2 B | c2 B c2 e |
+w: Heb un gof-al yn y byd, Mae'n
+w: Heb un gein-iog yn ei god, Yn
+w: Dyn-a'r modd y mae yn byw, A
+"G"d2 B A2 ^G | "Am"A3 A2 z ||
+w: can-u hyd y flwydd-yn.
+w: llyw-io~a bod yn llaw-en.
+w: gad-o~i Dduw ar-lwy-o.
+"Am"A2 B cBA | "G"G2 A BAG |
+"F"F2 G AGF | "Em"E3 E3 |
+[M:3/4]"Em"E2 "F"F2 "G"G2 | [M:6/8]"Am"A3 z3 | z6 :|

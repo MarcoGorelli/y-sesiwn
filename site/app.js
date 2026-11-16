@@ -144,6 +144,7 @@ const state = {
   data: null,           // tunes.json (on a tune's own page, at first, only that tune: see start())
   loaded: null,         // tunes.json, on its way
   complete: false,      // whether data is all of it yet
+  mapSize: null,        // the map's size, from sessions.json: a session's page, before tunes.json (walesMap)
   bySlug: new Map(),    // every tune file ("version"), by folder name
   byId: new Map(),      // and by its short_id (older set links)
   byCode: new Map(),    // and by its code in set links (build_site.py's set_code)
@@ -1192,8 +1193,9 @@ function notesSearch({ autoListen = false } = {}) {
 // A tune's name, marked as Welsh or English so screen readers say it in the right voice
 // (whichever language the page is in). The Welsh names are those with a pronunciation in
 // pronunciation.json; the rest are English ("Gower Reel").
-const nameLang = (group) => (state.data.say?.[group] ? "cy" : "en");
-const tuneName = (group, text) => el("span", { lang: nameLang(group) }, text);
+// (lang: the name's language as the data with it says, where tunes.json may not be in yet: the archive's.)
+const nameLang = (group) => (state.data?.say?.[group] ? "cy" : "en");
+const tuneName = (group, text, lang) => el("span", { lang: lang ?? nameLang(group) }, text);
 
 // A version's link names it (?v=, by its own number) unless it's the one shown first.
 function tuneUrl(group, version) {
@@ -1450,8 +1452,9 @@ function render() {
   const params = new URLSearchParams(location.search);
   const known = (slug) => state.groups.has(slug) || state.bySlug.has(slug);
   let address = addressTune();
-  // A tune's own page starts with only that tune (see start()): anything else waits for the rest.
-  if (!state.complete && !known(movedTo(address))) {
+  // A tune's own page starts with only that tune (see start()), and the archive and a
+  // session's page with none: anything else waits for the rest.
+  if (!state.complete && !known(movedTo(address)) && !withoutTunes()) {
     state.loaded.then(render, loadFailed);
     return;
   }
@@ -4899,7 +4902,7 @@ function walesMap(current = null, places = state.data.places, label = null) {
   // wales.svg is only the outline, used as a mask so the land takes the page's
   // colours (also in dark mode); the places are dots in an SVG on top of it.
   // places: the tunes' places (places.json), or others with x and y (the sessions' towns).
-  const [width, height] = state.data.mapSize;
+  const [width, height] = state.data?.mapSize ?? state.mapSize;  // (a session's page, before tunes.json: sessions.json's)
   const dots = places.map((place) => svg("circle", {
     cx: place.x, cy: place.y, r: place === current ? 3.6 : 1.7,
     class: current ? (place === current ? "here" : "other") : null,
@@ -5439,7 +5442,12 @@ function addSessionForm() {
 }
 
 function loadSessions() {
-  state.sessionData ??= fetch("sessions.json").then((answer) => answer.json()).catch((error) => { state.sessionData = null; throw error; });
+  // On a first visit to a session's page, already on its way (index.html).
+  const early = window.sessionsJson;
+  window.sessionsJson = null;
+  state.sessionData ??= (early ?? fetch("sessions.json")).then((answer) => answer.json())
+    .then((data) => { state.mapSize ??= data.mapSize; return data; })
+    .catch((error) => { state.sessionData = null; throw error; });
   return state.sessionData;
 }
 
@@ -5798,7 +5806,7 @@ const nightLabel = (day) => dateLabel(dateOf(day), { weekday: "long", day: "nume
 
 // A tune in a setlist: its page (at the version played), or its name alone if it isn't on the site.
 const setlistTune = (tune) => (tune.tune
-  ? el("a", { href: tuneUrl(tune.tune, tune.version), "data-route": true }, tuneName(tune.tune, tune.name))
+  ? el("a", { href: tuneUrl(tune.tune, tune.version), "data-route": true }, tuneName(tune.tune, tune.name, tune.lang))
   : [tune.name, el("span", { class: "caption" }, tr(" (not on Y Sesiwn yet)", " (ddim ar Y Sesiwn eto)"))]);
 
 const RECENT_NIGHTS = 5;  // nights shown before "Earlier nights"
@@ -5877,8 +5885,15 @@ function setlistsParts(id, { setlists, most }, heading = el("h2", { class: "sect
 }
 
 // archif/: every session's setlists, the latest first (build_site.py: archive_page).
+const onArchive = () => /^archif\/?$/.test(sitePath());
+// The pages drawn without tunes.json (start): the archive and a session's (whose setlists
+// and sessions.json say all they need, the tunes' names and the map's size).
+const withoutTunes = () => onArchive() || addressSession() !== null;
 function loadArchive() {
-  state.archive ??= fetch("archif/archif.json").then((answer) => {
+  // On a first visit to the page, already on its way (index.html).
+  const early = window.archiveJson;
+  window.archiveJson = null;
+  state.archive ??= (early ?? fetch("archif/archif.json")).then((answer) => {
     if (!answer.ok) throw new Error(`archif.json: ${answer.status}`);
     return answer.json();
   }).catch((error) => { state.archive = null; throw error; });
@@ -5887,7 +5902,7 @@ function loadArchive() {
 
 async function renderArchive(main) {
   document.title = tr("Tunes played at sessions · Y Sesiwn", "Alawon a chwaraewyd mewn sesiynau · Y Sesiwn");
-  const left = () => !/^archif\/?$/.test(sitePath());
+  const left = () => !onArchive();
   const heading = el("h1", {}, tr("Tunes played at sessions", "Alawon a chwaraewyd mewn sesiynau"));
   let sessions;
   showLoading(main);
@@ -7473,15 +7488,19 @@ async function start() {
     buildGroups();
     render();
   }
+  // The archive and a session's page need none of the tunes (their data has the names):
+  // drawn now, not after tunes.json, which carries on coming for the rest of the site.
+  const early = !own && withoutTunes();
+  if (early) render();
   try {
     state.data = await state.loaded;
   } catch (error) {
-    if (own) return;  // the tune is on the page already: keep it (other pages say so when opened)
+    if (own || early) return;  // the tune (or the archive, the session) is on the page already: keep it (other pages say so when opened)
     throw error;
   }
   state.complete = true;
   buildGroups();
-  if (!own) render();
+  if (!own && !early) render();
   (window.requestIdleCallback ?? setTimeout)(() => loadAbcjs().catch(() => {}));
 }
 // Offline use (sw.js): once the page has loaded, keep a copy of the whole site, so it

@@ -916,8 +916,7 @@ def main() -> None:
         "places": places({t["group"] for t in tunes}),
         "say": pronunciations({t["group"] for t in tunes}),
         "moved": moved_tunes({t["slug"] for t in tunes}, numbers, {t["group"] for t in tunes}),
-        "mapSize": [float(n) for n in re.search(
-            r'viewBox="0 0 ([\d.]+) ([\d.]+)"', (ROOT / "site" / "wales.svg").read_text()).groups()],
+        "mapSize": map_size(),
     }
 
     if OUT.exists():
@@ -1005,7 +1004,7 @@ def in_welsh(page: str) -> str:
 def app_page(template: str, *, path: str, title: str, description: str, main: str, lang: str = "en", head: str = "",
              scripts: str = "", loading: tuple[str, str] = ("Loading…", "Yn llwytho…"), kind: str = "other",
              tab: str | None = None, full_title: str | None = None, crumbs: list[tuple[str, str]] = (),
-             image: tuple[str, str] | None = None) -> str:
+             image: tuple[str, str] | None = None, early: bool = False) -> str:
     """The app (index.html) at path (alaw/glandyfi/; "" for the home page), in English or
     Welsh (cy/<path>), with its own title, description and address in the head, for link
     previews and search engines, and what they should read in <main> (hidden from readers
@@ -1013,7 +1012,8 @@ def app_page(template: str, *, path: str, title: str, description: str, main: st
     <title> than the title, for search results (full_title, the whole of it). The head
     also says where the page is in the other language (hreflang), and crumbs (name, path)
     are the pages above it, for search results. image (its path, and what it shows) is the
-    picture link previews show, in place of the site's own."""
+    picture link previews show, in place of the site's own. early: the copy in <main> is the
+    page as the app shows it, near enough, so it's shown while the app loads (style.css)."""
     def swap(page: str, old: str, new: str) -> str:
         if page.count(old) != 1:
             raise SystemExit(f"site/index.html: expected one {old!r} (for the pages build_site.py makes of it)")
@@ -1048,7 +1048,7 @@ def app_page(template: str, *, path: str, title: str, description: str, main: st
     page = swap(page, f'<meta property="og:url" content="{SITE_URL}">',
                 f'<meta property="og:url" content="{url}">\n  <link rel="canonical" href="{url}">' + alternates + head)
     page = swap(page, f'<main id="main" tabindex="-1">{LOADING}</main>',
-                f'<main id="main" tabindex="-1"><div class="static">{main}</div>'
+                f'<main id="main" tabindex="-1"><div class="static"{" data-early" if early else ""}>{main}</div>'
                 f'<p class="loading" data-cy="{esc(loading[1])}">{esc(loading[0])}</p></main>')
     return in_welsh(page) if lang == "cy" else page
 
@@ -1342,7 +1342,7 @@ def tune_pages(tunes: list[dict], index: dict, pictures: dict[str, Path] = {}) -
         write_page(OUT / EMBED_DIR / move["from"], redirect.replace("</title>", '</title>\n  <meta name="robots" content="noindex">', 1))
 
     sessions = session_data()
-    setlists = setlist_data(sessions, tunes, index["moved"])
+    setlists = names_said(setlist_data(sessions, tunes, index["moved"]), set(index["say"]))
     sessions_page(template, sessions, setlists)
     pages += [(f"{SESSIONS_DIR}/", None)] + [(f"{SESSIONS_DIR}/{s['id']}/", None) for s in sessions]
     pages += [(f"{SESSIONS_DIR}/{sid}/", None) for sid, kept in setlists.items() if "session" in kept]
@@ -1629,6 +1629,11 @@ def cy_date(day: str) -> str:
 ALL_SESSIONS = {"en": "All sessions, on a map", "cy": "Pob sesiwn, ar fap"}
 
 
+def map_size() -> list[float]:
+    """wales.svg's width and height, for the app's maps (walesMap)."""
+    return [float(n) for n in re.search(r'viewBox="0 0 ([\d.]+) ([\d.]+)"', (ROOT / "site" / "wales.svg").read_text()).groups()]
+
+
 def sessions_page(template: str, sessions: list[dict], setlists: dict[str, dict]) -> None:
     """sesiynau/: the sessions as plain HTML for search engines (the app draws its own),
     and sessions.json for the app. Each session also has a page of its own,
@@ -1637,7 +1642,8 @@ def sessions_page(template: str, sessions: list[dict], setlists: dict[str, dict]
     sessions.json, and has them in sesiynau/<id>/setlists.json, fetched only on its own
     page, with a page for each night (see setlist_pages). Each page is in Welsh too."""
     sessions = [{**s, **({"setlists": len(setlists[s["id"]]["setlists"])} if s["id"] in setlists else {})} for s in sessions]
-    (OUT / "sessions.json").write_text(json.dumps({"sessions": sessions}, ensure_ascii=False, separators=(",", ":")),
+    # (With the map's size, so a session's page draws its map without tunes.json: app.js, walesMap.)
+    (OUT / "sessions.json").write_text(json.dumps({"sessions": sessions, "mapSize": map_size()}, ensure_ascii=False, separators=(",", ":")),
                                        encoding="utf-8")
     towns = sorted({s["town"] for s in sessions}, key=normalize)
     towns_cy = sorted({s["town_cy"] for s in sessions}, key=normalize)
@@ -1694,14 +1700,17 @@ def sessions_page(template: str, sessions: list[dict], setlists: dict[str, dict]
                          + (setlists_html(s["id"], setlists[s["id"]], lang="cy") if has else "")
                          + f'<p><a href="{site_link(f"{SESSIONS_DIR}/", "cy")}">{ALL_SESSIONS["cy"]}</a></p>'),
             head=f'\n  <script type="application/ld+json">{ld}</script>',
-            loading=("Loading the session…", "Yn llwytho'r sesiwn…"))
+            loading=("Loading the session…", "Yn llwytho'r sesiwn…"), early=True)
     setlist_pages(template, {s["id"]: s for s in sessions}, setlists)
 
 
 # A session's page lists the tunes played most there, once it has MOST_PLAYED_FROM setlists:
 # every one played on at least two nights (the app shows a few, and more as asked), and on
-# the page as written (for search engines) the first MOST_PLAYED.
-MOST_PLAYED, MOST_PLAYED_FROM = 10, 3
+# the page as written the first MOST_PLAYED, as the app shows them at first (app.js: MOST_SHOWN).
+# Its nights likewise: the latest RECENT_NIGHTS, and the rest under "Earlier nights" (unless
+# that's only one or two more: app.js, RECENT_NIGHTS).
+MOST_PLAYED, MOST_PLAYED_FROM = 5, 3
+RECENT_NIGHTS = 5
 
 
 def setlist_data(sessions: list[dict], tunes: list[dict], moved: list[dict], today: "date | None" = None) -> dict[str, dict]:
@@ -1798,6 +1807,17 @@ def setlist_key(own: dict | None, key: str | None, where: str) -> dict:
     return {"key": f"{root} {own['modeName']}", "shift": shift}
 
 
+def names_said(setlists: dict[str, dict], welsh: set[str]) -> dict[str, dict]:
+    """setlist_data's, each tune on the site with its name's language ("lang": "cy" for those
+    with a pronunciation, welsh; "en" for the rest): the app draws the archive and a session's
+    page without tunes.json, which would otherwise say (app.js: nameLang), and the pages as
+    written mark them too, for screen readers while the app loads."""
+    def said(tune: dict) -> dict:
+        return {**tune, "lang": "cy" if tune["tune"] in welsh else "en"} if "tune" in tune else tune
+    return {sid: {**kept, "setlists": [{**night, "tunes": [said(t) for t in night["tunes"]]} for night in kept["setlists"]],
+                  "most": [said(t) for t in kept["most"]]} for sid, kept in setlists.items()}
+
+
 def most_played(nights: list[dict]) -> list[dict]:
     """The tunes played on the most nights (each night counted once), most first, then A to
     Z, each with how many: once there are MOST_PLAYED_FROM nights, and only those played on
@@ -1817,34 +1837,39 @@ def setlist_link(tune: dict, lang: str = "en") -> str:
     """A tune in a setlist, for the static pages: its page (at the version played), or its name if it isn't on the site."""
     if "tune" not in tune:
         return esc(tune["name"])
+    said = f' lang="{tune["lang"]}"' if "lang" in tune else ""  # the name's own language, where known (the archive's)
     return (f'<a href="{site_link(f"{TUNE_DIR}/{tune["tune"]}/", lang)}' + (f'?v={tune["version"]}' if "version" in tune else "")
-            + f'">{esc(tune["name"])}</a>')
+            + f'"{said}>{esc(tune["name"])}</a>')
 
 
-def setlists_html(sid: str, kept: dict, heading: str | None = None, most_played: int = MOST_PLAYED, lang: str = "en") -> str:
-    """A session's setlists for its static page: the tunes played most, and each night's page."""
+def setlists_html(sid: str, kept: dict, heading: str | None = None, lang: str = "en") -> str:
+    """A session's setlists for its static page: the tunes played most, and each night's page
+    (the earlier ones in a <details>, so they're there for search engines and without JavaScript)."""
     cy = lang == "cy"
     heading = heading or f"<h2>{'Alawon a chwaraewyd yma' if cy else 'Tunes played here'}</h2>"
     n = len(kept["setlists"])
     most = (f"<h3>{'Yr alawon a chwaraeir amlaf' if cy else 'Most played here'}</h3><ol>" + "".join(
         f"<li>{setlist_link(t, lang)}: {t['nights']} {'o' if cy else 'of'} {n} {'noson' if cy else 'nights'}</li>"
-        for t in kept["most"][:most_played]) + "</ol>") if kept["most"] else ""
-    return (heading + most + "<ul>" + "".join(
-        f'<li><a href="{site_link(f"{SESSIONS_DIR}/{sid}/{night["date"]}/", lang)}">'
-        f'{esc(cy_date(night["date"]) if cy else long_date(night["date"]))}</a>: '
-        f'{len(night["tunes"])} {"alaw" if cy else "tunes"}</li>'
-        for night in kept["setlists"]) + "</ul>")
+        for t in kept["most"][:MOST_PLAYED]) + "</ol>") if kept["most"] else ""
 
-
-# The archive's page as written (for search engines) lists the tunes played most at each
-# session: its first few. The app has them all, as on the session's page, and shows more as asked.
-ARCHIVE_MOST = 5
+    def nights(some: list[dict]) -> str:
+        return "<ul>" + "".join(
+            f'<li><a href="{site_link(f"{SESSIONS_DIR}/{sid}/{night["date"]}/", lang)}">'
+            f'{esc(cy_date(night["date"]) if cy else long_date(night["date"]))}</a>: '
+            f'{len(night["tunes"])} {"alaw" if cy else "tunes"}</li>' for night in some) + "</ul>"
+    shown = RECENT_NIGHTS if n > RECENT_NIGHTS + 2 else n
+    earlier = kept["setlists"][shown:]
+    return (heading + most + nights(kept["setlists"][:shown])
+            + (f'<details class="earlier-nights"><summary>{"Nosweithiau cynt" if cy else "Earlier nights"} ({len(earlier)})</summary>'
+               + nights(earlier) + "</details>" if earlier else ""))
 
 
 def archive_page(template: str, active: dict[str, dict], setlists: dict[str, dict]) -> None:
     """archif/: every session's setlists, the latest first, each with the tunes played most
     there and its nights (their tunes are on the nights' own pages). archif/archif.json is
-    the same for the app, fetched only on this page."""
+    the same for the app, fetched only on this page. The app draws this page without
+    waiting for tunes.json (app.js: start), and the page as written is shown while the app
+    loads (early)."""
     def about(sid: str) -> dict:
         s = active.get(sid) or setlists[sid]["session"]
         return {k: s[k] for k in ("id", "name", "venue", "town", "town_cy", "kind") if s.get(k)}
@@ -1863,14 +1888,14 @@ def archive_page(template: str, active: dict[str, dict], setlists: dict[str, dic
         title = session_title_cy if lang == "cy" else session_title
         return "".join(setlists_html(s["id"], setlists[s["id"]],
                                      f'<h2><a href="{site_link(f"{SESSIONS_DIR}/{s["id"]}/", lang)}">{esc(title(s))}</a></h2>',
-                                     ARCHIVE_MOST, lang) for s in sessions)
+                                     lang) for s in sessions)
     write_pages(
         template, f"{ARCHIVE_DIR}/",
         en=dict(title="Tunes played at sessions", description=description,
                 main=f"<h1>Tunes played at sessions</h1><p>{esc(description)}</p>{body('en')}"),
         cy=dict(title="Alawon a chwaraewyd mewn sesiynau", description=cy_description,
                 main=f"<h1>Alawon a chwaraewyd mewn sesiynau</h1><p>{esc(cy_description)}</p>{body('cy')}"),
-        crumbs=[("Y Sesiwn", "")], loading=("Loading the tunes played…", "Yn llwytho'r alawon a chwaraewyd…"))
+        crumbs=[("Y Sesiwn", "")], loading=("Loading the tunes played…", "Yn llwytho'r alawon a chwaraewyd…"), early=True)
 
 
 def setlist_pages(template: str, active: dict[str, dict], setlists: dict[str, dict]) -> None:
@@ -1898,7 +1923,7 @@ def setlist_pages(template: str, active: dict[str, dict], setlists: dict[str, di
                 cy=dict(title=cy_title, description=cy_description,
                         main=f"<h1>{esc(cy_title)}</h1><p>{esc(cy_description)}</p>" + setlists_html(sid, kept, lang="cy")
                              + f'<p><a href="{site_link(f"{SESSIONS_DIR}/", "cy")}">{ALL_SESSIONS["cy"]}</a></p>'),
-                loading=("Loading the session…", "Yn llwytho'r sesiwn…"))
+                loading=("Loading the session…", "Yn llwytho'r sesiwn…"), early=True)
         for night in kept["setlists"]:
             names = [t["name"] for t in night["tunes"]]
             some = ", ".join(names[:3]) + (f" and {len(names) - 3} more" if len(names) > 3 else "")
@@ -1921,7 +1946,7 @@ def setlist_pages(template: str, active: dict[str, dict], setlists: dict[str, di
                         crumbs=[("Y Sesiwn", ""), (title, session_path)]),
                 cy=dict(title=cy_page_title, description=cy_description, main=night_main("cy", cy_page_title, cy_title),
                         crumbs=[("Y Sesiwn", ""), (cy_title, session_path)]),
-                loading=("Loading the tunes…", "Yn llwytho'r alawon…"))
+                loading=("Loading the tunes…", "Yn llwytho'r alawon…"), early=True)
 
 
 # A type's page's heading, in Welsh: the kind of tune, said in a way that needs no plural

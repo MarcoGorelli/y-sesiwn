@@ -295,7 +295,10 @@ main { padding: 2.5rem 3rem 4rem; max-width: 1200px; width: 100%; animation: fad
 .loading, .caption { color: var(--muted); }
 /* The page as written, for search engines (see index.html): hidden where the app runs.
    "Loading…" only shows if it takes a moment, so a quick load doesn't flash it. */
-.js .static { display: none; }
+.js .static:not([data-early]) { display: none; }
+/* A page whose copy is the page as the app shows it (the archive: build_site.py, early) shows it
+   while the app loads, rather than "Loading…". */
+.js .static[data-early] ~ .loading { display: none; }
 .js main > .loading { animation: loading-shows .3s ease-in .6s both; }
 @keyframes loading-shows { from { opacity: 0; } }
 /* Under it, a strip of carthen going through the loom: its weave slides along, one repeat
@@ -1071,6 +1074,10 @@ details.abc pre { overflow-x: auto; font-size: .8rem; margin: .75rem 0 .25rem; }
 .setlists li, .setlist li { padding: .15rem 0; }
 .setlists .more-list { margin: .2rem 0 0 1.5rem; }  /* under the list's names, past the bullets or numbers */
 .setlists .more-list .link-button { margin: 0; font-size: inherit; }
+/* The page as written (build_site.py: setlists_html), shown while the app loads: its earlier
+   nights folded away as the app has them, under what looks like the app's button. */
+.static .earlier-nights > summary { margin: .2rem 0 0 1.5rem; list-style: none; cursor: pointer; color: var(--link, var(--accent)); text-decoration: underline; }
+.static .earlier-nights > summary::-webkit-details-marker { display: none; }
 .send-setlist { margin-top: 1.25rem; }
 .send-setlist > summary { color: var(--link); text-decoration: underline; width: fit-content; }
 .send-setlist > summary::before { display: none; }

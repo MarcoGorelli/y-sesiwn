@@ -736,20 +736,22 @@ def test_setlists(site):
     kept = json.loads((out / "sesiynau" / "chapter-cardiff-tuesday" / "setlists.json").read_text(encoding="utf-8"))
     assert [n["date"] for n in kept["setlists"]] == ["2026-10-20", "2026-10-13", "2026-10-06"]
     # Played on all three nights (twice on one, counted once; "drowsy maggie" the same tune), then A to Z.
-    assert kept["most"] == [{"name": "Drowsy Maggie", "nights": 3}, {"tune": "glandyfi", "name": "Glandyfi", "nights": 3},
-                            {"tune": "y-derwydd", "name": "Y Derwydd", "nights": 2}]
+    # Each tune on the site says whether its name is Welsh (for screen readers), as tunes.json
+    # would: the archive and a session's page are drawn without it.
+    assert kept["most"] == [{"name": "Drowsy Maggie", "nights": 3}, {"tune": "glandyfi", "name": "Glandyfi", "nights": 3, "lang": "cy"},
+                            {"tune": "y-derwydd", "name": "Y Derwydd", "nights": 2, "lang": "cy"}]
     page = (out / "sesiynau" / "chapter-cardiff-tuesday" / "index.html").read_text(encoding="utf-8")
-    assert '<li><a href="alaw/glandyfi/">Glandyfi</a>: 3 of 3 nights</li>' in page
+    assert '<li><a href="alaw/glandyfi/" lang="cy">Glandyfi</a>: 3 of 3 nights</li>' in page
     assert '<a href="sesiynau/chapter-cardiff-tuesday/2026-10-20/">Tuesday 20 October 2026</a>: 5 tunes' in page
     # Each tune with the key it was played in,
     # and the version played (glandyfi/ is the third version of Glandyfi shown on its page).
-    assert kept["setlists"][0]["tunes"][:2] == [{"tune": "y-derwydd", "version": 1, "name": "Y Derwydd", "key": "D major", "shift": 0},
-                                                {"tune": "glandyfi", "version": 1, "name": "Glandyfi", "key": "A major", "shift": 2}]
+    assert kept["setlists"][0]["tunes"][:2] == [{"tune": "y-derwydd", "version": 1, "name": "Y Derwydd", "key": "D major", "shift": 0, "lang": "cy"},
+                                                {"tune": "glandyfi", "version": 1, "name": "Glandyfi", "key": "A major", "shift": 2, "lang": "cy"}]
     night = (out / "sesiynau" / "chapter-cardiff-tuesday" / "2026-10-20" / "index.html").read_text(encoding="utf-8")
     assert '<base href="../../../">' in night
     assert "<title>Tunes played on Tuesday 20 October 2026 at Noson Lawen: Folk in the Bar, Chapter, Cardiff · Y Sesiwn</title>" in night
     assert "Yr alawon a chwaraewyd yng Nghaerdydd ar 20 Hydref 2026." in night and "<li>Drowsy Maggie</li>" in night
-    assert '<li><a href="alaw/glandyfi/?v=1">Glandyfi</a> (A major)</li>' in night
+    assert '<li><a href="alaw/glandyfi/?v=1" lang="cy">Glandyfi</a> (A major)</li>' in night
     # A session that's stopped keeps a page, with its setlists.
     past = (out / "sesiynau" / "hen-sesiwn-swansea-wednesday" / "index.html").read_text(encoding="utf-8")
     assert "<title>Session at Yr Hen Sesiwn, Swansea · Y Sesiwn</title>" in past and "no longer running" in past
@@ -803,6 +805,19 @@ def test_setlist_mistakes(tmp_path, monkeypatch, change, says):
              for slug in ("glandyfi", "y-derwydd")]
     with pytest.raises(SystemExit, match=says):
         b.setlist_data([session], tunes, [], date(2026, 11, 2))
+
+
+def test_setlists_html_folds_earlier_nights():
+    # The page as written shows a session's nights as the app does at first: the latest five,
+    # the rest under "Earlier nights" (a <details>: there without JavaScript, and for search
+    # engines), unless that's only one or two more.
+    def nights(n):
+        return {"setlists": [{"date": f"2026-10-{d:02}", "tunes": [{"name": "x"}]} for d in range(n, 0, -1)], "most": []}
+    page = b.setlists_html("s", nights(8))
+    shown, earlier = page.split("<details")
+    assert shown.count("<li>") == 5 and "2026-10-08" in shown and ">Earlier nights (3)</summary>" in earlier and earlier.count("<li>") == 3
+    assert "<details" not in b.setlists_html("s", nights(7)) and b.setlists_html("s", nights(7)).count("<li>") == 7
+    assert "Nosweithiau cynt (3)" in b.setlists_html("s", nights(8), lang="cy")
 
 
 def test_setlists_of_a_stopped_session(tmp_path, monkeypatch):

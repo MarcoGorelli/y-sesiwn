@@ -5,6 +5,7 @@ import os
 import random
 import re
 import struct
+import urllib.request
 import wave
 
 import pytest
@@ -4783,10 +4784,12 @@ def test_no_flash_of_the_static_page(browser, site):
     # But once the app is drawing the page, it stays hidden however long the page's own data
     # takes: offline, or on a slow connection, the page as it came is the saved home page
     # (sw.js), whose jigs and slip jigs would show on the archive's address.
+    home = urllib.request.urlopen(site).read().decode().replace('<base href="./">', '<base href="../">')
     context = browser.new_context(service_workers="block")
     page = context.new_page()
     page.clock.install()
     held = []
+    page.route("**/archif/", lambda route: route.fulfill(body=home, content_type="text/html"))
     page.route("**/archif.json", lambda route: held.append(route))
     page.goto(site + "archif/")
     while not held:
@@ -4796,6 +4799,33 @@ def test_no_flash_of_the_static_page(browser, site):
     held[0].continue_()
     page.wait_for_selector("#main .setlists")
     assert page.locator("#main .static").count() == 0
+    context.close()
+    # The archive's own page as written is the page as the app draws it (near enough), so it
+    # shows at once, not "Loading…"; and the app draws it without waiting for the tunes.
+    context = browser.new_context(service_workers="block")
+    page = context.new_page()
+    held = []
+    page.route("**/tunes.json", lambda route: held.append(route))
+    page.route("**/app.js", lambda route: route.abort())  # as it is before the app has come
+    page.goto(site + "archif/")
+    assert page.locator("#main .static h2").first.is_visible() and page.locator("#main .loading").is_hidden()
+    page.unroute("**/app.js")
+    page.goto(site + "archif/", wait_until="commit")
+    page.wait_for_selector("#main .setlists")
+    assert page.locator("#main .static").count() == 0
+    assert page.locator("#main .setlists [lang=cy]").count() > 0  # Welsh names marked, from archif.json
+    assert not page.evaluate("state.complete")
+    # A session's page too, map and all (its size from sessions.json).
+    page.route("**/app.js", lambda route: route.abort())
+    page.goto(site + "sesiynau/chapter-cardiff-tuesday/")
+    assert page.locator("#main .static h1").is_visible() and page.locator("#main .loading").is_hidden()
+    page.unroute("**/app.js")
+    page.goto(site + "sesiynau/chapter-cardiff-tuesday/", wait_until="commit")
+    page.wait_for_selector("#main .session-page .place svg")
+    page.wait_for_selector("#main .setlists [lang=cy]")
+    assert not page.evaluate("state.complete")
+    for route in held:
+        route.continue_()
     context.close()
 
 

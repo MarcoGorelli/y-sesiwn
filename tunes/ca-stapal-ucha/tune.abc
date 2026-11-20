@@ -5,8 +5,8 @@ M:4/4
 L:1/8
 S:https://trello.com/b/XdTzaEW5/bwrdd-du-yscolan (notated by Martin Leamon, Yscolan Bach Abertawe)
 %%chords From the Yscolan notation
-K:D
-|: "D"A2 A2 d4 | "C"ed=ce dcAG | "D"A2 A2 d4 |1 "C"ed=ce "D"d4 :|2 "C"ed=ce "D"d>d eg ||
-"Am"a2 a2 e4 | "Am"aged =c4 | "D"A2 A2 d4 | "C"ed=ce dcAG |
-"D"A2 A2 d4 | "C"ed=ce "D"d>d eg | "Am"a2 a2 e4 | "Am"aged =c4 |
-"D"A2 A2 d4 | "C"ed=ce dcAG | "D"A2 A2 d4 | "C"ed=ce "D"d4 |]
+K:DMix
+|: "D"A2 A2 d4 | "C"edce dcAG | "D"A2 A2 d4 |1 "C"edce "D"d4 :|2 "C"edce "D"d>d eg ||
+"Am"a2 a2 e4 | "Am"aged c4 | "D"A2 A2 d4 | "C"edce dcAG |
+"D"A2 A2 d4 | "C"edce "D"d>d eg | "Am"a2 a2 e4 | "Am"aged c4 |
+"D"A2 A2 d4 | "C"edce dcAG | "D"A2 A2 d4 | "C"edce "D"d4 |]
